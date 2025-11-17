@@ -1583,7 +1583,8 @@ const resetWorktime = async () => {
     if (!isOpen) return;
 
     // Инициализируем WebSocket соединение
-    const socketConnection = io('http://192.168.0.85:5000');
+    const socketUrl = typeof window !== 'undefined' && window.location ? window.location.origin : '';
+    const socketConnection = io(socketUrl);
     
     socketConnection.on('connect', () => {
       console.log('📡 WebSocket connected for worktime updates');
