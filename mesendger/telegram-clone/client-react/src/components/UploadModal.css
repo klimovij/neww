@@ -1,0 +1,71 @@
+.upload-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.25);
+  z-index: 1000;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+.upload-modal {
+  margin-top: 0;
+  margin-left: 60px;
+  width: 400px;
+  background: linear-gradient(135deg, #f7faff 0%, #e3e8f0 100%);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+  padding: 32px 24px 24px 24px;
+  position: relative;
+  font-family: 'Segoe UI', 'Roboto', sans-serif;
+}
+.upload-modal h2 {
+  margin-top: 0;
+  font-size: 1.3rem;
+  color: #2a3a5e;
+  font-weight: 600;
+  margin-bottom: 18px;
+}
+.upload-input {
+  width: 100%;
+  margin-bottom: 18px;
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid #bfc8e0;
+  font-size: 1rem;
+  background: #f7faff;
+}
+.upload-btn {
+  background: linear-gradient(90deg, #3a7bd5 0%, #00d2ff 100%);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 24px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  margin-right: 12px;
+  transition: background 0.2s;
+}
+.upload-btn:disabled {
+  background: #bfc8e0;
+  cursor: not-allowed;
+}
+.upload-message {
+  margin-top: 12px;
+  color: #2a3a5e;
+  font-size: 0.95rem;
+}
+.upload-close-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: none;
+  border: none;
+  color: #3a7bd5;
+  font-size: 1.1rem;
+  cursor: pointer;
+  font-weight: 600;
+}

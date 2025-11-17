@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🗺️ Карта проекта Telegram Clone</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .section {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border-left: 5px solid;
+        }
+
+        .section:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+        }
+
+        .section.auth { border-left-color: #e74c3c; }
+        .section.chat { border-left-color: #3498db; }
+        .section.schedule { border-left-color: #f39c12; }
+        .section.templates { border-left-color: #9b59b6; }
+        .section.users { border-left-color: #2ecc71; }
+        .section.worktime { border-left-color: #34495e; }
+        .section.congratulations { border-left-color: #e67e22; }
+        .section.news { border-left-color: #1abc9c; }
+        .section.calendar { border-left-color: #8e44ad; }
+        .section.additional { border-left-color: #95a5a6; }
+
+        .section-title {
+            font-size: 1.4em;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .component {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .component:hover {
+            background: #e3f2fd;
+            border-color: #2196f3;
+            transform: translateX(5px);
+        }
+
+        .component.modal {
+            background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+        }
+
+        .component.modal:hover {
+            background: linear-gradient(135deg, #ffecb3 0%, #ffd54f 100%);
+            border-color: #ff9800;
+        }
+
+        .component-name {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .component-desc {
+            font-size: 0.9em;
+            color: #7f8c8d;
+            line-height: 1.4;
+        }
+
+        .modal-indicator {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: #ff9800;
+            color: white;
+            font-size: 0.7em;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-weight: bold;
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 15px 20px;
+            font-size: 1.1em;
+            border: 2px solid #ddd;
+            border-radius: 25px;
+            margin-bottom: 25px;
+            transition: border-color 0.3s ease;
+            background: white;
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 10px rgba(52, 152, 219, 0.3);
+        }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+
+        .stat {
+            background: white;
+            padding: 15px 25px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            min-width: 120px;
+        }
+
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #3498db;
+        }
+
+        .stat-label {
+            color: #7f8c8d;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .highlight {
+            background: #fff3cd !important;
+            border-color: #ffc107 !important;
+        }
+
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+        }
+
+        .legend {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .legend-title {
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+
+        .legend-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9em;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🗺️ Карта проекта Telegram Clone</h1>
+        
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-number" id="totalComponents">0</div>
+                <div class="stat-label">Компонентов</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number" id="totalModals">0</div>
+                <div class="stat-label">Модалок</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number" id="totalSections">0</div>
+                <div class="stat-label">Разделов</div>
+            </div>
+        </div>
+
+        <input type="text" class="search-box" id="searchBox" placeholder="🔍 Поиск компонентов... (например: modal, chat, user)">
+
+        <div class="legend">
+            <div class="legend-title">📋 Легенда:</div>
+            <div class="legend-items">
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #f8f9fa;"></div>
+                    <span>Обычный компонент</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);"></div>
+                    <span>Модальное окно</span>
+                </div>
+                <div class="legend-item">
+                    <div class="modal-indicator" style="position: static;">🔧</div>
+                    <span>Модалка</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid">
+            <!-- АВТОРИЗАЦИЯ -->
+            <div class="section auth">
+                <div class="section-title">🔐 Авторизация</div>
+                <div class="component" data-file="AuthForm.jsx">
+                    <div class="component-name">AuthForm.jsx</div>
+                    <div class="component-desc">Форма входа и регистрации пользователей</div>
+                </div>
+            </div>
+
+            <!-- ЧАТ И СООБЩЕНИЯ -->
+            <div class="section chat">
+                <div class="section-title">💬 Чат и сообщения</div>
+                <div class="component" data-file="ChatArea.jsx">
+                    <div class="component-name">ChatArea.jsx</div>
+                    <div class="component-desc">Основная область чата с сообщениями</div>
+                </div>
+                <div class="component" data-file="MessageInput.jsx">
+                    <div class="component-name">MessageInput.jsx</div>
+                    <div class="component-desc">Поле ввода сообщений + кнопки отправки</div>
+                </div>
+                <div class="component" data-file="MessageList.jsx">
+                    <div class="component-name">MessageList.jsx</div>
+                    <div class="component-desc">Список всех сообщений в чате</div>
+                </div>
+                <div class="component" data-file="Message.jsx">
+                    <div class="component-name">Message.jsx</div>
+                    <div class="component-desc">Отдельное сообщение с функционалом</div>
+                </div>
+                <div class="component" data-file="ModernMessageBubble.jsx">
+                    <div class="component-name">ModernMessageBubble.jsx</div>
+                    <div class="component-desc">Стильные пузыри сообщений</div>
+                </div>
+                <div class="component" data-file="PinnedMessages.jsx">
+                    <div class="component-name">PinnedMessages.jsx</div>
+                    <div class="component-desc">Закрепленные сообщения</div>
+                </div>
+                <div class="component" data-file="ParticipantsList.jsx">
+                    <div class="component-name">ParticipantsList.jsx</div>
+                    <div class="component-desc">Список участников чата</div>
+                </div>
+            </div>
+
+            <!-- ПЛАНИРОВАНИЕ СООБЩЕНИЙ -->
+            <div class="section schedule">
+                <div class="section-title">⏰ Планирование сообщений</div>
+                <div class="component modal" data-file="ScheduledMessageModal.jsx">
+                    <div class="modal-indicator">🔧</div>
+                    <div class="component-name">ScheduledMessageModal.jsx</div>
+                    <div class="component-desc">Создание отложенного сообщения</div>
+                </div>
+                <div class="component modal" data-file="EditScheduledMessageModal.jsx">
+                    <div class="modal-indicator">✏️</div>
+                    <div class="component-name">EditScheduledMessageModal.jsx</div>
+                    <div class="component-desc">Редактирование запланированного сообщения</div>
+                </div>
+                <div class="component" data-file="ScheduledMessagesList.jsx">
+                    <div class="component-name">ScheduledMessagesList.jsx</div>
+                    <div class="component-desc">Просмотр всех запланированных сообщений</div>
+                </div>
+            </div>
+
+            <!-- ШАБЛОНЫ -->
+            <div class="section templates">
+                <div class="section-title">🎨 Шаблоны сообщений</div>
+                <div class="component" data-file="TemplatesQuickPicker.jsx">
+                    <div class="component-name">TemplatesQuickPicker.jsx</div>
+                    <div class="component-desc">Быстрый выбор шаблонов</div>
+                </div>
+                <div class="component modal" data-file="TemplatesManagementModal.jsx">
+                    <div class="modal-indicator">🔧</div>
+                    <div class="component-name">TemplatesManagementModal.jsx</div>
+                    <div class="component-desc">Управление шаблонами сообщений</div>
+                </div>
+            </div>
+
+            <!-- УПРАВЛЕНИЕ ПОЛЬЗОВАТЕЛЯМИ -->
+            <div class="section users">
+                <div class="section-title">👥 Управление пользователями</div>
+                <div class="component modal" data-file="CreateChatModal.jsx">
+                    <div class="modal-indicator">🔧</div>
+                    <div class="component-name">CreateChatModal.jsx</div>
+                    <div class="component-desc">Создание нового чата</div>
+                </div>
+                <div class="component modal" data-file="UserSelectionModal.jsx">
+                    <div class="modal-indicator">👤</div>
+                    <div class="component-name">UserSelectionModal.jsx</div>
+                    <div class="component-desc">Выбор пользователей для чата</div>
+                </div>
+                <div class="component modal" data-file="EmployeesListModal.jsx">
+                    <div class="modal-indicator">👥</div>
+                    <div class="component-name">EmployeesListModal.jsx</div>
+                    <div class="component-desc">Список всех сотрудников</div>
+                </div>
+                <div class="component modal" data-file="RemoveUserModal.jsx">
+                    <div class="modal-indicator">❌</div>
+                    <div class="component-name">RemoveUserModal.jsx</div>
+                    <div class="component-desc">Удаление пользователя из чата</div>
+                </div>
+                <div class="component modal" data-file="ChatsListModal.jsx">
+                    <div class="modal-indicator">💬</div>
+                    <div class="component-name">ChatsListModal.jsx</div>
+                    <div class="component-desc">Список всех чатов</div>
+                </div>
+                <div class="component" data-file="AllUsers.jsx">
+                    <div class="component-name">AllUsers.jsx</div>
+                    <div class="component-desc">Управление всеми пользователями</div>
+                </div>
+            </div>
+
+            <!-- РАБОЧЕЕ ВРЕМЯ -->
+            <div class="section worktime">
+                <div class="section-title">📊 Рабочее время</div>
+                <div class="component modal" data-file="HRWorktimeReviewModal.jsx">
+                    <div class="modal-indicator">📊</div>
+                    <div class="component-name">HRWorktimeReviewModal.jsx</div>
+                    <div class="component-desc">HR просмотр рабочего времени</div>
+                </div>
+                <div class="component modal" data-file="WorkTimeReportModal.jsx">
+                    <div class="modal-indicator">📈</div>
+                    <div class="component-name">WorkTimeReportModal.jsx</div>
+                    <div class="component-desc">Отчеты по рабочему времени</div>
+                </div>
+                <div class="component modal" data-file="UserWorkTimeDetailsModal.jsx">
+                    <div class="modal-indicator">🕐</div>
+                    <div class="component-name">UserWorkTimeDetailsModal.jsx</div>
+                    <div class="component-desc">Детали времени пользователя</div>
+                </div>
+                <div class="component modal" data-file="LeavesWorktimeModal.jsx">
+                    <div class="modal-indicator">🏖️</div>
+                    <div class="component-name">LeavesWorktimeModal.jsx</div>
+                    <div class="component-desc">Управление отпусками</div>
+                </div>
+            </div>
+
+            <!-- ПОЗДРАВЛЕНИЯ -->
+            <div class="section congratulations">
+                <div class="section-title">🎉 Поздравления</div>
+                <div class="component modal" data-file="CongratulationsModal.jsx">
+                    <div class="modal-indicator">🔧</div>
+                    <div class="component-name">CongratulationsModal.jsx</div>
+                    <div class="component-desc">Создание поздравления</div>
+                </div>
+                <div class="component modal" data-file="CongratulationSendModal.jsx">
+                    <div class="modal-indicator">📤</div>
+                    <div class="component-name">CongratulationSendModal.jsx</div>
+                    <div class="component-desc">Отправка поздравления</div>
+                </div>
+                <div class="component" data-file="CongratulationChat.jsx">
+                    <div class="component-name">CongratulationChat.jsx</div>
+                    <div class="component-desc">Чат поздравлений</div>
+                </div>
+                <div class="component" data-file="BirthdayCalendar.jsx">
+                    <div class="component-name">BirthdayCalendar.jsx</div>
+                    <div class="component-desc">Календарь дней рождения</div>
+                </div>
+            </div>
+
+            <!-- НОВОСТИ И ЗАДАЧИ -->
+            <div class="section news">
+                <div class="section-title">📰 Новости и задачи</div>
+                <div class="component modal" data-file="NewsModal.jsx">
+                    <div class="modal-indicator">🔧</div>
+                    <div class="component-name">NewsModal.jsx</div>
+                    <div class="component-desc">Создание/редактирование новостей</div>
+                </div>
+                <div class="component modal" data-file="TasksModal.jsx">
+                    <div class="modal-indicator">🔧</div>
+                    <div class="component-name">TasksModal.jsx</div>
+                    <div class="component-desc">Управление задачами</div>
+                </div>
+                <div class="component modal" data-file="TodoModal.jsx">
+                    <div class="modal-indicator">✅</div>
+                    <div class="component-name">TodoModal.jsx</div>
+                    <div class="component-desc">Список дел</div>
+                </div>
+                <div class="component" data-file="NewsFeed.jsx">
+                    <div class="component-name">NewsFeed.jsx</div>
+                    <div class="component-desc">Лента новостей</div>
+                </div>
+                <div class="component" data-file="Tasks.jsx">
+                    <div class="component-name">Tasks.jsx</div>
+                    <div class="component-desc">Управление задачами</div>
+                </div>
+            </div>
+
+            <!-- КАЛЕНДАРИ -->
+            <div class="section calendar">
+                <div class="section-title">📅 Календари</div>
+                <div class="component modal" data-file="GeneralCalendarModal.jsx">
+                    <div class="modal-indicator">📅</div>
+                    <div class="component-name">GeneralCalendarModal.jsx</div>
+                    <div class="component-desc">Общий календарь</div>
+                </div>
+                <div class="component modal" data-file="LeaveCalendarModal.jsx">
+                    <div class="modal-indicator">🔧</div>
+                    <div class="component-name">LeaveCalendarModal.jsx</div>
+                    <div class="component-desc">Календарь отпусков</div>
+                </div>
+                <div class="component" data-file="AllLeavesCalendar.jsx">
+                    <div class="component-name">AllLeavesCalendar.jsx</div>
+                    <div class="component-desc">Общий календарь отпусков</div>
+                </div>
+                <div class="component" data-file="Leaves.jsx">
+                    <div class="component-name">Leaves.jsx</div>
+                    <div class="component-desc">Управление отпусками</div>
+                </div>
+            </div>
+
+            <!-- ДОПОЛНИТЕЛЬНЫЕ -->
+            <div class="section additional">
+                <div class="section-title">🛠️ Дополнительные</div>
+                <div class="component modal" data-file="ShareMessageModal.jsx">
+                    <div class="modal-indicator">📤</div>
+                    <div class="component-name">ShareMessageModal.jsx</div>
+                    <div class="component-desc">Поделиться сообщением</div>
+                </div>
+                <div class="component modal" data-file="LikesModal.jsx">
+                    <div class="modal-indicator">❤️</div>
+                    <div class="component-name">LikesModal.jsx</div>
+                    <div class="component-desc">Просмотр лайков</div>
+                </div>
+                <div class="component modal" data-file="EmojiSettingsModal.jsx">
+                    <div class="modal-indicator">😀</div>
+                    <div class="component-name">EmojiSettingsModal.jsx</div>
+                    <div class="component-desc">Настройки эмодзи</div>
+                </div>
+                <div class="component modal" data-file="UploadModal.jsx">
+                    <div class="modal-indicator">📎</div>
+                    <div class="component-name">UploadModal.jsx</div>
+                    <div class="component-desc">Загрузка файлов</div>
+                </div>
+                <div class="component modal" data-file="AiAssistantModal.jsx">
+                    <div class="modal-indicator">🤖</div>
+                    <div class="component-name">AiAssistantModal.jsx</div>
+                    <div class="component-desc">AI помощник</div>
+                </div>
+                <div class="component modal" data-file="AdminPasswordModal.jsx">
+                    <div class="modal-indicator">🔐</div>
+                    <div class="component-name">AdminPasswordModal.jsx</div>
+                    <div class="component-desc">Пароль администратора</div>
+                </div>
+                <div class="component" data-file="Messenger.jsx">
+                    <div class="component-name">Messenger.jsx</div>
+                    <div class="component-desc">Основной мессенджер</div>
+                </div>
+                <div class="component" data-file="SocketProvider.jsx">
+                    <div class="component-name">SocketProvider.jsx</div>
+                    <div class="component-desc">WebSocket соединения</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Подсчет статистики
+        function updateStats() {
+            const totalComponents = document.querySelectorAll('.component').length;
+            const totalModals = document.querySelectorAll('.component.modal').length;
+            const totalSections = document.querySelectorAll('.section').length;
+
+            document.getElementById('totalComponents').textContent = totalComponents;
+            document.getElementById('totalModals').textContent = totalModals;
+            document.getElementById('totalSections').textContent = totalSections;
+        }
+
+        // Поиск
+        function setupSearch() {
+            const searchBox = document.getElementById('searchBox');
+            const components = document.querySelectorAll('.component');
+            const sections = document.querySelectorAll('.section');
+
+            searchBox.addEventListener('input', function() {
+                const query = this.value.toLowerCase().trim();
+                
+                if (query === '') {
+                    // Показать все
+                    components.forEach(comp => {
+                        comp.classList.remove('hidden', 'highlight');
+                    });
+                    sections.forEach(section => {
+                        section.style.display = 'block';
+                    });
+                    return;
+                }
+
+                let hasVisibleComponents = {};
+                
+                components.forEach(comp => {
+                    const name = comp.querySelector('.component-name').textContent.toLowerCase();
+                    const desc = comp.querySelector('.component-desc').textContent.toLowerCase();
+                    
+                    if (name.includes(query) || desc.includes(query)) {
+                        comp.classList.remove('hidden');
+                        comp.classList.add('highlight');
+                        
+                        // Отметить секцию как имеющую видимые компоненты
+                        const section = comp.closest('.section');
+                        hasVisibleComponents[section.className] = true;
+                    } else {
+                        comp.classList.add('hidden');
+                        comp.classList.remove('highlight');
+                    }
+                });
+
+                // Скрыть секции без видимых компонентов
+                sections.forEach(section => {
+                    if (hasVisibleComponents[section.className]) {
+                        section.style.display = 'block';
+                    } else {
+                        section.style.display = 'none';
+                    }
+                });
+            });
+        }
+
+        // Клик по компоненту
+        function setupComponentClicks() {
+            const components = document.querySelectorAll('.component');
+            
+            components.forEach(comp => {
+                comp.addEventListener('click', function() {
+                    const fileName = this.dataset.file;
+                    const componentName = this.querySelector('.component-name').textContent;
+                    const componentDesc = this.querySelector('.component-desc').textContent;
+                    
+                    alert(`📁 Файл: ${fileName}\n\n📝 Описание: ${componentDesc}\n\n💡 Совет: Этот компонент находится в папке components/`);
+                });
+            });
+        }
+
+        // Инициализация
+        document.addEventListener('DOMContentLoaded', function() {
+            updateStats();
+            setupSearch();
+            setupComponentClicks();
+        });
+    </script>
+</body>
+</html>

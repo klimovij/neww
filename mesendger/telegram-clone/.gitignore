@@ -1,0 +1,61 @@
+# Dependencies
+node_modules/
+/.pnp
+.pnp.js
+
+# Testing
+/coverage
+
+# Production
+/build
+/dist
+
+# Misc
+.DS_Store
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+logs/
+*.log
+
+# Database
+*.db
+*.db-shm
+*.db-wal
+*.db.bak_*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+Thumbs.db
+desktop.ini
+
+# Uploads (опционально - можно закоммитить пустые папки)
+uploads/*
+!uploads/.gitkeep
+
+# Server specific
+server/client.log
+server/.env
+
+# Build artifacts
+client-react/build/
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+

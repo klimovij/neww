@@ -1,0 +1,1186 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: #f5f5f5;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* Стили для страницы входа */
+.login-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.login-form {
+    background: white;
+    padding: 2rem;
+    border-radius: 10px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    width: 100%;
+    max-width: 400px;
+}
+
+.login-form h2 {
+    text-align: center;
+    margin-bottom: 1.5rem;
+    color: #333;
+}
+
+.login-form input {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+.login-form button {
+    width: 100%;
+    padding: 12px;
+    background: #667eea;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.login-form button:hover {
+    background: #5a6fd8;
+}
+
+.login-form p {
+    text-align: center;
+    margin-top: 1rem;
+}
+
+.login-form a {
+    color: #667eea;
+    text-decoration: none;
+}
+
+/* Основные стили мессенджера */
+.messenger-container {
+    display: flex;
+    height: 100vh;
+}
+
+.sidebar {
+    width: 300px;
+    background: #2c3e50;
+    color: white;
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar-header {
+    padding: 1rem;
+    border-bottom: 1px solid #34495e;
+}
+
+.clock {
+    margin-top: 0.5rem;
+    font-variant-numeric: tabular-nums;
+    font-size: 0.95rem;
+    color: #ecf0f1;
+    opacity: 0.9;
+}
+
+.sidebar-header h3 {
+    margin-bottom: 0.5rem;
+}
+
+.user-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.9rem;
+}
+
+#logoutBtn {
+    background: #e74c3c;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 0.8rem;
+}
+
+.chat-controls {
+    padding: 1rem;
+    border-bottom: 1px solid #34495e;
+}
+
+#createChatBtn {
+    width: 100%;
+    padding: 10px;
+    background: #3498db;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+#createChatBtn:hover {
+    background: #2980b9;
+}
+
+.chats-list {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.chat-item {
+    padding: 1rem;
+    border-bottom: 1px solid #34495e;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.chat-item:hover {
+    background: #34495e;
+}
+
+.chat-item.active {
+    background: #3498db;
+}
+
+.chat-name {
+    font-weight: bold;
+    margin-bottom: 0.25rem;
+}
+
+.chat-type {
+    font-size: 0.8rem;
+    color: #bdc3c7;
+}
+
+.online-users {
+    padding: 1rem;
+    border-top: 1px solid #34495e;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.online-users h4 {
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.online-user {
+    display: flex;
+    align-items: center;
+    padding: 0.25rem 0;
+    font-size: 0.8rem;
+}
+
+.user-avatar {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #3498db;
+    margin-right: 0.5rem;
+}
+
+/* Область чата */
+.chat-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: white;
+}
+
+.chat-header {
+    padding: 1rem;
+    background: #ecf0f1;
+    border-bottom: 1px solid #bdc3c7;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.clock-inline {
+    font-variant-numeric: tabular-nums;
+    color: #2c3e50;
+    opacity: 0.8;
+    font-size: 0.95rem;
+}
+
+.messages-container {
+    flex: 1;
+    padding: 1rem;
+    overflow-y: auto;
+    background: #f8f9fa;
+}
+
+.welcome-message {
+    text-align: center;
+    color: #7f8c8d;
+    margin-top: 2rem;
+}
+
+.message {
+    margin-bottom: 1rem;
+    max-width: 70%;
+}
+
+.message.own {
+    margin-left: auto;
+}
+
+.message.other {
+    margin-right: auto;
+}
+
+.message-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.25rem;
+    font-size: 0.8rem;
+    color: #7f8c8d;
+}
+
+.message-content {
+    padding: 0.75rem;
+    border-radius: 10px;
+    word-wrap: break-word;
+}
+
+.message.own .message-content {
+    background: #3498db;
+    color: white;
+}
+
+.message.other .message-content {
+    background: white;
+    border: 1px solid #ecf0f1;
+}
+
+.typing-indicator {
+    padding: 0.5rem 1rem;
+    font-style: italic;
+    color: #7f8c8d;
+    font-size: 0.9rem;
+    display: none;
+}
+
+.message-input-container {
+    display: flex;
+    padding: 1rem;
+    background: white;
+    border-top: 1px solid #ecf0f1;
+}
+
+#messageInput {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 20px;
+    margin-right: 0.5rem;
+    outline: none;
+}
+
+#sendBtn {
+    padding: 10px 20px;
+    background: #3498db;
+    color: white;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+}
+
+#sendBtn:hover {
+    background: #2980b9;
+}
+
+/* Модальное окно */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+}
+
+.modal-content {
+    background-color: white;
+    margin: 15% auto;
+    padding: 2rem;
+    border-radius: 10px;
+    width: 90%;
+    max-width: 400px;
+    position: relative;
+}
+
+.close {
+    position: absolute;
+    right: 1rem;
+    top: 1rem;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #aaa;
+}
+
+.close:hover {
+    color: #000;
+}
+
+.modal-content h3 {
+    margin-bottom: 1rem;
+}
+
+.modal-content input {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+.modal-content button {
+    width: 100%;
+    padding: 10px;
+    background: #3498db;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 250px;
+    }
+    
+    .message {
+        max-width: 85%;
+    }
+}
+
+@media (max-width: 600px) {
+    .messenger-container {
+        flex-direction: column;
+    }
+    
+    .sidebar {
+        width: 100%;
+        height: 40%;
+    }
+    
+    .chat-area {
+        height: 60%;
+    }
+}
+/* Дополнительные стили для новых функций */
+
+/* Кнопки прикрепления и смайликов */
+.attach-btn, .emoji-btn {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 5px;
+    margin-right: 5px;
+}
+
+.attach-btn:hover, .emoji-btn:hover {
+    background: #f0f0f0;
+    border-radius: 50%;
+}
+
+/* Панель смайликов */
+.emoji-picker {
+    position: absolute;
+    bottom: 60px;
+    right: 20px;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    padding: 1.5rem; /* Увеличен padding */
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 1000;
+    max-height: 400px; /* Увеличена высота */
+    overflow-y: auto;
+    min-width: 400px; /* Увеличена ширина */
+  }
+
+  .emoji-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr); /* Уменьшено количество колонок */
+    gap: 1rem; /* Увеличен gap */
+  }
+
+  .emoji-grid span {
+    font-size: 2.5rem !important; /* Значительно увеличен размер */
+    padding: 1rem !important; /* Увеличен padding */
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 60px; /* Увеличена минимальная ширина */
+    min-height: 60px; /* Увеличена минимальная высота */
+    user-select: none;
+  }
+
+  .emoji-grid span:hover {
+    background: #f0f0f0;
+    transform: scale(1.4) !important; /* Увеличено масштабирование при наведении */
+  }
+
+  .emoji-grid span:active {
+    transform: scale(1.2) !important;
+    background: #e0e0e0;
+  }
+  
+  * Увеличиваем эмодзи в сообщениях */
+.message-content .emoji,
+.message-content span {
+  font-size: 2.5em !important;
+  line-height: 1 !important;
+  vertical-align: middle;
+  margin: 0 0.15em;
+}
+
+.message-content.emoji-only {
+  font-size: 4em !important;
+  text-align: center;
+  padding: 1rem !important;
+}
+
+.message-content.emoji-only .emoji,
+.message-content.emoji-only span {
+  font-size: 1em !important;
+  margin: 0 0.2em;
+}
+
+/* Превью файла */
+.file-preview {
+    padding: 10px;
+    background: #f8f9fa;
+    border-top: 1px solid #ecf0f1;
+}
+
+.file-preview-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.file-preview-info {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.remove-file {
+    background: #e74c3c;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+/* Контейнер для ответа */
+.reply-container {
+    padding: 10px;
+    background: #e8f4fd;
+    border-top: 1px solid #bde0ff;
+}
+
+.reply-preview {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.reply-info {
+    flex: 1;
+}
+
+.close-reply {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    color: #666;
+}
+
+/* Стили сообщений с файлами */
+.file-message {
+    margin-top: 5px;
+}
+
+.image-message img {
+    max-width: 300px;
+    max-height: 300px;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+.document-message {
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    padding: 10px;
+    background: #f9f9f9;
+}
+
+.file-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.file-icon {
+    font-size: 2rem;
+}
+
+.file-details {
+    flex: 1;
+}
+
+.file-name {
+    font-weight: bold;
+    margin-bottom: 2px;
+}
+
+.file-size {
+    font-size: 0.8rem;
+    color: #666;
+}
+
+.download-btn {
+    text-decoration: none;
+    font-size: 1.5rem;
+    color: #3498db;
+}
+
+.file-caption {
+    margin-top: 5px;
+    font-style: italic;
+}
+
+/* Информация об ответе в сообщении */
+.reply-info {
+    background: rgba(52, 152, 219, 0.1);
+    border-left: 3px solid #3498db;
+    padding: 5px 10px;
+    margin-bottom: 5px;
+    border-radius: 5px;
+}
+
+.reply-author {
+    font-weight: bold;
+    font-size: 0.8rem;
+    color: #3498db;
+}
+
+.reply-content {
+    font-size: 0.9rem;
+    color: #666;
+}
+
+/* Действия с сообщениями */
+.message-actions {
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.message:hover .message-actions {
+    opacity: 1;
+}
+
+.reply-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 2px 5px;
+    border-radius: 3px;
+}
+
+.reply-btn:hover {
+    background: rgba(0,0,0,0.1);
+}
+
+/* Обновленный контейнер ввода сообщения */
+.message-input-container {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    background: white;
+    border-top: 1px solid #ecf0f1;
+}
+
+#messageInput {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 20px;
+    margin: 0 5px;
+    outline: none;
+}
+
+/* Добавьте эти стили к существующему файлу style.css */
+
+/* Счетчик непрочитанных сообщений */
+.unread-badge {
+    background: #e74c3c;
+    color: white;
+    border-radius: 50%;
+    padding: 2px 6px;
+    font-size: 0.7rem;
+    margin-left: 5px;
+    min-width: 18px;
+    text-align: center;
+    display: inline-block;
+}
+
+/* Последнее сообщение в чате */
+.last-message {
+    font-size: 0.7rem;
+    color: #95a5a6;
+    margin-top: 2px;
+}
+
+.chat-info {
+    flex: 1;
+}
+
+/* Статус прочитанности */
+.read-status {
+    color: #3498db;
+    font-size: 0.8rem;
+    margin-left: 5px;
+}
+
+/* Улучшенные стили для файлов */
+.file-preview-content img {
+    border-radius: 5px;
+    object-fit: cover;
+}
+
+.image-message img {
+    transition: transform 0.2s;
+}
+
+.image-message img:hover {
+    transform: scale(1.02);
+}
+
+/* Анимация для новых сообщений */
+.message {
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Улучшенная панель смайликов */
+.emoji-picker {
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.emoji-grid span {
+    transition: transform 0.1s;
+}
+
+.emoji-grid span:hover {
+    transform: scale(1.2);
+}
+
+/* Добавьте эти стили к существующему файлу style.css */
+
+/* Заголовок чата с кнопками */
+.chat-header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+  }
+  
+  .chat-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+  
+  .add-users-btn, .chat-info-btn {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 50%;
+    transition: background 0.3s;
+  }
+  
+  .add-users-btn:hover, .chat-info-btn:hover {
+    background: rgba(0,0,0,0.1);
+  }
+  
+  /* Заголовок онлайн пользователей */
+  .online-users-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+  }
+  
+  .online-users-header .add-users-btn {
+    font-size: 1rem;
+    padding: 3px;
+  }
+  
+  /* Кнопка "Написать" у онлайн пользователей */
+  .online-user {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.25rem 0;
+    font-size: 0.8rem;
+  }
+  
+  .online-user .username {
+    flex: 1;
+    margin-left: 0.5rem;
+  }
+  
+  .write-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 0.9rem;
+    padding: 2px;
+    border-radius: 3px;
+    opacity: 0.7;
+    transition: opacity 0.3s;
+  }
+  
+  .write-btn:hover {
+    opacity: 1;
+    background: rgba(0,0,0,0.1);
+  }
+  
+  /* Большое модальное окно */
+  .large-modal {
+    width: 90%;
+    max-width: 600px;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  
+  /* Список пользователей */
+  .users-list {
+    max-height: 400px;
+    overflow-y: auto;
+  }
+  
+  .user-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+  }
+  
+  .user-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+  }
+  
+  .user-avatar.online {
+    background: #2ecc71;
+  }
+  
+  .user-avatar.offline {
+    background: #95a5a6;
+  }
+  
+  .user-status {
+    font-size: 0.8rem;
+    color: #666;
+  }
+  
+  .user-actions {
+    display: flex;
+    gap: 5px;
+  }
+  
+  .btn-primary, .btn-secondary {
+    padding: 5px 10px;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 0.8rem;
+  }
+  
+  .btn-primary {
+    background: #3498db;
+    color: white;
+  }
+  
+  .btn-secondary {
+    background: #95a5a6;
+    color: white;
+  }
+  
+  .btn-primary:hover {
+    background: #2980b9;
+  }
+  
+  .btn-secondary:hover {
+    background: #7f8c8d;
+  }
+  
+  /* Список участников чата */
+  .participants-list {
+    max-height: 300px;
+    overflow-y: auto;
+  }
+  
+  .participant-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+  }
+  
+  .user-details {
+    display: flex;
+    flex-direction: column;
+    margin-left: 10px;
+  }
+  
+  .join-date {
+    font-size: 0.7rem;
+    color: #666;
+  }
+  
+  /* Системные сообщения */
+  .message.system {
+    text-align: center;
+    font-style: italic;
+    color: #666;
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 5px 10px;
+    margin: 5px auto;
+    max-width: 80%;
+  }
+  /* Добавьте эти стили к существующему файлу style.css */
+
+/* Футер сообщения с лайками */
+.message-footer {
+    margin-top: 5px;
+    padding-top: 5px;
+}
+
+.likes-section {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.like-btn {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 2px 5px;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.like-btn:hover {
+    background: rgba(0,0,0,0.1);
+    transform: scale(1.1);
+}
+
+.like-btn.liked {
+    animation: likeAnimation 0.3s ease;
+}
+
+@keyframes likeAnimation {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.3); }
+    100% { transform: scale(1); }
+}
+
+.likes-count {
+    font-size: 0.8rem;
+    color: #666;
+    cursor: pointer;
+    padding: 2px 5px;
+    border-radius: 10px;
+    transition: background 0.2s;
+}
+
+.likes-count:hover {
+    background: rgba(0,0,0,0.1);
+}
+
+.likes-count:empty {
+    display: none;
+}
+
+/* Модальное окно лайков */
+.likes-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.like-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.like-item:last-child {
+    border-bottom: none;
+}
+
+.like-item .user-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.like-item .user-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: #3498db;
+}
+
+.like-item .like-icon {
+    font-size: 1.2rem;
+}
+
+/* Анимация появления лайка */
+.message-footer {
+    opacity: 0;
+    animation: fadeIn 0.3s ease forwards;
+}
+
+@keyframes fadeIn {
+    to {
+        opacity: 1;
+    }
+}
+
+/* Стили для разных типов сообщений */
+.message.own .like-btn {
+    color: rgba(255,255,255,0.8);
+}
+
+.message.own .likes-count {
+    color: rgba(255,255,255,0.7);
+}
+
+.message.other .like-btn {
+    color: #666;
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 600px) {
+    .like-btn {
+        font-size: 1rem;
+        padding: 3px;
+    }
+    
+    .likes-count {
+        font-size: 0.7rem;
+    }
+}
+
+* Стили для кнопки удаления чата */
+.chat-header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.chat-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.delete-chat-btn {
+    background: none;
+    border: none;
+    font-size: 1.3rem;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+    color: #e74c3c;
+  }
+
+  .delete-chat-btn:hover {
+    background: rgba(231, 76, 60, 0.1);
+    transform: scale(1.1);
+  }
+
+.chat-info-btn, .add-users-btn {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 50%;
+  transition: background 0.3s;
+}
+
+.chat-info-btn:hover, .add-users-btn:hover {
+  background: rgba(0,0,0,0.1);
+}
+
+/* Стили для модального окна удаления */
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 1.5rem;
+}
+
+.btn-danger {
+  background: #e74c3c;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background 0.3s;
+}
+
+.btn-danger:hover {
+  background: #c0392b;
+}
+
+.btn-secondary {
+  background: #95a5a6;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background 0.3s;
+}
+
+.btn-secondary:hover {
+  background: #7f8c8d;
+}
+
+/* Анимация для удаления чата */
+.chat-item.deleting {
+    animation: slideOut 0.3s ease-out forwards;
+  }
+  
+  @keyframes slideOut {
+    from {
+      opacity: 1;
+      transform: translateX(0);
+    }
+    to {
+      opacity: 0;
+      transform: translateX(-100%);
+    }
+  }
+
+/* Улучшенные стили для заголовка чата */
+.chat-header {
+    padding: 1rem;
+    background: #ecf0f1;
+    border-bottom: 1px solid #bdc3c7;
+    position: relative;
+  }
+  
+  #chatTitle {
+    margin: 0;
+    color: #2c3e50;
+    font-size: 1.2rem;
+  }
+  
+  /* Адаптивность */
+  @media (max-width: 768px) {
+    .chat-actions {
+      gap: 5px;
+    }
+    
+    .delete-chat-btn, .chat-info-btn, .add-users-btn {
+      font-size: 1rem;
+      padding: 5px;
+    }
+
+    .btn-danger, .btn-secondary {
+        width: 100%;
+        margin-bottom: 10px;
+      }
+  
+  .emoji-picker {
+    min-width: 350px !important;
+    max-height: 300px !important;
+  }
+  
+  .emoji-grid {
+    grid-template-columns: repeat(5, 1fr) !important;
+    gap: 0.8rem !important;
+  }
+  
+  .message-content .emoji,
+  .message-content span {
+    font-size: 2.2em !important;
+  }
+  
+  .message-content.emoji-only {
+    font-size: 3.5em !important;
+  }
+  
+  .chat-actions {
+    gap: 5px;
+  }
+  
+  .delete-chat-btn, .chat-info-btn, .add-users-btn {
+    font-size: 1rem;
+    padding: 5px;
+  }
+}

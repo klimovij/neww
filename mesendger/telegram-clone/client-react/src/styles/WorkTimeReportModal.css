@@ -1,0 +1,124 @@
+/* MyModal.css */
+.modal {
+  background: #222;
+  color: #fff;
+  padding: 32px;
+  border-radius: 12px;
+  max-width: none;
+  width: 100vw;
+  min-height: 100vh;
+  height: auto;
+  margin: 0;
+  box-shadow: 0 4px 32px rgba(0,0,0,0.4);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  z-index: 2000 !important;
+  position: fixed;
+  top: 0;
+  left: 0;
+  overflow-y: auto;
+}
+
+.modal-overlay {
+  background: rgba(0,0,0,0.7);
+  z-index: 1999 !important;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+}
+
+.modal h2 {
+  color: #43e97b;
+  font-size: 2rem;
+  font-weight: 800;
+  margin-bottom: 18px;
+  letter-spacing: .01em;
+}
+
+.modal label {
+  font-weight: 600;
+  color: #ffe082;
+}
+
+
+.modal input[type="date"], .modal select, .modal input[type="text"] {
+  background: #232931;
+  color: #f5f6fa;
+  border: 1px solid #43e97b;
+  border-radius: 8px;
+  padding: 6px 12px;
+  margin-left: 6px;
+}
+
+.autocomplete-list {
+  position: absolute;
+  top: 38px;
+  left: 0;
+  background: #232931;
+  color: #fff;
+  border: 1px solid #43e97b;
+  border-radius: 8px;
+  z-index: 10;
+  max-height: 180px;
+  overflow-y: auto;
+  width: 100%;
+}
+.autocomplete-list div {
+  padding: 8px;
+  cursor: pointer;
+}
+.autocomplete-list div:hover {
+  background: #43e97b;
+  color: #232931;
+}
+
+.modal button {
+  background: linear-gradient(90deg, #43e97b 0%, #ffe082 100%);
+  color: #232931;
+  border: none;
+  border-radius: 10px;
+  padding: 8px 18px;
+  font-weight: 700;
+  font-size: 1em;
+  margin-top: 8px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px #43e97b33;
+  transition: background .18s;
+}
+
+.modal button:hover {
+  background: linear-gradient(90deg, #ffe082 0%, #43e97b 100%);
+}
+
+.modal table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 18px;
+  background: rgba(34,40,49,0.7);
+  border-radius: 12px;
+  overflow: visible;
+  max-height: none;
+  display: table;
+}
+
+.modal th, .modal td {
+  padding: 8px 10px;
+  text-align: left;
+}
+
+.modal th {
+  background: #232931;
+  color: #ffe082;
+  font-weight: 700;
+}
+
+.modal tr {
+  border-bottom: 1px solid #393e46;
+}
+
+.modal tr:last-child {
+  border-bottom: none;
+}

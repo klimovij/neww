@@ -1,0 +1,1294 @@
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+// Простая функция debounce
+function debounce(func, wait) {
+  let timeout;
+  return function(...args) {
+    const later = () => {
+      timeout = null;
+      func.apply(this, args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+}
+
+import { playNotificationSound } from '../../utils/notificationSound';
+import styled from 'styled-components';
+import { FiPaperclip, FiSmile, FiArrowRight, FiX } from 'react-icons/fi';
+import { useApp } from '../../context/AppContext';
+import api from '../../services/api';
+import Emoji from '../Common/Emoji';
+import EmojiInput from '../Common/EmojiInput';
+import EmojiTextarea from '../Common/EmojiTextarea';
+
+// Экстренные шаблоны для горячих кнопок
+const SOS_TEMPLATES = [
+  'Программа 1С не работает!',
+  'Программа 1 Работает медленно!',
+  'Не работает Zoiper, Нет гудков!',
+  'Не работает Zoiper, меня не слышат!',
+  'Не работает Zoiper, Я не слышу!'
+];
+
+// === ИСПРАВЛЕНИЕ: Объявляем PollModalOverlay ДО его использования ===
+const PollModalOverlay = styled.div`
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(33, 150, 243, 0.13);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+`;
+
+// === Теперь можно безопасно использовать PollModalOverlay ===
+// Модалка создания голосования
+const CreatePollModalOverlay = styled(PollModalOverlay)``;
+
+const CreatePollModal = styled.div`
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 8px 32px 0 rgba(33,150,243,0.18);
+  padding: 2.2rem 2.5rem 2rem 2.5rem;
+  min-width: 400px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  position: relative;
+`;
+
+const PollFormLabel = styled.label`
+  font-weight: 600;
+  color: #1976d2;
+  margin-bottom: 0.3rem;
+  align-self: flex-start;
+`;
+
+const PollFormInput = styled.input`
+  width: 100%;
+  padding: 0.7rem 1rem;
+  border-radius: 10px;
+  border: 1.5px solid #b3d8ff;
+  font-size: 1.05rem;
+  margin-bottom: 0.7rem;
+  outline: none;
+  &:focus {
+    border-color: #2196f3;
+    background: #f0f8ff;
+  }
+`;
+
+const PollFormOptionRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+`;
+
+const RemoveOptionBtn = styled.button`
+  background: #f44336;
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 0.2rem;
+  transition: background 0.18s;
+  &:hover { background: #b71c1c; }
+`;
+
+const AddOptionBtn = styled.button`
+  background: #2196f3;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.5rem 1.2rem;
+  font-weight: 700;
+  font-size: 1rem;
+  margin-top: 0.5rem;
+  cursor: pointer;
+  transition: background 0.18s;
+  &:hover { background: #1769aa; }
+`;
+
+const SosTemplatesButton = styled.button`
+  background: linear-gradient(90deg, #ff3c3c 0%, #ffb347 100%);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 0 18px;
+  height: 38px;
+  margin-right: 0.5rem;
+  font-weight: 800;
+  font-size: 1.02rem;
+  box-shadow: 0 2px 12px 0 #ff3c3c33;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  transition: background 0.18s, color 0.18s, box-shadow 0.18s;
+  &:hover {
+    background: linear-gradient(90deg, #ffb347 0%, #ff3c3c 100%);
+    color: #fff;
+    box-shadow: 0 5px 18px 0 #ff3c3c44;
+    transform: scale(1.04);
+  }
+`;
+
+const SosTemplatesMenu = styled.div`
+  position: absolute;
+  bottom: 60px;
+  left: 180px;
+  background: #fff;
+  border: 1.5px solid #d0e6ff;
+  border-radius: 14px;
+  box-shadow: 0 8px 32px 0 rgba(33,150,243,0.13);
+  padding: 0.7rem 1.1rem;
+  z-index: 1300;
+  min-width: 260px;
+  animation: quickMenuAppear 0.18s cubic-bezier(.4,0,.2,1);
+`;
+
+// Элемент списка SOS-шаблонов в нужных цветах (как на скриншоте)
+const SosTemplateItem = styled.button`
+  width: 100%;
+  background: linear-gradient(90deg, #ff3c3c 0%, #ffa142 100%);
+  color: #ffffff;
+  border: 2px solid #ffffff;
+  border-radius: 16px;
+  padding: 14px 22px;
+  font-weight: 900;
+  font-size: 1.05rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  box-shadow: 0 6px 22px rgba(255,60,60,0.35);
+  outline: none;
+  transition: transform .15s ease, box-shadow .15s ease, filter .15s ease;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  &:hover {
+    transform: translateY(-1px) scale(1.02);
+    box-shadow: 0 10px 28px rgba(255,60,60,0.45);
+    filter: brightness(1.03);
+  }
+`;
+
+const PollButton = styled.button`
+  background: linear-gradient(120deg, #e3f0ff 0%, #b3d8ff 100%);
+  color: #225;
+  border: none;
+  border-radius: 12px;
+  padding: 0 14px;
+  height: 38px;
+  margin-right: 0.5rem;
+  font-weight: 600;
+  font-size: 0.98rem;
+  box-shadow: 0 2px 8px 0 rgba(80,140,255,0.10);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: background 0.18s, color 0.18s, box-shadow 0.18s;
+  &:hover {
+    background: linear-gradient(120deg, #d2e7ff 0%, #e3f0ff 100%);
+    color: #113366;
+    box-shadow: 0 5px 18px 0 rgba(80,140,255,0.18);
+    transform: scale(1.04);
+  }
+`;
+
+// Убираем дублирующее объявление PollModalOverlay (уже есть выше)
+const PollModal = styled.div`
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 8px 32px 0 rgba(33,150,243,0.18);
+  padding: 2.2rem 2.5rem 2rem 2.5rem;
+  min-width: 340px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  position: relative;
+`;
+
+const PollTitle = styled.div`
+  font-size: 1.18rem;
+  font-weight: 700;
+  color: #1976d2;
+  margin-bottom: 0.7rem;
+`;
+
+const PollOptionButton = styled.button`
+  background: linear-gradient(90deg, #e3f0ff 0%, #b3d8ff 100%);
+  color: #225;
+  border: none;
+  border-radius: 12px;
+  padding: 1.1rem 2.2rem;
+  font-size: 1.08rem;
+  font-weight: 700;
+  margin-bottom: 0.7rem;
+  box-shadow: 0 2px 8px 0 #b3d8ff33;
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s, box-shadow 0.18s;
+  &:hover {
+    background: linear-gradient(90deg, #b3d8ff 0%, #e3f0ff 100%);
+    color: #007bff;
+    box-shadow: 0 4px 16px 0 #b3d8ff55;
+  }
+`;
+
+const PollClose = styled.button`
+  position: absolute;
+  top: 18px;
+  right: 22px;
+  background: none;
+  border: none;
+  color: #1976d2;
+  font-size: 2rem;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.18s;
+  &:hover { opacity: 1; color: #0d223a; }
+`;
+
+const QuickTemplatesButton = styled.button`
+  background: linear-gradient(120deg, #e3f0ff 0%, #cbe7ff 100%);
+  color: #225;
+  border: none;
+  border-radius: 12px;
+  padding: 0 14px;
+  height: 38px;
+  margin-right: 0.5rem;
+  font-weight: 600;
+  font-size: 0.98rem;
+  box-shadow: 0 2px 8px 0 rgba(80,140,255,0.10);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: background 0.18s, color 0.18s, box-shadow 0.18s;
+  &:hover {
+    background: linear-gradient(120deg, #d2e7ff 0%, #e3f0ff 100%);
+    color: #113366;
+    box-shadow: 0 5px 18px 0 rgba(80,140,255,0.18);
+    transform: scale(1.04);
+  }
+`;
+
+const QuickTemplatesMenu = styled.div`
+  position: absolute;
+  bottom: 60px;
+  left: 20px;
+  background: #fff;
+  border: 1.5px solid #d0e6ff;
+  border-radius: 14px;
+  box-shadow: 0 8px 32px 0 rgba(33,150,243,0.13);
+  padding: 0.7rem 1.1rem;
+  z-index: 1200;
+  min-width: 220px;
+  animation: quickMenuAppear 0.18s cubic-bezier(.4,0,.2,1);
+  @keyframes quickMenuAppear {
+    from { opacity: 0; transform: translateY(10px) scale(0.98); }
+    to { opacity: 1; transform: none; }
+  }
+`;
+
+const InputContainer = styled.div`
+  background: rgba(255,255,255,0.85);
+  border-top: 1px solid #e3e6ec;
+  padding: 1.2rem 2rem;
+  position: relative;
+  border-radius: 0 0 32px 32px;
+  box-shadow: 0 -2px 16px rgba(44,62,80,0.08);
+`;
+
+const MessageTextarea = styled.textarea`
+  flex: 1;
+  border: 1px solid #dee2e6;
+  border-radius: 20px;
+  padding: 0.75rem 1rem;
+  font-size: 0.95rem;
+  font-family: inherit;
+  resize: none;
+  outline: none;
+  min-height: 44px;
+  max-height: 120px;
+  transition: border-color 0.3s ease;
+  &:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+  }
+  &::placeholder {
+    color: #adb5bd;
+  }
+  &:disabled {
+    background: #f8f9fa;
+    cursor: not-allowed;
+  }
+`;
+
+const ReplyPreview = styled.div`
+  background: linear-gradient(90deg, #e3f2fd 60%, #fff 100%);
+  border-left: 5px solid #2196f3;
+  box-shadow: 0 2px 12px rgba(33,150,243,0.08);
+  padding: 0.85rem 1rem 0.85rem 0.85rem;
+  margin-bottom: 0.85rem;
+  border-radius: 0 12px 12px 0;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  position: relative;
+  animation: replyFadeIn 0.3s cubic-bezier(.4,0,.2,1);
+  @keyframes replyFadeIn {
+    from { opacity: 0; transform: translateY(-10px) scale(0.98); }
+    to { opacity: 1; transform: none; }
+  }
+`;
+
+const ReplyInfo = styled.div`
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+`;
+
+const ReplyAuthor = styled.div`
+  font-weight: 700;
+  color: #1976d2;
+  font-size: 1rem;
+  margin-bottom: 0.15rem;
+  letter-spacing: 0.01em;
+`;
+
+const ReplyContent = styled.div`
+  color: #444;
+  font-size: 0.97rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-style: italic;
+  opacity: 0.92;
+  .emoji {
+    font-size: 1.5em !important;
+    vertical-align: middle;
+  }
+`;
+
+const CloseReplyButton = styled.button`
+  background: #fff;
+  border: 1.5px solid #2196f3;
+  cursor: pointer;
+  color: #2196f3;
+  padding: 0.18rem 0.32rem;
+  border-radius: 50%;
+  margin-left: 8px;
+  font-size: 1.1rem;
+  box-shadow: 0 1px 4px rgba(33,150,243,0.08);
+  transition: all 0.18s;
+  &:hover {
+    background: #e3f2fd;
+    color: #1976d2;
+    border-color: #1976d2;
+    transform: scale(1.12);
+  }
+`;
+
+const FilePreview = styled.div`
+  background: linear-gradient(120deg, #e3f0ff 0%, #f8faff 100%);
+  border: 1.5px solid #d0e6ff;
+  border-radius: 14px;
+  padding: 1.1rem 1.3rem;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1.1rem;
+  box-shadow: 0 2px 12px 0 rgba(33,150,243,0.07);
+  transition: box-shadow 0.2s, border 0.2s, background 0.2s;
+  animation: filePreviewAppear 0.25s cubic-bezier(.4,0,.2,1);
+  @keyframes filePreviewAppear {
+    from { opacity: 0; transform: translateY(10px) scale(0.98); }
+    to { opacity: 1; transform: none; }
+  }
+`;
+
+const FilePreviewContent = styled.div`
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+`;
+
+const FilePreviewImage = styled.img`
+  width: 70px;
+  height: 70px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1.5px solid #d0e6ff;
+  box-shadow: 0 2px 8px 0 #b3d8ff33;
+`;
+
+const FilePreviewInfo = styled.div`
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+`;
+
+const FileName = styled.div`
+  font-weight: 700;
+  margin-bottom: 0.18rem;
+  color: #2266aa;
+  word-break: break-word;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 1.08rem;
+`;
+
+const FileSize = styled.div`
+  font-size: 0.85rem;
+  color: #3390ec;
+  font-weight: 500;
+`;
+
+const UploadProgress = styled.div`
+  width: 100%;
+  height: 7px;
+  background: #e3f0ff;
+  border-radius: 4px;
+  margin-top: 0.6rem;
+  overflow: hidden;
+  box-shadow: 0 1.5px 6px 0 #b3d8ff33;
+`;
+
+const ProgressBar = styled.div`
+  height: 100%;
+  background: linear-gradient(90deg, #3390ec 0%, #007bff 100%);
+  border-radius: 4px;
+  transition: width 0.22s cubic-bezier(.4,0,.2,1);
+  width: ${props => props.progress}%;
+  box-shadow: 0 1.5px 6px 0 #3390ec33;
+`;
+
+const RemoveFileButton = styled.button`
+  background: linear-gradient(135deg, #e57373 0%, #f44336 100%);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  box-shadow: 0 2px 8px rgba(244,67,54,0.10);
+  transition: all 0.22s cubic-bezier(.4,0,.2,1);
+  outline: none;
+  border: 2px solid transparent;
+  &:hover {
+    background: linear-gradient(135deg, #f44336 0%, #e57373 100%);
+    border: 2px solid #e57373;
+    transform: scale(1.13);
+    box-shadow: 0 6px 24px 0 rgba(244,67,54,0.18);
+  }
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+`;
+
+const InputRow = styled.div`
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5rem;
+`;
+
+const InputActions = styled.div`
+  display: flex;
+  gap: 0.25rem;
+`;
+
+const ActionButton = styled.button`
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.75rem;
+  border-radius: 50%;
+  color: #6c757d;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    background: #f8f9fa;
+    color: #007bff;
+    transform: scale(1.1);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+`;
+
+const SendButton = styled.button`
+  background: linear-gradient(120deg, #e3f0ff 0%, #cbe7ff 100%);
+  color: #225;
+  border: none;
+  border-radius: 15px;
+  min-width: 56px;
+  height: 44px;
+  padding: 0 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  font-size: 1.06rem;
+  box-shadow: 0 2.5px 14px 0 rgba(80,140,255,0.13), 0 1.5px 0.5px 0 rgba(255,255,255,0.13) inset;
+  backdrop-filter: blur(5px);
+  transition: all 0.15s cubic-bezier(.4,0,.2,1);
+  position: relative;
+
+  &:hover:not(:disabled) {
+    background: linear-gradient(120deg, #d2e7ff 0%, #e3f0ff 100%);
+    color: #113366;
+    box-shadow: 0 5px 18px 0 rgba(80,140,255,0.18);
+    transform: translateY(-1.5px) scale(1.03);
+  }
+
+  &:active:not(:disabled) {
+    background: #e3f0ff;
+    color: #0d223a;
+    transform: scale(0.98);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+  }
+`;
+
+const EmojiPicker = styled.div`
+  position: absolute;
+  bottom: 70px;
+  right: 20px;
+  background: white;
+  border: 1px solid #dee2e6;
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  z-index: 1000;
+  width: 480px;
+  max-width: 520px;
+  max-height: 380px;
+  overflow-y: auto;
+  min-width: 420px;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+    
+    &:hover {
+      background: #a8a8a8;
+    }
+  }
+`;
+
+const EmojiGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 0.5rem;
+  padding: 0.2rem 0.2rem 0 0.2rem;
+`;
+
+const HiddenFileInput = styled.input`
+  display: none;
+`;
+
+const ErrorMessage = styled.div`
+  background: #fee;
+  color: #c33;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  margin-bottom: 0.75rem;
+  border: 1px solid #fcc;
+  font-size: 0.85rem;
+`;
+
+// Расширенный набор эмодзи
+const emojis = [
+  '😊', '😃', '😄', '😁', '😆', '😅', '🤣', '😂', 
+  '🙂', '🙃', '😉', '😊', '😇', '🥰', '😍', '🤩',
+  '😘', '😗', '😚', '😙', '😋', '😛', '😜', '🤪',
+  '😝', '🤑', '🤗', '🤭', '🤫', '🤔', '🤐', '🤨',
+  '😐', '😑', '😶', '😏', '😒', '🙄', '😬', '🤥',
+  '😔', '😕', '🙁', '☹️', '😣', '😖', '😫', '😩',
+  '🥺', '😢', '😭', '😤', '😠', '😡', '🤬', '🤯',
+  '👍', '👎', '👌', '🤌', '🤏', '✌️', '🤞', '🤟',
+  '🤘', '🤙', '👈', '👉', '👆', '🖕', '👇', '☝️',
+  '👋', '🤚', '🖐️', '✋', '🖖', '👏', '🙌', '🤝',
+  '🙏', '✍️', '💪', '🦾', '🦿', '🦵', '🦶', '👂',
+  '❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍',
+  '🤎', '💔', '❣️', '💕', '💞', '💓', '💗', '💖',
+  '💘', '💝', '💟', '♥️', '💯', '💢', '💥', '💫',
+  '💦', '💨', '🕳️', '💣', '💬', '👁️‍🗨️', '🗨️', '🗯️',
+  '💭', '💤', '🔥', '⭐', '🌟', '✨', '⚡', '☄️',
+  '💥', '🔴', '🟠', '🟡', '🟢', '🔵', '🟣', '⚫',
+  '⚪', '🟤', '🔺', '🔻', '🔸', '🔹', '🔶', '🔷',
+  '🎉', '🎊', '🎈', '🎁', '🎀', '🎗️', '🎟️', '🎫',
+  '🎖️', '🏆', '🏅', '🥇', '🥈', '🥉', '⚽', '🏀',
+  '🏈', '⚾', '🥎', '🎾', '🏐', '🏉', '🥏', '🎱',
+  '🪀', '🏓', '🏸', '🏒', '🏑', '🥍', '🏏', '🪃',
+  '🍎', '🍊', '🍋', '🍌', '🍉', '🍇', '🍓', '🫐',
+  '🍈', '🍒', '🍑', '🥭', '🍍', '🥥', '🥝', '🍅',
+  '🍆', '🥑', '🥦', '🥬', '🥒', '🌶️', '🫑', '🌽',
+  '🥕', '🫒', '🧄', '🧅', '🥔', '🍠', '🥐', '🥖',
+  '🍞', '🥨', '🥯', '🧀', '🥚', '🍳', '🧈', '🥞',
+  '🧇', '🥓', '🥩', '🍗', '🍖', '🦴', '🌭', '🍔',
+  '🍟', '🍕', '🫓', '🥪', '🥙', '🧆', '🌮', '🌯',
+  '🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼',
+  '🐻‍❄️', '🐨', '🐯', '🦁', '🐮', '🐷', '🐽', '🐸',
+  '🐵', '🙈', '🙉', '🙊', '🐒', '🐔', '🐧', '🐦',
+  '🐤', '🐣', '🐥', '🦆', '🦅', '🦉', '🦇', '🐺',
+  '🐗', '🐴', '🦄', '🐝', '🪱', '🐛', '🦋', '🐌',
+  '🐞', '🐜', '🪰', '🪲', '🪳', '🦟', '🦗', '🕷️'
+];
+
+export default function MessageInput() {
+  // Состояния для модалки создания голосования
+  const [showCreatePoll, setShowCreatePoll] = useState(false);
+  const [pollQuestion, setPollQuestion] = useState('');
+  const [pollOptions, setPollOptions] = useState(['', '']);
+  const [showSosMenu, setShowSosMenu] = useState(false);
+  const quickPollTemplates = [
+    {
+      question: 'У всех не работает 1с?',
+      options: ['Да', 'Нет']
+    },
+    {
+      question: 'Удаленка у всех глючит?',
+      options: ['Да', 'Нет']
+    },
+    // Добавьте другие шаблоны по необходимости
+  ];
+
+  
+
+  const [showQuickPollMenu, setShowQuickPollMenu] = useState(false);
+  const [showQuickMenu, setShowQuickMenu] = useState(false);
+  const [showPollModal, setShowPollModal] = useState(false);
+  const { state, dispatch } = useApp();
+  const [message, setMessage] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [error, setError] = useState('');
+  const [pendingMessage, setPendingMessage] = useState('');
+  const textareaRef = useRef(null);
+  const fileInputRef = useRef(null);
+  const typingTimeoutRef = useRef(null);
+
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px';
+    }
+  }, [message]);
+
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => setError(''), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
+
+  // Подстраховка: отправляем отложенное сообщение по событиям сокета
+  useEffect(() => {
+    const tryFlushPending = (chat) => {
+      if (!pendingMessage) return;
+      const realChatIdRaw = chat?.id || state.currentChat?.id;
+      const realChatId = Number(realChatIdRaw);
+      const isTemp = !realChatId || String(realChatId).startsWith('temp_private_');
+      if (isTemp) return;
+      if (!window.socket || !window.socket.connected) return;
+      // На всякий случай присоединимся к комнате чата перед отправкой
+      window.socket.emit('join_chat', realChatId);
+      const messageData = {
+        chatId: realChatId,
+        content: pendingMessage,
+        messageType: 'text',
+        fileInfo: null,
+        replyToId: state.replyToMessage?.id || null
+      };
+      // Небольшая задержка, чтобы сервер успел добавить участников в чат
+      setTimeout(() => {
+        window.socket.emit('send_message', messageData);
+      }, 200);
+      playNotificationSound(0.3);
+      setPendingMessage('');
+      dispatch({ type: 'SET_REPLY_TO_MESSAGE', payload: null });
+    };
+
+    const onPrivateCreated = (data) => {
+      tryFlushPending(data?.chat);
+    };
+    const onChatExists = (chat) => {
+      tryFlushPending(chat);
+    };
+
+    if (window.socket) {
+      window.socket.on('private_chat_created', onPrivateCreated);
+      window.socket.on('chat_exists', onChatExists);
+    }
+    return () => {
+      if (window.socket) {
+        window.socket.off('private_chat_created', onPrivateCreated);
+        window.socket.off('chat_exists', onChatExists);
+      }
+    };
+  }, [pendingMessage, state.replyToMessage?.id]);
+
+  // Если сообщение было поставлено в очередь во время создания приватного чата,
+  // отправляем его сразу после того, как у текущего чата появится реальный id
+  useEffect(() => {
+    const chat = state.currentChat;
+    if (!chat) return;
+    const isTemp = String(chat.id).startsWith('temp_private_');
+    if (!isTemp && pendingMessage && window.socket && window.socket.connected) {
+      const messageData = {
+        chatId: chat.id,
+        content: pendingMessage,
+        messageType: 'text',
+        fileInfo: null,
+        replyToId: state.replyToMessage?.id || null
+      };
+      window.socket.emit('send_message', messageData);
+      playNotificationSound(0.3);
+      setPendingMessage('');
+      dispatch({ type: 'SET_REPLY_TO_MESSAGE', payload: null });
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+        window.socket.emit('stop_typing', { chatId: chat.id });
+      }
+    }
+  }, [state.currentChat?.id]);
+
+  const handleSendPoll = (poll) => {
+  if (!state.currentChat) return;
+  if (String(state.currentChat.id).startsWith('temp_private_')) {
+    setError('Создаётся приватный чат, подождите...');
+    return;
+  }
+  if (!window.socket || !window.socket.connected) return;
+
+  const pollData = {
+    chatId: state.currentChat.id,
+    content: poll.question,
+    messageType: 'poll',
+    pollOptions: poll.options,
+    fileInfo: null,
+    replyToId: state.replyToMessage?.id || null,
+  };
+
+  window.socket.emit('send_message', pollData);
+  playNotificationSound(0.3);
+  setMessage('');
+  dispatch({ type: 'SET_REPLY_TO_MESSAGE', payload: null });
+  setError('');
+  if (typingTimeoutRef.current) {
+    clearTimeout(typingTimeoutRef.current);
+    window.socket.emit('stop_typing', { chatId: state.currentChat.id });
+  }
+};
+
+  const handleSend = () => {
+    if ((!message.trim() && !state.filePreview) || !state.currentChat) {
+      return;
+    }
+    console.log('[MessageInput] handleSend called', {
+      currentChatId: state.currentChat?.id,
+      isTemp: String(state.currentChat?.id || '').startsWith('temp_private_'),
+      hasFile: !!state.filePreview,
+      socketConnected: !!(window.socket && window.socket.connected)
+    });
+    // Больше не создаём временных чатов — проверка лишняя
+    if (!window.socket) {
+      setError('Нет соединения с сервером');
+      console.error('[MessageInput] window.socket is undefined');
+      return;
+    }
+    if (!window.socket.connected) {
+      setError('Соединение с сервером потеряно');
+      console.error('[MessageInput] socket is not connected');
+      return;
+    }
+    const chatId = Number(state.currentChat.id);
+    // Подстраховка: присоединяемся к комнате и небольшая задержка
+    window.socket.emit('join_chat', chatId);
+    const messageData = {
+      chatId,
+      content: message.trim(),
+      messageType: state.filePreview ? 'file' : 'text',
+      fileInfo: state.filePreview,
+      replyToId: state.replyToMessage?.id || null
+    };
+    console.log('[MessageInput] emitting send_message', messageData);
+    setTimeout(() => {
+      window.socket.emit('send_message', messageData);
+    }, 150);
+    playNotificationSound(0.3);
+    setMessage('');
+    dispatch({ type: 'SET_FILE_PREVIEW', payload: null });
+    dispatch({ type: 'SET_REPLY_TO_MESSAGE', payload: null });
+    setError('');
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+      window.socket.emit('stop_typing', { chatId: state.currentChat.id });
+    }
+    // Не добавляем сообщение в state.messages вручную! Ждём событие new_message от сервера.
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    } else {
+      handleTyping();
+    }
+  };
+
+  const handleTyping = useCallback(
+    debounce(() => {
+      if (!state.currentChat || !window.socket) return;
+      window.socket.emit('typing', { chatId: state.currentChat.id });
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+      typingTimeoutRef.current = setTimeout(() => {
+        window.socket.emit('stop_typing', { chatId: state.currentChat.id });
+      }, 1000);
+    }, 300),
+    [state.currentChat]
+  );
+
+  const handleFileSelect = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const maxSize = 10 * 1024 * 1024;
+    if (file.size > maxSize) {
+      setError('Файл слишком большой. Максимальный размер: 10MB');
+      return;
+    }
+    const allowedTypes = [
+      'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/bmp',
+      'application/pdf', 'text/plain',
+      'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/zip', 'application/x-rar-compressed'
+    ];
+    if (!allowedTypes.includes(file.type)) {
+      setError('Неподдерживаемый тип файла');
+      return;
+    }
+    setUploading(true);
+    setUploadProgress(0);
+    setError('');
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('originalName', file.name);
+    try {
+      const response = await api.post('/api/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        onUploadProgress: (progressEvent) => {
+          const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          setUploadProgress(percentCompleted);
+        }
+      });
+      const fileData = {
+        ...response.data,
+        originalName: response.data.originalName || file.name,
+        mimetype: response.data.mimetype || file.type
+      };
+      dispatch({ type: 'SET_FILE_PREVIEW', payload: fileData });
+      dispatch({ type: 'ADD_NOTIFICATION', payload: { type: 'success', message: 'Файл успешно загружен' } });
+    } catch (error) {
+      let errorMessage = 'Ошибка загрузки файла';
+      if (error.response?.data?.message) errorMessage = error.response.data.message;
+      else if (error.message) errorMessage = error.message;
+      setError(errorMessage);
+    } finally {
+      setUploading(false);
+      setUploadProgress(0);
+      e.target.value = '';
+    }
+  };
+
+  const handleEmojiSelect = (emoji) => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const newMessage = message.substring(0, start) + emoji + message.substring(end);
+    setMessage(newMessage);
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(start + emoji.length, start + emoji.length);
+    }, 0);
+    dispatch({ type: 'CLOSE_EMOJI_PICKER' });
+  };
+
+  const formatFileSize = (bytes) => {
+    if (!bytes || bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  if (!state.currentChat) return null;
+
+  const handleSendQuickTemplate = (tpl) => {
+    setShowQuickMenu(false);
+    setShowSosMenu(false);
+    if (!state.currentChat) return;
+    if (!window.socket || !window.socket.connected) return;
+
+    // Если tpl — объект с вопросом и вариантами, отправляем как poll
+    if (String(state.currentChat.id).startsWith('temp_private_')) {
+      setError('Создаётся приватный чат, подождите...');
+      return;
+    }
+    if (typeof tpl === 'object' && tpl.question && tpl.options) {
+      const pollData = {
+        chatId: state.currentChat.id,
+        content: tpl.question,
+        messageType: 'poll',
+        pollOptions: tpl.options,
+        fileInfo: null,
+        replyToId: state.replyToMessage?.id || null
+      };
+      window.socket.emit('send_message', pollData);
+    } else {
+      // Если просто текст — отправляем как обычное сообщение
+      const messageData = {
+        chatId: state.currentChat.id,
+        content: tpl,
+        messageType: SOS_TEMPLATES.includes(tpl) ? 'sos' : 'text',
+        fileInfo: null,
+        replyToId: state.replyToMessage?.id || null
+      };
+      window.socket.emit('send_message', messageData);
+    }
+
+    playNotificationSound(0.3);
+    setMessage('');
+    dispatch({ type: 'SET_REPLY_TO_MESSAGE', payload: null });
+    setError('');
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+      window.socket.emit('stop_typing', { chatId: state.currentChat.id });
+    }
+  };
+
+  return (
+    <InputContainer>
+      {error && <ErrorMessage>{error}</ErrorMessage>}
+
+      {state.replyToMessage && (
+        <ReplyPreview>
+          {state.replyToMessage.avatar && (
+            <img
+              src={state.replyToMessage.avatar}
+              alt="avatar"
+              style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', marginRight: 10, boxShadow: '0 2px 8px #2196f344' }}
+            />
+          )}
+          <ReplyInfo>
+            <ReplyAuthor>Ответ для {state.replyToMessage.username}</ReplyAuthor>
+            <ReplyContent>{state.replyToMessage.content}</ReplyContent>
+          </ReplyInfo>
+          <CloseReplyButton onClick={() => dispatch({ type: 'SET_REPLY_TO_MESSAGE', payload: null })}>
+            <FiX size={16} />
+          </CloseReplyButton>
+        </ReplyPreview>
+      )}
+
+      
+
+      {state.filePreview && (
+        <FilePreview>
+          <FilePreviewContent>
+            {state.filePreview.mimetype?.startsWith('image/') ? (
+              <FilePreviewImage
+                src={state.filePreview.url}
+                alt={state.filePreview.originalName || 'Изображение'}
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                }}
+              />
+            ) : (
+              <div style={{ fontSize: '2.5rem' }}>📎</div>
+            )}
+            <FilePreviewInfo>
+              <FileName>{state.filePreview.originalName || 'Файл'}</FileName>
+              <FileSize>{formatFileSize(state.filePreview.size)}</FileSize>
+              {uploading && (
+                <UploadProgress>
+                  <ProgressBar progress={uploadProgress} />
+                </UploadProgress>
+              )}
+            </FilePreviewInfo>
+          </FilePreviewContent>
+          <RemoveFileButton onClick={() => dispatch({ type: 'SET_FILE_PREVIEW', payload: null })} disabled={uploading}>
+            <FiX size={16} />
+          </RemoveFileButton>
+        </FilePreview>
+      )}
+
+      <InputRow style={{ position: 'relative' }}>
+        <InputActions>
+          <ActionButton onClick={() => fileInputRef.current?.click()} disabled={uploading} title="Прикрепить файл">
+            <FiPaperclip size={18} />
+          </ActionButton>
+          <EmojiInput onEmojiSelect={handleEmojiSelect} placeholder="Выберите эмодзи" />
+        </InputActions>
+
+
+        <SosTemplatesButton type="button" onClick={() => setShowSosMenu(v => !v)} title="Экстренные шаблоны">
+          � Шаблоны
+        </SosTemplatesButton>
+        {showSosMenu && (
+          <SosTemplatesMenu>
+            {SOS_TEMPLATES.map((tpl, idx) => (
+              <SosTemplateItem
+                key={idx}
+                style={{ marginBottom: idx !== SOS_TEMPLATES.length - 1 ? 10 : 0 }}
+                onClick={() => handleSendQuickTemplate(tpl)}
+              >
+                <span style={{fontWeight:900,fontSize:'1.1em',textShadow:'0 2px 8px rgba(255,60,60,0.35)'}}>SOS</span>
+                {tpl}
+              </SosTemplateItem>
+            ))}
+          </SosTemplatesMenu>
+        )}
+
+        {showPollModal && (
+          <PollModalOverlay>
+            <PollModal>
+              <PollClose onClick={() => setShowPollModal(false)} title="Закрыть">
+                ×
+              </PollClose>
+              <PollTitle>Быстрое голосование</PollTitle>
+              <PollOptionButton onClick={() => handleSendPoll('У всех не работает 1с?')}>
+                У всех не работает 1с?
+              </PollOptionButton>
+              <PollOptionButton onClick={() => handleSendPoll('Удаленка у всех глючит?')}>
+                Удаленка у всех глючит?
+              </PollOptionButton>
+            </PollModal>
+          </PollModalOverlay>
+        )}
+
+
+        <PollButton type="button" onClick={() => setShowCreatePoll(true)} title="Быстрое голосование">
+          🗳️ Быстрое голосование
+        </PollButton>
+      {/* Модалка создания голосования */}
+      {showCreatePoll && (
+        <CreatePollModalOverlay>
+          <CreatePollModal>
+            <PollTitle>Создать голосование</PollTitle>
+            <form
+              onSubmit={e => {
+                e.preventDefault();
+                if (!pollQuestion.trim() || pollOptions.some(opt => !opt.trim())) return;
+                if (!state.currentChat || !window.socket || !window.socket.connected) return;
+                const pollData = {
+                  chatId: state.currentChat.id,
+                  content: pollQuestion.trim(),
+                  messageType: 'poll',
+                  pollOptions: pollOptions.map(opt => opt.trim()),
+                  fileInfo: null,
+                  replyToId: state.replyToMessage?.id || null,
+                };
+                window.socket.emit('send_message', pollData);
+                playNotificationSound(0.3);
+                setShowCreatePoll(false);
+                setPollQuestion('');
+                setPollOptions(['', '']);
+                dispatch({ type: 'SET_REPLY_TO_MESSAGE', payload: null });
+                setError('');
+                if (typingTimeoutRef.current) {
+                  clearTimeout(typingTimeoutRef.current);
+                  window.socket.emit('stop_typing', { chatId: state.currentChat.id });
+                }
+              }}
+              style={{ width: '100%' }}
+            >
+              <PollFormLabel htmlFor="poll-question">Тема голосования</PollFormLabel>
+              <PollFormInput
+                id="poll-question"
+                type="text"
+                value={pollQuestion}
+                onChange={e => setPollQuestion(e.target.value)}
+                placeholder="Введите тему..."
+                required
+                maxLength={120}
+                autoFocus
+              />
+              <PollFormLabel>Варианты ответа</PollFormLabel>
+              {pollOptions.map((opt, idx) => (
+                <PollFormOptionRow key={idx}>
+                  <PollFormInput
+                    type="text"
+                    value={opt}
+                    onChange={e => setPollOptions(
+                      pollOptions.map((o, i) => i === idx ? e.target.value : o)
+                    )}
+                    placeholder={`Вариант ${idx + 1}`}
+                    required
+                    maxLength={60}
+                  />
+                  {pollOptions.length > 2 && (
+                    <RemoveOptionBtn type="button" onClick={() => setPollOptions(pollOptions.filter((_, i) => i !== idx))} title="Удалить вариант">×</RemoveOptionBtn>
+                  )}
+                </PollFormOptionRow>
+              ))}
+              <AddOptionBtn type="button" onClick={() => setPollOptions([...pollOptions, ''])}>+ Добавить вариант</AddOptionBtn>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1.2rem' }}>
+                <PollClose type="button" onClick={() => { setShowCreatePoll(false); setPollQuestion(''); setPollOptions(['', '']); }} title="Отмена">Отмена</PollClose>
+                <PollOptionButton as="button" type="submit" style={{ minWidth: 120 }}>Создать</PollOptionButton>
+              </div>
+            </form>
+          </CreatePollModal>
+        </CreatePollModalOverlay>
+      )}
+
+        {showQuickPollMenu && (
+  <QuickTemplatesMenu>
+    {quickPollTemplates.map((tpl, idx) => (
+      <button
+        key={idx}
+        style={{
+          background: 'linear-gradient(90deg, #3390ec 0%, #007bff 100%)',
+          color: '#fff',
+          border: 'none',
+          borderRadius: 12,
+          padding: '10px 18px',
+          fontWeight: 700,
+          fontSize: '1rem',
+          marginBottom: idx !== quickPollTemplates.length - 1 ? 8 : 0,
+          cursor: 'pointer',
+          width: '100%',
+          outline: 'none',
+          transition: 'background 0.18s',
+        }}
+        onClick={() => {
+          handleSendPoll(tpl);
+          setShowQuickPollMenu(false);
+        }}
+      >
+        {tpl.question}
+      </button>
+    ))}
+  </QuickTemplatesMenu>
+)}
+
+        
+
+        <EmojiTextarea
+          ref={textareaRef}
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          onKeyPress={handleKeyPress}
+          placeholder={state.filePreview ? 'Добавьте подпись к файлу...' : 'Введите сообщение...'} 
+          rows={1}
+          disabled={uploading}
+          style={{ resize: 'vertical' }}
+        />
+
+        <SendButton onClick={handleSend} disabled={(!message.trim() && !state.filePreview) || uploading} title="Отправить">
+          <span style={{ fontWeight: 600, letterSpacing: '0.01em', marginRight: 6, color: '#225' }}>Отправить</span>
+          <FiArrowRight size={22} color="#225" />
+        </SendButton>
+      </InputRow>
+
+      {state.showEmojiPicker && (
+        <EmojiPicker className="emoji-picker">
+          <EmojiGrid className="emoji-grid">
+            {emojis.map((emoji, index) => (
+              <Emoji
+                key={index}
+                size="2.2rem"
+                clickable
+                onClick={() => handleEmojiSelect(emoji)}
+                title={`Добавить ${emoji}`}
+                style={{
+                  padding: '0.8rem',
+                  borderRadius: '8px',
+                  transition: 'all 0.2s ease',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  minWidth: '55px',
+                  minHeight: '55px',
+                  backgroundColor: 'transparent',
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = '#f8f9fa';
+                  e.target.style.transform = 'scale(1.3)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = 'transparent';
+                  e.target.style.transform = 'scale(1)';
+                }}
+              >
+                {emoji}
+              </Emoji>
+            ))}
+          </EmojiGrid>
+        </EmojiPicker>
+      )}
+
+
+      
+
+      <HiddenFileInput
+        ref={fileInputRef}
+        type="file"
+        onChange={handleFileSelect}
+        accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar"
+      />
+    </InputContainer>
+  );
+}

@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Issa Plus</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="messenger-container">
+        <!-- Боковая панель -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h3>Issa Plus</h3>
+                <div class="user-info">
+                    <span id="currentUser"></span>
+                    <button id="logoutBtn">Выйти</button>
+                </div>
+                <div class="clock" id="currentTime" aria-label="Текущее время"></div>
+            </div>
+            
+            <div class="chat-controls">
+                <button id="createChatBtn">Создать чат</button>
+            </div>
+            
+            <div class="chats-list" id="chatsList">
+                <!-- Список чатов будет загружен динамически -->
+            </div>
+            
+            <div class="online-users">
+                <h4>Онлайн пользователи</h4>
+                <div id="onlineUsersList"></div>
+            </div>
+        </div>
+
+        <!-- Основная область чата -->
+        <div class="chat-area">
+            <div class="chat-header" id="chatHeader">
+                <h3>Выберите чат</h3>
+                <div class="clock-inline" id="currentTimeHeader" aria-hidden="true" style="display:none;"></div>
+            </div>
+            
+            <div class="messages-container" id="messagesContainer">
+                <div class="welcome-message">
+                    <h2>Добро пожаловать в мессенджер!</h2>
+                    <p>Выберите чат из списка слева или создайте новый</p>
+                </div>
+            </div>
+            
+            <div class="typing-indicator" id="typingIndicator"></div>
+            
+            <!-- Контейнер для ответа -->
+            <div class="reply-container" id="replyContainer" style="display: none;"></div>
+            
+            <!-- Превью файла -->
+            <div class="file-preview" id="filePreview" style="display: none;"></div>
+            
+            <div class="message-input-container" id="messageInputContainer" style="display: none;">
+                <button id="attachBtn" class="attach-btn">📎</button>
+                <button id="emojiBtn" class="emoji-btn">😊</button>
+                <input type="text" id="messageInput" placeholder="Введите сообщение...">
+                <button id="sendBtn">Отправить</button>
+                <input type="file" id="fileInput" style="display: none;" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar">
+            </div>
+            
+            <!-- Панель смайликов -->
+            <div class="emoji-picker" id="emojiPicker" style="display: none;">
+                <div class="emoji-grid">
+                  <!-- Увеличенный набор эмодзи с правильными стилями -->
+                  <span onclick="app.insertEmoji('😊')" class="emoji-item">😊</span>
+                  <span onclick="app.insertEmoji('😃')" class="emoji-item">😃</span>
+                  <span onclick="app.insertEmoji('😄')" class="emoji-item">😄</span>
+                  <span onclick="app.insertEmoji('😁')" class="emoji-item">😁</span>
+                  <span onclick="app.insertEmoji('😆')" class="emoji-item">😆</span>
+                  <span onclick="app.insertEmoji('😅')" class="emoji-item">😅</span>
+                  <span onclick="app.insertEmoji('🤣')" class="emoji-item">🤣</span>
+                  <span onclick="app.insertEmoji('😂')" class="emoji-item">😂</span>
+                  <span onclick="app.insertEmoji('🙂')" class="emoji-item">🙂</span>
+                  <span onclick="app.insertEmoji('🙃')" class="emoji-item">🙃</span>
+                  <span onclick="app.insertEmoji('😉')" class="emoji-item">😉</span>
+                  <span onclick="app.insertEmoji('😇')" class="emoji-item">😇</span>
+                  <span onclick="app.insertEmoji('🥰')" class="emoji-item">🥰</span>
+                  <span onclick="app.insertEmoji('😍')" class="emoji-item">😍</span>
+                  <span onclick="app.insertEmoji('🤩')" class="emoji-item">🤩</span>
+                  <span onclick="app.insertEmoji('😘')" class="emoji-item">😘</span>
+                  <span onclick="app.insertEmoji('😗')" class="emoji-item">😗</span>
+                  <span onclick="app.insertEmoji('😚')" class="emoji-item">😚</span>
+                  <span onclick="app.insertEmoji('😙')" class="emoji-item">😙</span>
+                  <span onclick="app.insertEmoji('😋')" class="emoji-item">😋</span>
+                  <span onclick="app.insertEmoji('😛')" class="emoji-item">😛</span>
+                  <span onclick="app.insertEmoji('😜')" class="emoji-item">😜</span>
+                  <span onclick="app.insertEmoji('🤪')" class="emoji-item">🤪</span>
+                  <span onclick="app.insertEmoji('😝')" class="emoji-item">😝</span>
+                  <span onclick="app.insertEmoji('🤑')" class="emoji-item">🤑</span>
+                  <span onclick="app.insertEmoji('🤗')" class="emoji-item">🤗</span>
+                  <span onclick="app.insertEmoji('🤭')" class="emoji-item">🤭</span>
+                  <span onclick="app.insertEmoji('🤫')" class="emoji-item">🤫</span>
+                  <span onclick="app.insertEmoji('🤔')" class="emoji-item">🤔</span>
+                  <span onclick="app.insertEmoji('🤐')" class="emoji-item">🤐</span>
+                  <span onclick="app.insertEmoji('🤨')" class="emoji-item">🤨</span>
+                  <span onclick="app.insertEmoji('😐')" class="emoji-item">😐</span>
+                  <span onclick="app.insertEmoji('😑')" class="emoji-item">😑</span>
+                  <span onclick="app.insertEmoji('😶')" class="emoji-item">😶</span>
+                  <span onclick="app.insertEmoji('😏')" class="emoji-item">😏</span>
+                  <span onclick="app.insertEmoji('😒')" class="emoji-item">😒</span>
+                  <span onclick="app.insertEmoji('🙄')" class="emoji-item">🙄</span>
+                  <span onclick="app.insertEmoji('😬')" class="emoji-item">😬</span>
+                  <span onclick="app.insertEmoji('🤥')" class="emoji-item">🤥</span>
+                  <span onclick="app.insertEmoji('😔')" class="emoji-item">😔</span>
+                  <span onclick="app.insertEmoji('😕')" class="emoji-item">😕</span>
+                  <span onclick="app.insertEmoji('🙁')" class="emoji-item">🙁</span>
+                  <span onclick="app.insertEmoji('☹️')" class="emoji-item">☹️</span>
+                  <span onclick="app.insertEmoji('😣')" class="emoji-item">😣</span>
+                  <span onclick="app.insertEmoji('😖')" class="emoji-item">😖</span>
+                  <span onclick="app.insertEmoji('😫')" class="emoji-item">😫</span>
+                  <span onclick="app.insertEmoji('😩')" class="emoji-item">😩</span>
+                  <span onclick="app.insertEmoji('🥺')" class="emoji-item">🥺</span>
+                  <span onclick="app.insertEmoji('😢')" class="emoji-item">😢</span>
+                  <span onclick="app.insertEmoji('😭')" class="emoji-item">😭</span>
+                  <span onclick="app.insertEmoji('😤')" class="emoji-item">😤</span>
+                  <span onclick="app.insertEmoji('😠')" class="emoji-item">😠</span>
+                  <span onclick="app.insertEmoji('😡')" class="emoji-item">😡</span>
+                  <span onclick="app.insertEmoji('🤬')" class="emoji-item">🤬</span>
+                  <span onclick="app.insertEmoji('🤯')" class="emoji-item">🤯</span>
+                  <span onclick="app.insertEmoji('❤️')" class="emoji-item">❤️</span>
+                  <span onclick="app.insertEmoji('🧡')" class="emoji-item">🧡</span>
+                  <span onclick="app.insertEmoji('💛')" class="emoji-item">💛</span>
+                  <span onclick="app.insertEmoji('💚')" class="emoji-item">💚</span>
+                  <span onclick="app.insertEmoji('💙')" class="emoji-item">💙</span>
+                  <span onclick="app.insertEmoji('💜')" class="emoji-item">💜</span>
+                  <span onclick="app.insertEmoji('🖤')" class="emoji-item">🖤</span>
+                  <span onclick="app.insertEmoji('🤍')" class="emoji-item">🤍</span>
+                  <span onclick="app.insertEmoji('🤎')" class="emoji-item">🤎</span>
+                  <span onclick="app.insertEmoji('💔')" class="emoji-item">💔</span>
+                  <span onclick="app.insertEmoji('❣️')" class="emoji-item">❣️</span>
+                  <span onclick="app.insertEmoji('💕')" class="emoji-item">💕</span>
+                  <span onclick="app.insertEmoji('💞')" class="emoji-item">💞</span>
+                  <span onclick="app.insertEmoji('💓')" class="emoji-item">💓</span>
+                  <span onclick="app.insertEmoji('💗')" class="emoji-item">💗</span>
+                  <span onclick="app.insertEmoji('💖')" class="emoji-item">💖</span>
+                  <span onclick="app.insertEmoji('💘')" class="emoji-item">💘</span>
+                  <span onclick="app.insertEmoji('💝')" class="emoji-item">💝</span>
+                  <span onclick="app.insertEmoji('💟')" class="emoji-item">💟</span>
+                  <span onclick="app.insertEmoji('♥️')" class="emoji-item">♥️</span>
+                  <span onclick="app.insertEmoji('💯')" class="emoji-item">💯</span>
+                  <span onclick="app.insertEmoji('💢')" class="emoji-item">💢</span>
+                  <span onclick="app.insertEmoji('💥')" class="emoji-item">💥</span>
+                  <span onclick="app.insertEmoji('💫')" class="emoji-item">💫</span>
+                  <span onclick="app.insertEmoji('💦')" class="emoji-item">💦</span>
+                  <span onclick="app.insertEmoji('💨')" class="emoji-item">💨</span>
+                  <span onclick="app.insertEmoji('🔥')" class="emoji-item">🔥</span>
+                  <span onclick="app.insertEmoji('⭐')" class="emoji-item">⭐</span>
+                  <span onclick="app.insertEmoji('🌟')" class="emoji-item">🌟</span>
+                  <span onclick="app.insertEmoji('✨')" class="emoji-item">✨</span>
+                  <span onclick="app.insertEmoji('⚡')" class="emoji-item">⚡</span>
+                  <span onclick="app.insertEmoji('☄️')" class="emoji-item">☄️</span>
+                  <span onclick="app.insertEmoji('🎉')" class="emoji-item">🎉</span>
+                  <span onclick="app.insertEmoji('🎊')" class="emoji-item">🎊</span>
+                  <span onclick="app.insertEmoji('🎈')" class="emoji-item">🎈</span>
+                  <span onclick="app.insertEmoji('🎁')" class="emoji-item">🎁</span>
+                  <span onclick="app.insertEmoji('🎀')" class="emoji-item">🎀</span>
+                  <span onclick="app.insertEmoji('🏆')" class="emoji-item">🏆</span>
+                  <span onclick="app.insertEmoji('🏅')" class="emoji-item">🏅</span>
+                  <span onclick="app.insertEmoji('🥇')" class="emoji-item">🥇</span>
+                  <span onclick="app.insertEmoji('🥈')" class="emoji-item">🥈</span>
+                  <span onclick="app.insertEmoji('🥉')" class="emoji-item">🥉</span>
+                  <span onclick="app.insertEmoji('👍')" class="emoji-item">👍</span>
+                  <span onclick="app.insertEmoji('👎')" class="emoji-item">👎</span>
+                  <span onclick="app.insertEmoji('👌')" class="emoji-item">👌</span>
+                  <span onclick="app.insertEmoji('🤌')" class="emoji-item">🤌</span>
+                  <span onclick="app.insertEmoji('🤏')" class="emoji-item">🤏</span>
+                  <span onclick="app.insertEmoji('✌️')" class="emoji-item">✌️</span>
+                  <span onclick="app.insertEmoji('🤞')" class="emoji-item">🤞</span>
+                  <span onclick="app.insertEmoji('🤟')" class="emoji-item">🤟</span>
+                  <span onclick="app.insertEmoji('🤘')" class="emoji-item">🤘</span>
+                  <span onclick="app.insertEmoji('🤙')" class="emoji-item">🤙</span>
+                  <span onclick="app.insertEmoji('👋')" class="emoji-item">👋</span>
+                  <span onclick="app.insertEmoji('🤚')" class="emoji-item">🤚</span>
+                  <span onclick="app.insertEmoji('🖐️')" class="emoji-item">🖐️</span>
+                  <span onclick="app.insertEmoji('✋')" class="emoji-item">✋</span>
+                  <span onclick="app.insertEmoji('🖖')" class="emoji-item">🖖</span>
+                  <span onclick="app.insertEmoji('👏')" class="emoji-item">👏</span>
+                  <span onclick="app.insertEmoji('🙌')" class="emoji-item">🙌</span>
+                  <span onclick="app.insertEmoji('🤝')" class="emoji-item">🤝</span>
+                  <span onclick="app.insertEmoji('🙏')" class="emoji-item">🙏</span>
+                  <span onclick="app.insertEmoji('💪')" class="emoji-item">💪</span>
+                </div>
+              </div>
+
+    <!-- Модальное окно создания чата -->
+    <div id="createChatModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h3>Создать новый чат</h3>
+            <input type="text" id="chatNameInput" placeholder="Название чата">
+            <button id="confirmCreateChat">Создать</button>
+        </div>
+    </div>
+
+      <!-- Добавьте кнопку удаления чата в заголовок -->
+<div class="chat-header" id="chatHeader">
+  <div class="chat-header-content">
+    <h3 id="chatTitle">Выберите чат</h3>
+    <div class="chat-actions" id="chatActions" style="display: none;">
+      <button class="chat-info-btn" onclick="app.showChatInfo()" title="Информация о чате">ℹ️</button>
+      <button class="add-users-btn" onclick="app.showAddUsersModal()" title="Добавить пользователей">👥+</button>
+      <button class="delete-chat-btn" onclick="app.showDeleteChatModal()" title="Удалить чат">🗑️</button>
+    </div>
+  </div>
+</div>
+
+<!-- Добавьте модальное окно подтверждения удаления чата -->
+<div id="deleteChatModal" class="modal">
+  <div class="modal-content">
+    <span class="close" onclick="document.getElementById('deleteChatModal').style.display='none'">&times;</span>
+    <h3>Удалить чат?</h3>
+    <p id="deleteChatMessage">Вы уверены, что хотите удалить этот чат? Это действие нельзя отменить.</p>
+    <div class="modal-actions">
+      <button id="confirmDeleteChat" class="btn-danger">Удалить</button>
+      <button onclick="document.getElementById('deleteChatModal').style.display='none'" class="btn-secondary">Отмена</button>
+    </div>
+  </div>
+
+<!-- Модальное окно выбора пользователей -->
+<div id="userSelectionModal" class="modal">
+    <div class="modal-content large-modal">
+      <span class="close" onclick="document.getElementById('userSelectionModal').style.display='none'">&times;</span>
+      <h3>Выберите пользователя</h3>
+      <div id="usersList" class="users-list">
+        <!-- Список пользователей будет загружен динамически -->
+      </div>
+    </div>
+  </div>
+  
+  <!-- Модальное окно информации о чате -->
+  <div id="chatInfoModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="document.getElementById('chatInfoModal').style.display='none'">&times;</span>
+      <h3>Участники чата</h3>
+      <div id="participantsList" class="participants-list">
+        <!-- Список участников будет загружен динамически -->
+      </div>
+    </div>
+  </div>
+
+
+<!-- Модальное окно списка лайков -->
+<div id="likesModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="document.getElementById('likesModal').style.display='none'">&times;</span>
+        <h3>Лайки</h3>
+        <div id="likesList" class="likes-list">
+            <!-- Список лайков будет загружен динамически -->
+        </div>
+    </div>
+</div>
+  
+  <!-- Обновите онлайн пользователей с кнопкой "Добавить пользователей" -->
+  <div class="online-users">
+    <div class="online-users-header">
+      <h4>Онлайн пользователи</h4>
+      <button class="add-users-btn" onclick="app.showAddUsersModal()" title="Найти пользователей">👥+</button>
+    </div>
+    <div id="onlineUsersList"></div>
+  </div>
+
+
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
