@@ -487,7 +487,7 @@ function Tasks({ isMobile = false }) {
   // Загрузка пользователей
   useEffect(() => {
     const token = localStorage.getItem('token');
-    fetch('http://localhost:5000/api/users', {
+    fetch('/api/users', {
       headers: token ? { 'Authorization': 'Bearer ' + token } : {}
     })
       .then(r => r.json())
@@ -507,7 +507,7 @@ function Tasks({ isMobile = false }) {
     if (filter === 'open') url = '/api/tasks/open';
     else if (filter === 'completed') url = '/api/tasks/completed';
     
-    fetch(url.startsWith('/api/') ? `http://localhost:5000${url}` : url, {
+    fetch(url.startsWith('/api/') ? url : url, {
       headers: token ? { 'Authorization': 'Bearer ' + token } : {}
     })
       .then(r => r.json())
@@ -603,7 +603,7 @@ function Tasks({ isMobile = false }) {
     if (!window.confirm('Удалить все выполненные задачи?')) return;
     setLoading(true);
     const token = localStorage.getItem('token');
-    fetch('http://localhost:5000/api/tasks/completed', {
+    fetch('/api/tasks/completed', {
       method: 'DELETE',
       headers: token ? { 'Authorization': 'Bearer ' + token } : {}
     })
@@ -632,7 +632,7 @@ function Tasks({ isMobile = false }) {
       }
       data.append('originalName', JSON.stringify(names));
     }
-    fetch('http://localhost:5000/api/tasks', {
+    fetch('/api/tasks', {
       method: 'POST',
       headers: {
         ...(token ? { 'Authorization': `Bearer ${token}` } : {})
@@ -645,7 +645,7 @@ function Tasks({ isMobile = false }) {
         setFiles([]);
         const token = localStorage.getItem('token');
         let url = '/api/tasks';
-        fetch(url.startsWith('/api/') ? `http://localhost:5000${url}` : url, {
+        fetch(url.startsWith('/api/') ? url : url, {
           headers: token ? { 'Authorization': 'Bearer ' + token } : {}
         })
           .then(r => r.json())
@@ -665,7 +665,7 @@ function Tasks({ isMobile = false }) {
 
   const handleDelete = id => {
     const token = localStorage.getItem('token');
-    fetch(`http://localhost:5000/api/tasks/${id}`, {
+    fetch(`/api/tasks/${id}`, {
       method: 'DELETE',
       headers: token ? { 'Authorization': 'Bearer ' + token } : {}
     })
@@ -683,7 +683,7 @@ function Tasks({ isMobile = false }) {
     setCommentError('');
     setIsCompletionRequired(false);
     const token = localStorage.getItem('token');
-    fetch(`http://localhost:5000/api/tasks/${id}/complete`, {
+    fetch(`/api/tasks/${id}/complete`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -702,7 +702,7 @@ function Tasks({ isMobile = false }) {
 
   const handleExtend = id => {
     const token = localStorage.getItem('token');
-    fetch(`http://localhost:5000/api/tasks/${id}/extend`, {
+    fetch(`/api/tasks/${id}/extend`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -723,7 +723,7 @@ function Tasks({ isMobile = false }) {
       const token = localStorage.getItem('token');
       console.log('Downloading file:', filename, 'with token:', token ? 'present' : 'missing');
       
-      const response = await fetch(`http://localhost:5000/api/download/${filename}`, {
+      const response = await fetch(`/api/download/${filename}`, {
         headers: token ? { 'Authorization': `Bearer ${token}` } : {}
       });
 
@@ -1349,7 +1349,7 @@ function Tasks({ isMobile = false }) {
                         const ext = (f.originalname || f.name || '').split('.').pop()?.toLowerCase();
                         const sizeKb = f.size ? (f.size/1024).toFixed(1) : '';
                         const fileName = f.originalname || f.name || f.filename || 'file';
-                        const downloadUrl = f.filename ? `http://localhost:5000/api/download/${f.filename}` : 
+                        const downloadUrl = f.filename ? `/api/download/${f.filename}` : 
                                           f.url ? f.url : '#';
                         return (
                           <div key={idx} style={{background:'rgba(44, 62, 80, 0.3)',borderRadius:8,padding:'12px 16px',display:'flex',alignItems:'center',justifyContent:'space-between',gap:12}}>

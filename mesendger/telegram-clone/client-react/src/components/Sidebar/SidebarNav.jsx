@@ -463,7 +463,8 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar }
   const fetchMyTasksCount = useCallback(() => {
     const token = localStorage.getItem('token');
     if (!token || !state.user) return;
-    fetch('http://localhost:5000/api/tasks/open', {
+    const apiUrl = typeof window !== 'undefined' && window.location ? window.location.origin : '';
+    fetch(`${apiUrl}/api/tasks/open`, {
       headers: { Authorization: `Bearer ${token}` }
     })
       .then(r => r.json())

@@ -263,7 +263,7 @@ const safeHtml = (html) => {
   // Теперь преобразуем токены обратно в правильные img элементы
   textWithTokens = textWithTokens.replace(
     /custom:emoji-([^-\s]+)-([^-\s]+)/g,
-    '<img src="http://localhost:5000/uploads/emojis/emoji-$1-$2.jpg" alt="custom-emoji-$1-$2" data-custom-emoji="true" style="width: 20px; height: 20px; object-fit: cover; vertical-align: middle; margin: 0 2px; border-radius: 6px; display: inline-block;" onerror="this.style.display=\'none\'">'
+    '<img src="/uploads/emojis/emoji-$1-$2.jpg" alt="custom-emoji-$1-$2" data-custom-emoji="true" style="width: 20px; height: 20px; object-fit: cover; vertical-align: middle; margin: 0 2px; border-radius: 6px; display: inline-block;" onerror="this.style.display=\'none\'">'
   );
   
   let sanitized = DOMPurify.sanitize(textWithTokens);
@@ -271,7 +271,7 @@ const safeHtml = (html) => {
   // Исправляем URL эмодзи - заменяем относительные пути на абсолютные с правильным сервером
   sanitized = sanitized.replace(
     /src="\/uploads\/emojis\//g, 
-    'src="http://localhost:5000/uploads/emojis/'
+    'src="/uploads/emojis/'
   );
   
   return sanitized;

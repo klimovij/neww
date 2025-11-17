@@ -1,7 +1,8 @@
 import axios from 'axios';
+import { getApiBaseURL } from '../utils/apiUrl';
 
 const api = axios.create({
-  baseURL: 'http://localhost:5000',
+  baseURL: getApiBaseURL(),
   timeout: 30000, // 30 секунд для загрузки файлов
 });
 

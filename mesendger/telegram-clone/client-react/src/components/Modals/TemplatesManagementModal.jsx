@@ -54,7 +54,7 @@ const TemplatesManagementModal = ({ isOpen, onClose }) => {
       const token = localStorage.getItem('token');
       const endpoint = state.user?.role === 'admin' ? '/api/templates' : '/api/templates/for-me';
       
-      const response = await fetch(`http://localhost:5000${endpoint}`, {
+      const response = await fetch(endpoint, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -82,8 +82,8 @@ const TemplatesManagementModal = ({ isOpen, onClose }) => {
     try {
       const token = localStorage.getItem('token');
       const url = editingTemplate 
-        ? `http://localhost:5000/api/templates/${editingTemplate.id}`
-        : 'http://localhost:5000/api/templates';
+        ? `/api/templates/${editingTemplate.id}`
+        : '/api/templates';
       
       const method = editingTemplate ? 'PUT' : 'POST';
       
@@ -128,7 +128,7 @@ const TemplatesManagementModal = ({ isOpen, onClose }) => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/templates/${templateId}`, {
+      const response = await fetch(`/api/templates/${templateId}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       });

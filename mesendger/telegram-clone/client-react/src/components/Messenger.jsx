@@ -135,7 +135,7 @@ function Messenger() {
   // Функция для очистки базы через API
   const handleClearAll = () => {
     if (!window.confirm('Вы уверены, что хотите удалить всех пользователей, задачи и новости? Это действие необратимо!')) return;
-    fetch('http://localhost:5000/api/admin/clear-all', {
+    fetch('/api/admin/clear-all', {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${token}` }
     })

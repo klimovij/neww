@@ -28,7 +28,7 @@ const HRWorktimeReviewModal = ({ isOpen, onClose }) => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const url = `http://localhost:5000/api/leaves/hr-worktime?date=${selectedDate}`;
+      const url = `/api/leaves/hr-worktime?date=${selectedDate}`;
       console.log('🔍 Fetching from URL:', url);
       console.log('🔍 Token:', token ? 'exists' : 'missing');
       
@@ -64,7 +64,7 @@ const HRWorktimeReviewModal = ({ isOpen, onClose }) => {
       const row = (worktimeData || []).find((r) => r.userId === userId);
       const leaveMinutes = row && typeof row.requiredMinutes === 'number' ? row.requiredMinutes : undefined;
       const workedMinutes = row && typeof row.workedMinutes === 'number' ? row.workedMinutes : undefined;
-      const response = await fetch('http://localhost:5000/api/leaves/verify', {
+      const response = await fetch('/api/leaves/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({
@@ -90,7 +90,7 @@ const HRWorktimeReviewModal = ({ isOpen, onClose }) => {
   const handleShowDetails = async (userId) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/leaves/user-worktime-details?userId=${userId}&date=${selectedDate}`, {
+      const response = await fetch(`/api/leaves/user-worktime-details?userId=${userId}&date=${selectedDate}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (response.ok) {
@@ -208,7 +208,7 @@ const HRWorktimeReviewModal = ({ isOpen, onClose }) => {
               onClick={async () => {
                 try {
                   const token = localStorage.getItem('token');
-                  const res = await fetch('http://localhost:5000/api/leaves/auto-verify', {
+                  const res = await fetch('/api/leaves/auto-verify', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
                     body: JSON.stringify({ date: selectedDate })

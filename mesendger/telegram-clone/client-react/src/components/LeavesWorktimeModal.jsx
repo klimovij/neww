@@ -702,7 +702,7 @@ function LeavesWorktimeModal({ isOpen, onRequestClose, token: propToken }) {
   const loadVerifications = async (dateIso) => {
     try {
       const day = (dateIso || new Date().toISOString().slice(0, 10)).slice(0, 10);
-      const res = await fetch(`http://localhost:5000/api/leaves/verified?date=${encodeURIComponent(day)}`, { headers: { Authorization: `Bearer ${getToken()}` } });
+      const res = await fetch(`/api/leaves/verified?date=${encodeURIComponent(day)}`, { headers: { Authorization: `Bearer ${getToken()}` } });
       if (!res.ok) { setVerifiedMap({}); return; }
       const list = await res.json().catch(() => []);
       const map = {};

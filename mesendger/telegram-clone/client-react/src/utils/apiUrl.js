@@ -10,7 +10,7 @@ export const getApiBaseURL = () => {
     return window.location.origin;
   }
   
-  // Fallback на localhost для разработки
-  return 'http://localhost:5000';
+  // Fallback на пустую строку (будет использован относительный путь)
+  return '';
 };
 
