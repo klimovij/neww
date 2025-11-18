@@ -308,7 +308,7 @@ export default function NewsMobile({ open, onClose, onOpenMobileSidebar }) {
       )}
       
       {/* Модалка создания новости */}
-      {showAddModal && (
+      {showAddModal && ReactDOM.createPortal(
         <div
           style={{
             position: 'fixed',
@@ -431,11 +431,12 @@ export default function NewsMobile({ open, onClose, onOpenMobileSidebar }) {
               </button>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
       
       {/* Модалка создания голосования */}
-      {showPollModal && (
+      {showPollModal && ReactDOM.createPortal(
         <div
           style={{
             position: 'fixed',
@@ -616,7 +617,8 @@ export default function NewsMobile({ open, onClose, onOpenMobileSidebar }) {
               </button>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );
