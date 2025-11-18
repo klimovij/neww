@@ -110,13 +110,6 @@ class Database {
     this.db = new sqlite3.Database('./messenger.db');
     this.db.configure('busyTimeout', 30000); // ожидание до 30 секунд
     this.init();
-
-    // Миграция: добавить поля poll_votes и poll_voters для поддержки опросов (отключено для избежания блокировки БД)
-    // setTimeout(() => {
-    //   this.db.run(`ALTER TABLE messages ADD COLUMN poll_options TEXT`, () => {});
-    //   this.db.run(`ALTER TABLE messages ADD COLUMN poll_votes TEXT`, () => {});
-    //   this.db.run(`ALTER TABLE messages ADD COLUMN poll_voters TEXT`, () => {});
-    // }, 1000);
   }
 
   // Установить/обновить роль пользователя
@@ -1175,9 +1168,17 @@ class Database {
           // Для poll-сообщения парсим pollOptions, pollVotes, pollVoters
           let pollOptions = [], pollVotes = {}, pollVoters = [];
           if (msg.message_type === 'poll') {
+            console.log('[DB] getChatMessagesWithLikes: Poll message found:', {
+              messageId: msg.id,
+              poll_options: msg.poll_options,
+              poll_options_type: typeof msg.poll_options,
+              poll_options_length: msg.poll_options?.length
+            });
             try { 
               pollOptions = msg.poll_options ? JSON.parse(msg.poll_options) : []; 
-            } catch { 
+              console.log('[DB] getChatMessagesWithLikes: Parsed pollOptions:', pollOptions);
+            } catch (e) { 
+              console.error('[DB] getChatMessagesWithLikes: Error parsing poll_options:', e, msg.poll_options);
               pollOptions = []; 
             }
             
@@ -2072,6 +2073,10 @@ class Database {
           FOREIGN KEY (reply_to_id) REFERENCES messages (id)
         )
       `);
+      // Добавляем поля для опросов (poll) в сообщениях
+      this.db.run(`ALTER TABLE messages ADD COLUMN poll_options TEXT`, (err) => {});
+      this.db.run(`ALTER TABLE messages ADD COLUMN poll_votes TEXT`, (err) => {});
+      this.db.run(`ALTER TABLE messages ADD COLUMN poll_voters TEXT`, (err) => {});
 
       // Таблица задач
       this.db.run(`
