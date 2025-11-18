@@ -1840,51 +1840,50 @@ return (
           >
             +
           </PlusButton>
-          {/* Плавающий контейнер с реакциями справа от пузыря */}
-          <div
-            style={{
-              position: 'absolute',
-              top: '50%',
-              left: 'calc(100% + 8px)',
-              transform: (Array.isArray(likes) && likes.length > 0) ? 'translateX(0) translateY(-50%)' : 'translateX(18px) translateY(-50%)',
-              opacity: (Array.isArray(likes) && likes.length > 0) ? 1 : 0,
-              transition: 'transform .24s cubic-bezier(.2,.7,.3,1), opacity .24s cubic-bezier(.2,.7,.3,1)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              zIndex: 4000,
-              pointerEvents: 'auto'
-            }}
-          >
-            {Array.isArray(likes) &&
-              likes.length > 0 &&
-              Object.entries(
-                likes.reduce((acc, l) => {
-                  if (l.emoji) {
-                    if (!acc[l.emoji]) acc[l.emoji] = [];
-                    acc[l.emoji].push(l);
-                  }
-                  return acc;
-                }, {})
-              )
-              // Сортируем эмодзи по времени первого появления (минимальное created_at для каждого типа)
-              .sort(([emojiA, arrA], [emojiB, arrB]) => {
-                const getFirstTime = (arr) => {
-                  const times = arr
-                    .map(l => {
-                      const created = l.created_at || l.createdAt;
-                      if (!created) return null;
-                      const time = new Date(created).getTime();
-                      return isNaN(time) ? null : time;
-                    })
-                    .filter(t => t !== null);
-                  return times.length > 0 ? Math.min(...times) : Date.now();
-                };
-                const timeA = getFirstTime(arrA);
-                const timeB = getFirstTime(arrB);
-                return timeA - timeB; // Сортировка по возрастанию (первый появившийся - первый в списке)
-              })
-              .map(([emoji, arr]) => (
+          {/* Эмодзи реакции вокруг пузыря */}
+          {Array.isArray(likes) &&
+            likes.length > 0 &&
+            Object.entries(
+              likes.reduce((acc, l) => {
+                if (l.emoji) {
+                  if (!acc[l.emoji]) acc[l.emoji] = [];
+                  acc[l.emoji].push(l);
+                }
+                return acc;
+              }, {})
+            )
+            // Сортируем эмодзи по времени первого появления (минимальное created_at для каждого типа)
+            .sort(([emojiA, arrA], [emojiB, arrB]) => {
+              const getFirstTime = (arr) => {
+                const times = arr
+                  .map(l => {
+                    const created = l.created_at || l.createdAt;
+                    if (!created) return null;
+                    const time = new Date(created).getTime();
+                    return isNaN(time) ? null : time;
+                  })
+                  .filter(t => t !== null);
+                return times.length > 0 ? Math.min(...times) : Date.now();
+              };
+              const timeA = getFirstTime(arrA);
+              const timeB = getFirstTime(arrB);
+              return timeA - timeB; // Сортировка по возрастанию (первый появившийся - первый в списке)
+            })
+            .map(([emoji, arr], index) => {
+              // Определяем 8 позиций вокруг пузыря: верх, верх-право, право, низ-право, низ, низ-лево, лево, верх-лево
+              const positions = [
+                { top: '-8px', left: '50%', transform: 'translateX(-50%)' }, // верх
+                { top: '0px', right: '-8px', transform: 'translateY(0)' }, // верх-право
+                { top: '50%', right: '-8px', transform: 'translateY(-50%)' }, // право
+                { bottom: '0px', right: '-8px', transform: 'translateY(0)' }, // низ-право
+                { bottom: '-8px', left: '50%', transform: 'translateX(-50%)' }, // низ
+                { bottom: '0px', left: '-8px', transform: 'translateY(0)' }, // низ-лево
+                { top: '50%', left: '-8px', transform: 'translateY(-50%)' }, // лево
+                { top: '0px', left: '-8px', transform: 'translateY(0)' } // верх-лево
+              ];
+              const position = positions[index % positions.length];
+              
+              return (
                 <LikeButton
                   key={emoji}
                   liked={arr.some((l) => getLikeUserId(l) === String(myId))}
@@ -1892,22 +1891,30 @@ return (
                   onClick={() => handleLike(emoji)}
                   title={arr.some((l) => getLikeUserId(l) === String(myId)) ? 'Убрать лайк' : 'Поставить лайк'}
                   disabled={false}
-                  style={{ marginLeft: 0, position: 'relative' }}
+                  style={{
+                    position: 'absolute',
+                    ...position,
+                    marginLeft: 0,
+                    zIndex: 4000 + index,
+                    opacity: 1,
+                    transition: 'opacity .24s cubic-bezier(.2,.7,.3,1), transform .24s cubic-bezier(.2,.7,.3,1)',
+                    pointerEvents: 'auto'
+                  }}
                 >
                   {customEmojiMap[emoji] || ((emojiSettings.showStandardEmojis !== false && !JSON.parse(localStorage.getItem('emojiBlacklist') || '[]').includes(`std|${emoji}`)) && EMOJI_TO_ICON[emoji]) ? (
                     <img 
                       src={customEmojiMap[emoji] || EMOJI_TO_ICON[emoji]} 
                       alt={emoji} 
                       style={{ 
-                        width: Math.max(emojiSettings.customEmojiSize, 64), 
-                        height: Math.max(emojiSettings.customEmojiSize, 64),
+                        width: Math.max(emojiSettings.customEmojiSize, 32), 
+                        height: Math.max(emojiSettings.customEmojiSize, 32),
                         objectFit: 'cover',
                         borderRadius: '8px',
                         imageRendering: 'crisp-edges'
                       }} 
                     />
                   ) : (
-                    <span role="img" aria-label="like" style={{ fontSize: `${emojiSettings.standardEmojiSize}rem` }}>{emoji}</span>
+                    <span role="img" aria-label="like" style={{ fontSize: `${emojiSettings.standardEmojiSize * 0.8}rem` }}>{emoji}</span>
                   )}
                   {arr.length > 1 && (
                     <LikesCount
@@ -1922,8 +1929,8 @@ return (
                     </LikesCount>
                   )}
                 </LikeButton>
-              ))}
-          </div>
+              );
+            })}
           {/* Плавающий пикер справа */}
           <div
             ref={pickerContainerRef}
