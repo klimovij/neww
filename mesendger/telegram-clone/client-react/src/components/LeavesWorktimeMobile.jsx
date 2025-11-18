@@ -208,7 +208,7 @@ export default function LeavesWorktimeMobile({ open, onClose, token, onOpenMobil
             body > div.ReactModal__Overlay.ReactModal__Overlay--after-open {
               background: rgba(0, 0, 0, 0.85) !important;
               backdrop-filter: blur(8px) !important;
-              z-index: 10000 !important;
+              z-index: 100000 !important;
               position: fixed !important;
               top: 0 !important;
               left: 0 !important;
