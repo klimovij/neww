@@ -2251,7 +2251,35 @@ const resetWorktime = async () => {
   };
 
   // Render
-  const modalStyles = {
+  // Определяем, мобильное ли устройство
+  const isMobileDevice = typeof window !== 'undefined' && (window.innerWidth <= 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
+  
+  const modalStyles = isMobileDevice ? {
+    overlay: {
+      backgroundColor: 'rgba(0, 0, 0, 0.85)',
+      zIndex: 100000,
+      top: 0,
+      right: 0,
+      bottom: 0,
+      left: 0,
+      position: 'fixed'
+    },
+    content: {
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      width: '100%',
+      height: '100%',
+      margin: 0,
+      padding: 0,
+      border: 'none',
+      background: 'transparent',
+      overflow: 'auto',
+      inset: 0
+    }
+  } : {
     overlay: {
       backgroundColor: 'transparent',
       zIndex: 1000,
