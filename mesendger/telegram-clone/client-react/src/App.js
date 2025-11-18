@@ -81,6 +81,42 @@ function AppContent() {
     playNotificationSound();
   }, []);
 
+  // Предотвращение масштабирования через touch-жесты
+  useEffect(() => {
+    const preventZoom = (e) => {
+      if (e.touches.length > 1) {
+        e.preventDefault();
+      }
+    };
+
+    // Предотвращаем pinch zoom
+    document.addEventListener('touchstart', preventZoom, { passive: false });
+    document.addEventListener('touchmove', preventZoom, { passive: false });
+    
+    // Предотвращаем double-tap zoom
+    let lastTouchEnd = 0;
+    const preventDoubleTapZoom = (e) => {
+      const now = Date.now();
+      if (now - lastTouchEnd <= 300) {
+        e.preventDefault();
+      }
+      lastTouchEnd = now;
+    };
+    document.addEventListener('touchend', preventDoubleTapZoom, { passive: false });
+
+    // Устанавливаем viewport meta тег программно (на случай если HTML не обновился)
+    const viewport = document.querySelector('meta[name="viewport"]');
+    if (viewport) {
+      viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover');
+    }
+
+    return () => {
+      document.removeEventListener('touchstart', preventZoom);
+      document.removeEventListener('touchmove', preventZoom);
+      document.removeEventListener('touchend', preventDoubleTapZoom);
+    };
+  }, []);
+
   // Пинги использования приложения: старт при входе, стоп при закрытии
   useEffect(() => {
     if (!state.isAuthenticated) return;

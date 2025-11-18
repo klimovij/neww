@@ -12,9 +12,9 @@ export default function ChatAreaMobile({ open, onClose, onOpenChatsList }) {
   const modalRef = useRef(null);
   const messagesContainerRef = useRef(null);
 
-  // При открытии чата скроллим вниз
+  // При открытии чата скроллим вниз только если есть сообщения
   useEffect(() => {
-    if (open && state.currentChat && messagesContainerRef.current) {
+    if (open && state.currentChat && messagesContainerRef.current && state.messages.length > 0) {
       // Даем время на рендер, затем скроллим вниз
       const scrollToBottom = () => {
         if (messagesContainerRef.current) {
@@ -36,7 +36,7 @@ export default function ChatAreaMobile({ open, onClose, onOpenChatsList }) {
         clearTimeout(timer3);
       };
     }
-  }, [open, state.currentChat?.id]);
+  }, [open, state.currentChat?.id, state.messages.length]);
 
   // При загрузке/обновлении сообщений также скроллим вниз
   useEffect(() => {
@@ -265,10 +265,11 @@ export default function ChatAreaMobile({ open, onClose, onOpenChatsList }) {
           ref={messagesContainerRef}
           style={{
             flex: 1,
-            overflowY: 'auto',
+            overflowY: state.messages.length > 0 ? 'auto' : 'hidden',
             WebkitOverflowScrolling: 'touch',
             background: 'linear-gradient(135deg, #232931 0%, #232b3a 100%)',
             minHeight: 0,
+            maxHeight: '100%',
             overscrollBehavior: 'contain'
           }}
         >

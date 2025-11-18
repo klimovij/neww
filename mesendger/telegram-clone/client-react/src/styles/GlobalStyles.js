@@ -15,10 +15,35 @@ export const GlobalStyles = createGlobalStyle`
     overflow: hidden;
     color: #f8f8f8;
     letter-spacing: 0.01em;
+    /* Предотвращение масштабирования на мобильных */
+    touch-action: pan-x pan-y;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+    /* Предотвращение двойного тапа для зума */
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Разрешаем выделение текста в полях ввода */
+  input, textarea, [contenteditable="true"] {
+    -webkit-user-select: text;
+    user-select: text;
   }
 
   #root {
     height: 100vh;
+    /* Предотвращение масштабирования */
+    touch-action: pan-x pan-y;
+  }
+
+  html {
+    /* Фиксируем размеры viewport */
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    /* Предотвращение масштабирования */
+    touch-action: pan-x pan-y;
+    -ms-touch-action: pan-x pan-y;
   }
 
   /* === СТИЛИ ДЛЯ ЭМОДЗИ === */
