@@ -252,14 +252,19 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar }
     return false;
   };
 
-  // Единый контейнер для всех порталов
-  const modalRoot = React.useMemo(() => {
+  // Функция для получения или создания контейнера порталов
+  const getModalRoot = React.useCallback(() => {
     if (typeof document === 'undefined') return null;
     let el = document.getElementById('app-modal-root');
     if (!el) {
       el = document.createElement('div');
       el.id = 'app-modal-root';
-      el.style.position = 'relative';
+      el.style.position = 'fixed';
+      el.style.top = '0';
+      el.style.left = '0';
+      el.style.width = '100%';
+      el.style.height = '100%';
+      el.style.pointerEvents = 'none';
       el.style.zIndex = '10000';
       try {
         document.body.appendChild(el);
@@ -268,20 +273,31 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar }
         return null;
       }
     }
+    // Проверяем, что элемент все еще в DOM
+    if (!document.body.contains(el)) {
+      try {
+        document.body.appendChild(el);
+      } catch (error) {
+        console.warn('Failed to re-append modal root:', error);
+        return null;
+      }
+    }
     return el;
   }, []);
 
   // Безопасное создание портала с дополнительными проверками
   const createSafePortal = (component, condition) => {
-    if (!condition || !modalRoot) return null;
+    if (!condition) return null;
     
     try {
-      // Проверяем, что modalRoot все еще находится в DOM
-      if (!document.body.contains(modalRoot)) {
-        console.warn('Modal root not in DOM, skipping portal creation');
+      const root = getModalRoot();
+      if (!root) {
+        console.warn('Cannot get modal root, skipping portal creation');
         return null;
       }
-      return ReactDOM.createPortal(component, modalRoot);
+      // Включаем pointer events для контейнера, когда есть активные модалки
+      root.style.pointerEvents = 'auto';
+      return ReactDOM.createPortal(component, root);
     } catch (error) {
       console.warn('Failed to create portal:', error);
       return null;
@@ -309,36 +325,25 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar }
     setShowBirthdaysModal(false);
     setShowTodoModal(false);
     setShowRatingModal(false);
+    setShowAdminModal(false);
+    setShowEmojiSettingsModal(false);
+    setShowTemplatesModal(false);
+    setShowAppTitleSettingsModal(false);
+    setShowUserRightsModal(false);
     setPortalKey(k => k + 1);
     
-    // Безопасная очистка модального контейнера
+    // Отключаем pointer events для контейнера, когда все модалки закрыты
     setTimeout(() => {
       try {
-        const root = document.getElementById('app-modal-root');
-        if (root && root.parentNode && document.body.contains(root)) {
-          // Проверяем, что элемент все еще в DOM перед очисткой
-          // Дожидаемся завершения всех React обновлений
-          requestAnimationFrame(() => {
-            try {
-              if (root && root.parentNode && document.body.contains(root)) {
-                // Очищаем только если нет активных порталов
-                const hasActivePortals = Array.from(root.children).some(child => 
-                  child && child.parentNode === root
-                );
-                if (!hasActivePortals) {
-                  root.innerHTML = '';
-                }
-              }
-            } catch (innerError) {
-              console.warn('Failed to clear modal root in RAF:', innerError);
-            }
-          });
+        const root = getModalRoot();
+        if (root) {
+          root.style.pointerEvents = 'none';
         }
       } catch (error) {
-        console.warn('Failed to clear modal root:', error);
+        console.warn('Failed to update modal root pointer events:', error);
       }
     }, 150);
-  }, []);
+  }, [getModalRoot]);
 
   // Отслеживание изменения размера окна для определения мобильного устройства
   useEffect(() => {
@@ -370,30 +375,25 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar }
     };
   }, [closeAllModals]);
 
+  // Инициализация modal root при монтировании
+  useEffect(() => {
+    // Убеждаемся, что modal root создан при монтировании
+    getModalRoot();
+  }, [getModalRoot]);
+
   // Очистка при размонтировании компонента
   useEffect(() => {
     return () => {
       try {
-        const root = document.getElementById('app-modal-root');
-        if (root && root.parentNode && document.body.contains(root)) {
-          // Ждем завершения всех React операций
-          requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-              try {
-                if (root && root.parentNode && document.body.contains(root)) {
-                  root.innerHTML = '';
-                }
-              } catch (error) {
-                console.warn('Failed to cleanup modal root on unmount:', error);
-              }
-            });
-          });
+        const root = getModalRoot();
+        if (root) {
+          root.style.pointerEvents = 'none';
         }
       } catch (error) {
         console.warn('Failed to cleanup modal root on unmount:', error);
       }
     };
-  }, []);
+  }, [getModalRoot]);
 
   // Проверка, показывать ли кнопку "Отработка отгулов"
   useEffect(() => {
