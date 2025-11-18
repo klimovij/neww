@@ -177,7 +177,7 @@ const PollOption = styled.button.withConfig({
       ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' 
       : 'rgba(255, 255, 255, 0.05)'
   };
-  color: ${({ selected }) => selected ? '#fff' : '#e2e8f0'};
+  color: ${({ selected }) => selected ? '#ffffff' : '#f1f5f9'};
   border: 1px solid ${({ selected }) => 
     selected 
       ? 'rgba(102, 126, 234, 0.5)' 
@@ -212,13 +212,13 @@ const PollOption = styled.button.withConfig({
     height: 100%;
     width: ${({ percent }) => percent || 0}%;
     background: linear-gradient(135deg, 
-      rgba(102, 126, 234, 0.2) 0%, 
-      rgba(118, 75, 162, 0.2) 50%,
-      rgba(240, 147, 251, 0.2) 100%
+      rgba(102, 126, 234, 0.12) 0%, 
+      rgba(118, 75, 162, 0.12) 50%,
+      rgba(240, 147, 251, 0.12) 100%
     );
     transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
     border-radius: 15px;
-    z-index: 1;
+    z-index: 0;
     pointer-events: none;
   }
   
@@ -289,10 +289,14 @@ const PollOption = styled.button.withConfig({
     text-align: left;
     word-break: break-word;
     overflow-wrap: break-word;
-    line-height: 1.4;
+    line-height: 1.5;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4), 0 0 1px rgba(0, 0, 0, 0.5);
+    font-weight: 600;
+    letter-spacing: 0.01em;
 
     @media (max-width: 768px) {
       font-size: 0.95rem;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 0 1px rgba(0, 0, 0, 0.6);
     }
   }
   
@@ -302,16 +306,19 @@ const PollOption = styled.button.withConfig({
     font-weight: 700;
     font-size: 0.9rem;
     padding: 0.25rem 0.75rem;
-    background: rgba(0, 0, 0, 0.2);
+    background: rgba(0, 0, 0, 0.4);
     border-radius: 12px;
-    backdrop-filter: blur(5px);
+    backdrop-filter: blur(8px);
     white-space: nowrap;
     flex-shrink: 0;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 
     @media (max-width: 768px) {
       font-size: 0.85rem;
       padding: 0.2rem 0.6rem;
       border-radius: 8px;
+      background: rgba(0, 0, 0, 0.45);
     }
   }
 `;
