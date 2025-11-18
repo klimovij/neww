@@ -55,17 +55,15 @@ export default function LeavesWorktimeMobile({ open, onClose, token, onOpenMobil
     onClose();
   }, [onOpenMobileSidebar, onClose]);
   
-  // Мемоизируем компонент модалки, чтобы избежать лишних пересозданий
-  const modalComponent = useMemo(() => {
-    return (
-      <LeavesWorktimeModal 
-        key={`leaves-worktime-mobile-${modalKey}`}
-        isOpen={open} 
-        onRequestClose={handleClose} 
-        token={token} 
-      />
-    );
-  }, [open, modalKey, token, handleClose]);
+  // Компонент модалки - всегда рендерим, react-modal управляет видимостью через isOpen
+  const modalComponent = (
+    <LeavesWorktimeModal 
+      key={`leaves-worktime-mobile-${modalKey}`}
+      isOpen={open} 
+      onRequestClose={handleClose} 
+      token={token} 
+    />
+  );
   
   // Добавляем обработчики свайпа на react-modal после рендеринга и исправляем стили
   useEffect(() => {
@@ -186,7 +184,8 @@ export default function LeavesWorktimeMobile({ open, onClose, token, onOpenMobil
   return (
     <>
       {/* Рендерим LeavesWorktimeModal - он сам создаст свой портал через react-modal */}
-      {open && modalComponent}
+      {/* Всегда рендерим компонент, react-modal управляет видимостью через isOpen */}
+      {modalComponent}
 
       {/* CSS оверрайды для мобильной адаптации - применяем глобально */}
       {open && <style>{`
