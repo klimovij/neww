@@ -1188,8 +1188,8 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar }
         ),
         showLeavesWorktimeModal
       )}
-      {createSafePortal(
-        isMobile ? (
+      {isMobile ? (
+        showAdminModal && (
           <AdminMobile
             key={`admin-mobile-${portalKey}`}
             open={showAdminModal}
@@ -1200,7 +1200,9 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar }
             onOpenAppTitleSettings={() => setShowAppTitleSettingsModal(true)}
             onOpenUserRights={() => setShowUserRightsModal(true)}
           />
-        ) : (
+        )
+      ) : (
+        createSafePortal(
           <div
             style={{
               position:'fixed',
@@ -1515,9 +1517,9 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar }
             </div>
             )}
           </div>
-        </div>
-        ),
+        </div>,
         showAdminModal
+        )
       )}
       {/* Модалка редактирования пользователя - только для десктопа */}
       {!isMobile && createSafePortal(

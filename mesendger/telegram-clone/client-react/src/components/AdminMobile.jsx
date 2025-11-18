@@ -18,8 +18,6 @@ export default function AdminMobile({
   onOpenUserRights
 }) {
   const { state } = useApp();
-  const touchStartX = useRef(null);
-  const touchEndX = useRef(null);
   const modalRef = useRef(null);
   
   // Admin states
@@ -41,17 +39,10 @@ export default function AdminMobile({
 
   // Load users when modal opens
   useEffect(() => {
-    if (!open) {
-      console.log('AdminMobile: useEffect - modal not open, skipping load');
-      return;
-    }
-    console.log('AdminMobile: useEffect - modal opened, loading users');
+    if (!open) return;
     async function loadUsers() {
       const token = localStorage.getItem('token');
-      if (!token) {
-        console.log('AdminMobile: No token found');
-        return;
-      }
+      if (!token) return;
       setAdminLoading(true);
       setAdminError('');
       try {
@@ -291,32 +282,6 @@ export default function AdminMobile({
     }
   };
 
-  // Обработчики свайпа
-  const handleTouchStart = useCallback((e) => {
-    touchStartX.current = e.touches[0].clientX;
-  }, []);
-
-  const handleTouchMove = useCallback((e) => {
-    touchEndX.current = e.touches[0].clientX;
-  }, []);
-
-  const handleTouchEnd = useCallback(() => {
-    if (!touchStartX.current || !touchEndX.current) return;
-    
-    const distance = touchStartX.current - touchEndX.current;
-    const minSwipeDistance = 50;
-
-    if (distance > minSwipeDistance) {
-      if (onOpenMobileSidebar) {
-        onOpenMobileSidebar();
-      }
-      onClose();
-    }
-
-    touchStartX.current = null;
-    touchEndX.current = null;
-  }, [onClose, onOpenMobileSidebar]);
-
   const handleClose = () => {
     if (onOpenMobileSidebar) {
       onOpenMobileSidebar();
@@ -324,12 +289,7 @@ export default function AdminMobile({
     onClose();
   };
 
-  if (!open) {
-    console.log('AdminMobile: not open, returning null');
-    return null;
-  }
-
-  console.log('AdminMobile: rendering modal, open=', open, 'adminUsers.length=', adminUsers.length);
+  if (!open) return null;
 
   const filteredUsers = adminUsers
     .filter(u => !adminFilter || (u?.Name || '').toLowerCase().includes(adminFilter.toLowerCase()))
@@ -339,10 +299,7 @@ export default function AdminMobile({
       return !u?.Enabled;
     });
 
-  console.log('AdminMobile: Creating portal, modalRef.current=', modalRef.current);
-  
-  // Не используем ReactDOM.createPortal здесь, так как это уже делается через createSafePortal в SidebarNav
-  return (
+  return ReactDOM.createPortal(
     <div
       style={{
         position: 'fixed',
@@ -350,35 +307,27 @@ export default function AdminMobile({
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.85)',
-        zIndex: 10000,
+        background: 'rgba(0,0,0,0.85)',
+        zIndex: 100000,
         display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backdropFilter: 'blur(8px)',
-        pointerEvents: 'auto',
+        flexDirection: 'column',
+        overflow: 'hidden'
       }}
       onClick={handleClose}
     >
       <div
         ref={modalRef}
+        onClick={e => e.stopPropagation()}
         style={{
-          position: 'relative',
+          background: 'linear-gradient(135deg, #232931 0%, #181c22 100%)',
           width: '100%',
           height: '100%',
-          background: 'linear-gradient(135deg, #232931 0%, #181c22 100%)',
           display: 'flex',
           flexDirection: 'column',
-          overflowY: 'auto',
-          overflowX: 'hidden',
-          paddingTop: '56px',
-          paddingBottom: '20px',
-          boxSizing: 'border-box',
+          position: 'relative',
+          color: '#fff',
+          overflow: 'hidden'
         }}
-        onClick={(e) => e.stopPropagation()}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
       >
         {/* Header */}
         <div
@@ -1160,7 +1109,8 @@ export default function AdminMobile({
         onClose={() => setShowUserRights(false)}
         onOpenMobileSidebar={onOpenMobileSidebar}
       />
-    </div>
+    </div>,
+    document.body
   );
 }
 

@@ -10,35 +10,6 @@ import PinnedMessages from './PinnedMessages';
 export default function ChatAreaMobile({ open, onClose, onOpenChatsList }) {
   const { state } = useApp();
   const modalRef = useRef(null);
-  const touchStartX = useRef(null);
-  const touchEndX = useRef(null);
-
-  // Обработчики свайпа
-  const handleTouchStart = (e) => {
-    touchStartX.current = e.touches[0].clientX;
-  };
-
-  const handleTouchMove = (e) => {
-    touchEndX.current = e.touches[0].clientX;
-  };
-
-  const handleTouchEnd = () => {
-    if (!touchStartX.current || !touchEndX.current) return;
-    
-    const distance = touchStartX.current - touchEndX.current;
-    const minSwipeDistance = 100;
-    
-    // Свайп влево (возврат к списку чатов)
-    if (distance > minSwipeDistance) {
-      if (onOpenChatsList) {
-        onOpenChatsList();
-      }
-      onClose();
-    }
-    
-    touchStartX.current = null;
-    touchEndX.current = null;
-  };
 
   const handleClose = () => {
     if (onOpenChatsList) {
@@ -148,9 +119,6 @@ export default function ChatAreaMobile({ open, onClose, onOpenChatsList }) {
       <div
         ref={modalRef}
         onClick={e => e.stopPropagation()}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
         style={{
           background: 'linear-gradient(135deg, #232931 0%, #181c22 100%)',
           width: '100%',

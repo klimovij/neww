@@ -25,8 +25,6 @@ export default function ChatsListModalMobile({ open, onClose, onOpenMobileSideba
   const [pendingPrivateTargets, setPendingPrivateTargets] = useState(new Set());
   
   const modalRef = useRef(null);
-  const touchStartX = useRef(null);
-  const touchEndX = useRef(null);
 
   // Функция для определения онлайн статуса пользователя
   const isUserOnline = (userId) => {
@@ -194,33 +192,6 @@ export default function ChatsListModalMobile({ open, onClose, onOpenMobileSideba
     };
   }, [dispatch]);
 
-  // Обработчики свайпа
-  const handleTouchStart = (e) => {
-    touchStartX.current = e.touches[0].clientX;
-  };
-
-  const handleTouchMove = (e) => {
-    touchEndX.current = e.touches[0].clientX;
-  };
-
-  const handleTouchEnd = () => {
-    if (!touchStartX.current || !touchEndX.current) return;
-    
-    const distance = touchStartX.current - touchEndX.current;
-    const minSwipeDistance = 100;
-    
-    // Свайп влево (возврат в меню)
-    if (distance > minSwipeDistance) {
-      if (onOpenMobileSidebar) {
-        onOpenMobileSidebar();
-      }
-      onClose();
-    }
-    
-    touchStartX.current = null;
-    touchEndX.current = null;
-  };
-
   const handleClose = () => {
     if (onOpenMobileSidebar) {
       onOpenMobileSidebar();
@@ -387,9 +358,6 @@ export default function ChatsListModalMobile({ open, onClose, onOpenMobileSideba
       <div
         ref={modalRef}
         onClick={e => e.stopPropagation()}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
         style={{
           background: 'linear-gradient(135deg, #232931 0%, #181c22 100%)',
           width: '100%',
