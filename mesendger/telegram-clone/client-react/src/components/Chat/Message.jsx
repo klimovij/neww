@@ -1840,6 +1840,90 @@ return (
           >
             +
           </PlusButton>
+          {/* Плавающий контейнер с реакциями справа от пузыря */}
+          <div
+            style={{
+              position: 'absolute',
+              top: '50%',
+              left: 'calc(100% + 8px)',
+              transform: (Array.isArray(likes) && likes.length > 0) ? 'translateX(0) translateY(-50%)' : 'translateX(18px) translateY(-50%)',
+              opacity: (Array.isArray(likes) && likes.length > 0) ? 1 : 0,
+              transition: 'transform .24s cubic-bezier(.2,.7,.3,1), opacity .24s cubic-bezier(.2,.7,.3,1)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              zIndex: 4000,
+              pointerEvents: 'auto'
+            }}
+          >
+            {Array.isArray(likes) &&
+              likes.length > 0 &&
+              Object.entries(
+                likes.reduce((acc, l) => {
+                  if (l.emoji) {
+                    if (!acc[l.emoji]) acc[l.emoji] = [];
+                    acc[l.emoji].push(l);
+                  }
+                  return acc;
+                }, {})
+              )
+              // Сортируем эмодзи по времени первого появления (минимальное created_at для каждого типа)
+              .sort(([emojiA, arrA], [emojiB, arrB]) => {
+                const getFirstTime = (arr) => {
+                  const times = arr
+                    .map(l => {
+                      const created = l.created_at || l.createdAt;
+                      if (!created) return null;
+                      const time = new Date(created).getTime();
+                      return isNaN(time) ? null : time;
+                    })
+                    .filter(t => t !== null);
+                  return times.length > 0 ? Math.min(...times) : Date.now();
+                };
+                const timeA = getFirstTime(arrA);
+                const timeB = getFirstTime(arrB);
+                return timeA - timeB; // Сортировка по возрастанию (первый появившийся - первый в списке)
+              })
+              .map(([emoji, arr]) => (
+                <LikeButton
+                  key={emoji}
+                  liked={arr.some((l) => getLikeUserId(l) === String(myId))}
+                  isOwn={isOwn}
+                  onClick={() => handleLike(emoji)}
+                  title={arr.some((l) => getLikeUserId(l) === String(myId)) ? 'Убрать лайк' : 'Поставить лайк'}
+                  disabled={false}
+                  style={{ marginLeft: 0, position: 'relative' }}
+                >
+                  {customEmojiMap[emoji] || ((emojiSettings.showStandardEmojis !== false && !JSON.parse(localStorage.getItem('emojiBlacklist') || '[]').includes(`std|${emoji}`)) && EMOJI_TO_ICON[emoji]) ? (
+                    <img 
+                      src={customEmojiMap[emoji] || EMOJI_TO_ICON[emoji]} 
+                      alt={emoji} 
+                      style={{ 
+                        width: Math.max(emojiSettings.customEmojiSize, 64), 
+                        height: Math.max(emojiSettings.customEmojiSize, 64),
+                        objectFit: 'cover',
+                        borderRadius: '8px',
+                        imageRendering: 'crisp-edges'
+                      }} 
+                    />
+                  ) : (
+                    <span role="img" aria-label="like" style={{ fontSize: `${emojiSettings.standardEmojiSize}rem` }}>{emoji}</span>
+                  )}
+                  {arr.length > 1 && (
+                    <LikesCount
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleShowLikesList(emoji);
+                      }}
+                      title="Показать кто лайкнул"
+                      style={{ transform: 'scale(0.5)', transformOrigin: 'center', marginLeft: 2 }}
+                    >
+                      {arr.length}
+                    </LikesCount>
+                  )}
+                </LikeButton>
+              ))}
+          </div>
           {/* Плавающий пикер справа */}
           <div
             ref={pickerContainerRef}
@@ -1931,94 +2015,6 @@ return (
         )}
       </MessageActions>
     </ModernMessageBubble>
-
-    {/* Эмодзи реакции под сообщением в ряд */}
-    {Array.isArray(likes) && likes.length > 0 && (
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '6px',
-          marginTop: '4px',
-          marginBottom: '4px',
-          flexWrap: 'wrap',
-          justifyContent: isOwn ? 'flex-end' : 'flex-start',
-          maxWidth: '75%'
-        }}
-      >
-        {Object.entries(
-          likes.reduce((acc, l) => {
-            if (l.emoji) {
-              if (!acc[l.emoji]) acc[l.emoji] = [];
-              acc[l.emoji].push(l);
-            }
-            return acc;
-          }, {})
-        )
-        // Сортируем эмодзи по времени первого появления (минимальное created_at для каждого типа)
-        .sort(([emojiA, arrA], [emojiB, arrB]) => {
-          const getFirstTime = (arr) => {
-            const times = arr
-              .map(l => {
-                const created = l.created_at || l.createdAt;
-                if (!created) return null;
-                const time = new Date(created).getTime();
-                return isNaN(time) ? null : time;
-              })
-              .filter(t => t !== null);
-            return times.length > 0 ? Math.min(...times) : Date.now();
-          };
-          const timeA = getFirstTime(arrA);
-          const timeB = getFirstTime(arrB);
-          return timeA - timeB; // Сортировка по возрастанию (первый появившийся - первый в списке)
-        })
-        .map(([emoji, arr]) => (
-          <LikeButton
-            key={emoji}
-            liked={arr.some((l) => getLikeUserId(l) === String(myId))}
-            isOwn={isOwn}
-            onClick={() => handleLike(emoji)}
-            title={arr.some((l) => getLikeUserId(l) === String(myId)) ? 'Убрать лайк' : 'Поставить лайк'}
-            disabled={false}
-            style={{
-              marginLeft: 0,
-              position: 'relative',
-              opacity: 1,
-              transition: 'opacity .24s cubic-bezier(.2,.7,.3,1), transform .24s cubic-bezier(.2,.7,.3,1)',
-              pointerEvents: 'auto'
-            }}
-          >
-            {customEmojiMap[emoji] || ((emojiSettings.showStandardEmojis !== false && !JSON.parse(localStorage.getItem('emojiBlacklist') || '[]').includes(`std|${emoji}`)) && EMOJI_TO_ICON[emoji]) ? (
-              <img 
-                src={customEmojiMap[emoji] || EMOJI_TO_ICON[emoji]} 
-                alt={emoji} 
-                style={{ 
-                  width: Math.max(emojiSettings.customEmojiSize, 32), 
-                  height: Math.max(emojiSettings.customEmojiSize, 32),
-                  objectFit: 'cover',
-                  borderRadius: '8px',
-                  imageRendering: 'crisp-edges'
-                }} 
-              />
-            ) : (
-              <span role="img" aria-label="like" style={{ fontSize: `${emojiSettings.standardEmojiSize * 0.8}rem` }}>{emoji}</span>
-            )}
-            {arr.length > 1 && (
-              <LikesCount
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleShowLikesList(emoji);
-                }}
-                title="Показать кто лайкнул"
-                style={{ transform: 'scale(0.5)', transformOrigin: 'center', marginLeft: 2 }}
-              >
-                {arr.length}
-              </LikesCount>
-            )}
-          </LikeButton>
-        ))}
-      </div>
-    )}
 
     {isOwn && showAvatar && (
       <Avatar
