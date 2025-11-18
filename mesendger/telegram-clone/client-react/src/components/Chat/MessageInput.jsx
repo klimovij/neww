@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { playNotificationSound } from '../../utils/notificationSound';
 import styled from 'styled-components';
-import { FiPaperclip, FiSmile, FiArrowRight, FiX, FiFileText, FiClock, FiChevronDown, FiBarChart2, FiSend } from 'react-icons/fi';
+import { FiPaperclip, FiSmile, FiArrowRight, FiX, FiFileText, FiClock, FiChevronDown, FiBarChart2, FiCornerUpRight } from 'react-icons/fi';
 import { useApp } from '../../context/AppContext';
 import api from '../../services/api';
 import Emoji from '../Common/Emoji';
@@ -1459,7 +1459,7 @@ const handleFileSelect = async (e) => {
                 title="Отправить"
                 single={!message.trim() && !state.filePreview}
               >
-                <FiSend size={24} color="#225" />
+                <FiCornerUpRight size={24} color="#225" />
               </SendButton>
               
               {(message.trim() || state.filePreview) && !uploading && (
