@@ -180,16 +180,31 @@ const Card = styled.li`
   transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
   position: relative;
   overflow: hidden;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  max-width: 100%;
+  box-sizing: border-box;
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 16px 36px rgba(0,0,0,.35);
     border-color: #334155;
+  }
+  @media (max-width: 768px) {
+    padding: 16px 14px 14px 14px;
+    margin-bottom: 14px;
+    border-radius: 12px;
+    font-size: 0.9em;
   }
 `;
 
 const CardInfo = styled.div`
   display: flex;
   flex-direction: column;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 `;
 
 const CardTitle = styled.span`
@@ -253,9 +268,18 @@ const CardOption = styled.div`
   position: relative;
   display: block;
   transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  max-width: 100%;
+  box-sizing: border-box;
   &:hover {
     border-color: #d7dde6;
     box-shadow: 0 4px 14px rgba(16, 24, 40, 0.08);
+  }
+  @media (max-width: 768px) {
+    padding: 12px 14px;
+    margin-bottom: 10px;
+    border-radius: 10px;
   }
 `;
 
@@ -411,6 +435,9 @@ export default function NewsFeed({ token, modal = false }) {
   const userId = user?.id;
   const isAdminOrHr = user?.role === 'admin' || user?.role === 'hr';
   const now = Date.now();
+  
+  // Определяем, мобильное ли устройство
+  const isMobileDevice = typeof window !== 'undefined' && (window.innerWidth <= 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
 
   // Effect: Lock body scroll when comment modal is open
   useEffect(() => {
@@ -1121,23 +1148,54 @@ export default function NewsFeed({ token, modal = false }) {
             const info = votersInfo[item.id] || { voted: [], notVoted: [], totalWorkUsers: 0 };
 
             return (
-              <Card key={item.id} ref={el => { itemRefs.current[`news-${item.id}`] = el; }} style={{ borderLeft: '7px solid #3b82f6', background: 'linear-gradient(135deg, #111827 0%, #0f172a 100%)', color: '#e5e7eb' }}>
+              <Card key={item.id} ref={el => { itemRefs.current[`news-${item.id}`] = el; }} style={{ 
+                borderLeft: '7px solid #3b82f6', 
+                background: 'linear-gradient(135deg, #111827 0%, #0f172a 100%)', 
+                color: '#e5e7eb',
+                padding: isMobileDevice ? '16px 14px 14px 14px' : '22px 24px 18px 24px',
+              }}>
                 <CardInfo>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: isMobileDevice ? 8 : 10, flexWrap: isMobileDevice ? 'wrap' : 'nowrap' }}>
                     {getAvatarUrl(item)
-                      ? <img src={getAvatarUrl(item)} alt="avatar" style={{ width: 36, height: 36, borderRadius: 10, objectFit: 'cover' }} />
-                      : <FaUserCircle size={32} color="#b2bec3" title="Аватар" />}
-                    <CardTitle style={{ marginBottom: 0, background: 'transparent', color: 'inherit', boxShadow: 'none', textShadow: 'none', padding: 0 }}>
-                      <FaSort style={{ color: '#bfa100', fontSize: '1.2em', marginRight: 4 }} />
-                      Голосование
+                      ? <img src={getAvatarUrl(item)} alt="avatar" style={{ width: isMobileDevice ? 32 : 36, height: isMobileDevice ? 32 : 36, borderRadius: 10, objectFit: 'cover', flexShrink: 0 }} />
+                      : <FaUserCircle size={isMobileDevice ? 28 : 32} color="#b2bec3" title="Аватар" style={{ flexShrink: 0 }} />}
+                    <CardTitle style={{ 
+                      marginBottom: 0, 
+                      background: 'transparent', 
+                      color: 'inherit', 
+                      boxShadow: 'none', 
+                      textShadow: 'none', 
+                      padding: 0,
+                      fontSize: isMobileDevice ? '1.1em' : '1.35em',
+                      flex: '1 1 auto',
+                      minWidth: 0,
+                      wordBreak: 'break-word',
+                      overflowWrap: 'break-word',
+                    }}>
+                      <FaSort style={{ color: '#bfa100', fontSize: isMobileDevice ? '1em' : '1.2em', marginRight: 4, flexShrink: 0 }} />
+                      <span>Голосование</span>
                     </CardTitle>
                   </div>
-                  <span style={{ color: '#888', fontSize: '0.98em', marginBottom: 8, display: 'block' }}>
+                  <span style={{ 
+                    color: '#888', 
+                    fontSize: isMobileDevice ? '0.9em' : '0.98em', 
+                    marginBottom: isMobileDevice ? 6 : 8, 
+                    display: 'block',
+                    wordBreak: 'break-word',
+                    overflowWrap: 'break-word',
+                  }}>
                     {item.publishAt
                       ? `Опубликовано: ${new Date(item.publishAt).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })}`
                       : ''}
                   </span>
-                  <div style={{marginBottom: 10, fontWeight:700, fontSize:'1.13em', color:'#e5e7eb'}}>{item.question || item.content}</div>
+                  <div style={{
+                    marginBottom: isMobileDevice ? 8 : 10, 
+                    fontWeight: 700, 
+                    fontSize: isMobileDevice ? '1em' : '1.13em', 
+                    color: '#e5e7eb',
+                    wordBreak: 'break-word',
+                    overflowWrap: 'break-word',
+                  }}>{item.question || item.content}</div>
                   {/* Fancy progress visualization */}
                   {Array.isArray(options) && options.map((opt, idx) => {
                     const votesForOption = votes[idx] || 0;
@@ -1151,29 +1209,93 @@ export default function NewsFeed({ token, modal = false }) {
                       <CardOption key={idx} style={{
                         opacity: hasVoted && userVotedIdx !== idx ? 0.7 : 1,
                         border: hasVoted && userVotedIdx === idx ? '2.5px solid #43e97b' : 'none',
+                        padding: isMobileDevice ? '12px 14px' : '14px 16px',
+                        marginBottom: isMobileDevice ? '10px' : '14px',
                       }}>
-                        <div style={{ fontWeight: 700, fontSize: '1.02em', color: '#344054', marginBottom: 8 }}>{opt}</div>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', gap: 12 }}>
-                          <div style={{ flex: 1, height: 8, borderRadius: 999, background: '#eef2f6', overflow: 'hidden' }}>
+                        <div style={{ 
+                          fontWeight: 700, 
+                          fontSize: isMobileDevice ? '0.95em' : '1.02em', 
+                          color: '#344054', 
+                          marginBottom: isMobileDevice ? 6 : 8,
+                          wordBreak: 'break-word',
+                          overflowWrap: 'break-word',
+                        }}>{opt}</div>
+                        <div style={{ 
+                          display: 'flex', 
+                          alignItems: isMobileDevice ? 'flex-start' : 'center', 
+                          justifyContent: 'space-between', 
+                          width: '100%', 
+                          gap: isMobileDevice ? 8 : 12,
+                          flexWrap: isMobileDevice ? 'wrap' : 'nowrap',
+                          flexDirection: isMobileDevice ? 'column' : 'row',
+                        }}>
+                          <div style={{ 
+                            flex: 1, 
+                            width: isMobileDevice ? '100%' : 'auto',
+                            height: isMobileDevice ? 10 : 8, 
+                            borderRadius: 999, 
+                            background: '#eef2f6', 
+                            overflow: 'hidden',
+                            minWidth: isMobileDevice ? 0 : 'auto',
+                          }}>
                             <div style={{ width: percent + '%', height: '100%', background: '#3b82f6', transition: 'width .4s' }} />
                           </div>
-                          <span style={{ color: '#475467', fontWeight: 700, minWidth: 88, textAlign: 'right' }}>{votesForOption} ({percent}%)</span>
-                          <button
-                            type="button"
-                            style={{ minWidth: 92, padding: '6px 10px', background: '#f8fafc', color: '#344054', borderRadius: 8, border: '1px solid #e5eaf0', fontWeight: 600, cursor: 'pointer' }}
-                            onClick={() => toggleVotersCollapse(item.id, idx)}
-                          >
-                            {collapsedVoters[item.id]?.[idx] ? 'Скрыть' : 'Показать'}
-                          </button>
-                          {hasVoted ? null : (
+                          <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: isMobileDevice ? 6 : 12,
+                            width: isMobileDevice ? '100%' : 'auto',
+                            flexWrap: isMobileDevice ? 'wrap' : 'nowrap',
+                            justifyContent: isMobileDevice ? 'space-between' : 'flex-end',
+                          }}>
+                            <span style={{ 
+                              color: '#475467', 
+                              fontWeight: 700, 
+                              minWidth: isMobileDevice ? 0 : 88, 
+                              textAlign: 'right',
+                              fontSize: isMobileDevice ? '0.9em' : '1em',
+                              whiteSpace: 'nowrap',
+                            }}>{votesForOption} ({percent}%)</span>
                             <button
-                              style={{ minWidth: 110, padding: '6px 10px', background: '#3b82f6', color: '#fff', borderRadius: 8, border: 'none', fontWeight: 700, cursor: 'pointer', opacity: pollVoteLoading[item.id] ? 0.7 : 1 }}
-                              disabled={pollVoteLoading[item.id]}
-                              onClick={() => handlePollVote(item.id, idx)}
+                              type="button"
+                              style={{ 
+                                minWidth: isMobileDevice ? 0 : 92, 
+                                padding: isMobileDevice ? '5px 8px' : '6px 10px', 
+                                background: '#f8fafc', 
+                                color: '#344054', 
+                                borderRadius: 8, 
+                                border: '1px solid #e5eaf0', 
+                                fontWeight: 600, 
+                                cursor: 'pointer',
+                                fontSize: isMobileDevice ? '0.85em' : '0.95em',
+                                flex: isMobileDevice ? '1 1 auto' : 'none',
+                              }}
+                              onClick={() => toggleVotersCollapse(item.id, idx)}
                             >
-                              {pollVoteLoading[item.id] ? 'Голос...' : 'Голосовать'}
+                              {collapsedVoters[item.id]?.[idx] ? 'Скрыть' : 'Показать'}
                             </button>
-                          )}
+                            {hasVoted ? null : (
+                              <button
+                                style={{ 
+                                  minWidth: isMobileDevice ? 0 : 110, 
+                                  padding: isMobileDevice ? '5px 8px' : '6px 10px', 
+                                  background: '#3b82f6', 
+                                  color: '#fff', 
+                                  borderRadius: 8, 
+                                  border: 'none', 
+                                  fontWeight: 700, 
+                                  cursor: 'pointer', 
+                                  opacity: pollVoteLoading[item.id] ? 0.7 : 1,
+                                  fontSize: isMobileDevice ? '0.85em' : '0.95em',
+                                  flex: isMobileDevice ? '1 1 auto' : 'none',
+                                }}
+                                disabled={pollVoteLoading[item.id]}
+                                onClick={() => handlePollVote(item.id, idx)}
+                              >
+                                {pollVoteLoading[item.id] ? 'Голос...' : 'Голосовать'}
+                              </button>
+                            )}
+                          </div>
                         </div>
                         {hasVoted && (
                           <div style={{
@@ -1186,53 +1308,121 @@ export default function NewsFeed({ token, modal = false }) {
                             zIndex: 0,
                           }} />
                         )}
-                        <div style={{ marginTop: 14, fontSize: '1.04em', fontWeight: 600 }}>
+                        <div style={{ marginTop: isMobileDevice ? 10 : 14, fontSize: isMobileDevice ? '0.95em' : '1.04em', fontWeight: 600 }}>
                           {collapsedVoters[item.id]?.[idx] ? (
                             Array.isArray(votedUsers) && votedUsers.length > 0 ? (
-                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: isMobileDevice ? 6 : 10 }}>
                                 {votedUsers.map(u => (
                                   <span key={u.id} style={{
-                                    display: 'flex', alignItems: 'center', gap: 7,
+                                    display: 'flex', 
+                                    alignItems: 'center', 
+                                    gap: isMobileDevice ? 5 : 7,
                                     background: 'linear-gradient(90deg, #43e97b22 0%, #ffe08244 100%)',
                                     borderRadius: 50,
-                                    padding: '5px 16px',
+                                    padding: isMobileDevice ? '4px 12px' : '5px 16px',
                                     boxShadow: '0 2px 12px #43e97b22',
                                     transition: 'box-shadow 0.2s, transform 0.2s',
                                     fontWeight: 700,
-                                    fontSize: '1.08em',
+                                    fontSize: isMobileDevice ? '0.9em' : '1.08em',
                                     color: '#2193b0',
                                     letterSpacing: '0.5px',
                                     cursor: 'pointer',
                                     border: '2px solid #43e97b33',
+                                    maxWidth: isMobileDevice ? '100%' : 'none',
+                                    wordBreak: 'break-word',
+                                    overflowWrap: 'break-word',
                                   }}>
-                                    {u.avatar ? <img src={u.avatar} alt="avatar" style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover', boxShadow: '0 2px 8px #ffe08233', marginRight: 4 }} /> : <FaUserCircle size={24} color="#b2bec3" />}
-                                    <span>{u.username}</span>
+                                    {u.avatar ? <img src={u.avatar} alt="avatar" style={{ 
+                                      width: isMobileDevice ? 24 : 28, 
+                                      height: isMobileDevice ? 24 : 28, 
+                                      borderRadius: '50%', 
+                                      objectFit: 'cover', 
+                                      boxShadow: '0 2px 8px #ffe08233', 
+                                      marginRight: isMobileDevice ? 3 : 4,
+                                      flexShrink: 0,
+                                    }} /> : <FaUserCircle size={isMobileDevice ? 20 : 24} color="#b2bec3" />}
+                                    <span style={{
+                                      overflow: 'hidden',
+                                      textOverflow: 'ellipsis',
+                                      whiteSpace: 'nowrap',
+                                      maxWidth: isMobileDevice ? '120px' : 'none',
+                                      wordBreak: 'break-word',
+                                      overflowWrap: 'break-word',
+                                    }}>{u.username}</span>
                                   </span>
                                 ))}
                               </div>
-                            ) : <span style={{ color: '#888', fontStyle: 'italic', fontSize: '1.08em' }}>😶 Нет проголосовавших</span>
+                            ) : <span style={{ color: '#888', fontStyle: 'italic', fontSize: isMobileDevice ? '0.9em' : '1.08em' }}>😶 Нет проголосовавших</span>
                           ) : null}
                         </div>
                       </CardOption>
                     );
                   })}
                   {/* Сообщение об ошибке голосования */}
-                  {pollVoteError[item.id] && <div style={{ color: '#e74c3c', marginTop: 8 }}>{pollVoteError[item.id]}</div>}
+                  {pollVoteError[item.id] && <div style={{ 
+                    color: '#e74c3c', 
+                    marginTop: isMobileDevice ? 6 : 8,
+                    fontSize: isMobileDevice ? '0.9em' : '0.95em',
+                    wordBreak: 'break-word',
+                    overflowWrap: 'break-word',
+                  }}>{pollVoteError[item.id]}</div>}
                   {/* Информация о количестве проголосовавших */}
-                  <div style={{ marginTop: 8, color: '#888', fontSize: '0.98em' }}>
+                  <div style={{ 
+                    marginTop: isMobileDevice ? 6 : 8, 
+                    color: '#888', 
+                    fontSize: isMobileDevice ? '0.9em' : '0.98em',
+                    wordBreak: 'break-word',
+                  }}>
                     Проголосовало: {totalVotes}
                   </div>
-                  {hasVoted && <div style={{ color: '#43e97b', marginTop: 4, fontWeight: 600 }}>Вы уже голосовали</div>}
+                  {hasVoted && <div style={{ 
+                    color: '#43e97b', 
+                    marginTop: isMobileDevice ? 4 : 4, 
+                    fontWeight: 600,
+                    fontSize: isMobileDevice ? '0.9em' : '0.95em',
+                  }}>Вы уже голосовали</div>}
 
                   {/* Новый блок: кто проголосовал и кто нет */}
-                  <div style={{ marginTop: 14 }}>
-                    <div style={{ fontWeight: 700, color: '#232931', marginBottom: 4 }}>Сотрудники, не проголосовали:</div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                      {Array.isArray(info.notVoted) && info.notVoted.length === 0 && <span style={{ color: '#888' }}>Нет</span>}
+                  <div style={{ marginTop: isMobileDevice ? 10 : 14 }}>
+                    <div style={{ 
+                      fontWeight: 700, 
+                      color: '#232931', 
+                      marginBottom: isMobileDevice ? 6 : 4,
+                      fontSize: isMobileDevice ? '0.95em' : '1em',
+                      wordBreak: 'break-word',
+                    }}>Сотрудники, не проголосовали:</div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: isMobileDevice ? 6 : 8 }}>
+                      {Array.isArray(info.notVoted) && info.notVoted.length === 0 && <span style={{ 
+                        color: '#888',
+                        fontSize: isMobileDevice ? '0.9em' : '0.95em',
+                      }}>Нет</span>}
                       {Array.isArray(info.notVoted) ? info.notVoted.map(u => (
-                        <span key={u.id} style={{ display: 'flex', alignItems: 'center', gap: 4, background: '#ffe08222', borderRadius: 6, padding: '2px 8px' }}>
-                          {u.avatar ? <img src={u.avatar} alt="avatar" style={{ width: 22, height: 22, borderRadius: 6, objectFit: 'cover', marginRight: 4 }} /> : <FaUserCircle size={20} color="#b2bec3" />}
-                          {u.username}
+                        <span key={u.id} style={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          gap: isMobileDevice ? 3 : 4, 
+                          background: '#ffe08222', 
+                          borderRadius: 6, 
+                          padding: isMobileDevice ? '2px 6px' : '2px 8px',
+                          fontSize: isMobileDevice ? '0.85em' : '0.9em',
+                          maxWidth: '100%',
+                          wordBreak: 'break-word',
+                          overflowWrap: 'break-word',
+                        }}>
+                          {u.avatar ? <img src={u.avatar} alt="avatar" style={{ 
+                            width: isMobileDevice ? 18 : 22, 
+                            height: isMobileDevice ? 18 : 22, 
+                            borderRadius: 6, 
+                            objectFit: 'cover', 
+                            marginRight: isMobileDevice ? 3 : 4,
+                            flexShrink: 0,
+                          }} /> : <FaUserCircle size={isMobileDevice ? 18 : 20} color="#b2bec3" style={{ flexShrink: 0 }} />}
+                          <span style={{
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            maxWidth: isMobileDevice ? '150px' : 'none',
+                          }}>{u.username}</span>
                         </span>
                       )) : null}
                     </div>
