@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { playNotificationSound } from '../../utils/notificationSound';
 import styled from 'styled-components';
-import { FiPaperclip, FiSmile, FiArrowRight, FiX, FiFileText, FiClock, FiChevronDown } from 'react-icons/fi';
+import { FiPaperclip, FiSmile, FiArrowRight, FiX, FiFileText, FiClock, FiChevronDown, FiBarChart2 } from 'react-icons/fi';
 import { useApp } from '../../context/AppContext';
 import api from '../../services/api';
 import Emoji from '../Common/Emoji';
@@ -126,17 +126,20 @@ const PollButton = styled.button.withConfig({
   background: linear-gradient(120deg, #e3f0ff 0%, #b3d8ff 100%);
   color: #225;
   border: none;
-  border-radius: 12px;
-  padding: ${props => props.isMobile ? '12px 16px' : '0 14px'};
+  border-radius: ${props => props.isMobile ? '50%' : '12px'};
+  padding: ${props => props.isMobile ? '12px' : '0 14px'};
+  width: ${props => props.isMobile ? '48px' : 'auto'};
   height: ${props => props.isMobile ? '48px' : '38px'};
   margin-right: ${props => props.isMobile ? '8px' : '0.5rem'};
   font-weight: 600;
-  font-size: ${props => props.isMobile ? '1rem' : '0.98rem'};
+  font-size: ${props => props.isMobile ? '0' : '0.98rem'};
   box-shadow: 0 2px 8px 0 rgba(80,140,255,0.10);
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  justify-content: center;
+  gap: ${props => props.isMobile ? '0' : '0.5rem'};
+  flex-shrink: 0;
   transition: background 0.18s, color 0.18s, box-shadow 0.18s;
   &:hover {
     background: linear-gradient(120deg, #d2e7ff 0%, #e3f0ff 100%);
@@ -423,13 +426,18 @@ const InputRow = styled.div.withConfig({
   width: 100%;
   max-width: 100%;
   ${props => props.isMobile && `
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    align-items: center;
   `}
 `;
 
-const InputActions = styled.div`
+const InputActions = styled.div.withConfig({
+  shouldForwardProp: (prop) => prop !== 'isMobile'
+})`
   display: flex;
   gap: 0.25rem;
+  align-items: center;
+  flex-shrink: 0;
 `;
 
 const ActionButton = styled.button.withConfig({
@@ -470,6 +478,7 @@ const SendButtonGroup = styled.div`
   display: flex;
   align-items: center;
   gap: 2px;
+  flex-shrink: 0;
 `;
 
 const SendButton = styled.button.withConfig({
@@ -1264,12 +1273,21 @@ const handleFileSelect = async (e) => {
     )}
 
     <InputRow style={{ position: 'relative' }} isMobile={isMobile}>
-      <InputActions>
+      <InputActions isMobile={isMobile}>
         <ActionButton isMobile={isMobile} onClick={() => fileInputRef.current?.click()} disabled={uploading} title="Прикрепить файл">
           <FiPaperclip size={isMobile ? 24 : 18} />
         </ActionButton>
 
-        <EmojiInput onEmojiSelect={handleEmojiSelect} placeholder="Выберите эмодзи" />
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          width: isMobile ? '48px' : 'auto',
+          height: isMobile ? '48px' : 'auto',
+          flexShrink: 0,
+        }}>
+          <EmojiInput onEmojiSelect={handleEmojiSelect} placeholder="Выберите эмодзи" />
+        </div>
         
         <ActionButton 
           isMobile={isMobile}
@@ -1288,7 +1306,11 @@ const handleFileSelect = async (e) => {
 
 
       <PollButton isMobile={isMobile} type="button" onClick={() => setShowCreatePoll(true)} title="Быстрое голосование">
-        🗳️ Быстрое голосование
+        {isMobile ? (
+          <FiBarChart2 size={24} />
+        ) : (
+          <>🗳️ Быстрое голосование</>
+        )}
       </PollButton>
 
       {showCreatePoll && (
@@ -1388,7 +1410,30 @@ const handleFileSelect = async (e) => {
           setMessage(html);
         }}
         suppressContentEditableWarning
-        style={{ flex: 1, minHeight: isMobile ? 48 : 44, padding: isMobile ? '14px 18px' : '12px 16px', borderRadius: isMobile ? 24 : 20, border: '1px solid #dee2e6', background: '#fff', fontSize: isMobile ? '16px' : '1rem', outline: 'none', overflowY: 'auto', textAlign: 'left', direction: 'ltr', unicodeBidi: 'bidi-override', fontFamily: 'Segoe UI, Tahoma, Geneva, Verdana, sans-serif', color: '#2c3e50', boxSizing: 'border-box', maxWidth: '100%', width: '100%', maxHeight: '120px', lineHeight: isMobile ? '1.5' : 'normal' }}
+        style={{ 
+          flex: 1, 
+          minHeight: isMobile ? 48 : 44, 
+          height: isMobile ? 48 : 'auto',
+          padding: isMobile ? '12px 16px' : '12px 16px', 
+          borderRadius: isMobile ? 24 : 20, 
+          border: '1px solid #dee2e6', 
+          background: '#fff', 
+          fontSize: isMobile ? '16px' : '1rem', 
+          outline: 'none', 
+          overflowY: 'auto', 
+          textAlign: 'left', 
+          direction: 'ltr', 
+          unicodeBidi: 'bidi-override', 
+          fontFamily: 'Segoe UI, Tahoma, Geneva, Verdana, sans-serif', 
+          color: '#2c3e50', 
+          boxSizing: 'border-box', 
+          maxWidth: '100%', 
+          width: isMobile ? 'auto' : '100%',
+          maxHeight: '120px', 
+          lineHeight: isMobile ? '1.5' : 'normal',
+          minWidth: 0,
+          flexShrink: 1,
+        }}
       />
 
       <SendButtonGroup>
