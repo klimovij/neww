@@ -691,35 +691,61 @@ function PollMessage({ message, userId, participants }) {
     }
   };
 
+  // Получаем варианты голосования из разных возможных полей
+  const pollOptions = message.pollOptions || message.options || message.poll_options || [];
+  
+  // Отладочный лог
+  console.log('PollMessage render:', {
+    messageId: message.id,
+    content: message.content,
+    pollOptions: pollOptions,
+    messageKeys: Object.keys(message)
+  });
+
   return (
     <PollBox>
       <PollTitle>{message.content}</PollTitle>
-      {Array.isArray(message.pollOptions) && message.pollOptions.map((opt, idx) => {
-        const count = votes[idx]?.length || 0;
-        const percent = totalVotes ? Math.round((count / totalVotes) * 100) : 0;
-        return (
-          <PollOption
-            key={idx}
-            selected={selected === idx}
-            hasSelection={selected !== null}
-            disabled={closed}
-            onClick={() => handleVote(idx)}
-            percent={percent}
-            title={
-              closed 
-                ? 'Голосование завершено' 
-                : selected === idx 
-                  ? 'Вы выбрали этот вариант' 
-                  : selected !== null 
-                    ? 'Нажмите, чтобы переголосовать' 
-                    : 'Проголосовать'
-            }
-          >
-            <span>{opt}</span>
-            <span>{count} голосов • {percent}%</span>
-          </PollOption>
-        );
-      })}
+      {Array.isArray(pollOptions) && pollOptions.length > 0 ? (
+        pollOptions.map((opt, idx) => {
+          const count = votes[idx]?.length || 0;
+          const percent = totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 0;
+          return (
+            <PollOption
+              key={idx}
+              selected={selected === idx}
+              hasSelection={selected !== null}
+              disabled={closed || loading}
+              onClick={() => handleVote(idx)}
+              percent={percent}
+              type="button"
+              title={
+                closed 
+                  ? 'Голосование завершено' 
+                  : loading
+                    ? 'Загрузка...'
+                    : selected === idx 
+                      ? 'Вы выбрали этот вариант' 
+                      : selected !== null 
+                        ? 'Нажмите, чтобы переголосовать' 
+                        : 'Проголосовать'
+              }
+            >
+              <span>{opt}</span>
+              <span>{count} голосов • {percent}%</span>
+            </PollOption>
+          );
+        })
+      ) : (
+        <div style={{ 
+          padding: '1rem', 
+          textAlign: 'center', 
+          color: '#e2e8f0', 
+          fontStyle: 'italic',
+          fontSize: '0.95rem'
+        }}>
+          Варианты голосования не загружены
+        </div>
+      )}
       
       <PollStats>
         <div className="stat-item">
