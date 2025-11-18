@@ -834,9 +834,9 @@ export default function RatingMobile({ open, onClose, onOpenMobileSidebar }) {
     return sections;
   };
 
-  if (!open) return null;
-
-  return ReactDOM.createPortal(
+  return (
+    <>
+      {open && ReactDOM.createPortal(
     <div
       style={{
         position: 'fixed',
@@ -1049,6 +1049,8 @@ export default function RatingMobile({ open, onClose, onOpenMobileSidebar }) {
       </div>
     </div>,
     document.body
+      )}
+    </>
   );
 }
 

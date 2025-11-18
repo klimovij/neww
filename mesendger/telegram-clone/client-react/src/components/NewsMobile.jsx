@@ -43,11 +43,11 @@ export default function NewsMobile({ open, onClose, onOpenMobileSidebar }) {
     onClose();
   };
 
-  if (!open) return null;
-
   const token = localStorage.getItem('token');
 
-  return ReactDOM.createPortal(
+  return (
+    <>
+      {open && ReactDOM.createPortal(
     <div
       style={{
         position: 'fixed',
@@ -193,6 +193,8 @@ export default function NewsMobile({ open, onClose, onOpenMobileSidebar }) {
       </div>
     </div>,
     document.body
+      )}
+    </>
   );
 }
 
