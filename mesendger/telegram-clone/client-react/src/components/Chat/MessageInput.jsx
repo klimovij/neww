@@ -123,30 +123,63 @@ const AddOptionBtn = styled.button`
 const PollButton = styled.button.withConfig({
   shouldForwardProp: (prop) => prop !== 'isMobile'
 })`
-  background: linear-gradient(120deg, #e3f0ff 0%, #b3d8ff 100%);
-  color: #225;
-  border: none;
-  border-radius: ${props => props.isMobile ? '50%' : '12px'};
-  padding: ${props => props.isMobile ? '12px' : '0 14px'};
-  width: ${props => props.isMobile ? '48px' : 'auto'};
-  height: ${props => props.isMobile ? '48px' : '38px'};
-  margin-right: ${props => props.isMobile ? '8px' : '0.5rem'};
-  font-weight: 600;
-  font-size: ${props => props.isMobile ? '0' : '0.98rem'};
-  box-shadow: 0 2px 8px 0 rgba(80,140,255,0.10);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: ${props => props.isMobile ? '0' : '0.5rem'};
-  flex-shrink: 0;
-  transition: background 0.18s, color 0.18s, box-shadow 0.18s;
-  &:hover {
-    background: linear-gradient(120deg, #d2e7ff 0%, #e3f0ff 100%);
-    color: #113366;
-    box-shadow: 0 5px 18px 0 rgba(80,140,255,0.18);
-    transform: scale(1.04);
-  }
+  ${props => props.isMobile ? `
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 12px;
+    border-radius: 50%;
+    color: #6c757d;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 48px;
+    min-height: 48px;
+    flex-shrink: 0;
+    
+    &:hover {
+      background: #f8f9fa;
+      color: #007bff;
+      transform: scale(1.1);
+    }
+    
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    svg {
+      width: 24px;
+      height: 24px;
+    }
+  ` : `
+    background: linear-gradient(120deg, #e3f0ff 0%, #b3d8ff 100%);
+    color: #225;
+    border: none;
+    border-radius: 12px;
+    padding: 0 14px;
+    height: 38px;
+    margin-right: 0.5rem;
+    font-weight: 600;
+    font-size: 0.98rem;
+    box-shadow: 0 2px 8px 0 rgba(80,140,255,0.10);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+    transition: background 0.18s, color 0.18s, box-shadow 0.18s;
+    
+    &:hover {
+      background: linear-gradient(120deg, #d2e7ff 0%, #e3f0ff 100%);
+      color: #113366;
+      box-shadow: 0 5px 18px 0 rgba(80,140,255,0.18);
+      transform: scale(1.04);
+    }
+  `}
 `;
 
 // Убираем дублирующее объявление PollModalOverlay (уже есть выше)
@@ -1314,11 +1347,22 @@ const handleFileSelect = async (e) => {
               >
                 <FiFileText size={24} />
               </ActionButton>
-            </InputActions>
 
-            <PollButton isMobile={isMobile} type="button" onClick={() => setShowCreatePoll(true)} title="Быстрое голосование">
-              <FiBarChart2 size={24} />
-            </PollButton>
+              {isMobile ? (
+                <ActionButton 
+                  isMobile={isMobile}
+                  onClick={() => setShowCreatePoll(true)} 
+                  disabled={uploading} 
+                  title="Быстрое голосование"
+                >
+                  <FiBarChart2 size={24} />
+                </ActionButton>
+              ) : (
+                <PollButton isMobile={isMobile} type="button" onClick={() => setShowCreatePoll(true)} title="Быстрое голосование">
+                  <FiBarChart2 size={24} />
+                </PollButton>
+              )}
+            </InputActions>
           </div>
 
           {showCreatePoll && (
