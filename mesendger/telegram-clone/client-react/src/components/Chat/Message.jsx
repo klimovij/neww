@@ -67,6 +67,7 @@ const PollBox = styled.div`
   gap: 1rem;
   position: relative;
   backdrop-filter: blur(10px);
+  box-sizing: border-box;
   
   &::before {
     content: '';
@@ -91,6 +92,27 @@ const PollBox = styled.div`
     z-index: -1;
     opacity: 0.1;
   }
+
+  @media (max-width: 768px) {
+    min-width: 0;
+    max-width: 100%;
+    width: 100%;
+    padding: 1rem;
+    border-radius: 16px;
+    margin: 0.5em 0;
+    
+    &::before {
+      border-radius: 16px 16px 0 0;
+    }
+    
+    &::after {
+      border-radius: 18px;
+      top: -1px;
+      left: -1px;
+      right: -1px;
+      bottom: -1px;
+    }
+  }
 `;
 
 const PollTitle = styled.div`
@@ -102,11 +124,14 @@ const PollTitle = styled.div`
   align-items: center;
   gap: 0.75rem;
   position: relative;
+  word-break: break-word;
+  overflow-wrap: break-word;
   
   &::before {
     content: '🗳️';
     font-size: 1.5rem;
     filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+    flex-shrink: 0;
   }
   
   &::after {
@@ -123,6 +148,21 @@ const PollTitle = styled.div`
   
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   letter-spacing: 0.02em;
+
+  @media (max-width: 768px) {
+    font-size: 1.1rem;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    
+    &::before {
+      font-size: 1.3rem;
+    }
+    
+    &::after {
+      bottom: -6px;
+      height: 1.5px;
+    }
+  }
 `;
 
 const PollOption = styled.button.withConfig({
@@ -153,6 +193,9 @@ const PollOption = styled.button.withConfig({
   position: relative;
   overflow: hidden;
   backdrop-filter: blur(10px);
+  min-height: 56px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
   
   &::before {
     content: '';
@@ -168,6 +211,7 @@ const PollOption = styled.button.withConfig({
     );
     transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
     border-radius: 15px;
+    z-index: 1;
   }
   
   &:hover:not(:disabled) {
@@ -202,12 +246,46 @@ const PollOption = styled.button.withConfig({
   &:active {
     transform: translateY(0) scale(0.98);
   }
+
+  @media (max-width: 768px) {
+    padding: 14px 16px;
+    font-size: 0.95rem;
+    margin-bottom: 10px;
+    border-radius: 12px;
+    min-height: 52px;
+    gap: 0.75rem;
+    border-width: 1.5px;
+    
+    &:hover:not(:disabled) {
+      transform: translateY(0) scale(1);
+    }
+    
+    &:active:not(:disabled) {
+      transform: scale(0.97);
+      background: ${({ selected }) => 
+        selected 
+          ? 'linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%)' 
+          : 'rgba(255, 255, 255, 0.1)'
+      };
+    }
+
+    &::before {
+      border-radius: 11px;
+    }
+  }
   
   span:first-child {
     position: relative;
     z-index: 2;
     flex: 1;
     text-align: left;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    line-height: 1.4;
+
+    @media (max-width: 768px) {
+      font-size: 0.95rem;
+    }
   }
   
   span:last-child {
@@ -219,6 +297,14 @@ const PollOption = styled.button.withConfig({
     background: rgba(0, 0, 0, 0.2);
     border-radius: 12px;
     backdrop-filter: blur(5px);
+    white-space: nowrap;
+    flex-shrink: 0;
+
+    @media (max-width: 768px) {
+      font-size: 0.85rem;
+      padding: 0.2rem 0.6rem;
+      border-radius: 8px;
+    }
   }
 `;
 
@@ -248,6 +334,7 @@ const PollStats = styled.div`
       align-items: center;
       justify-content: center;
       font-size: 0.8rem;
+      flex-shrink: 0;
     }
     
     .stat-voted {
@@ -273,6 +360,36 @@ const PollStats = styled.div`
       background: rgba(255, 255, 255, 0.1);
       padding: 0.25rem 0.75rem;
       border-radius: 12px;
+      white-space: nowrap;
+    }
+  }
+
+  @media (max-width: 768px) {
+    font-size: 0.9rem;
+    padding: 0.75rem;
+    border-radius: 12px;
+    gap: 0.6rem;
+    margin-top: 0.75rem;
+    
+    .stat-item {
+      gap: 0.6rem;
+      padding: 0.4rem 0;
+      
+      .stat-icon {
+        width: 22px;
+        height: 22px;
+        font-size: 0.75rem;
+      }
+      
+      .stat-text {
+        font-size: 0.9rem;
+      }
+      
+      .stat-count {
+        font-size: 0.95rem;
+        padding: 0.2rem 0.6rem;
+        border-radius: 8px;
+      }
     }
   }
 `;
@@ -292,6 +409,9 @@ const PollVotersToggle = styled.button`
   transition: all 0.2s ease;
   width: 100%;
   margin-top: 0.5rem;
+  min-height: 44px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
   
   &:hover {
     background: rgba(255, 255, 255, 0.08);
@@ -313,6 +433,32 @@ const PollVotersToggle = styled.button`
     align-items: center;
     justify-content: center;
     font-size: 0.7rem;
+  }
+
+  @media (max-width: 768px) {
+    padding: 12px 14px;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    min-height: 48px;
+    
+    &:hover {
+      transform: translateY(0);
+    }
+    
+    &:active {
+      transform: scale(0.98);
+      background: rgba(255, 255, 255, 0.1);
+    }
+    
+    .toggle-left {
+      gap: 0.4rem;
+    }
+    
+    .toggle-icon {
+      width: 18px;
+      height: 18px;
+      font-size: 0.65rem;
+    }
   }
 `;
 
@@ -352,6 +498,27 @@ const PollVotersList = styled.div`
       object-fit: cover;
       border: 1px solid rgba(255, 255, 255, 0.2);
     }
+
+    @media (max-width: 768px) {
+      font-size: 0.85rem;
+      padding: 0.35rem 0.6rem;
+      border-radius: 16px;
+      gap: 0.4rem;
+      
+      img {
+        width: 18px;
+        height: 18px;
+        border-radius: 5px;
+      }
+    }
+  }
+
+  @media (max-width: 768px) {
+    padding: 0.6rem;
+    border-radius: 10px;
+    gap: 0.4rem;
+    margin-top: 0.6rem;
+    max-height: 120px;
   }
 `;
 
