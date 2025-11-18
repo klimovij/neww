@@ -915,12 +915,17 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar }
               }
               break;
             case 'leaves-worktime':
+              console.log('SidebarNav: Opening leaves-worktime modal, isMobile:', isMobile);
               if (isMobile) {
                 requestAnimationFrame(() => {
+                  console.log('SidebarNav: Setting showLeavesWorktimeModal to true (mobile)');
                   setShowLeavesWorktimeModal(true);
                 });
               } else {
-                setTimeout(() => setShowLeavesWorktimeModal(true), 0);
+                setTimeout(() => {
+                  console.log('SidebarNav: Setting showLeavesWorktimeModal to true (desktop)');
+                  setShowLeavesWorktimeModal(true);
+                }, 0);
               }
               break;
             case 'admin':
@@ -1174,20 +1179,26 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar }
         showWorkTimeModal
       )}
       
-      {createSafePortal(
-        isMobile ? (
-          <LeavesWorktimeMobile 
-            key={`leaves-worktime-mobile-${portalKey}`} 
-            open={showLeavesWorktimeModal} 
-            onClose={() => setShowLeavesWorktimeModal(false)} 
-            token={localStorage.getItem('token')}
-            onOpenMobileSidebar={onOpenMobileSidebar}
-          />
-        ) : (
-          <LeavesWorktimeModal key={`leaves-worktime-${portalKey}`} isOpen={showLeavesWorktimeModal} onRequestClose={() => setShowLeavesWorktimeModal(false)} token={localStorage.getItem('token')} />
-        ),
-        showLeavesWorktimeModal
-      )}
+      {(() => {
+        console.log('SidebarNav: Rendering leaves-worktime modal, isMobile:', isMobile, 'showLeavesWorktimeModal:', showLeavesWorktimeModal);
+        return createSafePortal(
+          isMobile ? (
+            <LeavesWorktimeMobile 
+              key={`leaves-worktime-mobile-${portalKey}`} 
+              open={showLeavesWorktimeModal} 
+              onClose={() => {
+                console.log('SidebarNav: Closing leaves-worktime modal');
+                setShowLeavesWorktimeModal(false);
+              }} 
+              token={localStorage.getItem('token')}
+              onOpenMobileSidebar={onOpenMobileSidebar}
+            />
+          ) : (
+            <LeavesWorktimeModal key={`leaves-worktime-${portalKey}`} isOpen={showLeavesWorktimeModal} onRequestClose={() => setShowLeavesWorktimeModal(false)} token={localStorage.getItem('token')} />
+          ),
+          showLeavesWorktimeModal
+        );
+      })()}
       {createSafePortal(
         isMobile ? (
           <AdminMobile

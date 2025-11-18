@@ -5,6 +5,8 @@ import { FiX } from 'react-icons/fi';
 import LeavesWorktimeModal from './LeavesWorktimeModal';
 
 export default function LeavesWorktimeMobile({ open, onClose, token, onOpenMobileSidebar }) {
+  console.log('LeavesWorktimeMobile: Component rendered, open =', open, 'token =', token ? 'present' : 'missing');
+  
   const touchStartX = useRef(null);
   const touchEndX = useRef(null);
   const modalRef = useRef(null);
@@ -14,6 +16,7 @@ export default function LeavesWorktimeMobile({ open, onClose, token, onOpenMobil
   
   // Обновляем ключ при открытии модалки
   useEffect(() => {
+    console.log('LeavesWorktimeMobile: useEffect open changed, open =', open);
     if (open && !prevOpenRef.current) {
       // Генерируем новый ключ только при переходе из closed в open
       setModalKey(Date.now());
