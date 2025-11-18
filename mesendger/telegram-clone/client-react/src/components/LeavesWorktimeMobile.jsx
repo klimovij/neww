@@ -57,12 +57,10 @@ export default function LeavesWorktimeMobile({ open, onClose, token, onOpenMobil
   
   // Мемоизируем компонент модалки, чтобы избежать лишних пересозданий
   const modalComponent = useMemo(() => {
-    if (!open) return null;
-    
     return (
       <LeavesWorktimeModal 
         key={`leaves-worktime-mobile-${modalKey}`}
-        isOpen={true} 
+        isOpen={open} 
         onRequestClose={handleClose} 
         token={token} 
       />

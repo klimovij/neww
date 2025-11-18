@@ -11,8 +11,6 @@ import 'react-calendar/dist/Calendar.css';
 import AddEmployeeMobile from './AddEmployeeMobile';
 
 export default function CongratulationsMobile({ open, onClose, onOpenMobileSidebar }) {
-  const touchStartX = useRef(null);
-  const touchEndX = useRef(null);
   const modalRef = useRef(null);
   const { state } = useApp();
   
@@ -56,32 +54,6 @@ export default function CongratulationsMobile({ open, onClose, onOpenMobileSideb
   const filteredEmployees = safeEmployees.filter((e) =>
     (e.first_name + ' ' + e.last_name).toLowerCase().includes(search.trim().toLowerCase())
   );
-
-  // Обработчики свайпа
-  const handleTouchStart = (e) => {
-    touchStartX.current = e.touches[0].clientX;
-  };
-
-  const handleTouchMove = (e) => {
-    touchEndX.current = e.touches[0].clientX;
-  };
-
-  const handleTouchEnd = () => {
-    if (!touchStartX.current || !touchEndX.current) return;
-    
-    const distance = touchStartX.current - touchEndX.current;
-    const minSwipeDistance = 50;
-
-    if (distance > minSwipeDistance) {
-      if (onOpenMobileSidebar) {
-        onOpenMobileSidebar();
-      }
-      onClose();
-    }
-
-    touchStartX.current = null;
-    touchEndX.current = null;
-  };
 
   const handleClose = () => {
     if (onOpenMobileSidebar) {
@@ -142,25 +114,25 @@ export default function CongratulationsMobile({ open, onClose, onOpenMobileSideb
     }
   };
 
-  if (!open) return null;
-
-  return ReactDOM.createPortal(
-    <div
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.85)',
-        zIndex: 10000,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backdropFilter: 'blur(8px)',
-      }}
-      onClick={handleClose}
-    >
+  return (
+    <>
+      {open && ReactDOM.createPortal(
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.85)',
+            zIndex: 100000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backdropFilter: 'blur(8px)',
+          }}
+          onClick={handleClose}
+        >
       <div
         ref={modalRef}
         style={{
@@ -177,9 +149,6 @@ export default function CongratulationsMobile({ open, onClose, onOpenMobileSideb
           boxSizing: 'border-box',
         }}
         onClick={(e) => e.stopPropagation()}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
       >
         {/* Header */}
         <div
@@ -590,6 +559,8 @@ export default function CongratulationsMobile({ open, onClose, onOpenMobileSideb
       )}
     </div>,
     document.body
+      )}
+    </>
   );
 }
 
