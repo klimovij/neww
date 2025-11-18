@@ -596,15 +596,42 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar }
         // hostname (for clarity where users are created)
         try {
           const rh = await fetch('/api/admin/host', { headers: { Authorization: `Bearer ${token}` } });
-          const hd = await rh.json();
-          if (hd && hd.success && hd.host) setAdminHost(hd.host);
+          if (rh.ok) {
+            const hd = await rh.json();
+            if (hd && hd.success && hd.host) setAdminHost(hd.host);
+          }
         } catch {}
-        const r = await fetch('/api/admin/local-users', { headers: { Authorization: `Bearer ${token}` } });
-        const data = await r.json();
-        if (Array.isArray(data)) setAdminUsers(data);
-        else setAdminUsers([]);
+        try {
+          const r = await fetch('/api/admin/local-users', { headers: { Authorization: `Bearer ${token}` } });
+          if (r.ok) {
+            try {
+              const data = await r.json();
+              if (Array.isArray(data)) setAdminUsers(data);
+              else setAdminUsers([]);
+            } catch (jsonError) {
+              console.error('Ошибка парсинга JSON:', jsonError);
+              setAdminError('Не удалось обработать ответ сервера');
+              setAdminUsers([]);
+            }
+          } else {
+            console.error('Ошибка загрузки пользователей:', r.status, r.statusText);
+            // Пытаемся прочитать сообщение об ошибке
+            try {
+              const errorData = await r.text();
+              console.error('Ответ сервера:', errorData);
+            } catch {}
+            setAdminError('Не удалось получить пользователей: сервер вернул ошибку ' + r.status);
+            setAdminUsers([]);
+          }
+        } catch (e) {
+          console.error('Ошибка запроса пользователей:', e);
+          setAdminError('Не удалось получить пользователей: ' + (e.message || 'неизвестная ошибка'));
+          setAdminUsers([]);
+        }
       } catch (e) {
-        setAdminError('Не удалось получить пользователей: ' + e.message);
+        console.error('Общая ошибка загрузки:', e);
+        setAdminError('Не удалось получить пользователей: ' + (e.message || 'неизвестная ошибка'));
+        setAdminUsers([]);
       } finally {
         setAdminLoading(false);
       }
@@ -762,126 +789,130 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar }
       setShowUserRightsModal(false);
       
       // Открываем нужную модалку с небольшой задержкой, чтобы предыдущие модалки успели закрыться
-      setTimeout(() => {
-        switch (n.key) {
-          case 'all-leaves':
-            fetchPendingCount();
-            // Устанавливаем флаг, что мы только что открыли модалку
-            justOpenedGeneralCalendar.current = true;
-            console.log('SidebarNav: Открываем модалку календаря, устанавливаем защиту');
-            // Открываем модалку синхронно, чтобы она точно открылась
-            setShowGeneralCalendar(true);
-            // Сбрасываем флаг через задержку, чтобы защитить от случайного закрытия
-            setTimeout(() => {
-              console.log('SidebarNav: Снимаем защиту с модалки календаря');
-              justOpenedGeneralCalendar.current = false;
-            }, 500);
-            break;
-          case 'leaves':
-            if (isMobile) {
-              requestAnimationFrame(() => {
-                setShowLeaveCalendar(true);
-              });
-            } else {
-              requestAnimationFrame(() => {
-                setShowLeaveCalendar(true);
-              });
-            }
-            break;
-          case 'news':
-            if (isMobile) {
-              requestAnimationFrame(() => {
-                setShowNewsModal(true);
-              });
-            } else {
-              requestAnimationFrame(() => {
-                setShowNewsModal(true);
-              });
-            }
-            dispatch({ type: 'RESET_UNREAD_NEWS' });
-            fetch('/api/news', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } })
-              .then(r => r.json())
-              .then(newsArr => {
-                if (Array.isArray(newsArr) && newsArr.length > 0) {
-                  localStorage.setItem('lastNewsId', String(newsArr[0].id));
-                }
-              });
-            break;
-          case 'tasks':
-            requestAnimationFrame(() => {
-              setShowTasksModal(true);
-            });
-            setMyTasksCount(0);
-            setTimeout(() => fetchMyTasksCount(), 300);
-            break;
-          case 'todo':
-            requestAnimationFrame(() => {
-              setShowTodoModal(true);
-            });
-            break;
-          case 'chats':
-            if (isMobile) {
-              requestAnimationFrame(() => {
-                setShowChatsModal(true);
-              });
-            } else {
-              // Для десктопной версии: открываем ChatArea и модалку чатов
-              // Сначала открываем ChatArea через событие show-chat
-              window.dispatchEvent(new CustomEvent('show-chat'));
-              // Небольшая задержка, чтобы ChatArea успел отрендериться
+      // Используем requestAnimationFrame для гарантии, что DOM обновился перед открытием новой модалки
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          switch (n.key) {
+            case 'all-leaves':
+              fetchPendingCount();
+              // Устанавливаем флаг, что мы только что открыли модалку
+              justOpenedGeneralCalendar.current = true;
+              console.log('SidebarNav: Открываем модалку календаря, устанавливаем защиту');
+              // Открываем модалку синхронно, чтобы она точно открылась
+              setShowGeneralCalendar(true);
+              // Сбрасываем флаг через задержку, чтобы защитить от случайного закрытия
               setTimeout(() => {
-                dispatch({ type: 'TOGGLE_MODAL', payload: { modal: 'chatsList', show: true } });
-              }, 100);
-            }
-            break;
-          case 'employees':
-            // Для обычных пользователей показываем только рейтинг, для админов/HR - полную модалку
-            const userRole = appState.user?.role;
-            if (userRole === 'user') {
-              // Обычные пользователи видят только рейтинг
-              window.dispatchEvent(new Event('show-employee-rating'));
-            } else {
-              // Админы и HR видят полную модалку с функциями сотрудников (список, дни рождения, календарь, рейтинг)
+                console.log('SidebarNav: Снимаем защиту с модалки календаря');
+                justOpenedGeneralCalendar.current = false;
+              }, 500);
+              break;
+            case 'leaves':
               if (isMobile) {
                 requestAnimationFrame(() => {
-                  setShowBirthdaysModal(true);
+                  setShowLeaveCalendar(true);
                 });
               } else {
-                setTimeout(() => setShowBirthdaysModal(true), 0);
+                requestAnimationFrame(() => {
+                  setShowLeaveCalendar(true);
+                });
               }
-            }
-            break;
-          case 'worktime':
-            if (isMobile) {
+              break;
+            case 'news':
+              if (isMobile) {
+                requestAnimationFrame(() => {
+                  setShowNewsModal(true);
+                });
+              } else {
+                requestAnimationFrame(() => {
+                  setShowNewsModal(true);
+                });
+              }
+              dispatch({ type: 'RESET_UNREAD_NEWS' });
+              fetch('/api/news', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } })
+                .then(r => r.json())
+                .then(newsArr => {
+                  if (Array.isArray(newsArr) && newsArr.length > 0) {
+                    localStorage.setItem('lastNewsId', String(newsArr[0].id));
+                  }
+                })
+                .catch(err => console.error('Ошибка загрузки новостей:', err));
+              break;
+            case 'tasks':
               requestAnimationFrame(() => {
-                setShowWorkTimeModal(true);
+                setShowTasksModal(true);
               });
-            } else {
-              setTimeout(() => setShowWorkTimeModal(true), 0);
-            }
-            break;
-          case 'leaves-worktime':
-            if (isMobile) {
+              setMyTasksCount(0);
+              setTimeout(() => fetchMyTasksCount(), 300);
+              break;
+            case 'todo':
               requestAnimationFrame(() => {
-                setShowLeavesWorktimeModal(true);
+                setShowTodoModal(true);
               });
-            } else {
-              setTimeout(() => setShowLeavesWorktimeModal(true), 0);
-            }
-            break;
-          case 'admin':
-            if (isMobile) {
-              requestAnimationFrame(() => {
-                setShowAdminModal(true);
-              });
-            } else {
-              setTimeout(() => setShowAdminModal(true), 0);
-            }
-            break;
-          default:
-            break;
-        }
-      }, 50); // Небольшая задержка для закрытия предыдущих модалок
+              break;
+            case 'chats':
+              if (isMobile) {
+                requestAnimationFrame(() => {
+                  setShowChatsModal(true);
+                });
+              } else {
+                // Для десктопной версии: открываем ChatArea и модалку чатов
+                // Сначала открываем ChatArea через событие show-chat
+                window.dispatchEvent(new CustomEvent('show-chat'));
+                // Небольшая задержка, чтобы ChatArea успел отрендериться
+                setTimeout(() => {
+                  dispatch({ type: 'TOGGLE_MODAL', payload: { modal: 'chatsList', show: true } });
+                }, 100);
+              }
+              break;
+            case 'employees':
+              // Для обычных пользователей показываем только рейтинг, для админов/HR - полную модалку
+              const userRole = appState.user?.role;
+              if (userRole === 'user') {
+                // Обычные пользователи видят только рейтинг
+                window.dispatchEvent(new Event('show-employee-rating'));
+              } else {
+                // Админы и HR видят полную модалку с функциями сотрудников (список, дни рождения, календарь, рейтинг)
+                if (isMobile) {
+                  requestAnimationFrame(() => {
+                    setShowBirthdaysModal(true);
+                  });
+                } else {
+                  setTimeout(() => setShowBirthdaysModal(true), 0);
+                }
+              }
+              break;
+            case 'worktime':
+              if (isMobile) {
+                requestAnimationFrame(() => {
+                  setShowWorkTimeModal(true);
+                });
+              } else {
+                setTimeout(() => setShowWorkTimeModal(true), 0);
+              }
+              break;
+            case 'leaves-worktime':
+              if (isMobile) {
+                requestAnimationFrame(() => {
+                  setShowLeavesWorktimeModal(true);
+                });
+              } else {
+                setTimeout(() => setShowLeavesWorktimeModal(true), 0);
+              }
+              break;
+            case 'admin':
+              if (isMobile) {
+                requestAnimationFrame(() => {
+                  setShowAdminModal(true);
+                });
+              } else {
+                setTimeout(() => setShowAdminModal(true), 0);
+              }
+              break;
+            default:
+              break;
+          }
+        }, 100); // Увеличена задержка для гарантированного закрытия предыдущих модалок
+      });
       
       // Закрываем мобильный сайдбар после задержки, чтобы модалка успела открыться
       if (onCloseMobileSidebar) {
@@ -1279,9 +1310,7 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar }
                   cursor:'pointer',
                   fontSize:'0.95em',
                   fontWeight:600,
-                  transition:'all 0.2s ease',
-                  alignItems:'center',
-                  gap:8
+                  transition:'all 0.2s ease'
                 }}
                 title="Права пользователей"
               >

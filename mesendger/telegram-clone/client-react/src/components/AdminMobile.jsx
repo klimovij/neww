@@ -49,15 +49,42 @@ export default function AdminMobile({
       try {
         try {
           const rh = await fetch('/api/admin/host', { headers: { Authorization: `Bearer ${token}` } });
-          const hd = await rh.json();
-          if (hd && hd.success && hd.host) setAdminHost(hd.host);
+          if (rh.ok) {
+            const hd = await rh.json();
+            if (hd && hd.success && hd.host) setAdminHost(hd.host);
+          }
         } catch {}
-        const r = await fetch('/api/admin/local-users', { headers: { Authorization: `Bearer ${token}` } });
-        const data = await r.json();
-        if (Array.isArray(data)) setAdminUsers(data);
-        else setAdminUsers([]);
+        try {
+          const r = await fetch('/api/admin/local-users', { headers: { Authorization: `Bearer ${token}` } });
+          if (r.ok) {
+            try {
+              const data = await r.json();
+              if (Array.isArray(data)) setAdminUsers(data);
+              else setAdminUsers([]);
+            } catch (jsonError) {
+              console.error('Ошибка парсинга JSON:', jsonError);
+              setAdminError('Не удалось обработать ответ сервера');
+              setAdminUsers([]);
+            }
+          } else {
+            console.error('Ошибка загрузки пользователей:', r.status, r.statusText);
+            // Пытаемся прочитать сообщение об ошибке
+            try {
+              const errorData = await r.text();
+              console.error('Ответ сервера:', errorData);
+            } catch {}
+            setAdminError('Не удалось получить пользователей: сервер вернул ошибку ' + r.status);
+            setAdminUsers([]);
+          }
+        } catch (e) {
+          console.error('Ошибка запроса пользователей:', e);
+          setAdminError('Не удалось получить пользователей: ' + (e.message || 'неизвестная ошибка'));
+          setAdminUsers([]);
+        }
       } catch (e) {
-        setAdminError('Не удалось получить пользователей: ' + e.message);
+        console.error('Общая ошибка загрузки:', e);
+        setAdminError('Не удалось получить пользователей: ' + (e.message || 'неизвестная ошибка'));
+        setAdminUsers([]);
       } finally {
         setAdminLoading(false);
       }
