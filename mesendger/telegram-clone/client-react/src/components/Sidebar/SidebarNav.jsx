@@ -265,7 +265,8 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar }
       el.style.width = '100%';
       el.style.height = '100%';
       el.style.pointerEvents = 'none';
-      el.style.zIndex = '10000';
+      el.style.zIndex = '99999'; // Высокий z-index, чтобы быть поверх всего
+      el.style.isolation = 'isolate'; // Создаем новый stacking context
       try {
         document.body.appendChild(el);
       } catch (error) {
@@ -282,6 +283,14 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar }
         return null;
       }
     }
+    // Убеждаемся, что стили установлены правильно
+    el.style.position = 'fixed';
+    el.style.top = '0';
+    el.style.left = '0';
+    el.style.width = '100%';
+    el.style.height = '100%';
+    el.style.zIndex = '99999';
+    el.style.isolation = 'isolate';
     return el;
   }, []);
 
@@ -295,8 +304,7 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar }
         console.warn('Cannot get modal root, skipping portal creation');
         return null;
       }
-      // Включаем pointer events для контейнера, когда есть активные модалки
-      root.style.pointerEvents = 'auto';
+      // pointer-events управляются через useEffect, который отслеживает состояние всех модалок
       return ReactDOM.createPortal(component, root);
     } catch (error) {
       console.warn('Failed to create portal:', error);
@@ -331,19 +339,8 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar }
     setShowAppTitleSettingsModal(false);
     setShowUserRightsModal(false);
     setPortalKey(k => k + 1);
-    
-    // Отключаем pointer events для контейнера, когда все модалки закрыты
-    setTimeout(() => {
-      try {
-        const root = getModalRoot();
-        if (root) {
-          root.style.pointerEvents = 'none';
-        }
-      } catch (error) {
-        console.warn('Failed to update modal root pointer events:', error);
-      }
-    }, 150);
-  }, [getModalRoot]);
+    // pointer-events управляются автоматически через useEffect
+  }, []);
 
   // Отслеживание изменения размера окна для определения мобильного устройства
   useEffect(() => {
@@ -381,12 +378,63 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar }
     getModalRoot();
   }, [getModalRoot]);
 
+  // Управление pointer-events контейнера в зависимости от состояния модалок
+  useEffect(() => {
+    const hasOpenModal = 
+      showUploadModal ||
+      showGeneralCalendar ||
+      showLeaveCalendar ||
+      showNewsModal ||
+      showTasksModal ||
+      showChatsModal ||
+      showChatAreaModal ||
+      showCreateChatModal ||
+      showWorkTimeModal ||
+      showLeavesWorktimeModal ||
+      showEmployeesModal ||
+      showBirthdaysModal ||
+      showAdminModal ||
+      showEmojiSettingsModal ||
+      showTemplatesModal ||
+      showAppTitleSettingsModal ||
+      showUserRightsModal ||
+      showTodoModal ||
+      showRatingModal;
+
+    const root = getModalRoot();
+    if (root) {
+      root.style.pointerEvents = hasOpenModal ? 'auto' : 'none';
+    }
+  }, [
+    showUploadModal,
+    showGeneralCalendar,
+    showLeaveCalendar,
+    showNewsModal,
+    showTasksModal,
+    showChatsModal,
+    showChatAreaModal,
+    showCreateChatModal,
+    showWorkTimeModal,
+    showLeavesWorktimeModal,
+    showEmployeesModal,
+    showBirthdaysModal,
+    showAdminModal,
+    showEmojiSettingsModal,
+    showTemplatesModal,
+    showAppTitleSettingsModal,
+    showUserRightsModal,
+    showTodoModal,
+    showRatingModal,
+    getModalRoot
+  ]);
+
   // Очистка при размонтировании компонента
   useEffect(() => {
     return () => {
       try {
         const root = getModalRoot();
         if (root) {
+          // pointer-events будут автоматически обновлены через useEffect при изменении состояния модалок
           root.style.pointerEvents = 'none';
         }
       } catch (error) {
