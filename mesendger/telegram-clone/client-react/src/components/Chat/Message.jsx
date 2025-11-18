@@ -95,11 +95,15 @@ const PollBox = styled.div`
 
   @media (max-width: 768px) {
     min-width: 0;
-    max-width: 100%;
-    width: 100%;
-    padding: 1rem;
+    max-width: none;
+    width: calc(100% + 3.6rem);
+    margin-left: -1.8rem;
+    margin-right: -1.8rem;
+    padding: 1rem 1.2rem;
     border-radius: 16px;
-    margin: 0.5em 0;
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+    box-sizing: border-box;
     
     &::before {
       border-radius: 16px 16px 0 0;
