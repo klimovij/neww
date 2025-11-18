@@ -170,181 +170,172 @@ const PollTitle = styled.div`
 `;
 
 const PollOption = styled.button.withConfig({
-  shouldForwardProp: (prop) => !['selected', 'active', 'percent', 'hasSelection'].includes(prop)
+  shouldForwardProp: (prop) => !['selected', 'percent', 'hasSelection'].includes(prop)
 })`
   background: ${({ selected }) => 
     selected 
-      ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' 
-      : 'rgba(255, 255, 255, 0.05)'
+      ? 'linear-gradient(135deg, rgba(99, 102, 241, 0.25) 0%, rgba(139, 92, 246, 0.25) 100%)' 
+      : 'rgba(255, 255, 255, 0.06)'
   };
-  color: ${({ selected }) => selected ? '#ffffff' : '#f8fafc'};
-  border: 1px solid ${({ selected }) => 
+  border: 2px solid ${({ selected }) => 
     selected 
-      ? 'rgba(102, 126, 234, 0.5)' 
-      : 'rgba(255, 255, 255, 0.1)'
+      ? 'rgba(99, 102, 241, 0.5)' 
+      : 'rgba(255, 255, 255, 0.12)'
   };
-  border-radius: 16px;
-  padding: 1rem 1.25rem;
-  font-size: 1rem;
-  font-weight: 600;
-  margin-bottom: 0.75rem;
+  border-radius: 14px;
+  padding: 0;
+  margin-bottom: 10px;
   cursor: pointer;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: block;
+  width: 100%;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
-  backdrop-filter: blur(10px);
-  min-height: 56px;
+  backdrop-filter: blur(12px);
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
   pointer-events: auto;
   user-select: none;
   -webkit-user-select: none;
-  direction: ltr;
-  writing-mode: horizontal-tb;
-  text-orientation: mixed;
   
+  /* Progress bar background */
   &::before {
     content: '';
     position: absolute;
     bottom: 0;
     left: 0;
-    height: 3px;
+    height: 4px;
     width: ${({ percent }) => percent || 0}%;
     background: linear-gradient(90deg, 
-      rgba(102, 126, 234, 0.6) 0%, 
-      rgba(118, 75, 162, 0.6) 50%,
-      rgba(240, 147, 251, 0.6) 100%
+      #6366f1 0%, 
+      #8b5cf6 50%,
+      #ec4899 100%
     );
-    transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-    border-radius: 0 0 15px 15px;
+    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 1;
     pointer-events: none;
-    box-shadow: 0 -1px 4px rgba(102, 126, 234, 0.3);
+    box-shadow: 0 0 8px rgba(99, 102, 241, 0.5);
   }
   
   &:hover:not(:disabled) {
-    transform: translateY(-2px) scale(1.02);
-    box-shadow: 
-      0 10px 25px rgba(102, 126, 234, 0.2),
-      0 4px 12px rgba(0, 0, 0, 0.15);
-    border-color: rgba(102, 126, 234, 0.4);
+    transform: translateY(-1px);
+    border-color: ${({ selected }) => 
+      selected 
+        ? 'rgba(99, 102, 241, 0.7)' 
+        : 'rgba(255, 255, 255, 0.2)'
+    };
     background: ${({ selected }) => 
       selected 
-        ? 'linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%)' 
+        ? 'linear-gradient(135deg, rgba(99, 102, 241, 0.3) 0%, rgba(139, 92, 246, 0.3) 100%)' 
         : 'rgba(255, 255, 255, 0.08)'
     };
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   }
   
-  /* Дополнительные стили для невыбранных вариантов при наличии выбора */
   ${({ selected, hasSelection }) => !selected && hasSelection && `
-    opacity: 0.7;
+    opacity: 0.75;
     
     &:hover:not(:disabled) {
       opacity: 1;
-      border-color: rgba(102, 126, 234, 0.6);
-      background: rgba(102, 126, 234, 0.1);
     }
   `}
   
   &:disabled {
     cursor: not-allowed;
-    opacity: 0.7;
+    opacity: 0.6;
   }
   
-  &:active {
-    transform: translateY(0) scale(0.98);
+  &:active:not(:disabled) {
+    transform: translateY(0) scale(0.99);
   }
 
   @media (max-width: 768px) {
-    padding: 14px 16px;
-    font-size: 0.95rem;
-    margin-bottom: 10px;
     border-radius: 12px;
-    min-height: 52px;
-    gap: 0.75rem;
+    margin-bottom: 8px;
     border-width: 1.5px;
-    
-    &:hover:not(:disabled) {
-      transform: translateY(0) scale(1);
-    }
-    
-    &:active:not(:disabled) {
-      transform: scale(0.97);
-      background: ${({ selected }) => 
-        selected 
-          ? 'linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%)' 
-          : 'rgba(255, 255, 255, 0.1)'
-      };
-    }
 
     &::before {
-      border-radius: 0 0 11px 11px;
-      height: 2.5px;
+      height: 3px;
+    }
+    
+    &:hover:not(:disabled) {
+      transform: none;
     }
   }
-  
-  span:first-child {
-    position: relative;
-    z-index: 2;
-    flex: 1;
-    text-align: left;
-    direction: ltr;
-    writing-mode: horizontal-tb;
-    text-orientation: mixed;
-    word-break: break-word;
-    overflow-wrap: break-word;
-    line-height: 1.5;
-    font-weight: 600;
-    letter-spacing: 0.01em;
-    padding: 2px 0;
-    color: ${({ selected }) => selected ? '#ffffff' : '#f8fafc'};
-    white-space: normal;
-    display: block;
-    width: 100%;
+`;
 
-    @media (max-width: 768px) {
-      font-size: 0.95rem;
-    }
+const PollOptionContent = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  position: relative;
+  z-index: 2;
+  
+  @media (max-width: 768px) {
+    padding: 12px 14px;
+    gap: 10px;
   }
-  
-  span:last-child {
-    position: relative;
-    z-index: 2;
-    font-weight: 700;
-    font-size: 0.9rem;
-    padding: 0.35rem 0.85rem;
-    background: ${({ selected }) => 
-      selected 
-        ? 'rgba(0, 0, 0, 0.5)' 
-        : 'rgba(0, 0, 0, 0.45)'
-    };
-    border-radius: 12px;
-    backdrop-filter: blur(10px);
-    white-space: nowrap;
-    flex-shrink: 0;
-    color: #ffffff;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    direction: ltr;
-    writing-mode: horizontal-tb;
-    text-orientation: mixed;
-    display: inline-block;
+`;
 
-    @media (max-width: 768px) {
-      font-size: 0.85rem;
-      padding: 0.25rem 0.7rem;
-      border-radius: 8px;
-      background: ${({ selected }) => 
-        selected 
-          ? 'rgba(0, 0, 0, 0.55)' 
-          : 'rgba(0, 0, 0, 0.5)'
-      };
-    }
+const PollOptionText = styled.div`
+  flex: 1;
+  min-width: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.5;
+  color: ${({ selected }) => selected ? '#ffffff' : '#f1f5f9'};
+  word-break: break-word;
+  overflow-wrap: break-word;
+  text-align: left;
+  
+  @media (max-width: 768px) {
+    font-size: 0.95rem;
+  }
+`;
+
+const PollOptionStats = styled.div`
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: ${({ selected }) => 
+    selected 
+      ? 'rgba(0, 0, 0, 0.35)' 
+      : 'rgba(0, 0, 0, 0.3)'
+  };
+  border-radius: 10px;
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  
+  @media (max-width: 768px) {
+    padding: 5px 10px;
+    border-radius: 8px;
+    gap: 5px;
+  }
+`;
+
+const PollOptionCount = styled.span`
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #ffffff;
+  white-space: nowrap;
+  
+  @media (max-width: 768px) {
+    font-size: 0.8rem;
+  }
+`;
+
+const PollOptionPercent = styled.span`
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: ${({ selected }) => selected ? '#a78bfa' : '#cbd5e1'};
+  white-space: nowrap;
+  
+  @media (max-width: 768px) {
+    font-size: 0.8rem;
   }
 `;
 
@@ -783,8 +774,15 @@ function PollMessage({ message, userId, participants }) {
                         : 'Проголосовать'
               }
             >
-              <span>{opt}</span>
-              <span>{count} голосов • {percent}%</span>
+              <PollOptionContent>
+                <PollOptionText selected={selected === idx}>
+                  {opt}
+                </PollOptionText>
+                <PollOptionStats selected={selected === idx}>
+                  <PollOptionCount>{count} голосов</PollOptionCount>
+                  <PollOptionPercent selected={selected === idx}>• {percent}%</PollOptionPercent>
+                </PollOptionStats>
+              </PollOptionContent>
             </PollOption>
           );
         })
