@@ -2420,23 +2420,23 @@ const resetWorktime = async () => {
             <div style={{ display: 'flex', gap: isMobileDevice ? 4 : 8, alignItems: 'center', flexWrap: isMobileDevice ? 'wrap' : 'nowrap' }}>
               <span style={{ color: '#ffe082', fontWeight: 600, fontSize: isMobileDevice ? '0.8rem' : '0.9rem' }}>Фильтр:</span>
               <button onClick={() => setFilter('pending')} style={{
-                padding: '6px 12px',
+                padding: isMobileDevice ? '5px 10px' : '6px 12px',
                 borderRadius: 8,
                 border: filter === 'pending' ? '2px solid #43e97b' : '1px solid #4a5568',
                 background: filter === 'pending' ? '#43e97b22' : 'transparent',
                 color: filter === 'pending' ? '#43e97b' : '#a0aec0',
                 cursor: 'pointer',
-                fontSize: '0.85rem',
+                fontSize: isMobileDevice ? '0.8rem' : '0.85rem',
                 fontWeight: 600
               }}>📋 На очереди</button>
               <button onClick={() => setFilter('completed')} style={{
-                padding: '6px 12px',
+                padding: isMobileDevice ? '5px 10px' : '6px 12px',
                 borderRadius: 8,
                 border: filter === 'completed' ? '2px solid #28a745' : '1px solid #4a5568',
                 background: filter === 'completed' ? '#28a74522' : 'transparent',
                 color: filter === 'completed' ? '#28a745' : '#a0aec0',
                 cursor: 'pointer',
-                fontSize: '0.85rem',
+                fontSize: isMobileDevice ? '0.8rem' : '0.85rem',
                 fontWeight: 600
               }}>💼 Отработанные</button>
             </div>
@@ -2444,12 +2444,12 @@ const resetWorktime = async () => {
             <div style={{ display: 'flex', gap: isMobileDevice ? 4 : 8, alignItems: 'center', flexWrap: isMobileDevice ? 'wrap' : 'nowrap' }}>
               <span style={{ color: '#ffe082', fontWeight: 600, fontSize: isMobileDevice ? '0.8rem' : '0.9rem' }}>Дата:</span>
               <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} style={{
-                padding: '6px 10px',
+                padding: isMobileDevice ? '5px 8px' : '6px 10px',
                 borderRadius: 8,
                 border: '1px solid #4a5568',
                 background: '#2d3748',
                 color: '#fff',
-                fontSize: '0.85rem',
+                fontSize: isMobileDevice ? '0.8rem' : '0.85rem',
                 outline: 'none'
               }} />
             </div>
@@ -2462,14 +2462,16 @@ const resetWorktime = async () => {
                     ? "Поиск отработанных отгулов по имени..." 
                     : "Введите имя сотрудника..."
                 } value={nameFilter} onChange={(e) => setNameFilter(e.target.value)} style={{
-                  padding: '6px 10px',
+                  padding: isMobileDevice ? '5px 8px' : '6px 10px',
                   borderRadius: 8,
                   border: '1px solid #4a5568',
                   background: '#2d3748',
                   color: '#fff',
-                  fontSize: '0.85rem',
+                  fontSize: isMobileDevice ? '0.8rem' : '0.85rem',
                   outline: 'none',
-                  minWidth: '200px'
+                  minWidth: isMobileDevice ? '150px' : '200px',
+                  flex: isMobileDevice ? '1 1 auto' : 'none',
+                  maxWidth: isMobileDevice ? '100%' : 'none'
                 }} />
                 {nameFilter && <button onClick={() => setNameFilter('')} style={{
                   padding: '4px 8px',
