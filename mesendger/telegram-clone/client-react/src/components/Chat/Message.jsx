@@ -177,7 +177,7 @@ const PollOption = styled.button.withConfig({
       ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' 
       : 'rgba(255, 255, 255, 0.05)'
   };
-  color: ${({ selected }) => selected ? '#ffffff' : '#f1f5f9'};
+  color: ${({ selected }) => selected ? '#ffffff' : '#f8fafc'};
   border: 1px solid ${({ selected }) => 
     selected 
       ? 'rgba(102, 126, 234, 0.5)' 
@@ -207,19 +207,20 @@ const PollOption = styled.button.withConfig({
   &::before {
     content: '';
     position: absolute;
-    top: 0;
+    bottom: 0;
     left: 0;
-    height: 100%;
+    height: 3px;
     width: ${({ percent }) => percent || 0}%;
-    background: linear-gradient(135deg, 
-      rgba(102, 126, 234, 0.12) 0%, 
-      rgba(118, 75, 162, 0.12) 50%,
-      rgba(240, 147, 251, 0.12) 100%
+    background: linear-gradient(90deg, 
+      rgba(102, 126, 234, 0.6) 0%, 
+      rgba(118, 75, 162, 0.6) 50%,
+      rgba(240, 147, 251, 0.6) 100%
     );
     transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-    border-radius: 15px;
-    z-index: 0;
+    border-radius: 0 0 15px 15px;
+    z-index: 1;
     pointer-events: none;
+    box-shadow: 0 -1px 4px rgba(102, 126, 234, 0.3);
   }
   
   &:hover:not(:disabled) {
@@ -278,7 +279,8 @@ const PollOption = styled.button.withConfig({
     }
 
     &::before {
-      border-radius: 11px;
+      border-radius: 0 0 11px 11px;
+      height: 2.5px;
     }
   }
   
@@ -290,13 +292,13 @@ const PollOption = styled.button.withConfig({
     word-break: break-word;
     overflow-wrap: break-word;
     line-height: 1.5;
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4), 0 0 1px rgba(0, 0, 0, 0.5);
     font-weight: 600;
     letter-spacing: 0.01em;
+    padding: 2px 0;
+    color: ${({ selected }) => selected ? '#ffffff' : '#f8fafc'};
 
     @media (max-width: 768px) {
       font-size: 0.95rem;
-      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 0 1px rgba(0, 0, 0, 0.6);
     }
   }
   
@@ -305,20 +307,29 @@ const PollOption = styled.button.withConfig({
     z-index: 2;
     font-weight: 700;
     font-size: 0.9rem;
-    padding: 0.25rem 0.75rem;
-    background: rgba(0, 0, 0, 0.4);
+    padding: 0.35rem 0.85rem;
+    background: ${({ selected }) => 
+      selected 
+        ? 'rgba(0, 0, 0, 0.5)' 
+        : 'rgba(0, 0, 0, 0.45)'
+    };
     border-radius: 12px;
-    backdrop-filter: blur(8px);
+    backdrop-filter: blur(10px);
     white-space: nowrap;
     flex-shrink: 0;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    color: #ffffff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
 
     @media (max-width: 768px) {
       font-size: 0.85rem;
-      padding: 0.2rem 0.6rem;
+      padding: 0.25rem 0.7rem;
       border-radius: 8px;
-      background: rgba(0, 0, 0, 0.45);
+      background: ${({ selected }) => 
+        selected 
+          ? 'rgba(0, 0, 0, 0.55)' 
+          : 'rgba(0, 0, 0, 0.5)'
+      };
     }
   }
 `;
