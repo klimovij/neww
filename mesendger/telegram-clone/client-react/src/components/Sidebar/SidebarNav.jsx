@@ -1174,18 +1174,19 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar }
         showWorkTimeModal
       )}
       
-      {isMobile ? (
-        <LeavesWorktimeMobile 
-          key={`leaves-worktime-mobile-${portalKey}`} 
-          open={showLeavesWorktimeModal} 
-          onClose={() => setShowLeavesWorktimeModal(false)} 
-          token={localStorage.getItem('token')}
-          onOpenMobileSidebar={onOpenMobileSidebar}
-        />
-      ) : (
-        showLeavesWorktimeModal && (
+      {createSafePortal(
+        isMobile ? (
+          <LeavesWorktimeMobile 
+            key={`leaves-worktime-mobile-${portalKey}`} 
+            open={showLeavesWorktimeModal} 
+            onClose={() => setShowLeavesWorktimeModal(false)} 
+            token={localStorage.getItem('token')}
+            onOpenMobileSidebar={onOpenMobileSidebar}
+          />
+        ) : (
           <LeavesWorktimeModal key={`leaves-worktime-${portalKey}`} isOpen={showLeavesWorktimeModal} onRequestClose={() => setShowLeavesWorktimeModal(false)} token={localStorage.getItem('token')} />
-        )
+        ),
+        showLeavesWorktimeModal
       )}
       {createSafePortal(
         isMobile ? (
