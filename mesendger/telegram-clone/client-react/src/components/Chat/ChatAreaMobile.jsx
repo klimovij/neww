@@ -297,7 +297,8 @@ export default function ChatAreaMobile({ open, onClose, onOpenChatsList }) {
         <div style={{
           borderTop: '1px solid rgba(67,233,123,0.1)',
           background: 'rgba(34,40,49,0.95)',
-          padding: '12px 16px',
+          padding: '12px 16px 20px 16px',
+          paddingBottom: `calc(20px + env(safe-area-inset-bottom, 0px))`,
           position: 'sticky',
           bottom: 0,
           zIndex: 20,
