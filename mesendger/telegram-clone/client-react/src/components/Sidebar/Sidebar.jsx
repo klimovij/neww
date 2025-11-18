@@ -328,6 +328,34 @@ export default function Sidebar() {
   const [showAllUsers, setShowAllUsers] = useState(false);
   const [appTitleSettings, setAppTitleSettings] = useState(getAppTitleSettings());
 
+  // Функция нормализации URL аватарки (аналогично NewsFeed.jsx)
+  const normalizeAvatarUrl = (url) => {
+    if (!url || typeof url !== 'string') return null;
+    let trimmed = url.trim();
+    // Normalize Windows backslashes to forward slashes
+    trimmed = trimmed.replace(/\\/g, '/');
+    // If absolute local path contains uploads/avatars, strip to web path
+    const idx = trimmed.toLowerCase().indexOf('/uploads/avatars/');
+    if (idx !== -1) {
+      const path = trimmed.slice(idx);
+      // If running on different origin (e.g., 3000), prefix backend origin
+      if (typeof window !== 'undefined' && window.location && !path.startsWith('http')) {
+        return `${window.location.origin}${path}`;
+      }
+      return path;
+    }
+    if (!trimmed) return null;
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return trimmed;
+    if (trimmed.startsWith('/uploads') || trimmed.startsWith('/images')) {
+      return `${window.location.origin}${trimmed}`;
+    }
+    if (trimmed.startsWith('uploads/')) return `${window.location.origin}/${trimmed}`;
+    return `${window.location.origin}/uploads/avatars/${trimmed.replace(/^\/+/, '')}`;
+  };
+
+  // Нормализованный URL аватарки пользователя
+  const normalizedAvatarUrl = state.user?.avatarUrl ? normalizeAvatarUrl(state.user.avatarUrl) : null;
+
   const snowflakes = React.useMemo(
     () => Array.from({ length: SNOWFLAKE_COUNT }),
     []
@@ -889,10 +917,10 @@ export default function Sidebar() {
               onMouseEnter={()=>setAvatarHover(true)}
               onMouseLeave={()=>setAvatarHover(false)}
               onClick={()=>{
-                if (state.user?.avatarUrl || appTitleSettings.avatarImage) setShowAvatarModal(true);
+                if (normalizedAvatarUrl || appTitleSettings.avatarImage) setShowAvatarModal(true);
                 else fileInputRef.current?.click();
               }}
-              title={(state.user?.avatarUrl || appTitleSettings.avatarImage) ? 'Просмотреть/изменить аватар' : 'Загрузить аватар'}
+              title={(normalizedAvatarUrl || appTitleSettings.avatarImage) ? 'Просмотреть/изменить аватар' : 'Загрузить аватар'}
             >
               {appTitleSettings.avatarImage ? (
                 <>
@@ -916,9 +944,9 @@ export default function Sidebar() {
                     </>
                   )}
                 </>
-              ) : state.user?.avatarUrl ? (
+              ) : normalizedAvatarUrl ? (
                 <>
-                  <img src={state.user.avatarUrl} alt="avatar" style={{width:'100%',height:'100%',objectFit:'cover',borderRadius:'12px'}} />
+                  <img src={normalizedAvatarUrl} alt="avatar" style={{width:'100%',height:'100%',objectFit:'cover',borderRadius:'12px'}} />
                   {avatarHover && (
                     <>
                       <span
@@ -945,7 +973,7 @@ export default function Sidebar() {
                 </>
               )}
             </Avatar>
-      {showAvatarModal && (state.user?.avatarUrl || appTitleSettings.avatarImage) && (
+      {showAvatarModal && (normalizedAvatarUrl || appTitleSettings.avatarImage) && (
         <AvatarModalBg onClick={()=>setShowAvatarModal(false)}>
           <AvatarModalCloseButton 
             onClick={()=>setShowAvatarModal(false)}
@@ -953,7 +981,7 @@ export default function Sidebar() {
           >
             <FiX />
           </AvatarModalCloseButton>
-          <AvatarModalImg src={appTitleSettings.avatarImage || state.user.avatarUrl} alt="avatar-large" onClick={e=>e.stopPropagation()} />
+          <AvatarModalImg src={appTitleSettings.avatarImage || normalizedAvatarUrl} alt="avatar-large" onClick={e=>e.stopPropagation()} />
         </AvatarModalBg>
       )}
             <input ref={fileInputRef} type="file" accept="image/*" style={{display:'none'}} onChange={handleAvatarChange} />
