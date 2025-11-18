@@ -190,6 +190,7 @@ const PollOption = styled.button.withConfig({
   margin-bottom: 0.75rem;
   cursor: pointer;
   display: flex;
+  flex-direction: row;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
@@ -203,6 +204,9 @@ const PollOption = styled.button.withConfig({
   pointer-events: auto;
   user-select: none;
   -webkit-user-select: none;
+  direction: ltr;
+  writing-mode: horizontal-tb;
+  text-orientation: mixed;
   
   &::before {
     content: '';
@@ -289,6 +293,9 @@ const PollOption = styled.button.withConfig({
     z-index: 2;
     flex: 1;
     text-align: left;
+    direction: ltr;
+    writing-mode: horizontal-tb;
+    text-orientation: mixed;
     word-break: break-word;
     overflow-wrap: break-word;
     line-height: 1.5;
@@ -296,6 +303,9 @@ const PollOption = styled.button.withConfig({
     letter-spacing: 0.01em;
     padding: 2px 0;
     color: ${({ selected }) => selected ? '#ffffff' : '#f8fafc'};
+    white-space: normal;
+    display: block;
+    width: 100%;
 
     @media (max-width: 768px) {
       font-size: 0.95rem;
@@ -320,6 +330,10 @@ const PollOption = styled.button.withConfig({
     color: #ffffff;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
     border: 1px solid rgba(255, 255, 255, 0.1);
+    direction: ltr;
+    writing-mode: horizontal-tb;
+    text-orientation: mixed;
+    display: inline-block;
 
     @media (max-width: 768px) {
       font-size: 0.85rem;
