@@ -1006,7 +1006,7 @@ export default function AdminMobile({
                     )}
                     <button 
                       onClick={async ()=>{ 
-                        if(confirm('Удалить пользователя? Это действие нельзя отменить.')){ 
+                        if(window.confirm('Удалить пользователя? Это действие нельзя отменить.')){ 
                           try { 
                             await adminDelete(editRow.name);
                           } catch(e){ alert('Ошибка: '+e.message); } 

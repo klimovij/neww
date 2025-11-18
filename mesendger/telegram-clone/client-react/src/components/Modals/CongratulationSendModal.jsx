@@ -16,6 +16,23 @@ export default function CongratulationSendModal({ user, open, onClose, onSent })
   // Сброс file и fileType при открытии модального окна
   // file upload полностью отключен
 
+  // Синхронизация editor DOM при изменении text программно
+  useEffect(() => {
+    if (editorRef.current && typeof text === 'string') {
+      if (editorRef.current.innerHTML !== text) {
+        editorRef.current.innerHTML = text;
+      }
+    }
+  }, [text]);
+
+  // Загрузка кастомных эмодзи
+  useEffect(() => {
+    fetch('/api/emojis/list').then(r => r.json()).then(list => {
+      const map = {}; (Array.isArray(list) ? list : []).forEach(e => { map[`custom:${e.name}`] = e.url; });
+      setCustomEmojiMap(map);
+    }).catch(()=>{});
+  }, []);
+
   if (!open) return null;
 
   const handleGenerate = async () => {
@@ -70,23 +87,6 @@ export default function CongratulationSendModal({ user, open, onClose, onSent })
       setLoading(false);
     }
   };
-
-  // Синхронизация editor DOM при изменении text программно
-  useEffect(() => {
-    if (editorRef.current && typeof text === 'string') {
-      if (editorRef.current.innerHTML !== text) {
-        editorRef.current.innerHTML = text;
-      }
-    }
-  }, [text]);
-
-  // Загрузка кастомных эмодзи
-  useEffect(() => {
-    fetch('/api/emojis/list').then(r => r.json()).then(list => {
-      const map = {}; (Array.isArray(list) ? list : []).forEach(e => { map[`custom:${e.name}`] = e.url; });
-      setCustomEmojiMap(map);
-    }).catch(()=>{});
-  }, []);
 
   const insertCustomEmojiAtCursor = (token) => {
     if (!editorRef.current) return;

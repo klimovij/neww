@@ -451,9 +451,12 @@ export default function UserSelectionModal() {
       return () => clearTimeout(retryTimeout);
     }
     
+    // Обработчик ошибок - определяем выше, чтобы был доступен в cleanup
+    let handleError = null;
+    
     if (window.socket) {
       // Обработчик ошибок
-      const handleError = (error) => {
+      handleError = (error) => {
         console.error('❌ Socket error:', error);
         setError('Ошибка получения пользователей');
         setLoading(false);
@@ -489,7 +492,9 @@ export default function UserSelectionModal() {
     return () => { 
       if (window.socket) {
         window.socket.off('all_users', handleAllUsers);
-        window.socket.off('error', handleError);
+        if (handleError) {
+          window.socket.off('error', handleError);
+        }
       }
     };
   }, [state.user?.id, state.modals.userSelection]);

@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
+import styled from 'styled-components';
+
 // Функция для озвучки текста (без Markdown-символов)
 function speakText(text) {
   if (!window.speechSynthesis) return;
@@ -23,7 +25,6 @@ function StopSpeechButton() {
     >⏹️</button>
   );
 }
-import styled from 'styled-components';
 
 const ModalBg = styled.div`
   position: fixed;

@@ -172,16 +172,13 @@ export default function LeavesWorktimeMobile({ open, onClose, token, onOpenMobil
     };
   }, [open, handleTouchStart, handleTouchMove, handleTouchEnd]);
 
-
-  if (!open) return null;
-
   // Отладка
   useEffect(() => {
-    if (open) {
-      console.log('LeavesWorktimeMobile: open =', open, 'token =', token ? 'present' : 'missing');
-      // Проверяем, появился ли react-modal через некоторое время
-      setTimeout(() => {
-        const modalOverlay = document.querySelector('body > div.ReactModal__Overlay');
+    if (!open) return;
+    console.log('LeavesWorktimeMobile: open =', open, 'token =', token ? 'present' : 'missing');
+    // Проверяем, появился ли react-modal через некоторое время
+    setTimeout(() => {
+      const modalOverlay = document.querySelector('body > div.ReactModal__Overlay');
         const modalContent = document.querySelector('body > div[role="dialog"]');
         console.log('LeavesWorktimeMobile: modalOverlay =', modalOverlay ? 'found' : 'not found');
         console.log('LeavesWorktimeMobile: modalContent =', modalContent ? 'found' : 'not found');
