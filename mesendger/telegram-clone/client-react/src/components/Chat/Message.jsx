@@ -1511,7 +1511,7 @@ const handleLike = (emoji) => {
     setLikes(prev => prev.filter(l => !(getLikeUserId(l) === String(myId) && l.emoji === emoji)));
     window.socket.emit('unlike_message', { messageId: message.id, emoji });
   } else {
-    setLikes(prev => ([...prev, { userId: myId, username: state.user?.username, emoji }]));
+    setLikes(prev => ([...prev, { userId: myId, username: state.user?.username, emoji, created_at: new Date().toISOString() }]));
     window.socket.emit('like_message', { messageId: message.id, emoji });
   }
   setShowLikePicker(false);
@@ -1539,7 +1539,7 @@ useEffect(() => {
       if (!emoji) return;
       setLikes(prev => ([
         ...prev.filter(l => getLikeUserId(l) !== uid),
-        { userId: uid, username, emoji }
+        { userId: uid, username, emoji, created_at: data.created_at || data.createdAt || new Date().toISOString() }
       ]));
     }
   };
@@ -1866,7 +1866,25 @@ return (
                   }
                   return acc;
                 }, {})
-              ).map(([emoji, arr]) => (
+              )
+              // Сортируем эмодзи по времени первого появления (минимальное created_at для каждого типа)
+              .sort(([emojiA, arrA], [emojiB, arrB]) => {
+                const getFirstTime = (arr) => {
+                  const times = arr
+                    .map(l => {
+                      const created = l.created_at || l.createdAt;
+                      if (!created) return null;
+                      const time = new Date(created).getTime();
+                      return isNaN(time) ? null : time;
+                    })
+                    .filter(t => t !== null);
+                  return times.length > 0 ? Math.min(...times) : Date.now();
+                };
+                const timeA = getFirstTime(arrA);
+                const timeB = getFirstTime(arrB);
+                return timeA - timeB; // Сортировка по возрастанию (первый появившийся - первый в списке)
+              })
+              .map(([emoji, arr]) => (
                 <LikeButton
                   key={emoji}
                   liked={arr.some((l) => getLikeUserId(l) === String(myId))}
