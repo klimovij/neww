@@ -102,7 +102,7 @@ app.use(cors({
 
 // Обработчик поздравлений перенесен в routes/congratulations.js для избежания дублирования
 // Раздача аватаров
-app.use('/uploads/avatars', express.static(path.join(__dirname, '../uploads/avatars')));
+app.use('/uploads/avatars', express.static(path.join(__dirname, './uploads/avatars')));
 // Заглушка: получить количество непрочитанных чатов
 app.get('/api/chats/unread', async (req, res) => {
   // Здесь можно реализовать логику подсчёта непрочитанных чатов для пользователя
@@ -126,7 +126,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Статическая раздача файлов
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+app.use('/uploads', express.static(path.join(__dirname, './uploads')));
 
 // --- ДОБАВИТЬ ЭТОТ БЛОК ДЛЯ СТАТИКИ ЭМОДЗИ ---
 const emojiDir = path.resolve('C:/Users/Ksendz/web/mesendger(самый удачный)/mesendger/telegram-clone/client-react/src/assets/icons/Smile');
@@ -353,7 +353,8 @@ function authenticateToken(req, res, next) {
 
 // ==================== НАСТРОЙКА MULTER ====================
 // Создаем папки для загрузок если их нет
-const uploadsDir = path.join(__dirname, '../uploads');
+// На сервере файлы должны быть в server/uploads для соответствия Nginx
+const uploadsDir = path.join(__dirname, './uploads');
 const avatarsDir = path.join(uploadsDir, 'avatars');
 
 if (!fs.existsSync(avatarsDir)) {
@@ -1628,7 +1629,9 @@ app.post('/api/remove-avatar', authenticateToken, async (req, res) => {
     const userId = req.user.userId;
     const user = await db.getUserById(userId);
     if (user && user.avatar) {
-      const filePath = path.join(__dirname, '../', user.avatar);
+      // Удаляем префикс /uploads/avatars/ из пути и добавляем правильный путь
+      const filename = user.avatar.replace('/uploads/avatars/', '');
+      const filePath = path.join(avatarsDir, filename);
       if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
     }
     await db.setUserAvatar(userId, '');
