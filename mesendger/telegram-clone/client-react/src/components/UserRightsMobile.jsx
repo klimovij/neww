@@ -192,19 +192,18 @@ export default function UserRightsMobile({ open, onClose, onOpenMobileSidebar })
     onClose();
   }, [onClose, onOpenMobileSidebar]);
 
-  if (!open) return null;
-
-  return ReactDOM.createPortal(
+  return (
     <>
-      <div
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.85)',
-          zIndex: 10001,
+      {open && ReactDOM.createPortal(
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.85)',
+            zIndex: 100001,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -526,9 +525,10 @@ export default function UserRightsMobile({ open, onClose, onOpenMobileSidebar })
             )}
           </div>
         </div>
-      </div>
-    </>,
-    document.body
+      </div>,
+      document.body
+      )}
+    </>
   );
 }
 
