@@ -192,7 +192,7 @@ const PollOption = styled.button.withConfig({
       : 'rgba(255, 255, 255, 0.12)'
   };
   border-radius: 14px;
-  padding: 0;
+  padding: 14px 16px;
   cursor: pointer;
   display: block;
   width: 100%;
@@ -204,6 +204,10 @@ const PollOption = styled.button.withConfig({
   pointer-events: auto;
   user-select: none;
   -webkit-user-select: none;
+  text-align: left;
+  direction: ltr;
+  writing-mode: horizontal-tb;
+  text-orientation: mixed;
   
   &:hover:not(:disabled) {
     transform: translateY(-1px);
@@ -240,6 +244,7 @@ const PollOption = styled.button.withConfig({
   @media (max-width: 768px) {
     border-radius: 12px;
     border-width: 1.5px;
+    padding: 12px 14px;
     
     &:hover:not(:disabled) {
       transform: none;
@@ -247,14 +252,53 @@ const PollOption = styled.button.withConfig({
   }
 `;
 
+const PollOptionMeta = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+  
+  @media (max-width: 768px) {
+    margin-top: 6px;
+    gap: 8px;
+  }
+`;
+
+const PollOptionStats = styled.div`
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  background: ${({ selected }) => 
+    selected 
+      ? 'rgba(0, 0, 0, 0.35)' 
+      : 'rgba(0, 0, 0, 0.3)'
+  };
+  border-radius: 8px;
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  white-space: nowrap;
+  direction: ltr;
+  writing-mode: horizontal-tb;
+  
+  @media (max-width: 768px) {
+    padding: 4px 8px;
+    border-radius: 6px;
+    gap: 5px;
+    font-size: 0.85rem;
+  }
+`;
+
 const PollProgressBar = styled.div.withConfig({
   shouldForwardProp: (prop) => prop !== 'percent'
 })`
-  width: 100%;
+  flex: 1;
+  min-width: 120px;
   height: 4px;
   background: rgba(255, 255, 255, 0.08);
   border-radius: 2px;
-  margin-top: 6px;
   overflow: hidden;
   position: relative;
   
@@ -277,31 +321,11 @@ const PollProgressBar = styled.div.withConfig({
   
   @media (max-width: 768px) {
     height: 3px;
-    margin-top: 5px;
+    min-width: 100px;
   }
 `;
 
-const PollOptionContent = styled.div`
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 14px 16px;
-  position: relative;
-  z-index: 2;
-  direction: ltr;
-  writing-mode: horizontal-tb;
-  
-  @media (max-width: 768px) {
-    padding: 12px 14px;
-    gap: 10px;
-  }
-`;
-
-const PollOptionText = styled.div`
-  flex: 1;
-  min-width: 0;
+const PollOptionText = styled.span`
   font-size: 1rem;
   font-weight: 600;
   line-height: 1.5;
@@ -309,7 +333,7 @@ const PollOptionText = styled.div`
   word-break: break-word;
   overflow-wrap: break-word;
   text-align: left;
-  display: inline-block;
+  display: inline;
   white-space: normal;
   direction: ltr;
   writing-mode: horizontal-tb;
@@ -320,30 +344,6 @@ const PollOptionText = styled.div`
   }
 `;
 
-const PollOptionStats = styled.div`
-  flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  background: ${({ selected }) => 
-    selected 
-      ? 'rgba(0, 0, 0, 0.35)' 
-      : 'rgba(0, 0, 0, 0.3)'
-  };
-  border-radius: 10px;
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  white-space: nowrap;
-  direction: ltr;
-  writing-mode: horizontal-tb;
-  
-  @media (max-width: 768px) {
-    padding: 5px 10px;
-    border-radius: 8px;
-    gap: 5px;
-  }
-`;
 
 const PollOptionCount = styled.span`
   font-size: 0.85rem;
@@ -801,17 +801,17 @@ function PollMessage({ message, userId, participants }) {
                           : 'Проголосовать'
                 }
               >
-                <PollOptionContent>
-                  <PollOptionText selected={selected === idx}>
-                    {opt}
-                  </PollOptionText>
-                  <PollOptionStats selected={selected === idx}>
-                    <PollOptionCount>{count} голосов</PollOptionCount>
-                    <PollOptionPercent selected={selected === idx}>• {percent}%</PollOptionPercent>
-                  </PollOptionStats>
-                </PollOptionContent>
+                <PollOptionText selected={selected === idx}>
+                  {opt}
+                </PollOptionText>
               </PollOption>
-              <PollProgressBar percent={percent} />
+              <PollOptionMeta>
+                <PollProgressBar percent={percent} />
+                <PollOptionStats selected={selected === idx}>
+                  <PollOptionCount>{count} голосов</PollOptionCount>
+                  <PollOptionPercent selected={selected === idx}>• {percent}%</PollOptionPercent>
+                </PollOptionStats>
+              </PollOptionMeta>
             </PollOptionWrapper>
           );
         })
