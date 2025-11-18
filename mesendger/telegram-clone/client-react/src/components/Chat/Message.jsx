@@ -200,6 +200,9 @@ const PollOption = styled.button.withConfig({
   min-height: 56px;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
+  pointer-events: auto;
+  user-select: none;
+  -webkit-user-select: none;
   
   &::before {
     content: '';
@@ -216,6 +219,7 @@ const PollOption = styled.button.withConfig({
     transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
     border-radius: 15px;
     z-index: 1;
+    pointer-events: none;
   }
   
   &:hover:not(:disabled) {
