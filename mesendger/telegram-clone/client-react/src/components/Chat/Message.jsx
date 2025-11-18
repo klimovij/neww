@@ -169,8 +169,17 @@ const PollTitle = styled.div`
   }
 `;
 
+const PollOptionWrapper = styled.div`
+  margin-bottom: 12px;
+  width: 100%;
+  
+  @media (max-width: 768px) {
+    margin-bottom: 10px;
+  }
+`;
+
 const PollOption = styled.button.withConfig({
-  shouldForwardProp: (prop) => !['selected', 'percent', 'hasSelection'].includes(prop)
+  shouldForwardProp: (prop) => !['selected', 'hasSelection'].includes(prop)
 })`
   background: ${({ selected }) => 
     selected 
@@ -184,38 +193,17 @@ const PollOption = styled.button.withConfig({
   };
   border-radius: 14px;
   padding: 0;
-  margin-bottom: 10px;
   cursor: pointer;
   display: block;
   width: 100%;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
-  overflow: hidden;
   backdrop-filter: blur(12px);
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
   pointer-events: auto;
   user-select: none;
   -webkit-user-select: none;
-  
-  /* Progress bar background */
-  &::before {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    height: 4px;
-    width: ${({ percent }) => percent || 0}%;
-    background: linear-gradient(90deg, 
-      #6366f1 0%, 
-      #8b5cf6 50%,
-      #ec4899 100%
-    );
-    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-    z-index: 1;
-    pointer-events: none;
-    box-shadow: 0 0 8px rgba(99, 102, 241, 0.5);
-  }
   
   &:hover:not(:disabled) {
     transform: translateY(-1px);
@@ -251,12 +239,7 @@ const PollOption = styled.button.withConfig({
 
   @media (max-width: 768px) {
     border-radius: 12px;
-    margin-bottom: 8px;
     border-width: 1.5px;
-
-    &::before {
-      height: 3px;
-    }
     
     &:hover:not(:disabled) {
       transform: none;
@@ -264,14 +247,51 @@ const PollOption = styled.button.withConfig({
   }
 `;
 
+const PollProgressBar = styled.div.withConfig({
+  shouldForwardProp: (prop) => prop !== 'percent'
+})`
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 2px;
+  margin-top: 6px;
+  overflow: hidden;
+  position: relative;
+  
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: ${({ percent }) => percent || 0}%;
+    background: linear-gradient(90deg, 
+      #6366f1 0%, 
+      #8b5cf6 50%,
+      #ec4899 100%
+    );
+    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 2px;
+    box-shadow: 0 0 8px rgba(99, 102, 241, 0.5);
+  }
+  
+  @media (max-width: 768px) {
+    height: 3px;
+    margin-top: 5px;
+  }
+`;
+
 const PollOptionContent = styled.div`
   display: flex;
+  flex-direction: row;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   padding: 14px 16px;
   position: relative;
   z-index: 2;
+  direction: ltr;
+  writing-mode: horizontal-tb;
   
   @media (max-width: 768px) {
     padding: 12px 14px;
@@ -289,6 +309,11 @@ const PollOptionText = styled.div`
   word-break: break-word;
   overflow-wrap: break-word;
   text-align: left;
+  display: inline-block;
+  white-space: normal;
+  direction: ltr;
+  writing-mode: horizontal-tb;
+  text-orientation: mixed;
   
   @media (max-width: 768px) {
     font-size: 0.95rem;
@@ -297,7 +322,7 @@ const PollOptionText = styled.div`
 
 const PollOptionStats = styled.div`
   flex-shrink: 0;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 6px;
   padding: 6px 12px;
@@ -309,6 +334,9 @@ const PollOptionStats = styled.div`
   border-radius: 10px;
   backdrop-filter: blur(8px);
   border: 1px solid rgba(255, 255, 255, 0.08);
+  white-space: nowrap;
+  direction: ltr;
+  writing-mode: horizontal-tb;
   
   @media (max-width: 768px) {
     padding: 5px 10px;
@@ -753,37 +781,38 @@ function PollMessage({ message, userId, participants }) {
         pollOptions.map((opt, idx) => {
           const count = votes[idx]?.length || 0;
           const percent = totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 0;
-          return (
-            <PollOption
-              key={idx}
-              selected={selected === idx}
-              hasSelection={selected !== null}
-              disabled={closed || loading}
-              onClick={() => handleVote(idx)}
-              percent={percent}
-              type="button"
-              title={
-                closed 
-                  ? 'Голосование завершено' 
-                  : loading
-                    ? 'Загрузка...'
-                    : selected === idx 
-                      ? 'Вы выбрали этот вариант' 
-                      : selected !== null 
-                        ? 'Нажмите, чтобы переголосовать' 
-                        : 'Проголосовать'
-              }
-            >
-              <PollOptionContent>
-                <PollOptionText selected={selected === idx}>
-                  {opt}
-                </PollOptionText>
-                <PollOptionStats selected={selected === idx}>
-                  <PollOptionCount>{count} голосов</PollOptionCount>
-                  <PollOptionPercent selected={selected === idx}>• {percent}%</PollOptionPercent>
-                </PollOptionStats>
-              </PollOptionContent>
-            </PollOption>
+              return (
+            <PollOptionWrapper key={idx}>
+              <PollOption
+                selected={selected === idx}
+                hasSelection={selected !== null}
+                disabled={closed || loading}
+                onClick={() => handleVote(idx)}
+                type="button"
+                title={
+                  closed 
+                    ? 'Голосование завершено' 
+                    : loading
+                      ? 'Загрузка...'
+                      : selected === idx 
+                        ? 'Вы выбрали этот вариант' 
+                        : selected !== null 
+                          ? 'Нажмите, чтобы переголосовать' 
+                          : 'Проголосовать'
+                }
+              >
+                <PollOptionContent>
+                  <PollOptionText selected={selected === idx}>
+                    {opt}
+                  </PollOptionText>
+                  <PollOptionStats selected={selected === idx}>
+                    <PollOptionCount>{count} голосов</PollOptionCount>
+                    <PollOptionPercent selected={selected === idx}>• {percent}%</PollOptionPercent>
+                  </PollOptionStats>
+                </PollOptionContent>
+              </PollOption>
+              <PollProgressBar percent={percent} />
+            </PollOptionWrapper>
           );
         })
       ) : (
