@@ -4320,6 +4320,11 @@ socket.on('delete_chat', requireAuth(async (data) => {
       // Для poll-сообщения сразу сохраняем pollOptions, pollVotes, pollVoters
       let messageId;
       if (messageType === 'poll') {
+        console.log('📊 Creating poll message:', { pollOptions, content, chatId });
+        if (!pollOptions || !Array.isArray(pollOptions) || pollOptions.length === 0) {
+          socket.emit('error', 'Варианты голосования обязательны');
+          return;
+        }
         messageId = await db.createMessage(
           chatId,
           socket.userId,
@@ -4329,7 +4334,9 @@ socket.on('delete_chat', requireAuth(async (data) => {
           replyToId
         );
         // Сохраняем pollOptions, pollVotes, pollVoters
-        await db.updatePoll(messageId, JSON.stringify(pollOptions || []), JSON.stringify({}), JSON.stringify([]));
+        const pollOptionsStr = JSON.stringify(pollOptions);
+        console.log('📊 Saving poll to DB:', { messageId, pollOptions: pollOptions, pollOptionsStr });
+        await db.updatePoll(messageId, pollOptionsStr, JSON.stringify({}), JSON.stringify([]));
       } else {
         messageId = await db.createMessage(
           chatId,
@@ -4367,13 +4374,19 @@ socket.on('delete_chat', requireAuth(async (data) => {
         user_liked: 0,
         // Для poll-сообщения добавляем pollOptions, pollVotes, pollVoters
         ...(messageType === 'poll' ? {
-          pollOptions: pollOptions || [],
+          pollOptions: Array.isArray(pollOptions) ? pollOptions : [],
           pollVotes: {},
           pollVoters: []
         } : {})
       };
     
       // Отправляем сообщение всем участникам чата
+      console.log('📨 Emitting new_message:', { 
+        messageId: message.id, 
+        messageType: message.message_type, 
+        pollOptions: message.pollOptions,
+        hasPollOptions: !!message.pollOptions
+      });
       io.to(`chat_${chatId}`).emit('new_message', message);
     
       // Подтверждение отправки

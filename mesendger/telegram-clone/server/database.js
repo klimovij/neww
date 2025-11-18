@@ -1225,6 +1225,24 @@ class Database {
           reject(err);
         } else {
           console.log('[DB] getMessageById RESULT:', row);
+          // Для poll-сообщения парсим pollOptions, pollVotes, pollVoters
+          if (row && row.message_type === 'poll') {
+            try {
+              row.pollOptions = row.poll_options ? JSON.parse(row.poll_options) : [];
+            } catch {
+              row.pollOptions = [];
+            }
+            try {
+              row.pollVotes = row.poll_votes ? JSON.parse(row.poll_votes) : {};
+            } catch {
+              row.pollVotes = {};
+            }
+            try {
+              row.pollVoters = row.poll_voters ? JSON.parse(row.poll_voters) : [];
+            } catch {
+              row.pollVoters = [];
+            }
+          }
           resolve(row);
         }
       });
