@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { FaArrowLeft } from 'react-icons/fa';
 import { FiX } from 'react-icons/fi';
@@ -10,6 +10,51 @@ import PinnedMessages from './PinnedMessages';
 export default function ChatAreaMobile({ open, onClose, onOpenChatsList }) {
   const { state } = useApp();
   const modalRef = useRef(null);
+  const messagesContainerRef = useRef(null);
+
+  // При открытии чата скроллим вниз
+  useEffect(() => {
+    if (open && state.currentChat && messagesContainerRef.current) {
+      // Даем время на рендер, затем скроллим вниз
+      const scrollToBottom = () => {
+        if (messagesContainerRef.current) {
+          const container = messagesContainerRef.current;
+          container.scrollTop = container.scrollHeight;
+        }
+      };
+
+      // Первый скролл после небольшой задержки
+      const timer1 = setTimeout(scrollToBottom, 100);
+      
+      // Дополнительные скроллы для гарантии
+      const timer2 = setTimeout(scrollToBottom, 300);
+      const timer3 = setTimeout(scrollToBottom, 500);
+
+      return () => {
+        clearTimeout(timer1);
+        clearTimeout(timer2);
+        clearTimeout(timer3);
+      };
+    }
+  }, [open, state.currentChat?.id]);
+
+  // При загрузке/обновлении сообщений также скроллим вниз
+  useEffect(() => {
+    if (open && state.currentChat && state.messages.length > 0 && messagesContainerRef.current) {
+      const timer = setTimeout(() => {
+        if (messagesContainerRef.current) {
+          const container = messagesContainerRef.current;
+          // Скроллим только если пользователь уже внизу или сообщений мало
+          const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
+          if (isNearBottom || state.messages.length <= 5) {
+            container.scrollTop = container.scrollHeight;
+          }
+        }
+      }, 150);
+
+      return () => clearTimeout(timer);
+    }
+  }, [open, state.messages.length, state.currentChat?.id]);
 
   const handleClose = () => {
     if (onOpenChatsList) {
@@ -108,11 +153,16 @@ export default function ChatAreaMobile({ open, onClose, onOpenChatsList }) {
         left: 0,
         right: 0,
         bottom: 0,
+        width: '100vw',
+        height: '100vh',
+        maxWidth: '100vw',
+        maxHeight: '100vh',
         background: 'rgba(0,0,0,0.85)',
         zIndex: 100001,
         display: 'flex',
         flexDirection: 'column',
-        overflow: 'hidden'
+        overflow: 'hidden',
+        touchAction: 'none'
       }}
       onClick={handleClose}
     >
@@ -123,6 +173,8 @@ export default function ChatAreaMobile({ open, onClose, onOpenChatsList }) {
           background: 'linear-gradient(135deg, #232931 0%, #181c22 100%)',
           width: '100%',
           height: '100%',
+          maxWidth: '100%',
+          maxHeight: '100%',
           display: 'flex',
           flexDirection: 'column',
           position: 'relative',
@@ -209,12 +261,17 @@ export default function ChatAreaMobile({ open, onClose, onOpenChatsList }) {
         />
 
         {/* Список сообщений */}
-        <div style={{
-          flex: 1,
-          overflowY: 'auto',
-          WebkitOverflowScrolling: 'touch',
-          background: 'linear-gradient(135deg, #232931 0%, #232b3a 100%)'
-        }}>
+        <div 
+          ref={messagesContainerRef}
+          style={{
+            flex: 1,
+            overflowY: 'auto',
+            WebkitOverflowScrolling: 'touch',
+            background: 'linear-gradient(135deg, #232931 0%, #232b3a 100%)',
+            minHeight: 0,
+            overscrollBehavior: 'contain'
+          }}
+        >
           <MessageList />
         </div>
 
@@ -240,7 +297,10 @@ export default function ChatAreaMobile({ open, onClose, onOpenChatsList }) {
           borderTop: '1px solid rgba(67,233,123,0.1)',
           background: 'rgba(34,40,49,0.95)',
           padding: '12px 16px',
-          position: 'relative'
+          position: 'sticky',
+          bottom: 0,
+          zIndex: 20,
+          flexShrink: 0
         }}>
           <MessageInput isMobile={true} />
         </div>
@@ -252,7 +312,12 @@ export default function ChatAreaMobile({ open, onClose, onOpenChatsList }) {
           background: 'rgba(34,40,49,0.6)',
           textAlign: 'center',
           fontSize: '0.75em',
-          color: '#b2bec3'
+          color: '#b2bec3',
+          position: 'sticky',
+          bottom: 0,
+          zIndex: 19,
+          flexShrink: 0,
+          display: 'none'
         }}>
           ← Свайпните вправо, чтобы вернуться к чатам
         </div>
