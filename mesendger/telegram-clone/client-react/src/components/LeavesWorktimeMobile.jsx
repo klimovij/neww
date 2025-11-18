@@ -179,11 +179,10 @@ export default function LeavesWorktimeMobile({ open, onClose, token, onOpenMobil
     // Проверяем, появился ли react-modal через некоторое время
     setTimeout(() => {
       const modalOverlay = document.querySelector('body > div.ReactModal__Overlay');
-        const modalContent = document.querySelector('body > div[role="dialog"]');
-        console.log('LeavesWorktimeMobile: modalOverlay =', modalOverlay ? 'found' : 'not found');
-        console.log('LeavesWorktimeMobile: modalContent =', modalContent ? 'found' : 'not found');
-      }, 500);
-    }
+      const modalContent = document.querySelector('body > div[role="dialog"]');
+      console.log('LeavesWorktimeMobile: modalOverlay =', modalOverlay ? 'found' : 'not found');
+      console.log('LeavesWorktimeMobile: modalContent =', modalContent ? 'found' : 'not found');
+    }, 500);
   }, [open, token]);
 
   return (
