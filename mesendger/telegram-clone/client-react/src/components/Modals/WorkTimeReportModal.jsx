@@ -1,10 +1,3 @@
-  // Функция очистки поиска
-const handleClearSearch = () => {
-  setSearchTerm('');
-  setSelectedUser('');
-  setShowAutocomplete(false);
-  setUserOptions(usersList);
-};
 import React, { useState, useEffect } from 'react';
 import Modal from 'react-modal';
 import '../../styles/WorkTimeReportModal.css';

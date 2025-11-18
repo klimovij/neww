@@ -124,7 +124,7 @@ const TemplatesManagementModal = ({ isOpen, onClose }) => {
 
   // Удаление шаблона
   const handleDelete = async (templateId) => {
-    if (!confirm('Удалить этот шаблон?')) return;
+    if (!window.confirm('Удалить этот шаблон?')) return;
 
     try {
       const token = localStorage.getItem('token');

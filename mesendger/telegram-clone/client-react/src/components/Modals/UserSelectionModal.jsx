@@ -452,14 +452,14 @@ export default function UserSelectionModal() {
     }
     
     if (window.socket) {
-      window.socket.on('all_users', handleAllUsers);
-      
       // Обработчик ошибок
       const handleError = (error) => {
         console.error('❌ Socket error:', error);
         setError('Ошибка получения пользователей');
         setLoading(false);
       };
+      
+      window.socket.on('all_users', handleAllUsers);
       window.socket.on('error', handleError);
       
       // Если модалка открыта, запрашиваем список пользователей

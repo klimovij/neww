@@ -426,8 +426,8 @@ export default function UploadModalMobile({ open, onClose, onOpenMobileSidebar }
       // Используем размеры мобильного устройства
       const mobileWidth = 375;
       const mobileHeight = 667;
-      const left = (screen.width - mobileWidth) / 2;
-      const top = (screen.height - mobileHeight) / 2;
+      const left = (window.screen.width - mobileWidth) / 2;
+      const top = (window.screen.height - mobileHeight) / 2;
       
       const printWindow = window.open(
         '', 
