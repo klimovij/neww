@@ -188,7 +188,7 @@ export default function LeavesWorktimeMobile({ open, onClose, token, onOpenMobil
   return (
     <>
       {/* Рендерим LeavesWorktimeModal - он сам создаст свой портал через react-modal */}
-      {modalComponent}
+      {open && modalComponent}
 
       {/* CSS оверрайды для мобильной адаптации - применяем глобально */}
       {open && <style>{`
