@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { FaArrowLeft } from 'react-icons/fa';
 import { FiX, FiPlus } from 'react-icons/fi';
+import { FaVoteYea } from 'react-icons/fa';
 import NewsFeed from './NewsFeed';
 
 export default function NewsMobile({ open, onClose, onOpenMobileSidebar }) {
@@ -9,6 +10,11 @@ export default function NewsMobile({ open, onClose, onOpenMobileSidebar }) {
   const touchEndX = useRef(null);
   const modalRef = useRef(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showPollModal, setShowPollModal] = useState(false);
+  const [pollQuestion, setPollQuestion] = useState('');
+  const [pollOptions, setPollOptions] = useState(['', '']);
+  const [isPollSending, setIsPollSending] = useState(false);
+  const [tab, setTab] = useState('news');
   
   // Проверяем права пользователя на создание новостей
   const userRaw = localStorage.getItem('user');
@@ -150,33 +156,100 @@ export default function NewsMobile({ open, onClose, onOpenMobileSidebar }) {
             Новости
           </h2>
 
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
             {canManageNews && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowAddModal(true);
-                }}
-                style={{
-                  background: 'linear-gradient(135deg, #2193b0 0%, #43e97b 100%)',
-                  border: 'none',
-                  color: '#fff',
-                  fontSize: '20px',
-                  cursor: 'pointer',
-                  padding: '8px 12px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  borderRadius: '8px',
-                  transition: 'all 0.2s',
-                  boxShadow: '0 2px 8px rgba(67, 233, 123, 0.3)',
-                }}
-                onMouseEnter={(e) => e.target.style.transform = 'scale(1.05)'}
-                onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
-                title="Создать новость"
-              >
-                <FiPlus />
-              </button>
+              <>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowAddModal(true);
+                  }}
+                  style={{
+                    background: 'linear-gradient(135deg, #2193b0 0%, #43e97b 100%)',
+                    border: 'none',
+                    color: '#fff',
+                    fontSize: '12px',
+                    cursor: 'pointer',
+                    padding: '6px 10px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderRadius: '8px',
+                    transition: 'all 0.2s',
+                    boxShadow: '0 2px 8px rgba(67, 233, 123, 0.3)',
+                    fontWeight: 600,
+                    whiteSpace: 'nowrap',
+                  }}
+                  onMouseEnter={(e) => e.target.style.transform = 'scale(1.05)'}
+                  onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
+                  title="Добавить новость"
+                >
+                  <FiPlus size={14} style={{ marginRight: '4px' }} />
+                  Новость
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowPollModal(true);
+                  }}
+                  style={{
+                    background: 'linear-gradient(135deg, #ff9800 0%, #f57c00 100%)',
+                    border: 'none',
+                    color: '#fff',
+                    fontSize: '12px',
+                    cursor: 'pointer',
+                    padding: '6px 10px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderRadius: '8px',
+                    transition: 'all 0.2s',
+                    boxShadow: '0 2px 8px rgba(255, 152, 0, 0.3)',
+                    fontWeight: 600,
+                    whiteSpace: 'nowrap',
+                  }}
+                  onMouseEnter={(e) => e.target.style.transform = 'scale(1.05)'}
+                  onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
+                  title="Создать голосование"
+                >
+                  <FaVoteYea size={14} style={{ marginRight: '4px' }} />
+                  Голосование
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setTab('news');
+                  }}
+                  style={{
+                    background: tab === 'news' ? 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)' : 'rgba(255, 255, 255, 0.1)',
+                    border: tab === 'news' ? 'none' : '1px solid rgba(255, 255, 255, 0.2)',
+                    color: '#fff',
+                    fontSize: '12px',
+                    cursor: 'pointer',
+                    padding: '6px 10px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderRadius: '8px',
+                    transition: 'all 0.2s',
+                    fontWeight: 600,
+                    whiteSpace: 'nowrap',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (tab !== 'news') {
+                      e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.15)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (tab !== 'news') {
+                      e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+                    }
+                  }}
+                  title="Новости"
+                >
+                  Новости
+                </button>
+              </>
             )}
             <button
               onClick={handleClose}
@@ -355,6 +428,191 @@ export default function NewsMobile({ open, onClose, onOpenMobileSidebar }) {
                 }}
               >
                 Добавить
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+      
+      {/* Модалка создания голосования */}
+      {showPollModal && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.85)',
+            zIndex: 100001,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px',
+          }}
+          onClick={() => setShowPollModal(false)}
+        >
+          <div
+            style={{
+              width: '100%',
+              maxWidth: '600px',
+              backgroundColor: '#fff',
+              borderRadius: '16px',
+              padding: '24px',
+              position: 'relative',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setShowPollModal(false)}
+              style={{
+                position: 'absolute',
+                top: '12px',
+                right: '16px',
+                fontSize: '24px',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: '#ff9800',
+                padding: '4px',
+              }}
+            >
+              ×
+            </button>
+            <h3 style={{ marginBottom: '16px', color: '#ff9800', fontSize: '1.2em', fontWeight: 700 }}>
+              Создать голосование
+            </h3>
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                if (!pollQuestion.trim() || pollOptions.some(opt => !opt.trim())) {
+                  alert('Заполните вопрос и все варианты ответа');
+                  return;
+                }
+                
+                setIsPollSending(true);
+                try {
+                  const response = await fetch('/api/news/poll', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      Authorization: `Bearer ${token}`,
+                    },
+                    body: JSON.stringify({
+                      type: 'poll',
+                      question: pollQuestion.trim(),
+                      options: pollOptions.map(opt => opt.trim()).filter(Boolean),
+                    }),
+                  });
+                  
+                  if (response.ok) {
+                    setShowPollModal(false);
+                    setPollQuestion('');
+                    setPollOptions(['', '']);
+                    window.dispatchEvent(new CustomEvent('news-published'));
+                  } else {
+                    const error = await response.json().catch(() => ({}));
+                    alert(`Ошибка создания голосования: ${error.error || 'Неизвестная ошибка'}`);
+                  }
+                } catch (error) {
+                  console.error('Ошибка создания голосования:', error);
+                  alert('Ошибка создания голосования');
+                } finally {
+                  setIsPollSending(false);
+                }
+              }}
+              style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}
+            >
+              <input
+                type="text"
+                placeholder="Тема голосования"
+                value={pollQuestion}
+                onChange={(e) => setPollQuestion(e.target.value)}
+                required
+                maxLength={120}
+                autoFocus
+                style={{
+                  padding: '10px 14px',
+                  borderRadius: '10px',
+                  border: '1.5px solid #ff9800',
+                  fontWeight: 600,
+                  fontSize: '1.06em',
+                  background: 'rgba(255,255,255,0.92)',
+                }}
+              />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {pollOptions.map((opt, idx) => (
+                  <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <input
+                      type="text"
+                      placeholder={`Вариант ${idx + 1}`}
+                      value={opt}
+                      onChange={(e) => setPollOptions(pollOptions.map((o, i) => i === idx ? e.target.value : o))}
+                      required
+                      maxLength={60}
+                      style={{
+                        flex: 1,
+                        padding: '10px 14px',
+                        borderRadius: '10px',
+                        border: '1.5px solid #ff9800',
+                        fontSize: '1em',
+                        background: 'rgba(255,255,255,0.92)',
+                      }}
+                    />
+                    {pollOptions.length > 2 && (
+                      <button
+                        type="button"
+                        onClick={() => setPollOptions(pollOptions.filter((_, i) => i !== idx))}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: '#e74c3c',
+                          fontSize: '22px',
+                          cursor: 'pointer',
+                          padding: '4px',
+                        }}
+                        title="Удалить вариант"
+                      >
+                        ×
+                      </button>
+                    )}
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => setPollOptions([...pollOptions, ''])}
+                  style={{
+                    background: 'none',
+                    border: '1.5px dashed #ff9800',
+                    color: '#ff9800',
+                    borderRadius: '8px',
+                    padding: '8px 14px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    fontSize: '0.95em',
+                  }}
+                >
+                  + Добавить вариант
+                </button>
+              </div>
+              <button
+                type="submit"
+                disabled={isPollSending}
+                style={{
+                  background: 'linear-gradient(135deg, #ff9800 0%, #f57c00 100%)',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '10px',
+                  padding: '10px 18px',
+                  fontWeight: 700,
+                  cursor: isPollSending ? 'not-allowed' : 'pointer',
+                  boxShadow: '0 2px 8px rgba(255, 152, 0, 0.3)',
+                  opacity: isPollSending ? 0.7 : 1,
+                }}
+              >
+                {isPollSending ? 'Создание...' : 'Создать'}
               </button>
             </form>
           </div>
