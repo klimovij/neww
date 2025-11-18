@@ -677,7 +677,7 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar }
     setActive(n.key);
     
     // Определяем, является ли это модалкой
-    const isModal = ['all-leaves', 'tasks', 'news', 'todo', 'leaves', 'chats'].includes(n.key);
+    const isModal = ['all-leaves', 'tasks', 'news', 'todo', 'leaves', 'chats', 'employees', 'worktime', 'leaves-worktime', 'admin'].includes(n.key);
     
     // Для модалок: сначала открываем модалку, потом закрываем сайдбар
     // Для не-модалок: закрываем все модалки и сайдбар
@@ -695,12 +695,15 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar }
         setShowChatAreaModal(false);
       }
       // Закрываем остальные модалки
+      if (n.key !== 'worktime') setShowWorkTimeModal(false);
+      if (n.key !== 'leaves-worktime') setShowLeavesWorktimeModal(false);
+      if (n.key !== 'employees') {
+        setShowEmployeesModal(false);
+        setShowBirthdaysModal(false);
+        setShowRatingModal(false);
+      }
+      if (n.key !== 'admin') setShowAdminModal(false);
       setShowUploadModal(false);
-      setShowWorkTimeModal(false);
-      setShowLeavesWorktimeModal(false);
-      setShowEmployeesModal(false);
-      setShowBirthdaysModal(false);
-      setShowRatingModal(false);
       
       // Открываем нужную модалку сразу
       switch (n.key) {
@@ -774,6 +777,50 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar }
             }, 100);
           }
           break;
+        case 'employees':
+          // Для обычных пользователей показываем только рейтинг, для админов/HR - полную модалку
+          const userRole = appState.user?.role;
+          if (userRole === 'user') {
+            // Обычные пользователи видят только рейтинг
+            window.dispatchEvent(new Event('show-employee-rating'));
+          } else {
+            // Админы и HR видят полную модалку с функциями сотрудников (список, дни рождения, календарь, рейтинг)
+            if (isMobile) {
+              requestAnimationFrame(() => {
+                setShowBirthdaysModal(true);
+              });
+            } else {
+              setTimeout(() => setShowBirthdaysModal(true), 0);
+            }
+          }
+          break;
+        case 'worktime':
+          if (isMobile) {
+            requestAnimationFrame(() => {
+              setShowWorkTimeModal(true);
+            });
+          } else {
+            setTimeout(() => setShowWorkTimeModal(true), 0);
+          }
+          break;
+        case 'leaves-worktime':
+          if (isMobile) {
+            requestAnimationFrame(() => {
+              setShowLeavesWorktimeModal(true);
+            });
+          } else {
+            setTimeout(() => setShowLeavesWorktimeModal(true), 0);
+          }
+          break;
+        case 'admin':
+          if (isMobile) {
+            requestAnimationFrame(() => {
+              setShowAdminModal(true);
+            });
+          } else {
+            setTimeout(() => setShowAdminModal(true), 0);
+          }
+          break;
         default:
           break;
       }
@@ -793,60 +840,6 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar }
       }
       // Переключаем основной контент
       window.dispatchEvent(new CustomEvent(n.event));
-    }
-    
-    // Обработка остальных случаев (для не-модалок)
-    if (!isModal) {
-      switch (n.key) {
-      case 'employees':
-        // Для обычных пользователей показываем только рейтинг, для админов/HR - полную модалку
-        const userRole = appState.user?.role;
-        if (userRole === 'user') {
-          // Обычные пользователи видят только рейтинг
-          window.dispatchEvent(new Event('show-employee-rating'));
-        } else {
-          // Админы и HR видят полную модалку с функциями сотрудников (список, дни рождения, календарь, рейтинг)
-          if (isMobile) {
-            requestAnimationFrame(() => {
-              setShowBirthdaysModal(true);
-            });
-          } else {
-            setTimeout(() => setShowBirthdaysModal(true), 0);
-          }
-        }
-        break;
-      case 'chats':
-        if (isMobile) {
-          requestAnimationFrame(() => {
-            setShowChatsModal(true);
-          });
-        } else {
-          // Для десктопной версии: открываем ChatArea и модалку чатов
-          window.dispatchEvent(new CustomEvent('show-chat'));
-          dispatch({ type: 'TOGGLE_MODAL', payload: { modal: 'chatsList', show: true } });
-        }
-        break;
-      case 'ai':
-        window.dispatchEvent(new CustomEvent('show-ai'));
-        break;
-      case 'worktime':
-        if (isMobile) {
-          requestAnimationFrame(() => {
-            setShowWorkTimeModal(true);
-          });
-        } else {
-          setTimeout(() => setShowWorkTimeModal(true), 0);
-        }
-        break;
-      case 'leaves-worktime':
-        setTimeout(() => setShowLeavesWorktimeModal(true), 0);
-        break;
-      case 'admin':
-        setTimeout(() => setShowAdminModal(true), 0);
-        break;
-      default:
-        break;
-      }
     }
   };
 
