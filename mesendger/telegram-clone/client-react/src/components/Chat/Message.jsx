@@ -692,14 +692,35 @@ function PollMessage({ message, userId, participants }) {
   };
 
   // Получаем варианты голосования из разных возможных полей
-  const pollOptions = message.pollOptions || message.options || message.poll_options || [];
+  // Пытаемся распарсить poll_options если это строка (из БД)
+  let pollOptions = [];
+  if (message.pollOptions) {
+    pollOptions = Array.isArray(message.pollOptions) ? message.pollOptions : [];
+  } else if (message.poll_options) {
+    try {
+      pollOptions = typeof message.poll_options === 'string' 
+        ? JSON.parse(message.poll_options) 
+        : (Array.isArray(message.poll_options) ? message.poll_options : []);
+    } catch {
+      pollOptions = [];
+    }
+  } else if (message.options) {
+    pollOptions = Array.isArray(message.options) ? message.options : [];
+  }
   
   // Отладочный лог
   console.log('PollMessage render:', {
     messageId: message.id,
     content: message.content,
     pollOptions: pollOptions,
-    messageKeys: Object.keys(message)
+    pollOptionsLength: pollOptions?.length,
+    messageType: message.message_type,
+    messageKeys: Object.keys(message),
+    hasPollOptions: !!message.pollOptions,
+    hasPoll_options: !!message.poll_options,
+    hasOptions: !!message.options,
+    rawPollOptions: message.pollOptions,
+    rawPoll_options: message.poll_options
   });
 
   return (
