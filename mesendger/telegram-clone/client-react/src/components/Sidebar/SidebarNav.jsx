@@ -296,7 +296,9 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar }
 
   // Безопасное создание портала с дополнительными проверками
   const createSafePortal = (component, condition) => {
-    if (!condition) return null;
+    if (!condition) {
+      return null;
+    }
     
     try {
       const root = getModalRoot();
@@ -305,9 +307,11 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar }
         return null;
       }
       // pointer-events управляются через useEffect, который отслеживает состояние всех модалок
-      return ReactDOM.createPortal(component, root);
+      const portal = ReactDOM.createPortal(component, root);
+      console.log('SidebarNav: Portal created for condition:', condition);
+      return portal;
     } catch (error) {
-      console.warn('Failed to create portal:', error);
+      console.error('Failed to create portal:', error);
       return null;
     }
   };
@@ -920,12 +924,13 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar }
               }
               break;
             case 'admin':
+              console.log('SidebarNav: Opening admin modal, isMobile:', isMobile);
               if (isMobile) {
-                requestAnimationFrame(() => {
-                  setShowAdminModal(true);
-                });
+                setShowAdminModal(true);
+                console.log('SidebarNav: Admin modal state set to true (mobile)');
               } else {
-                setTimeout(() => setShowAdminModal(true), 0);
+                setShowAdminModal(true);
+                console.log('SidebarNav: Admin modal state set to true (desktop)');
               }
               break;
             default:

@@ -41,9 +41,17 @@ export default function AdminMobile({
 
   // Load users when modal opens
   useEffect(() => {
+    if (!open) {
+      console.log('AdminMobile: useEffect - modal not open, skipping load');
+      return;
+    }
+    console.log('AdminMobile: useEffect - modal opened, loading users');
     async function loadUsers() {
       const token = localStorage.getItem('token');
-      if (!token) return;
+      if (!token) {
+        console.log('AdminMobile: No token found');
+        return;
+      }
       setAdminLoading(true);
       setAdminError('');
       try {
@@ -316,7 +324,12 @@ export default function AdminMobile({
     onClose();
   };
 
-  if (!open) return null;
+  if (!open) {
+    console.log('AdminMobile: not open, returning null');
+    return null;
+  }
+
+  console.log('AdminMobile: rendering modal, open=', open, 'adminUsers.length=', adminUsers.length);
 
   const filteredUsers = adminUsers
     .filter(u => !adminFilter || (u?.Name || '').toLowerCase().includes(adminFilter.toLowerCase()))
@@ -326,7 +339,10 @@ export default function AdminMobile({
       return !u?.Enabled;
     });
 
-  return ReactDOM.createPortal(
+  console.log('AdminMobile: Creating portal, modalRef.current=', modalRef.current);
+  
+  // Не используем ReactDOM.createPortal здесь, так как это уже делается через createSafePortal в SidebarNav
+  return (
     <div
       style={{
         position: 'fixed',
@@ -340,6 +356,7 @@ export default function AdminMobile({
         alignItems: 'center',
         justifyContent: 'center',
         backdropFilter: 'blur(8px)',
+        pointerEvents: 'auto',
       }}
       onClick={handleClose}
     >
@@ -1143,8 +1160,7 @@ export default function AdminMobile({
         onClose={() => setShowUserRights(false)}
         onOpenMobileSidebar={onOpenMobileSidebar}
       />
-    </div>,
-    document.body
+    </div>
   );
 }
 
