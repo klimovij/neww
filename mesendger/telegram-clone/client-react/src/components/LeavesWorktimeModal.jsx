@@ -2320,24 +2320,31 @@ const resetWorktime = async () => {
 
       <div
         onClick={onRequestClose}
-        style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}
+        style={{ 
+          width: '100%', 
+          height: '100%', 
+          display: 'flex', 
+          alignItems: isMobileDevice ? 'stretch' : 'center', 
+          justifyContent: isMobileDevice ? 'stretch' : 'flex-start' 
+        }}
       >
         <div
           onClick={(e) => e.stopPropagation()}
           style={{
             background: 'linear-gradient(135deg, #232931 0%, #181c22 100%)',
-            borderRadius: 28,
+            borderRadius: isMobileDevice ? 0 : 28,
             width: '100%',
-            minWidth: '600px',
-            maxWidth: '1200px',
+            minWidth: isMobileDevice ? '100%' : '600px',
+            maxWidth: isMobileDevice ? '100%' : '1200px',
             height: '100%',
             boxSizing: 'border-box',
-            boxShadow: '0 4px 32px rgba(0,0,0,0.15)',
+            boxShadow: isMobileDevice ? 'none' : '0 4px 32px rgba(0,0,0,0.15)',
             display: 'flex',
             flexDirection: 'column',
             position: 'relative',
             color: '#fff',
-            padding: '40px 48px',
+            padding: isMobileDevice ? '16px' : '40px 48px',
+            paddingTop: isMobileDevice ? '60px' : '40px',
             overflowY: 'auto',
             overflowX: 'hidden'
           }}
@@ -2346,8 +2353,8 @@ const resetWorktime = async () => {
             onClick={onRequestClose}
             style={{
               position: 'absolute',
-              top: 16,
-              right: 16,
+              top: isMobileDevice ? 12 : 16,
+              right: isMobileDevice ? 12 : 16,
               fontSize: 28,
               background: 'transparent',
               border: 'none',
@@ -2375,13 +2382,13 @@ const resetWorktime = async () => {
             ×
           </button>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 18 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: isMobileDevice ? 8 : 16, marginBottom: isMobileDevice ? 12 : 18, flexWrap: isMobileDevice ? 'wrap' : 'nowrap' }}>
             <h2 style={{
               marginTop: 0,
               marginBottom: 0,
               color: '#43e97b',
               fontWeight: 900,
-              fontSize: '2em',
+              fontSize: isMobileDevice ? '1.4em' : '2em',
               letterSpacing: '0.5px',
               textShadow: '0 0 22px #43e97b, 0 0 32px #43e97b44, 0 0 2px #fff, 0 0 24px #43e97b88'
             }}>
@@ -2409,9 +2416,9 @@ const resetWorktime = async () => {
           </div>
 
           {/* Filters */}
-          <div style={{ display: 'flex', gap: 16, marginBottom: 20, alignItems: 'center', flexWrap: 'wrap' }}>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <span style={{ color: '#ffe082', fontWeight: 600, fontSize: '0.9rem' }}>Фильтр:</span>
+          <div style={{ display: 'flex', gap: isMobileDevice ? 8 : 16, marginBottom: isMobileDevice ? 12 : 20, alignItems: 'center', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: isMobileDevice ? 4 : 8, alignItems: 'center', flexWrap: isMobileDevice ? 'wrap' : 'nowrap' }}>
+              <span style={{ color: '#ffe082', fontWeight: 600, fontSize: isMobileDevice ? '0.8rem' : '0.9rem' }}>Фильтр:</span>
               <button onClick={() => setFilter('pending')} style={{
                 padding: '6px 12px',
                 borderRadius: 8,
@@ -2434,8 +2441,8 @@ const resetWorktime = async () => {
               }}>💼 Отработанные</button>
             </div>
 
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <span style={{ color: '#ffe082', fontWeight: 600, fontSize: '0.9rem' }}>Дата:</span>
+            <div style={{ display: 'flex', gap: isMobileDevice ? 4 : 8, alignItems: 'center', flexWrap: isMobileDevice ? 'wrap' : 'nowrap' }}>
+              <span style={{ color: '#ffe082', fontWeight: 600, fontSize: isMobileDevice ? '0.8rem' : '0.9rem' }}>Дата:</span>
               <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} style={{
                 padding: '6px 10px',
                 borderRadius: 8,
@@ -2448,8 +2455,8 @@ const resetWorktime = async () => {
             </div>
 
             {(userRole === 'hr' || userRole === 'admin') && (
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <span style={{ color: '#ffe082', fontWeight: 600, fontSize: '0.9rem' }}>Поиск:</span>
+              <div style={{ display: 'flex', gap: isMobileDevice ? 4 : 8, alignItems: 'center', flexWrap: isMobileDevice ? 'wrap' : 'nowrap', width: isMobileDevice ? '100%' : 'auto' }}>
+                <span style={{ color: '#ffe082', fontWeight: 600, fontSize: isMobileDevice ? '0.8rem' : '0.9rem' }}>Поиск:</span>
                 <input type="text" placeholder={
                   filter === 'completed' 
                     ? "Поиск отработанных отгулов по имени..." 
@@ -2476,7 +2483,7 @@ const resetWorktime = async () => {
               </div>
             )}
 
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: isMobileDevice ? 4 : 8, alignItems: 'center', flexWrap: isMobileDevice ? 'wrap' : 'nowrap' }}>
               <button onClick={resetWorktime} style={{
                 padding: '6px 12px',
                 borderRadius: 8,
