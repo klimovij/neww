@@ -299,7 +299,9 @@ export default function AdminMobile({
       return !u?.Enabled;
     });
 
-  return ReactDOM.createPortal(
+  return (
+    <>
+      {open && ReactDOM.createPortal(
     <div
       style={{
         position: 'fixed',
@@ -1111,6 +1113,8 @@ export default function AdminMobile({
       />
     </div>,
     document.body
+      )}
+    </>
   );
 }
 
