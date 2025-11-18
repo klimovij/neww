@@ -319,7 +319,14 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar }
       console.log('SidebarNav: Предотвращено закрытие модалки календаря (только что открыта)');
       return;
     }
+    // Сначала закрываем вложенные модалки
+    setShowEmojiSettingsModal(false);
+    setShowTemplatesModal(false);
+    setShowAppTitleSettingsModal(false);
+    setShowUserRightsModal(false);
+    // Затем закрываем основные модалки
     setShowUploadModal(false);
+    setShowAdminModal(false);
     setShowGeneralCalendarSafe(false);
     setShowLeaveCalendar(false);
     setShowNewsModal(false);
@@ -333,14 +340,9 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar }
     setShowBirthdaysModal(false);
     setShowTodoModal(false);
     setShowRatingModal(false);
-    setShowAdminModal(false);
-    setShowEmojiSettingsModal(false);
-    setShowTemplatesModal(false);
-    setShowAppTitleSettingsModal(false);
-    setShowUserRightsModal(false);
     setPortalKey(k => k + 1);
     // pointer-events управляются автоматически через useEffect
-  }, []);
+  }, [setShowGeneralCalendarSafe]);
 
   // Отслеживание изменения размера окна для определения мобильного устройства
   useEffect(() => {
@@ -730,6 +732,7 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar }
     // Для модалок: сначала открываем модалку, потом закрываем сайдбар
     // Для не-модалок: закрываем все модалки и сайдбар
     if (isModal) {
+      // Сначала закрываем все модалки синхронно, чтобы предотвратить конфликты z-index
       // Для модалок: закрываем только другие модалки (не ту, которую открываем)
       // НЕ вызываем closeAllModals() и не отправляем событие close-all-modals,
       // чтобы не закрыть модалку, которую мы только что открыли
@@ -751,133 +754,140 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar }
         setShowRatingModal(false);
       }
       if (n.key !== 'admin') setShowAdminModal(false);
+      // Закрываем модалку загрузки файлов и все вложенные модалки
       setShowUploadModal(false);
+      setShowEmojiSettingsModal(false);
+      setShowTemplatesModal(false);
+      setShowAppTitleSettingsModal(false);
+      setShowUserRightsModal(false);
       
-      // Открываем нужную модалку сразу
-      switch (n.key) {
-        case 'all-leaves':
-          fetchPendingCount();
-          // Устанавливаем флаг, что мы только что открыли модалку
-          justOpenedGeneralCalendar.current = true;
-          console.log('SidebarNav: Открываем модалку календаря, устанавливаем защиту');
-          // Открываем модалку синхронно, чтобы она точно открылась
-          setShowGeneralCalendar(true);
-          // Сбрасываем флаг через задержку, чтобы защитить от случайного закрытия
-          setTimeout(() => {
-            console.log('SidebarNav: Снимаем защиту с модалки календаря');
-            justOpenedGeneralCalendar.current = false;
-          }, 500);
-          break;
-        case 'leaves':
-          if (isMobile) {
-            requestAnimationFrame(() => {
-              setShowLeaveCalendar(true);
-            });
-          } else {
-            requestAnimationFrame(() => {
-              setShowLeaveCalendar(true);
-            });
-          }
-          break;
-        case 'news':
-          if (isMobile) {
-            requestAnimationFrame(() => {
-              setShowNewsModal(true);
-            });
-          } else {
-            requestAnimationFrame(() => {
-              setShowNewsModal(true);
-            });
-          }
-          dispatch({ type: 'RESET_UNREAD_NEWS' });
-          fetch('/api/news', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } })
-            .then(r => r.json())
-            .then(newsArr => {
-              if (Array.isArray(newsArr) && newsArr.length > 0) {
-                localStorage.setItem('lastNewsId', String(newsArr[0].id));
-              }
-            });
-          break;
-        case 'tasks':
-          requestAnimationFrame(() => {
-            setShowTasksModal(true);
-          });
-          setMyTasksCount(0);
-          setTimeout(() => fetchMyTasksCount(), 300);
-          break;
-        case 'todo':
-          requestAnimationFrame(() => {
-            setShowTodoModal(true);
-          });
-          break;
-        case 'chats':
-          if (isMobile) {
-            requestAnimationFrame(() => {
-              setShowChatsModal(true);
-            });
-          } else {
-            // Для десктопной версии: открываем ChatArea и модалку чатов
-            // Сначала открываем ChatArea через событие show-chat
-            window.dispatchEvent(new CustomEvent('show-chat'));
-            // Небольшая задержка, чтобы ChatArea успел отрендериться
+      // Открываем нужную модалку с небольшой задержкой, чтобы предыдущие модалки успели закрыться
+      setTimeout(() => {
+        switch (n.key) {
+          case 'all-leaves':
+            fetchPendingCount();
+            // Устанавливаем флаг, что мы только что открыли модалку
+            justOpenedGeneralCalendar.current = true;
+            console.log('SidebarNav: Открываем модалку календаря, устанавливаем защиту');
+            // Открываем модалку синхронно, чтобы она точно открылась
+            setShowGeneralCalendar(true);
+            // Сбрасываем флаг через задержку, чтобы защитить от случайного закрытия
             setTimeout(() => {
-              dispatch({ type: 'TOGGLE_MODAL', payload: { modal: 'chatsList', show: true } });
-            }, 100);
-          }
-          break;
-        case 'employees':
-          // Для обычных пользователей показываем только рейтинг, для админов/HR - полную модалку
-          const userRole = appState.user?.role;
-          if (userRole === 'user') {
-            // Обычные пользователи видят только рейтинг
-            window.dispatchEvent(new Event('show-employee-rating'));
-          } else {
-            // Админы и HR видят полную модалку с функциями сотрудников (список, дни рождения, календарь, рейтинг)
+              console.log('SidebarNav: Снимаем защиту с модалки календаря');
+              justOpenedGeneralCalendar.current = false;
+            }, 500);
+            break;
+          case 'leaves':
             if (isMobile) {
               requestAnimationFrame(() => {
-                setShowBirthdaysModal(true);
+                setShowLeaveCalendar(true);
               });
             } else {
-              setTimeout(() => setShowBirthdaysModal(true), 0);
+              requestAnimationFrame(() => {
+                setShowLeaveCalendar(true);
+              });
             }
-          }
-          break;
-        case 'worktime':
-          if (isMobile) {
+            break;
+          case 'news':
+            if (isMobile) {
+              requestAnimationFrame(() => {
+                setShowNewsModal(true);
+              });
+            } else {
+              requestAnimationFrame(() => {
+                setShowNewsModal(true);
+              });
+            }
+            dispatch({ type: 'RESET_UNREAD_NEWS' });
+            fetch('/api/news', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } })
+              .then(r => r.json())
+              .then(newsArr => {
+                if (Array.isArray(newsArr) && newsArr.length > 0) {
+                  localStorage.setItem('lastNewsId', String(newsArr[0].id));
+                }
+              });
+            break;
+          case 'tasks':
             requestAnimationFrame(() => {
-              setShowWorkTimeModal(true);
+              setShowTasksModal(true);
             });
-          } else {
-            setTimeout(() => setShowWorkTimeModal(true), 0);
-          }
-          break;
-        case 'leaves-worktime':
-          if (isMobile) {
+            setMyTasksCount(0);
+            setTimeout(() => fetchMyTasksCount(), 300);
+            break;
+          case 'todo':
             requestAnimationFrame(() => {
-              setShowLeavesWorktimeModal(true);
+              setShowTodoModal(true);
             });
-          } else {
-            setTimeout(() => setShowLeavesWorktimeModal(true), 0);
-          }
-          break;
-        case 'admin':
-          if (isMobile) {
-            requestAnimationFrame(() => {
-              setShowAdminModal(true);
-            });
-          } else {
-            setTimeout(() => setShowAdminModal(true), 0);
-          }
-          break;
-        default:
-          break;
-      }
+            break;
+          case 'chats':
+            if (isMobile) {
+              requestAnimationFrame(() => {
+                setShowChatsModal(true);
+              });
+            } else {
+              // Для десктопной версии: открываем ChatArea и модалку чатов
+              // Сначала открываем ChatArea через событие show-chat
+              window.dispatchEvent(new CustomEvent('show-chat'));
+              // Небольшая задержка, чтобы ChatArea успел отрендериться
+              setTimeout(() => {
+                dispatch({ type: 'TOGGLE_MODAL', payload: { modal: 'chatsList', show: true } });
+              }, 100);
+            }
+            break;
+          case 'employees':
+            // Для обычных пользователей показываем только рейтинг, для админов/HR - полную модалку
+            const userRole = appState.user?.role;
+            if (userRole === 'user') {
+              // Обычные пользователи видят только рейтинг
+              window.dispatchEvent(new Event('show-employee-rating'));
+            } else {
+              // Админы и HR видят полную модалку с функциями сотрудников (список, дни рождения, календарь, рейтинг)
+              if (isMobile) {
+                requestAnimationFrame(() => {
+                  setShowBirthdaysModal(true);
+                });
+              } else {
+                setTimeout(() => setShowBirthdaysModal(true), 0);
+              }
+            }
+            break;
+          case 'worktime':
+            if (isMobile) {
+              requestAnimationFrame(() => {
+                setShowWorkTimeModal(true);
+              });
+            } else {
+              setTimeout(() => setShowWorkTimeModal(true), 0);
+            }
+            break;
+          case 'leaves-worktime':
+            if (isMobile) {
+              requestAnimationFrame(() => {
+                setShowLeavesWorktimeModal(true);
+              });
+            } else {
+              setTimeout(() => setShowLeavesWorktimeModal(true), 0);
+            }
+            break;
+          case 'admin':
+            if (isMobile) {
+              requestAnimationFrame(() => {
+                setShowAdminModal(true);
+              });
+            } else {
+              setTimeout(() => setShowAdminModal(true), 0);
+            }
+            break;
+          default:
+            break;
+        }
+      }, 50); // Небольшая задержка для закрытия предыдущих модалок
       
       // Закрываем мобильный сайдбар после задержки, чтобы модалка успела открыться
       if (onCloseMobileSidebar) {
         setTimeout(() => {
           onCloseMobileSidebar();
-        }, 100);
+        }, 150);
       }
     } else {
       // Для не-модалок: закрываем все модалки и сайдбар
