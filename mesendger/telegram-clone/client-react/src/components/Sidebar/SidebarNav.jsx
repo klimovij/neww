@@ -898,10 +898,10 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar }
                 // Админы и HR видят полную модалку с функциями сотрудников (список, дни рождения, календарь, рейтинг)
                 if (isMobile) {
                   requestAnimationFrame(() => {
-                    setShowEmployeesModal(true);
+                    setShowBirthdaysModal(true);
                   });
                 } else {
-                  setTimeout(() => setShowEmployeesModal(true), 0);
+                  setTimeout(() => setShowBirthdaysModal(true), 0);
                 }
               }
               break;
