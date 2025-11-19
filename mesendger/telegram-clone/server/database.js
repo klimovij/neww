@@ -1533,15 +1533,35 @@ class Database {
       });
 
       if (linkedUser && linkedUser.id) {
+        console.log(`🗑️ Найден связанный пользователь с id=${linkedUser.id} для сотрудника id=${id}`);
         try {
-          await this.deleteUserCascade(linkedUser.id);
+          const cascadeResult = await this.deleteUserCascade(linkedUser.id);
+          console.log(`✅ Каскадное удаление пользователя ${linkedUser.id} успешно: ${cascadeResult} записей`);
         } catch (cascadeErr) {
           console.error(`⚠️ Ошибка каскадного удаления пользователя ${linkedUser.id}:`, cascadeErr);
-          // Продолжаем удаление сотрудника даже если удаление пользователя не удалось
+          console.error(`⚠️ Детали ошибки:`, cascadeErr.message);
+          console.error(`⚠️ Stack:`, cascadeErr.stack);
+          
+          // Попытка прямого удаления пользователя как запасной вариант
+          try {
+            console.log(`🔄 Попытка прямого удаления пользователя ${linkedUser.id}...`);
+            const directDelete = await new Promise((resolve, reject) => {
+              this.db.run('DELETE FROM users WHERE id = ?', [linkedUser.id], function(err) {
+                if (err) reject(err);
+                else resolve(this.changes);
+              });
+            });
+            console.log(`✅ Прямое удаление пользователя ${linkedUser.id} успешно: ${directDelete} записей`);
+          } catch (directErr) {
+            console.error(`❌ Ошибка прямого удаления пользователя ${linkedUser.id}:`, directErr);
+          }
         }
+      } else {
+        console.log(`ℹ️ Связанный пользователь для сотрудника id=${id} не найден`);
       }
     } catch (userErr) {
       console.error(`⚠️ Ошибка при проверке связанного пользователя:`, userErr);
+      console.error(`⚠️ Детали ошибки:`, userErr.message);
       // Продолжаем удаление сотрудника даже если проверка пользователя не удалась
     }
 
