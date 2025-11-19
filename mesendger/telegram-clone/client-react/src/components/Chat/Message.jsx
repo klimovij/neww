@@ -1437,8 +1437,18 @@ export default function Message({ message, showAvatar }) {
   const [showLikesList, setShowLikesList] = useState(null);
   const [likesForModal, setLikesForModal] = useState([]);
   const [modalMessageId, setModalMessageId] = useState(null);
+  const [isMobile, setIsMobile] = useState(false);
   const myId = state.user?.id;
   const myLikes = likes.filter(l => getLikeUserId(l) === String(myId)).map(l => l.emoji);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const handleDelete = () => {
     if (!window.socket) {
@@ -1924,27 +1934,38 @@ return (
                 </LikeButton>
               ))}
           </div>
-          {/* Плавающий пикер справа */}
-          <div
-            ref={pickerContainerRef}
-            style={{
-              position: 'absolute',
-              top: '50%',
-              left: 'calc(100% - 150px)',
-              transform: showLikePicker ? 'translateX(0) translateY(-50%)' : 'translateX(18px) translateY(-50%)',
-              opacity: showLikePicker ? 1 : 0,
-              transition: 'transform .24s cubic-bezier(.2,.7,.3,1), opacity .24s cubic-bezier(.2,.7,.3,1)',
-              zIndex: 5000,
-              pointerEvents: showLikePicker ? 'auto' : 'none'
-            }}
-          >
+          {/* Плавающий пикер справа (только для десктопа) */}
+          {!isMobile && (
+            <div
+              ref={pickerContainerRef}
+              style={{
+                position: 'absolute',
+                top: '50%',
+                left: 'calc(100% - 150px)',
+                transform: showLikePicker ? 'translateX(0) translateY(-50%)' : 'translateX(18px) translateY(-50%)',
+                opacity: showLikePicker ? 1 : 0,
+                transition: 'transform .24s cubic-bezier(.2,.7,.3,1), opacity .24s cubic-bezier(.2,.7,.3,1)',
+                zIndex: 5000,
+                pointerEvents: showLikePicker ? 'auto' : 'none'
+              }}
+            >
+              <EmojiPicker
+                isOpen={showLikePicker}
+                onEmojiSelect={handleLike}
+                onClose={() => setShowLikePicker(false)}
+                containerRef={pickerContainerRef}
+              />
+            </div>
+          )}
+          {/* Мобильный пикер (рендерится через портал) */}
+          {isMobile && (
             <EmojiPicker
               isOpen={showLikePicker}
               onEmojiSelect={handleLike}
               onClose={() => setShowLikePicker(false)}
               containerRef={pickerContainerRef}
             />
-          </div>
+          )}
           {showLikesList && (
             <LikesModal
               open={!!showLikesList}
