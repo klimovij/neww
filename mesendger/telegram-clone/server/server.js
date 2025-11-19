@@ -3640,6 +3640,16 @@ io.on('connection', (socket) => {
     standardEmojiSize: 1.6
   });
   
+  // Отправляем текущие настройки сайдбара новому подключению
+  db.getSidebarSettings().then(settings => {
+    if (settings) {
+      console.log('📡 Sending sidebar settings to new connection:', socket.id);
+      socket.emit('sidebar-settings-updated', { settings });
+    }
+  }).catch(err => {
+    console.error('❌ Error sending sidebar settings to new connection:', err);
+  });
+  
   // ==================== ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ ====================
   // Функция проверки аутентификации для всех событий
   const requireAuth = (callback) => {
