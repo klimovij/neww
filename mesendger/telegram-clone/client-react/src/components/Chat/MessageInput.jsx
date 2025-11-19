@@ -1351,14 +1351,28 @@ const handleFileSelect = async (e) => {
         </ActionButton>
 
               {isMobile ? (
-                <ActionButton 
-                  isMobile={isMobile}
-                  onClick={() => setShowCreatePoll(true)} 
-                  disabled={uploading} 
-                  title="Быстрое голосование"
-                >
-                  <FiBarChart2 size={24} />
-                </ActionButton>
+                <>
+                  <ActionButton 
+                    isMobile={isMobile}
+                    onClick={() => setShowCreatePoll(true)} 
+                    disabled={uploading} 
+                    title="Быстрое голосование"
+                  >
+                    <FiBarChart2 size={24} />
+                  </ActionButton>
+                  <ActionButton
+                    isMobile={isMobile}
+                    onClick={() => setShowScheduledMessagesModal(true)}
+                    disabled={uploading}
+                    title="Запланированные сообщения"
+                    style={{
+                      backgroundColor: showScheduledMessagesModal ? 'rgba(109, 213, 237, 0.2)' : 'transparent',
+                      color: showScheduledMessagesModal ? '#6dd5ed' : '#6b7280'
+                    }}
+                  >
+                    <FiClock size={24} />
+                  </ActionButton>
+                </>
               ) : (
                 <PollButton isMobile={isMobile} type="button" onClick={() => setShowCreatePoll(true)} title="Быстрое голосование">
                   <FiBarChart2 size={24} />
@@ -1549,54 +1563,30 @@ const handleFileSelect = async (e) => {
               <FiFileText size={18} />
             </ActionButton>
             {isMobile && (
-              <ActionButton
-                isMobile={isMobile}
-                onClick={() => setShowScheduledMessagesModal(true)}
-                disabled={uploading}
-                title="Запланированные сообщения"
-                style={{
-                  backgroundColor: showScheduledMessagesModal ? 'rgba(109, 213, 237, 0.2)' : 'transparent',
-                  color: showScheduledMessagesModal ? '#6dd5ed' : '#6b7280'
-                }}
-              >
-                <FiClock size={18} />
-              </ActionButton>
+              <>
+                <ActionButton 
+                  isMobile={isMobile}
+                  onClick={() => setShowCreatePoll(true)} 
+                  disabled={uploading} 
+                  title="Быстрое голосование"
+                >
+                  <FiBarChart2 size={18} />
+                </ActionButton>
+                <ActionButton
+                  isMobile={isMobile}
+                  onClick={() => setShowScheduledMessagesModal(true)}
+                  disabled={uploading}
+                  title="Запланированные сообщения"
+                  style={{
+                    backgroundColor: showScheduledMessagesModal ? 'rgba(109, 213, 237, 0.2)' : 'transparent',
+                    color: showScheduledMessagesModal ? '#6dd5ed' : '#6b7280'
+                  }}
+                >
+                  <FiClock size={18} />
+                </ActionButton>
+              </>
             )}
           </InputActions>
-
-          {isMobile && (
-            <div style={{ 
-              display: 'flex', 
-              gap: '8px', 
-              padding: '0 16px 16px 16px',
-              flexWrap: 'wrap'
-            }}>
-              <PollButton isMobile={isMobile} type="button" onClick={() => setShowCreatePoll(true)} title="Быстрое голосование">
-                🗳️ Быстрое голосование
-              </PollButton>
-              <ActionButton
-                isMobile={isMobile}
-                onClick={() => setShowScheduledMessagesModal(true)}
-                disabled={uploading}
-                title="Запланированные сообщения"
-                style={{
-                  backgroundColor: showScheduledMessagesModal ? 'rgba(109, 213, 237, 0.2)' : 'rgba(75, 85, 99, 0.2)',
-                  color: showScheduledMessagesModal ? '#6dd5ed' : '#6b7280',
-                  border: showScheduledMessagesModal ? '1px solid rgba(109, 213, 237, 0.3)' : '1px solid rgba(75, 85, 99, 0.3)',
-                  borderRadius: '12px',
-                  padding: '10px 16px',
-                  fontSize: '14px',
-                  fontWeight: 500,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}
-              >
-                <FiClock size={18} />
-                Запланированные
-              </ActionButton>
-            </div>
-          )}
           
           {!isMobile && (
             <PollButton isMobile={isMobile} type="button" onClick={() => setShowCreatePoll(true)} title="Быстрое голосование">
