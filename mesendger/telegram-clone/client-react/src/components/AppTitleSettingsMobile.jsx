@@ -1745,7 +1745,7 @@ export default function AppTitleSettingsMobile({ open, onClose, onOpenMobileSide
                         opacity: 0.9; 
                       }
                       100% { 
-                        transform: translate3d(var(--snow-x, 40px), var(--snow-y, 160px), 0) rotate(360deg); 
+                        transform: translate3d(var(--snow-x, 40px), var(--snow-y, calc(100% + 20px)), 0) rotate(360deg); 
                         opacity: 0; 
                       }
                     }
