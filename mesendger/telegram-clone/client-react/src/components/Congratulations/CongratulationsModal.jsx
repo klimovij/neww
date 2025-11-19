@@ -328,9 +328,22 @@ function EmployeeList({ employees, loading, onEdit, onCongrats, setEmployees, us
               const user = usersByEmployeeId[String(emp.id)] || {};
               const avatarUrl = normalizeAvatarUrl(user.avatar);
               const initials = `${emp.first_name?.[0] || ''}${emp.last_name?.[0] || ''}`;
+              
+              // Логирование при рендере каждой строки
+              console.log(`📝 Rendering row for employee:`, emp.id, emp.first_name, emp.last_name);
+              console.log(`📝 onEdit:`, typeof onEdit, onEdit);
+              console.log(`📝 onCongrats:`, typeof onCongrats, onCongrats);
 
               return (
-                <tr key={emp.id}>
+                <tr 
+                  key={emp.id}
+                  onClick={(e) => {
+                    // Логируем клик по строке для отладки
+                    console.log('📋 Row clicked for employee:', emp.id);
+                    // НЕ останавливаем всплытие здесь, чтобы кнопки могли получить событие
+                  }}
+                  style={{ position: 'relative' }}
+                >
                   <td>
                     <div
                       style={{
@@ -360,13 +373,13 @@ function EmployeeList({ employees, loading, onEdit, onCongrats, setEmployees, us
                   </td>
                   <td>{getAge(emp.birth_day, emp.birth_month, emp.birth_year)}</td>
                   <td 
-                    onClick={(e) => {
-                      // Останавливаем всплытие на уровне td
-                      e.stopPropagation();
+                    style={{ 
+                      position: 'relative', 
+                      zIndex: 100,
+                      pointerEvents: 'auto'
                     }}
-                    style={{ position: 'relative', zIndex: 100 }}
                   >
-                    <ActionButton
+                    <button
                       type="button"
                       onClick={(e) => {
                         e.preventDefault();
@@ -387,20 +400,33 @@ function EmployeeList({ employees, loading, onEdit, onCongrats, setEmployees, us
                         }
                       }}
                       onMouseDown={(e) => {
+                        e.preventDefault();
                         e.stopPropagation();
                         console.log('✏️ Редактировать mouseDown');
+                      }}
+                      onTouchStart={(e) => {
+                        e.stopPropagation();
+                        console.log('✏️ Редактировать touchStart');
                       }}
                       style={{ 
                         marginRight: '8px',
                         position: 'relative',
                         zIndex: 1000,
                         pointerEvents: 'auto',
-                        cursor: 'pointer'
+                        cursor: 'pointer',
+                        background: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
+                        border: 'none',
+                        borderRadius: '8px',
+                        color: '#232931',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        padding: '4px 8px',
+                        transition: 'all 0.2s ease'
                       }}
                     >
                       Редактировать
-                    </ActionButton>
-                    <ActionButton
+                    </button>
+                    <button
                       type="button"
                       onClick={(e) => {
                         e.preventDefault();
@@ -421,8 +447,13 @@ function EmployeeList({ employees, loading, onEdit, onCongrats, setEmployees, us
                         }
                       }}
                       onMouseDown={(e) => {
+                        e.preventDefault();
                         e.stopPropagation();
                         console.log('🎉 Поздравить mouseDown');
+                      }}
+                      onTouchStart={(e) => {
+                        e.stopPropagation();
+                        console.log('🎉 Поздравить touchStart');
                       }}
                       style={{ 
                         background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
@@ -430,11 +461,18 @@ function EmployeeList({ employees, loading, onEdit, onCongrats, setEmployees, us
                         position: 'relative',
                         zIndex: 1000,
                         pointerEvents: 'auto',
-                        cursor: 'pointer'
+                        cursor: 'pointer',
+                        border: 'none',
+                        borderRadius: '8px',
+                        color: '#232931',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        padding: '4px 8px',
+                        transition: 'all 0.2s ease'
                       }}
                     >
                       Поздравить
-                    </ActionButton>
+                    </button>
                     <ActionButton
                       style={{ background: 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)' }}
                       onClick={async () => {
