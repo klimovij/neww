@@ -175,22 +175,18 @@ export default function UserRightsMobile({ open, onClose, onOpenMobileSidebar })
     const minSwipeDistance = 50;
 
     if (distance > minSwipeDistance) {
-      if (onOpenMobileSidebar) {
-        onOpenMobileSidebar();
-      }
+      // Закрываем модалку, возвращаемся в AdminMobile (не в SidebarNav)
       onClose();
     }
 
     touchStartX.current = null;
     touchEndX.current = null;
-  }, [onClose, onOpenMobileSidebar]);
+  }, [onClose]);
 
   const handleClose = useCallback(() => {
-    if (onOpenMobileSidebar) {
-      onOpenMobileSidebar();
-    }
+    // Закрываем модалку, возвращаемся в AdminMobile (не в SidebarNav)
     onClose();
-  }, [onClose, onOpenMobileSidebar]);
+  }, [onClose]);
 
   return (
     <>
