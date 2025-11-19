@@ -323,13 +323,15 @@ const TemplatesQuickPicker = ({ isOpen, onClose, onSelectTemplate, onSendTemplat
         {/* Список шаблонов */}
         <div style={{
           flex: 1,
+          minHeight: 0,
           overflowY: 'auto',
           overflowX: 'hidden',
           padding: isMobile ? '12px 16px' : '8px',
-          paddingBottom: isMobile ? `calc(12px + env(safe-area-inset-bottom, 0px))` : '8px',
+          paddingBottom: isMobile ? `calc(200px + env(safe-area-inset-bottom, 0px))` : '8px', // Увеличен padding для кнопок + системная панель навигации
           WebkitOverflowScrolling: 'touch',
           touchAction: 'pan-y',
-          overscrollBehavior: 'contain'
+          overscrollBehavior: 'contain',
+          position: 'relative'
         }}>
           {loading ? (
             <div style={{ 
@@ -353,7 +355,12 @@ const TemplatesQuickPicker = ({ isOpen, onClose, onSelectTemplate, onSendTemplat
               }
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '12px' : '8px' }}>
+            <div style={{ 
+              display: 'flex', 
+              flexDirection: 'column', 
+              gap: isMobile ? '12px' : '8px',
+              paddingBottom: isMobile ? '32px' : '0' // Дополнительный padding для последнего элемента на мобильных
+            }}>
               {filteredTemplates.map((template) => {
                 const type = templateTypes[template.type] || templateTypes.info;
                 return (
@@ -541,6 +548,16 @@ const TemplatesQuickPicker = ({ isOpen, onClose, onSelectTemplate, onSendTemplat
                   </div>
                 );
               })}
+              {/* Дополнительное пустое пространство внизу для удобной прокрутки и системной панели навигации (только на мобильных) */}
+              {isMobile && (
+                <div style={{ 
+                  height: '200px', 
+                  minHeight: '200px',
+                  width: '100%',
+                  flexShrink: 0,
+                  paddingBottom: `calc(80px + env(safe-area-inset-bottom, 0px))` // Высота системной панели навигации (~56px) + дополнительный запас + safe-area
+                }} />
+              )}
             </div>
           )}
         </div>
