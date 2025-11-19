@@ -815,6 +815,7 @@ export default function Sidebar() {
               display: inline-flex;
               align-items: flex-start;
               gap: 2px;
+              white-space: nowrap;
             }
             .issa-plus-last {
               position: relative;
