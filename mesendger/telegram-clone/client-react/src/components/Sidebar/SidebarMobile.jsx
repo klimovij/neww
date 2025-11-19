@@ -773,7 +773,7 @@ export default function SidebarMobile({ open, onClose, onOpen, showNav = true, o
             </div>
           </div>
         </div>
-        <style>{`
+      <style>{`
         @keyframes neonGlow {
           0% { 
             text-shadow: 0 0 ${Number(appTitleSettings.glowIntensity) || 12}px ${appTitleSettings.glowColor || '#43e97b'}, 
