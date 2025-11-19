@@ -1106,14 +1106,48 @@ export default function CongratulationsModal({ onClose }) {
       {tab === 'list' && (
         <div style={{ width: '100%', maxWidth: 1120, margin: '0 auto', padding: '0 16px', boxSizing: 'border-box' }}>
           <div style={{ marginLeft: 200 }}>
-            <EmployeeList
-              employees={filteredEmployees}
-              loading={loading}
-              onEdit={setEditUser}
-              onCongrats={setCongratsUser}
-              setEmployees={setEmployees}
-              usersByEmployeeId={usersByEmployeeId}
-            />
+            {(() => {
+              // Проверка функций перед рендерингом
+              console.log('🔍 Before rendering EmployeeList:');
+              console.log('  - setEditUser:', typeof setEditUser, setEditUser);
+              console.log('  - setCongratsUser:', typeof setCongratsUser, setCongratsUser);
+              console.log('  - filteredEmployees:', filteredEmployees?.length || 0);
+              console.log('  - loading:', loading);
+              
+              if (typeof setEditUser !== 'function') {
+                console.error('❌ setEditUser is not a function!', setEditUser);
+              }
+              if (typeof setCongratsUser !== 'function') {
+                console.error('❌ setCongratsUser is not a function!', setCongratsUser);
+              }
+              
+              return (
+                <EmployeeList
+                  employees={filteredEmployees}
+                  loading={loading}
+                  onEdit={(emp) => {
+                    console.log('🔧 onEdit wrapper called with:', emp);
+                    if (typeof setEditUser === 'function') {
+                      console.log('✅ Calling setEditUser');
+                      setEditUser(emp);
+                    } else {
+                      console.error('❌ setEditUser is not a function!', setEditUser);
+                    }
+                  }}
+                  onCongrats={(emp) => {
+                    console.log('🎉 onCongrats wrapper called with:', emp);
+                    if (typeof setCongratsUser === 'function') {
+                      console.log('✅ Calling setCongratsUser');
+                      setCongratsUser(emp);
+                    } else {
+                      console.error('❌ setCongratsUser is not a function!', setCongratsUser);
+                    }
+                  }}
+                  setEmployees={setEmployees}
+                  usersByEmployeeId={usersByEmployeeId}
+                />
+              );
+            })()}
           </div>
         </div>
       )}
