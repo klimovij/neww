@@ -732,7 +732,6 @@ export default function SidebarMobile({ open, onClose, onOpen, showNav = true, o
                   Выйти
                 </button>
               </div>
-              </div>
             </div>
 
             {/* Навигация - только если showNav === true */}
