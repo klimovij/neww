@@ -513,7 +513,7 @@ export default function UploadModalMobile({ open, onClose, onOpenMobileSidebar }
 
     touchStartX.current = null;
     touchEndX.current = null;
-  }, [onClose, onOpenMobileSidebar]);
+  }, [onClose]);
 
   const handleClose = useCallback(() => {
     // Просто закрываем модалку, возвращаемся к SidebarNav (который остается открытым)

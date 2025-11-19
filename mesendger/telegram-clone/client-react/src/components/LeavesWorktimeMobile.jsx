@@ -46,7 +46,7 @@ export default function LeavesWorktimeMobile({ open, onClose, token, onOpenMobil
 
     touchStartX.current = null;
     touchEndX.current = null;
-  }, [onClose, onOpenMobileSidebar]);
+  }, [onClose]);
 
   const handleClose = useCallback(() => {
     // Просто закрываем модалку, возвращаемся к SidebarNav (который остается открытым)
