@@ -16,7 +16,7 @@ import RatingMobile from '../RatingMobile';
 import WorkTimeMobile from '../WorkTimeMobile';
 import LeavesWorktimeMobile from '../LeavesWorktimeMobile';
 import AdminMobile from '../AdminMobile';
-import { FaCalendarAlt, FaTasks, FaNewspaper, FaComments, FaUserCircle } from 'react-icons/fa';
+import { FaCalendarAlt, FaTasks, FaNewspaper, FaComments, FaUserCircle, FaBars } from 'react-icons/fa';
 import { FiSettings, FiAlertTriangle, FiSmile, FiFileText, FiX } from 'react-icons/fi';
 import { Badge } from '../../styles/GlobalStyles';
 import { useApp } from '../../context/AppContext';
@@ -32,10 +32,13 @@ import LeavesWorktimeModal from '../LeavesWorktimeModal';
 import CongratulationsModal from '../Congratulations/CongratulationsModal';
 import EmployeesListModal from '../Modals/EmployeesListModal';
 import EmojiSettingsModal from '../Modals/EmojiSettingsModal';
+import EmojiSettingsMobile from '../EmojiSettingsMobile';
 import TemplatesManagementModal from '../Modals/TemplatesManagementModal';
+import TemplatesManagementMobile from '../TemplatesManagementMobile';
 import TodoModal from '../Modals/TodoModal';
 import EmployeeRatingModal from '../Rating/EmployeeRatingModal';
 import AppTitleSettingsModal from '../Modals/AppTitleSettingsModal';
+import AppTitleSettingsMobile from '../AppTitleSettingsMobile';
 
 const navs = [
   { key: 'all-leaves', label: 'Общий календарь', icon: <FaUserCircle />, color: '#b2bec3', event: 'show-all-leaves', tip: 'Календарь всех сотрудников' },
@@ -50,7 +53,7 @@ const navs = [
   { key: 'admin', label: 'Управление', icon: <FiSettings />, color: '#a3e635', event: 'show-admin', tip: 'Администрирование' },
 ];
 
-export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar }) {
+export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar, isMobileNavModal = false, open = false }) {
   const { state: appState } = useApp();
   const [active, setActive] = useState('chats');
   const [pendingCount, setPendingCount] = useState(0);
@@ -601,17 +604,17 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar }
         try {
           const rh = await fetch('/api/admin/host', { headers: { Authorization: `Bearer ${token}` } });
           if (rh.ok) {
-            const hd = await rh.json();
-            if (hd && hd.success && hd.host) setAdminHost(hd.host);
+          const hd = await rh.json();
+          if (hd && hd.success && hd.host) setAdminHost(hd.host);
           }
         } catch {}
         try {
-          const r = await fetch('/api/admin/local-users', { headers: { Authorization: `Bearer ${token}` } });
+        const r = await fetch('/api/admin/local-users', { headers: { Authorization: `Bearer ${token}` } });
           if (r.ok) {
             try {
-              const data = await r.json();
-              if (Array.isArray(data)) setAdminUsers(data);
-              else setAdminUsers([]);
+        const data = await r.json();
+        if (Array.isArray(data)) setAdminUsers(data);
+        else setAdminUsers([]);
             } catch (jsonError) {
               console.error('Ошибка парсинга JSON:', jsonError);
               setAdminError('Не удалось обработать ответ сервера');
@@ -647,7 +650,7 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar }
             setAdminError(`Не удалось получить пользователей: ${errorMessage}`);
             setAdminUsers([]);
           }
-        } catch (e) {
+      } catch (e) {
           console.error('Ошибка запроса пользователей:', e);
           setAdminError('Не удалось получить пользователей: ' + (e.message || 'неизвестная ошибка'));
           setAdminUsers([]);
@@ -816,131 +819,131 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar }
       // Используем requestAnimationFrame для гарантии, что DOM обновился перед открытием новой модалки
       requestAnimationFrame(() => {
         setTimeout(() => {
-          switch (n.key) {
-            case 'all-leaves':
-              fetchPendingCount();
-              // Устанавливаем флаг, что мы только что открыли модалку
-              justOpenedGeneralCalendar.current = true;
-              console.log('SidebarNav: Открываем модалку календаря, устанавливаем защиту');
-              // Открываем модалку синхронно, чтобы она точно открылась
-              setShowGeneralCalendar(true);
-              // Сбрасываем флаг через задержку, чтобы защитить от случайного закрытия
-              setTimeout(() => {
-                console.log('SidebarNav: Снимаем защиту с модалки календаря');
-                justOpenedGeneralCalendar.current = false;
-              }, 500);
-              break;
-            case 'leaves':
-              if (isMobile) {
-                requestAnimationFrame(() => {
-                  setShowLeaveCalendar(true);
-                });
-              } else {
-                requestAnimationFrame(() => {
-                  setShowLeaveCalendar(true);
-                });
+      switch (n.key) {
+        case 'all-leaves':
+          fetchPendingCount();
+          // Устанавливаем флаг, что мы только что открыли модалку
+          justOpenedGeneralCalendar.current = true;
+          console.log('SidebarNav: Открываем модалку календаря, устанавливаем защиту');
+          // Открываем модалку синхронно, чтобы она точно открылась
+          setShowGeneralCalendar(true);
+          // Сбрасываем флаг через задержку, чтобы защитить от случайного закрытия
+          setTimeout(() => {
+            console.log('SidebarNav: Снимаем защиту с модалки календаря');
+            justOpenedGeneralCalendar.current = false;
+          }, 500);
+          break;
+        case 'leaves':
+          if (isMobile) {
+            requestAnimationFrame(() => {
+              setShowLeaveCalendar(true);
+            });
+          } else {
+            requestAnimationFrame(() => {
+              setShowLeaveCalendar(true);
+            });
+          }
+          break;
+        case 'news':
+          if (isMobile) {
+            requestAnimationFrame(() => {
+              setShowNewsModal(true);
+            });
+          } else {
+            requestAnimationFrame(() => {
+              setShowNewsModal(true);
+            });
+          }
+          dispatch({ type: 'RESET_UNREAD_NEWS' });
+          fetch('/api/news', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } })
+            .then(r => r.json())
+            .then(newsArr => {
+              if (Array.isArray(newsArr) && newsArr.length > 0) {
+                localStorage.setItem('lastNewsId', String(newsArr[0].id));
               }
-              break;
-            case 'news':
-              if (isMobile) {
-                requestAnimationFrame(() => {
-                  setShowNewsModal(true);
-                });
-              } else {
-                requestAnimationFrame(() => {
-                  setShowNewsModal(true);
-                });
-              }
-              dispatch({ type: 'RESET_UNREAD_NEWS' });
-              fetch('/api/news', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } })
-                .then(r => r.json())
-                .then(newsArr => {
-                  if (Array.isArray(newsArr) && newsArr.length > 0) {
-                    localStorage.setItem('lastNewsId', String(newsArr[0].id));
-                  }
                 })
                 .catch(err => console.error('Ошибка загрузки новостей:', err));
-              break;
-            case 'tasks':
+          break;
+        case 'tasks':
+          requestAnimationFrame(() => {
+            setShowTasksModal(true);
+          });
+          setMyTasksCount(0);
+          setTimeout(() => fetchMyTasksCount(), 300);
+          break;
+        case 'todo':
+          requestAnimationFrame(() => {
+            setShowTodoModal(true);
+          });
+          break;
+        case 'chats':
+          if (isMobile) {
+            requestAnimationFrame(() => {
+              setShowChatsModal(true);
+            });
+          } else {
+            // Для десктопной версии: открываем ChatArea и модалку чатов
+            // Сначала открываем ChatArea через событие show-chat
+            window.dispatchEvent(new CustomEvent('show-chat'));
+            // Небольшая задержка, чтобы ChatArea успел отрендериться
+            setTimeout(() => {
+              dispatch({ type: 'TOGGLE_MODAL', payload: { modal: 'chatsList', show: true } });
+            }, 100);
+          }
+          break;
+        case 'employees':
+          // Для обычных пользователей показываем только рейтинг, для админов/HR - полную модалку
+          const userRole = appState.user?.role;
+          if (userRole === 'user') {
+            // Обычные пользователи видят только рейтинг
+            window.dispatchEvent(new Event('show-employee-rating'));
+          } else {
+            // Админы и HR видят полную модалку с функциями сотрудников (список, дни рождения, календарь, рейтинг)
+            if (isMobile) {
               requestAnimationFrame(() => {
-                setShowTasksModal(true);
+                setShowBirthdaysModal(true);
               });
-              setMyTasksCount(0);
-              setTimeout(() => fetchMyTasksCount(), 300);
-              break;
-            case 'todo':
-              requestAnimationFrame(() => {
-                setShowTodoModal(true);
-              });
-              break;
-            case 'chats':
-              if (isMobile) {
-                requestAnimationFrame(() => {
-                  setShowChatsModal(true);
-                });
-              } else {
-                // Для десктопной версии: открываем ChatArea и модалку чатов
-                // Сначала открываем ChatArea через событие show-chat
-                window.dispatchEvent(new CustomEvent('show-chat'));
-                // Небольшая задержка, чтобы ChatArea успел отрендериться
-                setTimeout(() => {
-                  dispatch({ type: 'TOGGLE_MODAL', payload: { modal: 'chatsList', show: true } });
-                }, 100);
-              }
-              break;
-            case 'employees':
-              // Для обычных пользователей показываем только рейтинг, для админов/HR - полную модалку
-              const userRole = appState.user?.role;
-              if (userRole === 'user') {
-                // Обычные пользователи видят только рейтинг
-                window.dispatchEvent(new Event('show-employee-rating'));
-              } else {
-                // Админы и HR видят полную модалку с функциями сотрудников (список, дни рождения, календарь, рейтинг)
-                if (isMobile) {
-                  requestAnimationFrame(() => {
-                    setShowBirthdaysModal(true);
-                  });
-                } else {
-                  setTimeout(() => setShowBirthdaysModal(true), 0);
-                }
-              }
-              break;
-            case 'worktime':
-              if (isMobile) {
-                requestAnimationFrame(() => {
-                  setShowWorkTimeModal(true);
-                });
-              } else {
-                setTimeout(() => setShowWorkTimeModal(true), 0);
-              }
-              break;
-            case 'leaves-worktime':
+            } else {
+              setTimeout(() => setShowBirthdaysModal(true), 0);
+            }
+          }
+          break;
+        case 'worktime':
+          if (isMobile) {
+            requestAnimationFrame(() => {
+              setShowWorkTimeModal(true);
+            });
+          } else {
+            setTimeout(() => setShowWorkTimeModal(true), 0);
+          }
+          break;
+        case 'leaves-worktime':
               console.log('SidebarNav: Opening leaves-worktime modal, isMobile:', isMobile);
-              if (isMobile) {
-                requestAnimationFrame(() => {
+          if (isMobile) {
+            requestAnimationFrame(() => {
                   console.log('SidebarNav: Setting showLeavesWorktimeModal to true (mobile)');
-                  setShowLeavesWorktimeModal(true);
-                });
-              } else {
+              setShowLeavesWorktimeModal(true);
+            });
+          } else {
                 setTimeout(() => {
                   console.log('SidebarNav: Setting showLeavesWorktimeModal to true (desktop)');
                   setShowLeavesWorktimeModal(true);
                 }, 0);
-              }
-              break;
-            case 'admin':
+          }
+          break;
+        case 'admin':
               console.log('SidebarNav: Opening admin modal, isMobile:', isMobile);
-              if (isMobile) {
-                setShowAdminModal(true);
+          if (isMobile) {
+              setShowAdminModal(true);
                 console.log('SidebarNav: Admin modal state set to true (mobile)');
-              } else {
+          } else {
                 setShowAdminModal(true);
                 console.log('SidebarNav: Admin modal state set to true (desktop)');
-              }
-              break;
-            default:
-              break;
           }
+          break;
+        default:
+          break;
+      }
         }, 100); // Увеличена задержка для гарантированного закрытия предыдущих модалок
       });
       
@@ -962,6 +965,438 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar }
     }
   };
 
+  // Блокируем скролл body для мобильной модалки
+  useEffect(() => {
+    if (isMobileNavModal && isMobile && open) {
+      const originalStyle = window.getComputedStyle(document.body).overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = originalStyle;
+      };
+    }
+  }, [open, isMobileNavModal, isMobile]);
+
+  // Если это мобильная навигация как модалка
+  if (isMobileNavModal && isMobile) {
+    if (!open) return null;
+
+    const navContent = (
+      <>
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0,0,0,0.85)',
+            zIndex: 100001,
+            display: 'flex',
+            flexDirection: 'row',
+            overflow: 'hidden',
+            pointerEvents: 'auto'
+          }}
+          onClick={onCloseMobileSidebar}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: 'linear-gradient(135deg, #232931 0%, #181c22 100%)',
+              width: '100%',
+              height: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              position: 'relative',
+              color: '#fff',
+              overflow: 'hidden'
+            }}
+          >
+            {/* Заголовок с кнопкой-гамбургером */}
+            <div style={{
+              padding: '16px 20px',
+              borderBottom: '1px solid rgba(67,233,123,0.2)',
+              background: 'rgba(34,40,49,0.95)',
+              position: 'sticky',
+              top: 0,
+              zIndex: 10,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '12px'
+            }}>
+              <h2 style={{
+                margin: 0,
+                color: '#43e97b',
+                fontWeight: 900,
+                fontSize: '1.3em',
+                textAlign: 'center',
+                flex: 1
+              }}>
+                Навигация
+              </h2>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (onOpenMobileSidebar) {
+                    onOpenMobileSidebar();
+                  }
+                }}
+                style={{
+                  background: 'rgba(67,233,123,0.2)',
+                  border: '1px solid #43e97b',
+                  borderRadius: '12px',
+                  width: 48,
+                  height: 48,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  color: '#43e97b',
+                  fontSize: '24px',
+                  padding: 0,
+                  boxShadow: '0 4px 12px rgba(67,233,123,0.3)',
+                  transition: 'all 0.2s',
+                  flexShrink: 0
+                }}
+                title="Открыть меню"
+                onMouseEnter={(e) => {
+                  e.target.style.background = 'rgba(67,233,123,0.3)';
+                  e.target.style.transform = 'scale(1.05)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.background = 'rgba(67,233,123,0.2)';
+                  e.target.style.transform = 'none';
+                }}
+              >
+                <FaBars />
+              </button>
+            </div>
+
+            {/* Контент навигации */}
+            <div style={{
+              flex: 1,
+              overflowY: 'auto',
+              padding: '16px',
+              WebkitOverflowScrolling: 'touch',
+              minHeight: 0
+            }}>
+              <div style={{marginTop: 0, display:'flex', flexDirection:'column', gap:8}}>
+                {navs.map(n => {
+                  // Кнопка "Мониторинг времени" только для HR и админа
+                  if (n.key === 'worktime') {
+                    const role = state.user?.role;
+                    if (role !== 'hr' && role !== 'admin') return null;
+                  }
+                  // Кнопка "Управление" для пользователей с департаментом
+                  if (n.key === 'admin') {
+                    const department = state.user?.department;
+                    if (!department) return null;
+                  }
+                  // Кнопка "Сотрудники компании" доступна всем пользователям
+                  if (n.key === 'leaves-worktime' && !showLeavesWorktimeButton) return null;
+                  return (
+                    <button
+                      key={n.key}
+                      style={{
+                        width:'100%',
+                        padding:12,
+                        borderRadius:10,
+                        background: active===n.key ? n.color : '#232931',
+                        color: active===n.key ? (n.key==='tasks'? '#fff':'#222') : '#fff',
+                        fontWeight:600,
+                        border:'none',
+                        cursor:'pointer',
+                        display:'flex',
+                        alignItems:'center',
+                        gap:10,
+                        fontSize:'1.08em',
+                        boxShadow: active===n.key ? '0 2px 8px #43e97b33' : 'none',
+                        transition:'all .18s',
+                        outline: active===n.key ? '2px solid #43e97b' : 'none',
+                        position:'relative'
+                      }}
+                      title={n.tip}
+                      onClick={() => handleNavClick(n)}
+                    >
+                      {n.icon} {n.label}
+                      {n.key === 'all-leaves' && pendingCount > 0 && (
+                        <Badge>{pendingCount}</Badge>
+                      )}
+                      {n.key === 'tasks' && myTasksCount > 0 && (
+                        <Badge>{myTasksCount}</Badge>
+                      )}
+                      {n.key === 'news' && state.unreadNews > 0 && (
+                        <Badge style={{background:'#e74c3c',color:'#fff'}}>{state.unreadNews}</Badge>
+                      )}
+                      {n.key === 'chats' && state.unreadChats > 0 && (
+                        <Badge style={{background:'#43e97b',color:'#fff'}}>{state.unreadChats}</Badge>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+              <SidebarUploadButton onClick={() => setShowUploadModal(true)} />
+            </div>
+          </div>
+        </div>
+        
+        {/* Порталы для модалок в мобильной версии */}
+        {createSafePortal(
+          isMobile ? (
+            <UploadModalMobile
+              key={`upload-mobile-${portalKey}`}
+              open={showUploadModal}
+              onClose={() => setShowUploadModal(false)}
+              onOpenMobileSidebar={onOpenMobileSidebar}
+            />
+          ) : (
+            <UploadModal key={`upload-${portalKey}`} open={showUploadModal} onClose={() => setShowUploadModal(false)} />
+          ),
+          showUploadModal
+        )}
+        
+        {createSafePortal(
+          isMobile ? (
+            <AllLeavesCalendarMobile key={`all-leaves-mobile-${portalKey}`} open={showGeneralCalendar} onClose={()=>setShowGeneralCalendarSafe(false)} token={localStorage.getItem('token')} onOpenMobileSidebar={onOpenMobileSidebar} />
+          ) : (
+            <AllLeavesCalendar key={`all-leaves-${portalKey}`} open={showGeneralCalendar} onClose={()=>setShowGeneralCalendarSafe(false)} token={localStorage.getItem('token')} />
+          ),
+          showGeneralCalendar
+        )}
+        
+        {createSafePortal(
+          isMobile ? (
+            <LeavesMobile 
+              key={`leaves-mobile-${portalKey}`} 
+              open={showLeaveCalendar} 
+              onClose={()=>setShowLeaveCalendar(false)} 
+              token={localStorage.getItem('token')} 
+              onOpenMobileSidebar={onOpenMobileSidebar} 
+            />
+          ) : (
+            <LeaveCalendarModal key={`leave-${portalKey}`} open={showLeaveCalendar} onClose={()=>setShowLeaveCalendar(false)} leaves={[]} />
+          ),
+          showLeaveCalendar
+        )}
+        
+        {isMobile && createSafePortal(
+          <ChatsListModalMobile 
+            key={`chats-mobile-${portalKey}`} 
+            open={showChatsModal} 
+            onClose={()=>setShowChatsModal(false)} 
+            onOpenMobileSidebar={onOpenMobileSidebar}
+            onOpenChat={() => {
+              setShowChatsModal(false);
+              setShowChatAreaModal(true);
+            }}
+            onOpenCreateChat={() => {
+              setShowChatsModal(false);
+              setShowCreateChatModal(true);
+            }}
+          />,
+          showChatsModal
+        )}
+        
+        {isMobile && createSafePortal(
+          <CreateChatModalMobile
+            key={`create-chat-mobile-${portalKey}`}
+            open={showCreateChatModal}
+            onClose={() => setShowCreateChatModal(false)}
+            onOpenChatsList={() => {
+              setShowCreateChatModal(false);
+              setShowChatsModal(true);
+            }}
+          />,
+          showCreateChatModal
+        )}
+        
+        {createSafePortal(
+          isMobile ? (
+            <ChatAreaMobile 
+              key={`chat-area-mobile-${portalKey}`} 
+              open={showChatAreaModal} 
+              onClose={()=>setShowChatAreaModal(false)}
+              onOpenChatsList={() => {
+                setShowChatAreaModal(false);
+                setShowChatsModal(true);
+              }}
+            />
+          ) : null,
+          showChatAreaModal && isMobile
+        )}
+        
+        {createSafePortal(
+          isMobile ? (
+            <NewsMobile 
+              key={`news-mobile-${portalKey}`} 
+              open={showNewsModal} 
+              onClose={() => setShowNewsModal(false)} 
+              onOpenMobileSidebar={onOpenMobileSidebar} 
+            />
+          ) : (
+            <NewsModal key={`news-${portalKey}`} open={showNewsModal} onClose={() => setShowNewsModal(false)} />
+          ),
+          showNewsModal
+        )}
+        
+        {createSafePortal(
+          isMobile ? (
+            <TasksMobile 
+              key={`tasks-mobile-${portalKey}`} 
+              open={showTasksModal} 
+              onClose={() => setShowTasksModal(false)} 
+              onOpenMobileSidebar={onOpenMobileSidebar} 
+            />
+          ) : (
+            <TasksModal key={`tasks-${portalKey}`} open={showTasksModal} onClose={() => setShowTasksModal(false)} />
+          ),
+          showTasksModal
+        )}
+        
+        {createSafePortal(
+          isMobile ? (
+            <TodoMobile 
+              key={`todo-mobile-${portalKey}`} 
+              open={showTodoModal} 
+              onClose={() => setShowTodoModal(false)} 
+              onOpenMobileSidebar={onOpenMobileSidebar} 
+            />
+          ) : (
+            <TodoModal key={`todo-${portalKey}`} open={showTodoModal} onClose={() => setShowTodoModal(false)} />
+          ),
+          showTodoModal
+        )}
+        
+        {createSafePortal(
+          isMobile ? (
+            <WorkTimeMobile 
+              key={`worktime-mobile-${portalKey}`} 
+              open={showWorkTimeModal} 
+              onClose={() => setShowWorkTimeModal(false)} 
+              onOpenMobileSidebar={onOpenMobileSidebar} 
+            />
+          ) : (
+            <WorkTimeReportModal key={`worktime-${portalKey}`} open={showWorkTimeModal} onClose={() => setShowWorkTimeModal(false)} />
+          ),
+          showWorkTimeModal
+        )}
+        
+        {createSafePortal(
+          isMobile ? (
+            <LeavesWorktimeMobile 
+              key={`leaves-worktime-mobile-${portalKey}`} 
+              open={showLeavesWorktimeModal} 
+              onClose={() => setShowLeavesWorktimeModal(false)} 
+              onOpenMobileSidebar={onOpenMobileSidebar} 
+            />
+          ) : (
+            <LeavesWorktimeModal key={`leaves-worktime-${portalKey}`} open={showLeavesWorktimeModal} onClose={() => setShowLeavesWorktimeModal(false)} />
+          ),
+          showLeavesWorktimeModal
+        )}
+        
+        {createSafePortal(
+          isMobile ? (
+            <CongratulationsMobile 
+              key={`birthdays-mobile-${portalKey}`} 
+              open={showBirthdaysModal} 
+              onClose={() => setShowBirthdaysModal(false)} 
+              onOpenMobileSidebar={onOpenMobileSidebar} 
+            />
+          ) : (
+            <CongratulationsModal key={`birthdays-${portalKey}`} open={showBirthdaysModal} onClose={() => setShowBirthdaysModal(false)} />
+          ),
+          showBirthdaysModal
+        )}
+        
+        {createSafePortal(
+          isMobile ? (
+            <EmployeesMobile 
+              key={`employees-mobile-${portalKey}`} 
+              open={showEmployeesModal} 
+              onClose={() => setShowEmployeesModal(false)} 
+              onOpenMobileSidebar={onOpenMobileSidebar} 
+            />
+          ) : (
+            <EmployeesListModal key={`employees-${portalKey}`} open={showEmployeesModal} onClose={() => setShowEmployeesModal(false)} />
+          ),
+          showEmployeesModal
+        )}
+        
+        {createSafePortal(
+          isMobile ? (
+            <AdminMobile 
+              key={`admin-mobile-${portalKey}`} 
+              open={showAdminModal} 
+              onClose={() => setShowAdminModal(false)} 
+              onOpenMobileSidebar={onOpenMobileSidebar} 
+            />
+          ) : null,
+          showAdminModal && isMobile
+        )}
+        
+        {createSafePortal(
+          isMobile ? (
+            <EmojiSettingsMobile 
+              key={`emoji-settings-mobile-${portalKey}`} 
+              open={showEmojiSettingsModal} 
+              onClose={() => setShowEmojiSettingsModal(false)} 
+              onOpenMobileSidebar={onOpenMobileSidebar} 
+            />
+          ) : (
+            <EmojiSettingsModal key={`emoji-settings-${portalKey}`} open={showEmojiSettingsModal} onClose={() => setShowEmojiSettingsModal(false)} />
+          ),
+          showEmojiSettingsModal
+        )}
+        
+        {createSafePortal(
+          isMobile ? (
+            <TemplatesManagementMobile 
+              key={`templates-mobile-${portalKey}`} 
+              open={showTemplatesModal} 
+              onClose={() => setShowTemplatesModal(false)} 
+              onOpenMobileSidebar={onOpenMobileSidebar} 
+            />
+          ) : (
+            <TemplatesManagementModal key={`templates-${portalKey}`} open={showTemplatesModal} onClose={() => setShowTemplatesModal(false)} />
+          ),
+          showTemplatesModal
+        )}
+        
+        {createSafePortal(
+          isMobile ? (
+            <AppTitleSettingsMobile 
+              key={`app-title-settings-mobile-${portalKey}`} 
+              open={showAppTitleSettingsModal} 
+              onClose={() => setShowAppTitleSettingsModal(false)} 
+              onOpenMobileSidebar={onOpenMobileSidebar} 
+            />
+          ) : (
+            <AppTitleSettingsModal key={`app-title-settings-${portalKey}`} open={showAppTitleSettingsModal} onClose={() => setShowAppTitleSettingsModal(false)} />
+          ),
+          showAppTitleSettingsModal
+        )}
+        
+        {createSafePortal(
+          isMobile ? (
+            <RatingMobile 
+              key={`rating-mobile-${portalKey}`} 
+              open={showRatingModal} 
+              onClose={() => setShowRatingModal(false)} 
+              onOpenMobileSidebar={onOpenMobileSidebar} 
+            />
+          ) : (
+            <EmployeeRatingModal key={`rating-${portalKey}`} open={showRatingModal} onClose={() => setShowRatingModal(false)} />
+          ),
+          showRatingModal
+        )}
+      </>
+    );
+
+    return ReactDOM.createPortal(navContent, document.body);
+  }
+
+  // Обычный рендер (для десктопа или встроенного в SidebarMobile)
   return (
     <>
       <div style={{marginTop:20, display:'flex', flexDirection:'column', gap:8}}>
@@ -1184,20 +1619,20 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar }
         // Для react-modal не используем createSafePortal, так как react-modal сам управляет порталом
         if (isMobile) {
           return (
-            <LeavesWorktimeMobile 
-              key={`leaves-worktime-mobile-${portalKey}`} 
-              open={showLeavesWorktimeModal} 
+          <LeavesWorktimeMobile 
+            key={`leaves-worktime-mobile-${portalKey}`} 
+            open={showLeavesWorktimeModal} 
               onClose={() => {
                 console.log('SidebarNav: Closing leaves-worktime modal');
                 setShowLeavesWorktimeModal(false);
               }} 
-              token={localStorage.getItem('token')}
-              onOpenMobileSidebar={onOpenMobileSidebar}
-            />
+            token={localStorage.getItem('token')}
+            onOpenMobileSidebar={onOpenMobileSidebar}
+          />
           );
         } else {
           return showLeavesWorktimeModal ? (
-            <LeavesWorktimeModal key={`leaves-worktime-${portalKey}`} isOpen={showLeavesWorktimeModal} onRequestClose={() => setShowLeavesWorktimeModal(false)} token={localStorage.getItem('token')} />
+          <LeavesWorktimeModal key={`leaves-worktime-${portalKey}`} isOpen={showLeavesWorktimeModal} onRequestClose={() => setShowLeavesWorktimeModal(false)} token={localStorage.getItem('token')} />
           ) : null;
         }
       })()}

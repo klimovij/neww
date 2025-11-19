@@ -1,6 +1,7 @@
 import React from 'react';
 import Sidebar from './Sidebar/Sidebar';
 import SidebarMobile from './Sidebar/SidebarMobile';
+import SidebarNav from './Sidebar/SidebarNav';
 import AiAssistantModal from './AiAssistantModal';
 import ChatArea from './Chat/ChatArea';
 import Leaves from './Leaves';
@@ -52,6 +53,7 @@ function Messenger() {
     return window.innerWidth <= 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
   });
   const [showMobileSidebar, setShowMobileSidebar] = React.useState(false);
+  const [showMobileSidebarNav, setShowMobileSidebarNav] = React.useState(false);
 
   // Отслеживание изменения размера окна для определения мобильного устройства
   React.useEffect(() => {
@@ -194,6 +196,20 @@ function Messenger() {
           open={showMobileSidebar || (!showLeaves && !showTasks && !showNews && !showChat && !showAllLeaves)} 
           onClose={() => setShowMobileSidebar(false)}
           onOpen={() => setShowMobileSidebar(true)}
+          showNav={false} // Не показываем навигацию внутри SidebarMobile на мобильных
+        />
+      )}
+      
+      {/* Мобильная навигация (отдельная модалка на весь экран) */}
+      {isMobile && (
+        <SidebarNav 
+          onCloseMobileSidebar={() => setShowMobileSidebarNav(false)}
+          onOpenMobileSidebar={() => {
+            setShowMobileSidebarNav(false);
+            setShowMobileSidebar(true);
+          }}
+          isMobileNavModal={true}
+          open={showMobileSidebarNav}
         />
       )}
       

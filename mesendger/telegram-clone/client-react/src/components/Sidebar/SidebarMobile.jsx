@@ -48,7 +48,7 @@ function getAppTitleSettings() {
   return DEFAULT_APP_TITLE_SETTINGS;
 }
 
-export default function SidebarMobile({ open, onClose, onOpen }) {
+export default function SidebarMobile({ open, onClose, onOpen, showNav = true }) {
   const { state, dispatch } = useApp();
   const fileInputRef = useRef();
   const [avatarHover, setAvatarHover] = useState(false);
@@ -676,28 +676,30 @@ export default function SidebarMobile({ open, onClose, onOpen }) {
               </div>
             </div>
 
-            {/* Навигация */}
-            <div style={{
-              flex: 1,
-              overflowY: 'auto',
-              padding: '16px',
-              WebkitOverflowScrolling: 'touch'
-            }}>
-              <SidebarNav 
-                showChatsModal={showChatsModal} 
-                setShowChatsModal={setShowChatsModal}
-                onCloseMobileSidebar={onClose}
-                onOpenMobileSidebar={() => {
-                  // Открываем сайдбар, если он закрыт
-                  if (!open && onOpen) {
-                    onOpen();
-                  } else if (!open) {
-                    // Fallback: используем событие для открытия
-                    window.dispatchEvent(new CustomEvent('open-mobile-sidebar'));
-                  }
-                }}
-              />
-            </div>
+            {/* Навигация - только если showNav === true */}
+            {showNav && (
+              <div style={{
+                flex: 1,
+                overflowY: 'auto',
+                padding: '16px',
+                WebkitOverflowScrolling: 'touch'
+              }}>
+                <SidebarNav 
+                  showChatsModal={showChatsModal} 
+                  setShowChatsModal={setShowChatsModal}
+                  onCloseMobileSidebar={onClose}
+                  onOpenMobileSidebar={() => {
+                    // Открываем сайдбар, если он закрыт
+                    if (!open && onOpen) {
+                      onOpen();
+                    } else if (!open) {
+                      // Fallback: используем событие для открытия
+                      window.dispatchEvent(new CustomEvent('open-mobile-sidebar'));
+                    }
+                  }}
+                />
+              </div>
+            )}
 
             {/* Подсказка о свайпе */}
             <div style={{
