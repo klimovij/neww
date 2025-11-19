@@ -507,9 +507,7 @@ export default function UploadModalMobile({ open, onClose, onOpenMobileSidebar }
     const minSwipeDistance = 50;
 
     if (distance > minSwipeDistance) {
-      if (onOpenMobileSidebar) {
-        onOpenMobileSidebar();
-      }
+      // Свайп влево - закрываем модалку, возвращаемся к SidebarNav
       onClose();
     }
 
@@ -518,11 +516,9 @@ export default function UploadModalMobile({ open, onClose, onOpenMobileSidebar }
   }, [onClose, onOpenMobileSidebar]);
 
   const handleClose = useCallback(() => {
-    if (onOpenMobileSidebar) {
-      onOpenMobileSidebar();
-    }
+    // Просто закрываем модалку, возвращаемся к SidebarNav (который остается открытым)
     onClose();
-  }, [onClose, onOpenMobileSidebar]);
+  }, [onClose]);
 
   if (!open) return null;
 

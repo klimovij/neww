@@ -41,10 +41,7 @@ export default function NewsMobile({ open, onClose, onOpenMobileSidebar }) {
     const minSwipeDistance = 50;
 
     if (distance > minSwipeDistance) {
-      // Свайп влево - закрываем модалку и возвращаемся в сайдбар
-      if (onOpenMobileSidebar) {
-        onOpenMobileSidebar();
-      }
+      // Свайп влево - закрываем модалку, возвращаемся к SidebarNav
       onClose();
     }
 
@@ -53,9 +50,7 @@ export default function NewsMobile({ open, onClose, onOpenMobileSidebar }) {
   };
 
   const handleClose = () => {
-    if (onOpenMobileSidebar) {
-      onOpenMobileSidebar();
-    }
+    // Просто закрываем модалку, возвращаемся к SidebarNav (который остается открытым)
     onClose();
   };
 

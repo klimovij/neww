@@ -65,9 +65,7 @@ export default function CongratulationsMobile({ open, onClose, onOpenMobileSideb
   );
 
   const handleClose = () => {
-    if (onOpenMobileSidebar) {
-      onOpenMobileSidebar();
-    }
+    // Просто закрываем модалку, возвращаемся к SidebarNav (который остается открытым)
     onClose();
   };
 

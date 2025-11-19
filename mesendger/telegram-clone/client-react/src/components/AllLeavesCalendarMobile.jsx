@@ -216,12 +216,8 @@ export default function AllLeavesCalendarMobile({ open, onClose, token, onOpenMo
     const distance = touchStartX.current - touchEndX.current;
     const minSwipeDistance = 100; // Минимальное расстояние для свайпа
     
-    // Свайп влево (возврат в меню)
+    // Свайп влево - закрываем модалку, возвращаемся к SidebarNav
     if (distance > minSwipeDistance) {
-      // Открываем мобильный сайдбар перед закрытием модалки
-      if (onOpenMobileSidebar) {
-        onOpenMobileSidebar();
-      }
       onClose();
     }
     
@@ -267,10 +263,7 @@ export default function AllLeavesCalendarMobile({ open, onClose, token, onOpenMo
             overflow: 'hidden'
           }}
           onClick={() => {
-            // Открываем мобильный сайдбар перед закрытием модалки
-            if (onOpenMobileSidebar) {
-              onOpenMobileSidebar();
-            }
+            // Закрываем модалку, возвращаемся к SidebarNav
             onClose();
           }}
         >
@@ -305,10 +298,7 @@ export default function AllLeavesCalendarMobile({ open, onClose, token, onOpenMo
             }}>
               <button
                 onClick={() => {
-                  // Открываем мобильный сайдбар перед закрытием модалки
-                  if (onOpenMobileSidebar) {
-                    onOpenMobileSidebar();
-                  }
+                  // Закрываем модалку, возвращаемся к SidebarNav
                   onClose();
                 }}
                 style={{
@@ -343,10 +333,7 @@ export default function AllLeavesCalendarMobile({ open, onClose, token, onOpenMo
               </h2>
               <button
                 onClick={() => {
-                  // Открываем мобильный сайдбар перед закрытием модалки
-                  if (onOpenMobileSidebar) {
-                    onOpenMobileSidebar();
-                  }
+                  // Закрываем модалку, возвращаемся к SidebarNav
                   onClose();
                 }}
                 style={{

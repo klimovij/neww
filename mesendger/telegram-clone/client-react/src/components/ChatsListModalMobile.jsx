@@ -193,9 +193,7 @@ export default function ChatsListModalMobile({ open, onClose, onOpenMobileSideba
   }, [dispatch]);
 
   const handleClose = () => {
-    if (onOpenMobileSidebar) {
-      onOpenMobileSidebar();
-    }
+    // Просто закрываем модалку, возвращаемся к SidebarNav (который остается открытым)
     onClose();
   };
 

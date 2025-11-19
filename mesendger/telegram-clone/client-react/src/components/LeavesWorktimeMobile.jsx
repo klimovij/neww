@@ -40,10 +40,7 @@ export default function LeavesWorktimeMobile({ open, onClose, token, onOpenMobil
     const minSwipeDistance = 50;
 
     if (distance > minSwipeDistance) {
-      // Свайп влево - закрываем модалку и возвращаемся в сайдбар
-      if (onOpenMobileSidebar) {
-        onOpenMobileSidebar();
-      }
+      // Свайп влево - закрываем модалку, возвращаемся к SidebarNav
       onClose();
     }
 
@@ -52,11 +49,9 @@ export default function LeavesWorktimeMobile({ open, onClose, token, onOpenMobil
   }, [onClose, onOpenMobileSidebar]);
 
   const handleClose = useCallback(() => {
-    if (onOpenMobileSidebar) {
-      onOpenMobileSidebar();
-    }
+    // Просто закрываем модалку, возвращаемся к SidebarNav (который остается открытым)
     onClose();
-  }, [onOpenMobileSidebar, onClose]);
+  }, [onClose]);
   
   // Компонент модалки - всегда рендерим, react-modal управляет видимостью через isOpen
   const modalComponent = (

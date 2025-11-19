@@ -130,9 +130,7 @@ export default function TodoMobile({ open, onClose, onOpenMobileSidebar }) {
     const minSwipeDistance = 50;
 
     if (distance > minSwipeDistance) {
-      if (onOpenMobileSidebar) {
-        onOpenMobileSidebar();
-      }
+      // Свайп влево - закрываем модалку, возвращаемся к SidebarNav
       onClose();
     }
 
@@ -141,9 +139,7 @@ export default function TodoMobile({ open, onClose, onOpenMobileSidebar }) {
   };
 
   const handleClose = () => {
-    if (onOpenMobileSidebar) {
-      onOpenMobileSidebar();
-    }
+    // Просто закрываем модалку, возвращаемся к SidebarNav (который остается открытым)
     onClose();
   };
 

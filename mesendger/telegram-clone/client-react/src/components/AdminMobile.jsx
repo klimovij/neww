@@ -283,9 +283,7 @@ export default function AdminMobile({
   };
 
   const handleClose = () => {
-    if (onOpenMobileSidebar) {
-      onOpenMobileSidebar();
-    }
+    // Просто закрываем модалку, возвращаемся к SidebarNav (который остается открытым)
     onClose();
   };
 
