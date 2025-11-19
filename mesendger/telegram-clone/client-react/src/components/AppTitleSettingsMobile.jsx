@@ -121,7 +121,8 @@ function setAppTitleSettings(settings) {
       const settingsWithoutImages = {
         ...settings,
         avatarImage: null,
-        snowmanImage: null
+        snowmanImage: null,
+        snowmanImages: []
       };
       localStorage.setItem('appTitleSettings', JSON.stringify(settingsWithoutImages));
       window.dispatchEvent(new CustomEvent('appTitleSettingsUpdated', { detail: settingsWithoutImages }));
@@ -135,7 +136,8 @@ function setAppTitleSettings(settings) {
     const settingsWithoutImages = {
       ...settings,
       avatarImage: null,
-      snowmanImage: null
+      snowmanImage: null,
+      snowmanImages: []
     };
     try {
       localStorage.setItem('appTitleSettings', JSON.stringify(settingsWithoutImages));
