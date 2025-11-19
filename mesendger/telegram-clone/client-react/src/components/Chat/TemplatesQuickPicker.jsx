@@ -408,7 +408,11 @@ const TemplatesQuickPicker = ({ isOpen, onClose, onSelectTemplate, onSendTemplat
                           transition: 'all 0.2s',
                           touchAction: 'manipulation',
                           flex: isMobile ? '1' : 'none',
-                          minWidth: isMobile ? '0' : 'auto'
+                          minWidth: isMobile ? '0' : 'auto',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          textAlign: 'center'
                         }}
                         onMouseEnter={(e) => {
                           if (!isMobile) {
@@ -446,7 +450,11 @@ const TemplatesQuickPicker = ({ isOpen, onClose, onSelectTemplate, onSendTemplat
                           transition: 'all 0.2s',
                           touchAction: 'manipulation',
                           flex: isMobile ? '1' : 'none',
-                          minWidth: isMobile ? '0' : 'auto'
+                          minWidth: isMobile ? '0' : 'auto',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          textAlign: 'center'
                         }}
                         onMouseEnter={(e) => {
                           if (!isMobile) {
@@ -489,7 +497,11 @@ const TemplatesQuickPicker = ({ isOpen, onClose, onSelectTemplate, onSendTemplat
                           touchAction: 'manipulation',
                           flex: isMobile ? '1' : 'none',
                           minWidth: isMobile ? '0' : 'auto',
-                          width: isMobile ? '100%' : 'auto'
+                          width: isMobile ? '100%' : 'auto',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          textAlign: 'center'
                         }}
                         onMouseEnter={(e) => {
                           if (!isMobile) {
