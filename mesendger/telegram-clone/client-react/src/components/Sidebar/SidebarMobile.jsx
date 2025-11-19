@@ -849,7 +849,7 @@ export default function SidebarMobile({ open, onClose, onOpen, showNav = true, o
           ${(appTitleSettings.glowEnabled === true && appTitleSettings.effectType === 'gradient-animation') ? 'background-clip: text;' : ''}
           ${(appTitleSettings.glowEnabled === true && appTitleSettings.effectType === 'sparkle') ? 'animation: sparkleAnimation 2s ease-in-out infinite;' : ''}
           ${(appTitleSettings.glowEnabled === true && appTitleSettings.effectType === 'new-year') ? 'animation: newYearAnimation 3s ease-in-out infinite;' : ''}
-          display: block;
+          display: inline;
         }
         .issa-plus-festive { position: relative; }
         .issa-plus-text { position: relative; display: inline-flex; align-items: center; gap: 10px; }

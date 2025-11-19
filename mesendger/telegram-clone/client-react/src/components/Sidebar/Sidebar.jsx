@@ -789,6 +789,7 @@ export default function Sidebar() {
               }
             }
             .neon-issa-plus {
+              display: inline;
               ${(appTitleSettings.glowEnabled === true && (appTitleSettings.effectType || 'neon') === 'neon') ? 'animation: neonGlow 1.6s infinite alternate;' : ''}
               ${(appTitleSettings.glowEnabled === true && appTitleSettings.effectType === 'gradient-animation') ? 'animation: gradientAnimation 3s ease infinite;' : ''}
               ${(appTitleSettings.glowEnabled === true && appTitleSettings.effectType === 'gradient-animation') ? `background: linear-gradient(-45deg, ${appTitleSettings.glowColor || '#43e97b'}, ${appTitleSettings.color || '#43e97b'}, ${appTitleSettings.glowColor || '#43e97b'}, ${appTitleSettings.color || '#43e97b'});` : ''}
@@ -798,7 +799,6 @@ export default function Sidebar() {
               ${(appTitleSettings.glowEnabled === true && appTitleSettings.effectType === 'gradient-animation') ? 'background-clip: text;' : ''}
               ${(appTitleSettings.glowEnabled === true && appTitleSettings.effectType === 'sparkle') ? 'animation: sparkleAnimation 2s ease-in-out infinite;' : ''}
               ${(appTitleSettings.glowEnabled === true && appTitleSettings.effectType === 'new-year') ? 'animation: newYearAnimation 3s ease-in-out infinite;' : ''}
-              display: block;
             }
             .issa-plus-festive {
               position: relative;
