@@ -1310,15 +1310,21 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar, 
           showWorkTimeModal
         )}
         
-        {/* LeavesWorktimeMobile всегда рендерим (react-modal внутри управляет видимостью через isOpen) */}
+        {/* LeavesWorktimeMobile всегда рендерим через портал в document.body (react-modal внутри управляет видимостью через isOpen) */}
         {isMobile ? (
-          <LeavesWorktimeMobile 
-            key={`leaves-worktime-mobile-${portalKey}`} 
-            open={showLeavesWorktimeModal} 
-            onClose={() => setShowLeavesWorktimeModal(false)} 
-            token={localStorage.getItem('token')}
-            onOpenMobileSidebar={onOpenMobileSidebar} 
-          />
+          ReactDOM.createPortal(
+            <LeavesWorktimeMobile 
+              key={`leaves-worktime-mobile-${portalKey}`} 
+              open={showLeavesWorktimeModal} 
+              onClose={() => {
+                console.log('SidebarNav: Closing leaves-worktime modal');
+                setShowLeavesWorktimeModal(false);
+              }} 
+              token={localStorage.getItem('token')}
+              onOpenMobileSidebar={onOpenMobileSidebar} 
+            />,
+            document.body
+          )
         ) : (
           createSafePortal(
             <LeavesWorktimeModal key={`leaves-worktime-${portalKey}`} isOpen={showLeavesWorktimeModal} onRequestClose={() => setShowLeavesWorktimeModal(false)} token={localStorage.getItem('token')} />,
