@@ -512,8 +512,8 @@ export default function AppTitleSettingsMobile({ open, onClose, onOpenMobileSide
       handleChange('avatarPositionX', Math.round(clampedX));
       handleChange('avatarPositionY', Math.round(clampedY));
     } else if (dragging === 'snowman') {
-      const clampedX = Math.max(-300, Math.min(300, newX));
-      const clampedY = Math.max(-300, Math.min(300, newY));
+      const clampedX = Math.max(-800, Math.min(800, newX));
+      const clampedY = Math.max(-800, Math.min(800, newY));
       handleChange('snowmanPositionX', Math.round(clampedX));
       handleChange('snowmanPositionY', Math.round(clampedY));
     }
@@ -1470,9 +1470,9 @@ export default function AppTitleSettingsMobile({ open, onClose, onOpenMobileSide
                     </label>
                     <input
                       type="range"
-                      min="-300"
-                      max="300"
-                      step="5"
+                      min="-800"
+                      max="800"
+                      step="10"
                       value={settings.snowmanPositionX !== undefined ? settings.snowmanPositionX : 0}
                       onChange={(e) => {
                         const value = parseInt(e.target.value, 10);
@@ -1481,9 +1481,9 @@ export default function AppTitleSettingsMobile({ open, onClose, onOpenMobileSide
                       style={{ width: '100%' }}
                     />
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#666', marginTop: '4px' }}>
-                      <span>-300px (влево)</span>
+                      <span>-800px (влево)</span>
                       <span>0px (центр)</span>
-                      <span>300px (вправо)</span>
+                      <span>800px (вправо)</span>
                     </div>
                   </div>
                   <div>
@@ -1492,9 +1492,9 @@ export default function AppTitleSettingsMobile({ open, onClose, onOpenMobileSide
                     </label>
                     <input
                       type="range"
-                      min="-300"
-                      max="300"
-                      step="5"
+                      min="-800"
+                      max="800"
+                      step="10"
                       value={settings.snowmanPositionY !== undefined ? settings.snowmanPositionY : 0}
                       onChange={(e) => {
                         const value = parseInt(e.target.value, 10);
@@ -1503,9 +1503,9 @@ export default function AppTitleSettingsMobile({ open, onClose, onOpenMobileSide
                       style={{ width: '100%' }}
                     />
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#666', marginTop: '4px' }}>
-                      <span>-300px (вверх)</span>
+                      <span>-800px (вверх)</span>
                       <span>0px (центр)</span>
-                      <span>300px (вниз)</span>
+                      <span>800px (вниз)</span>
                     </div>
                   </div>
                   <div>
@@ -1514,8 +1514,8 @@ export default function AppTitleSettingsMobile({ open, onClose, onOpenMobileSide
                     </label>
                     <input
                       type="range"
-                      min="50"
-                      max="200"
+                      min="25"
+                      max="400"
                       step="5"
                       value={settings.snowmanScale !== undefined ? settings.snowmanScale : 100}
                       onChange={(e) => {
@@ -1525,9 +1525,9 @@ export default function AppTitleSettingsMobile({ open, onClose, onOpenMobileSide
                       style={{ width: '100%' }}
                     />
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#666', marginTop: '4px' }}>
-                      <span>50% (меньше)</span>
+                      <span>25% (очень маленький)</span>
                       <span>100% (норма)</span>
-                      <span>200% (больше)</span>
+                      <span>400% (очень большой)</span>
                     </div>
                   </div>
                 </div>
