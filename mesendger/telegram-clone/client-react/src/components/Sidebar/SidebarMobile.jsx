@@ -244,6 +244,7 @@ export default function SidebarMobile({ open, onClose, onOpen, showNav = true, o
 
   // Не размонтируем компонент, а просто скрываем его, чтобы сохранить состояние SidebarNav
   return ReactDOM.createPortal(
+    <>
     <div
           style={{
             position: 'fixed',
@@ -771,7 +772,8 @@ export default function SidebarMobile({ open, onClose, onOpen, showNav = true, o
               ← Свайпните вправо, чтобы закрыть
             </div>
           </div>
-          <style>{`
+        </div>
+        <style>{`
         @keyframes neonGlow {
           0% { 
             text-shadow: 0 0 ${Number(appTitleSettings.glowIntensity) || 12}px ${appTitleSettings.glowColor || '#43e97b'}, 
@@ -945,7 +947,7 @@ export default function SidebarMobile({ open, onClose, onOpen, showNav = true, o
           filter: drop-shadow(0 0 6px rgba(255,255,255,0.45));
         }
       `}</style>
-        </div>,
+    </>,
     document.body
   );
 }
