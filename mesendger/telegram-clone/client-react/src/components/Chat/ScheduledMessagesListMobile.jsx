@@ -420,7 +420,7 @@ export default function ScheduledMessagesListMobile({
           overflowY: 'auto',
           overflowX: 'hidden',
           padding: '16px',
-          paddingBottom: `calc(100px + env(safe-area-inset-bottom, 0px))`, // Увеличен padding для кнопок
+          paddingBottom: `calc(200px + env(safe-area-inset-bottom, 0px))`, // Увеличен padding для кнопок + системная панель навигации (~48-56px) + запас
           WebkitOverflowScrolling: 'touch',
           touchAction: 'pan-y',
           overscrollBehavior: 'contain',
@@ -626,12 +626,13 @@ export default function ScheduledMessagesListMobile({
                   </div>
                 </div>
               ))}
-              {/* Дополнительное пустое пространство внизу для удобной прокрутки */}
+              {/* Дополнительное пустое пространство внизу для удобной прокрутки и системной панели навигации */}
               <div style={{ 
-                height: '100px', 
-                minHeight: '100px',
+                height: '200px', 
+                minHeight: '200px',
                 width: '100%',
-                flexShrink: 0
+                flexShrink: 0,
+                paddingBottom: `calc(80px + env(safe-area-inset-bottom, 0px))` // Высота системной панели навигации (~56px) + дополнительный запас + safe-area
               }} />
             </div>
           )}
