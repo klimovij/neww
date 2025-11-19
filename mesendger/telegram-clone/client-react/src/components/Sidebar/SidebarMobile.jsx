@@ -343,8 +343,28 @@ export default function SidebarMobile({ open, onClose, onOpen, showNav = true, o
               )}
               
               <div style={{ flex: 1, position: 'relative' }}>
-                {/* Снеговик (абсолютное позиционирование по блоку) */}
-                {appTitleSettings.snowmanEnabled && appTitleSettings.snowmanPositionType === 'absolute' && (
+                {/* Изображения (абсолютное позиционирование по блоку) */}
+                {appTitleSettings.snowmanEnabled && (appTitleSettings.snowmanImages || []).filter(img => img.enabled !== false && img.positionType === 'absolute').map((img) => (
+                  <img
+                    key={img.id}
+                    src={img.image || frostyImg}
+                    alt={`Изображение ${img.id}`}
+                    style={{
+                      position: 'absolute',
+                      left: `calc(50% + ${img.positionX || 0}px)`,
+                      top: `${img.positionY || 0}px`,
+                      transform: 'translateX(-50%)',
+                      width: `${(img.scale || 100) * 0.6}px`,
+                      height: 'auto',
+                      zIndex: 10,
+                      pointerEvents: 'none',
+                      userSelect: 'none'
+                    }}
+                  />
+                ))}
+                
+                {/* Обратная совместимость: старое одиночное изображение */}
+                {appTitleSettings.snowmanEnabled && (!appTitleSettings.snowmanImages || appTitleSettings.snowmanImages.length === 0) && appTitleSettings.snowmanImage && appTitleSettings.snowmanPositionType === 'absolute' && (
                   <img
                     src={appTitleSettings.snowmanImage || frostyImg}
                     alt="Снеговик"
@@ -436,8 +456,28 @@ export default function SidebarMobile({ open, onClose, onOpen, showNav = true, o
                   </div>
                 )}
                 
-                {/* Снеговик (относительно текста) */}
-                {appTitleSettings.snowmanEnabled && appTitleSettings.snowmanPositionType === 'relative' && (
+                {/* Изображения (относительно текста) */}
+                {appTitleSettings.snowmanEnabled && (appTitleSettings.snowmanImages || []).filter(img => img.enabled !== false && img.positionType === 'relative').map((img) => (
+                  <img
+                    key={img.id}
+                    src={img.image || frostyImg}
+                    alt={`Изображение ${img.id}`}
+                    style={{
+                      position: 'absolute',
+                      left: `calc(50% + ${img.positionX || 0}px)`,
+                      top: `${img.positionY || 0}px`,
+                      transform: 'translateX(-50%)',
+                      width: `${(img.scale || 100) * 0.6}px`,
+                      height: 'auto',
+                      zIndex: 10,
+                      pointerEvents: 'none',
+                      userSelect: 'none'
+                    }}
+                  />
+                ))}
+                
+                {/* Обратная совместимость: старое одиночное изображение */}
+                {appTitleSettings.snowmanEnabled && (!appTitleSettings.snowmanImages || appTitleSettings.snowmanImages.length === 0) && appTitleSettings.snowmanImage && appTitleSettings.snowmanPositionType === 'relative' && (
                   <img
                     src={appTitleSettings.snowmanImage || frostyImg}
                     alt="Снеговик"

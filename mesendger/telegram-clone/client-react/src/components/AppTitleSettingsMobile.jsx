@@ -21,11 +21,12 @@ const DEFAULT_SETTINGS = {
   effectType: 'neon',
   snowEnabled: null,
   snowmanEnabled: false,
-  snowmanImage: null,
-  snowmanPositionX: 0,
-  snowmanPositionY: 0,
-  snowmanScale: 100,
-  snowmanPositionType: 'relative',
+  snowmanImage: null, // Для обратной совместимости
+  snowmanPositionX: 0, // Для обратной совместимости
+  snowmanPositionY: 0, // Для обратной совместимости
+  snowmanScale: 100, // Для обратной совместимости
+  snowmanPositionType: 'relative', // Для обратной совместимости
+  snowmanImages: [], // Массив объектов с изображениями: [{id, image, positionX, positionY, scale, positionType, enabled, selected}]
   avatarImage: null,
   avatarPositionX: 0,
   avatarPositionY: 0,
@@ -200,10 +201,23 @@ export default function AppTitleSettingsMobile({ open, onClose, onOpenMobileSide
   const [showPresetInput, setShowPresetInput] = useState(false);
   
   // Для drag and drop
-  const [dragging, setDragging] = useState(null); // 'avatar' или 'snowman'
+  const [dragging, setDragging] = useState(null); // 'avatar' или 'snowman' или 'snowman-image-{id}'
+  const [draggingImageId, setDraggingImageId] = useState(null); // ID активного изображения при перетаскивании
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const previewContainerRef = useRef(null);
+  
+  // Получаем активное изображение (выбранное для манипуляций)
+  const getActiveSnowmanImage = () => {
+    const images = settings.snowmanImages || [];
+    return images.find(img => img.selected === true) || images[0] || null;
+  };
+  
+  // Получаем индекс активного изображения
+  const getActiveSnowmanImageIndex = () => {
+    const images = settings.snowmanImages || [];
+    return images.findIndex(img => img.selected === true);
+  };
 
   useEffect(() => {
     if (open) {
@@ -351,6 +365,29 @@ export default function AppTitleSettingsMobile({ open, onClose, onOpenMobileSide
         }
       }
       
+      // Сжимаем изображения в массиве snowmanImages
+      if (settingsToSave.snowmanImages && Array.isArray(settingsToSave.snowmanImages)) {
+        try {
+          settingsToSave.snowmanImages = await Promise.all(
+            settingsToSave.snowmanImages.map(async (img) => {
+              if (img.image && img.image.startsWith('data:image')) {
+                try {
+                  const compressed = await compressImage(img.image, 300, 300, 0.75);
+                  return { ...img, image: compressed };
+                } catch (error) {
+                  console.error('Ошибка при сжатии изображения снеговика:', error);
+                  return img;
+                }
+              }
+              return img;
+            })
+          );
+        } catch (error) {
+          console.error('Ошибка при сжатии изображений снеговика:', error);
+        }
+      }
+      
+      // Обратная совместимость: сжимаем старое одиночное изображение
       if (settingsToSave.snowmanImage && settingsToSave.snowmanImage.startsWith('data:image')) {
         try {
           settingsToSave.snowmanImage = await compressImage(settingsToSave.snowmanImage, 300, 300, 0.75);
@@ -470,10 +507,11 @@ export default function AppTitleSettingsMobile({ open, onClose, onOpenMobileSide
   }, [onClose]);
 
   // Обработчики для drag and drop
-  const handleDragStart = useCallback((e, type) => {
+  const handleDragStart = useCallback((e, type, imageId = null) => {
     e.preventDefault();
     e.stopPropagation();
     setDragging(type);
+    setDraggingImageId(imageId);
     const rect = previewContainerRef.current?.getBoundingClientRect();
     if (rect) {
       const clientX = e.touches ? e.touches[0].clientX : e.clientX;
@@ -485,7 +523,16 @@ export default function AppTitleSettingsMobile({ open, onClose, onOpenMobileSide
           x: settings.avatarPositionX || 0,
           y: settings.avatarPositionY || 0
         });
+      } else if (type.startsWith('snowman-image-')) {
+        const img = settings.snowmanImages?.find(i => i.id === imageId);
+        if (img) {
+          setDragOffset({
+            x: img.positionX || 0,
+            y: img.positionY || 0
+          });
+        }
       } else if (type === 'snowman') {
+        // Обратная совместимость со старым форматом
         setDragOffset({
           x: settings.snowmanPositionX || 0,
           y: settings.snowmanPositionY || 0
@@ -511,16 +558,25 @@ export default function AppTitleSettingsMobile({ open, onClose, onOpenMobileSide
       const clampedY = Math.max(-100, Math.min(100, newY));
       handleChange('avatarPositionX', Math.round(clampedX));
       handleChange('avatarPositionY', Math.round(clampedY));
+    } else if (dragging.startsWith('snowman-image-')) {
+      const clampedX = Math.max(-800, Math.min(800, newX));
+      const clampedY = Math.max(-800, Math.min(800, newY));
+      updateActiveSnowmanImage({
+        positionX: Math.round(clampedX),
+        positionY: Math.round(clampedY)
+      });
     } else if (dragging === 'snowman') {
+      // Обратная совместимость со старым форматом
       const clampedX = Math.max(-800, Math.min(800, newX));
       const clampedY = Math.max(-800, Math.min(800, newY));
       handleChange('snowmanPositionX', Math.round(clampedX));
       handleChange('snowmanPositionY', Math.round(clampedY));
     }
-  }, [dragging, dragStart, dragOffset, handleChange]);
+  }, [dragging, dragStart, dragOffset, handleChange, updateActiveSnowmanImage]);
 
   const handleDragEnd = useCallback(() => {
     setDragging(null);
+    setDraggingImageId(null);
     setDragStart({ x: 0, y: 0 });
     setDragOffset({ x: 0, y: 0 });
   }, []);
@@ -1391,13 +1447,13 @@ export default function AppTitleSettingsMobile({ open, onClose, onOpenMobileSide
                   onChange={(e) => handleChange('snowmanEnabled', e.target.checked)}
                   style={{ width: '18px', height: '18px', cursor: 'pointer' }}
                 />
-                Показать снеговика
+                Показать изображения
               </label>
               {settings.snowmanEnabled && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginLeft: '26px' }}>
                   <div>
                     <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500, color: '#cbd5e1', fontSize: '13px' }}>
-                      Загрузить изображение снеговика
+                      Загрузить изображение
                     </label>
                     <input
                       type="file"
@@ -1415,121 +1471,294 @@ export default function AppTitleSettingsMobile({ open, onClose, onOpenMobileSide
                         boxSizing: 'border-box',
                       }}
                     />
-                    {settings.snowmanImage && (
-                      <button
-                        onClick={() => handleChange('snowmanImage', null)}
-                        style={{
-                          marginTop: '8px',
-                          padding: '6px 12px',
-                          borderRadius: '6px',
-                          border: '1px solid #e74c3c',
-                          background: 'rgba(231,76,60,0.15)',
-                          color: '#e74c3c',
-                          cursor: 'pointer',
-                          fontWeight: 500,
-                          fontSize: '13px',
-                        }}
-                      >
-                        Удалить изображение
-                      </button>
-                    )}
-                    {!settings.snowmanImage && (
-                      <div style={{ fontSize: '12px', color: '#999', marginTop: '4px' }}>
-                        Если не загружено, будет использовано изображение по умолчанию
-                      </div>
-                    )}
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500, color: '#cbd5e1', fontSize: '13px' }}>
-                      Тип позиционирования
-                    </label>
-                    <select
-                      value={settings.snowmanPositionType || 'relative'}
-                      onChange={(e) => handleChange('snowmanPositionType', e.target.value)}
-                      style={{
-                        width: '100%',
-                        padding: '12px',
-                        borderRadius: '8px',
-                        border: '1px solid #444',
-                        background: '#1a1d24',
-                        color: '#e0e0e0',
-                        fontSize: '14px',
-                        boxSizing: 'border-box',
-                      }}
-                    >
-                      <option value="relative">Относительно текста</option>
-                      <option value="absolute">Абсолютно по блоку</option>
-                    </select>
                     <div style={{ fontSize: '12px', color: '#999', marginTop: '4px' }}>
-                      {settings.snowmanPositionType === 'relative' ? 'Позиция относительно текста названия' : 'Позиция относительно всего блока сайдбара'}
+                      Вы можете загрузить несколько изображений. Выберите изображение галочкой для настройки позиции и размера.
                     </div>
                   </div>
-                  <div>
-                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500, color: '#cbd5e1', fontSize: '13px' }}>
-                      Позиция по горизонтали: {settings.snowmanPositionX !== undefined ? settings.snowmanPositionX : 0}px
-                    </label>
-                    <input
-                      type="range"
-                      min="-800"
-                      max="800"
-                      step="10"
-                      value={settings.snowmanPositionX !== undefined ? settings.snowmanPositionX : 0}
-                      onChange={(e) => {
-                        const value = parseInt(e.target.value, 10);
-                        handleChange('snowmanPositionX', value);
-                      }}
-                      style={{ width: '100%' }}
-                    />
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#666', marginTop: '4px' }}>
-                      <span>-800px (влево)</span>
-                      <span>0px (центр)</span>
-                      <span>800px (вправо)</span>
+                  
+                  {/* Список загруженных изображений */}
+                  {settings.snowmanImages && settings.snowmanImages.length > 0 && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '8px' }}>
+                      <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500, color: '#cbd5e1', fontSize: '13px' }}>
+                        Загруженные изображения (выберите для настройки):
+                      </label>
+                      {settings.snowmanImages.map((img, index) => (
+                        <div
+                          key={img.id}
+                          style={{
+                            padding: '12px',
+                            borderRadius: '8px',
+                            border: `2px solid ${img.selected ? '#43e97b' : '#444'}`,
+                            background: img.selected ? 'rgba(67,233,123,0.1)' : '#1a1d24',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '12px',
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={img.selected === true}
+                            onChange={() => handleSelectSnowmanImage(img.id)}
+                            style={{ width: '20px', height: '20px', cursor: 'pointer', flexShrink: 0 }}
+                          />
+                          <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            {img.image ? (
+                              <img
+                                src={img.image}
+                                alt={`Изображение ${index + 1}`}
+                                style={{
+                                  width: '60px',
+                                  height: '60px',
+                                  objectFit: 'cover',
+                                  borderRadius: '8px',
+                                  border: '1px solid #444',
+                                }}
+                              />
+                            ) : (
+                              <div style={{
+                                width: '60px',
+                                height: '60px',
+                                borderRadius: '8px',
+                                background: '#2a2f38',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: '#999',
+                                fontSize: '24px',
+                              }}>
+                                ⛄
+                              </div>
+                            )}
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontWeight: 600, color: '#e0e0e0', fontSize: '14px', marginBottom: '4px' }}>
+                                Изображение {index + 1}
+                              </div>
+                              <div style={{ fontSize: '12px', color: '#999' }}>
+                                {img.selected ? '✓ Активно для настройки' : 'Нажмите галочку для выбора'}
+                              </div>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => handleRemoveSnowmanImage(img.id)}
+                            style={{
+                              padding: '6px 12px',
+                              borderRadius: '6px',
+                              border: '1px solid #e74c3c',
+                              background: 'rgba(231,76,60,0.15)',
+                              color: '#e74c3c',
+                              cursor: 'pointer',
+                              fontWeight: 500,
+                              fontSize: '13px',
+                              flexShrink: 0,
+                            }}
+                          >
+                            Удалить
+                          </button>
+                        </div>
+                      ))}
                     </div>
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500, color: '#cbd5e1', fontSize: '13px' }}>
-                      Позиция по вертикали: {settings.snowmanPositionY !== undefined ? settings.snowmanPositionY : 0}px
-                    </label>
-                    <input
-                      type="range"
-                      min="-800"
-                      max="800"
-                      step="10"
-                      value={settings.snowmanPositionY !== undefined ? settings.snowmanPositionY : 0}
-                      onChange={(e) => {
-                        const value = parseInt(e.target.value, 10);
-                        handleChange('snowmanPositionY', value);
-                      }}
-                      style={{ width: '100%' }}
-                    />
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#666', marginTop: '4px' }}>
-                      <span>-800px (вверх)</span>
-                      <span>0px (центр)</span>
-                      <span>800px (вниз)</span>
-                    </div>
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500, color: '#cbd5e1', fontSize: '13px' }}>
-                      Размер: {settings.snowmanScale !== undefined ? settings.snowmanScale : 100}%
-                    </label>
-                    <input
-                      type="range"
-                      min="25"
-                      max="400"
-                      step="5"
-                      value={settings.snowmanScale !== undefined ? settings.snowmanScale : 100}
-                      onChange={(e) => {
-                        const value = parseInt(e.target.value, 10);
-                        handleChange('snowmanScale', value);
-                      }}
-                      style={{ width: '100%' }}
-                    />
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#666', marginTop: '4px' }}>
-                      <span>25% (очень маленький)</span>
-                      <span>100% (норма)</span>
-                      <span>400% (очень большой)</span>
-                    </div>
-                  </div>
+                  )}
+                  {/* Настройки для активного изображения */}
+                  {(() => {
+                    const activeImage = getActiveSnowmanImage();
+                    if (!activeImage) {
+                      return (
+                        <div style={{ padding: '16px', background: 'rgba(67,233,123,0.1)', borderRadius: '8px', border: '1px solid rgba(67,233,123,0.3)' }}>
+                          <div style={{ color: '#43e97b', fontSize: '13px', textAlign: 'center' }}>
+                            Выберите изображение галочкой для настройки позиции и размера
+                          </div>
+                        </div>
+                      );
+                    }
+                    
+                    return (
+                      <>
+                        <div style={{ marginTop: '12px', padding: '12px', background: 'rgba(67,233,123,0.15)', borderRadius: '8px', border: '1px solid rgba(67,233,123,0.3)' }}>
+                          <div style={{ color: '#43e97b', fontWeight: 600, fontSize: '13px', marginBottom: '8px' }}>
+                            ⚙️ Настройки активного изображения
+                          </div>
+                          <div style={{ fontSize: '12px', color: '#999' }}>
+                            Вы выбрали изображение для настройки. Используйте ползунки ниже или перетащите изображение в превью.
+                          </div>
+                        </div>
+                        <div>
+                          <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500, color: '#cbd5e1', fontSize: '13px' }}>
+                            Тип позиционирования
+                          </label>
+                          <select
+                            value={activeImage.positionType || 'relative'}
+                            onChange={(e) => updateActiveSnowmanImage({ positionType: e.target.value })}
+                            style={{
+                              width: '100%',
+                              padding: '12px',
+                              borderRadius: '8px',
+                              border: '1px solid #444',
+                              background: '#1a1d24',
+                              color: '#e0e0e0',
+                              fontSize: '14px',
+                              boxSizing: 'border-box',
+                            }}
+                          >
+                            <option value="relative">Относительно текста</option>
+                            <option value="absolute">Абсолютно по блоку</option>
+                          </select>
+                          <div style={{ fontSize: '12px', color: '#999', marginTop: '4px' }}>
+                            {activeImage.positionType === 'relative' ? 'Позиция относительно текста названия' : 'Позиция относительно всего блока сайдбара'}
+                          </div>
+                        </div>
+                        <div>
+                          <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500, color: '#cbd5e1', fontSize: '13px' }}>
+                            Позиция по горизонтали: {activeImage.positionX !== undefined ? activeImage.positionX : 0}px
+                          </label>
+                          <input
+                            type="range"
+                            min="-800"
+                            max="800"
+                            step="10"
+                            value={activeImage.positionX !== undefined ? activeImage.positionX : 0}
+                            onChange={(e) => {
+                              const value = parseInt(e.target.value, 10);
+                              updateActiveSnowmanImage({ positionX: value });
+                            }}
+                            style={{ width: '100%' }}
+                          />
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#666', marginTop: '4px' }}>
+                            <span>-800px (влево)</span>
+                            <span>0px (центр)</span>
+                            <span>800px (вправо)</span>
+                          </div>
+                        </div>
+                        <div>
+                          <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500, color: '#cbd5e1', fontSize: '13px' }}>
+                            Позиция по вертикали: {activeImage.positionY !== undefined ? activeImage.positionY : 0}px
+                          </label>
+                          <input
+                            type="range"
+                            min="-800"
+                            max="800"
+                            step="10"
+                            value={activeImage.positionY !== undefined ? activeImage.positionY : 0}
+                            onChange={(e) => {
+                              const value = parseInt(e.target.value, 10);
+                              updateActiveSnowmanImage({ positionY: value });
+                            }}
+                            style={{ width: '100%' }}
+                          />
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#666', marginTop: '4px' }}>
+                            <span>-800px (вверх)</span>
+                            <span>0px (центр)</span>
+                            <span>800px (вниз)</span>
+                          </div>
+                        </div>
+                        <div>
+                          <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500, color: '#cbd5e1', fontSize: '13px' }}>
+                            Размер: {activeImage.scale !== undefined ? activeImage.scale : 100}%
+                          </label>
+                          <input
+                            type="range"
+                            min="25"
+                            max="400"
+                            step="5"
+                            value={activeImage.scale !== undefined ? activeImage.scale : 100}
+                            onChange={(e) => {
+                              const value = parseInt(e.target.value, 10);
+                              updateActiveSnowmanImage({ scale: value });
+                            }}
+                            style={{ width: '100%' }}
+                          />
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#666', marginTop: '4px' }}>
+                            <span>25% (очень маленький)</span>
+                            <span>100% (норма)</span>
+                            <span>400% (очень большой)</span>
+                          </div>
+                        </div>
+                      </>
+                    );
+                  })()}
+                  
+                  {/* Обратная совместимость: если используется старый формат (snowmanImage) */}
+                  {(!settings.snowmanImages || settings.snowmanImages.length === 0) && settings.snowmanImage && (
+                    <>
+                      <div style={{ marginTop: '12px', padding: '12px', background: 'rgba(255,193,7,0.15)', borderRadius: '8px', border: '1px solid rgba(255,193,7,0.3)' }}>
+                        <div style={{ color: '#ffc107', fontSize: '12px', marginBottom: '8px' }}>
+                          ⚠️ Используется старый формат. Загрузите новое изображение для использования новой системы управления.
+                        </div>
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500, color: '#cbd5e1', fontSize: '13px' }}>
+                          Тип позиционирования
+                        </label>
+                        <select
+                          value={settings.snowmanPositionType || 'relative'}
+                          onChange={(e) => handleChange('snowmanPositionType', e.target.value)}
+                          style={{
+                            width: '100%',
+                            padding: '12px',
+                            borderRadius: '8px',
+                            border: '1px solid #444',
+                            background: '#1a1d24',
+                            color: '#e0e0e0',
+                            fontSize: '14px',
+                            boxSizing: 'border-box',
+                          }}
+                        >
+                          <option value="relative">Относительно текста</option>
+                          <option value="absolute">Абсолютно по блоку</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500, color: '#cbd5e1', fontSize: '13px' }}>
+                          Позиция по горизонтали: {settings.snowmanPositionX !== undefined ? settings.snowmanPositionX : 0}px
+                        </label>
+                        <input
+                          type="range"
+                          min="-800"
+                          max="800"
+                          step="10"
+                          value={settings.snowmanPositionX !== undefined ? settings.snowmanPositionX : 0}
+                          onChange={(e) => {
+                            const value = parseInt(e.target.value, 10);
+                            handleChange('snowmanPositionX', value);
+                          }}
+                          style={{ width: '100%' }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500, color: '#cbd5e1', fontSize: '13px' }}>
+                          Позиция по вертикали: {settings.snowmanPositionY !== undefined ? settings.snowmanPositionY : 0}px
+                        </label>
+                        <input
+                          type="range"
+                          min="-800"
+                          max="800"
+                          step="10"
+                          value={settings.snowmanPositionY !== undefined ? settings.snowmanPositionY : 0}
+                          onChange={(e) => {
+                            const value = parseInt(e.target.value, 10);
+                            handleChange('snowmanPositionY', value);
+                          }}
+                          style={{ width: '100%' }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500, color: '#cbd5e1', fontSize: '13px' }}>
+                          Размер: {settings.snowmanScale !== undefined ? settings.snowmanScale : 100}%
+                        </label>
+                        <input
+                          type="range"
+                          min="25"
+                          max="400"
+                          step="5"
+                          value={settings.snowmanScale !== undefined ? settings.snowmanScale : 100}
+                          onChange={(e) => {
+                            const value = parseInt(e.target.value, 10);
+                            handleChange('snowmanScale', value);
+                          }}
+                          style={{ width: '100%' }}
+                        />
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
             </div>
@@ -1562,8 +1791,43 @@ export default function AppTitleSettingsMobile({ open, onClose, onOpenMobileSide
                   marginBottom: '-10%', // Компенсация масштабирования
                 }}
               >
-                {/* Снеговик (абсолютное позиционирование по блоку) - можно перетаскивать */}
-                {settings.snowmanEnabled && settings.snowmanPositionType === 'absolute' && (
+                {/* Изображения (абсолютное позиционирование по блоку) - можно перетаскивать */}
+                {settings.snowmanEnabled && (settings.snowmanImages || []).filter(img => img.enabled !== false && img.positionType === 'absolute').map((img) => (
+                  <img
+                    key={img.id}
+                    src={img.image || frostyImg}
+                    alt={`Изображение ${img.id}`}
+                    onMouseDown={(e) => {
+                      handleSelectSnowmanImage(img.id);
+                      handleDragStart(e, `snowman-image-${img.id}`, img.id);
+                    }}
+                    onTouchStart={(e) => {
+                      handleSelectSnowmanImage(img.id);
+                      handleDragStart(e, `snowman-image-${img.id}`, img.id);
+                    }}
+                    style={{
+                      position: 'absolute',
+                      left: `calc(50% + ${img.positionX || 0}px)`,
+                      top: `${img.positionY || 0}px`,
+                      transform: 'translateX(-50%)',
+                      width: `${(img.scale || 100) * 0.6}px`,
+                      height: 'auto',
+                      zIndex: draggingImageId === img.id ? 200 : (img.selected ? 150 : 100),
+                      cursor: draggingImageId === img.id ? 'grabbing' : 'grab',
+                      userSelect: 'none',
+                      touchAction: 'none',
+                      opacity: draggingImageId === img.id ? 0.8 : (img.selected ? 0.9 : 1),
+                      transition: draggingImageId === img.id ? 'none' : 'opacity 0.2s',
+                      border: img.selected ? '2px solid #43e97b' : '2px solid transparent',
+                      borderRadius: '4px',
+                      boxShadow: img.selected ? '0 0 8px rgba(67,233,123,0.5)' : 'none',
+                    }}
+                    draggable={false}
+                  />
+                ))}
+                
+                {/* Обратная совместимость: старое одиночное изображение */}
+                {settings.snowmanEnabled && (!settings.snowmanImages || settings.snowmanImages.length === 0) && settings.snowmanImage && settings.snowmanPositionType === 'absolute' && (
                   <img
                     src={settings.snowmanImage || frostyImg}
                     alt="Снеговик"
