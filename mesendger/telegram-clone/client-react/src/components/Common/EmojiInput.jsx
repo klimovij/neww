@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import ReactDOM from 'react-dom';
 import styled from 'styled-components';
 import { FiSmile, FiX } from 'react-icons/fi';
 import { useEmojiSettings } from '../../hooks/useEmojiSettings';
@@ -94,20 +95,42 @@ const EmojiButton = styled.button`
   }
 `;
 
-const EmojiPickerContainer = styled.div`
-  position: absolute;
-  bottom: 100%;
-  left: 0;
+const EmojiPickerContainer = styled.div.withConfig({
+  shouldForwardProp: (prop) => prop !== 'isMobile'
+})`
+  position: ${props => props.isMobile ? 'fixed' : 'absolute'};
+  ${props => props.isMobile ? `
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100vw;
+    height: 100vh;
+    max-width: 100vw;
+    max-height: 100vh;
+    border-radius: 0;
+    z-index: 100002;
+    padding: 20px 16px;
+    padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+    overscroll-behavior: contain;
+  ` : `
+    bottom: 100%;
+    left: 0;
+    width: 480px;
+    max-width: 520px;
+    max-height: 380px;
+    border-radius: 12px;
+    padding: 12px;
+    z-index: 1000;
+    overflow-y: auto;
+  `}
   background: #fff;
-  border: 1.5px solid #e3f0ff;
-  border-radius: 12px;
-  padding: 12px;
-  box-shadow: 0 4px 20px rgba(51, 144, 236, 0.15);
-  z-index: 1000;
-  width: 480px;
-  max-width: 520px;
-  max-height: 380px;
-  overflow-y: auto;
+  border: ${props => props.isMobile ? 'none' : '1.5px solid #e3f0ff'};
+  box-shadow: ${props => props.isMobile ? 'none' : '0 4px 20px rgba(51, 144, 236, 0.15)'};
   
   &::-webkit-scrollbar {
     width: 6px;
@@ -128,15 +151,69 @@ const EmojiPickerContainer = styled.div`
   }
 `;
 
-const EmojiGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  gap: 10px;
-  max-height: 300px;
-  overflow-y: auto;
+const MobileOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 100001;
 `;
 
-const EmojiItem = styled.button`
+const MobileHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 0;
+  margin-bottom: 16px;
+  border-bottom: 1px solid #e5e7eb;
+`;
+
+const MobileTitle = styled.h3`
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+`;
+
+const CloseButton = styled.button`
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background: #f3f4f6;
+    color: #374151;
+  }
+  
+  &:active {
+    transform: scale(0.95);
+  }
+`;
+
+const EmojiGrid = styled.div.withConfig({
+  shouldForwardProp: (prop) => prop !== 'isMobile'
+})`
+  display: grid;
+  grid-template-columns: ${props => props.isMobile ? 'repeat(auto-fill, minmax(70px, 1fr))' : 'repeat(8, 1fr)'};
+  gap: ${props => props.isMobile ? '12px' : '10px'};
+  max-height: ${props => props.isMobile ? 'none' : '300px'};
+  overflow-y: ${props => props.isMobile ? 'visible' : 'auto'};
+`;
+
+const EmojiItem = styled.button.withConfig({
+  shouldForwardProp: (prop) => prop !== 'isMobile'
+})`
   background: none;
   border: none;
   cursor: pointer;
@@ -146,8 +223,9 @@ const EmojiItem = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 60px;
-  min-width: 60px;
+  min-height: ${props => props.isMobile ? '70px' : '60px'};
+  min-width: ${props => props.isMobile ? '70px' : '60px'};
+  touch-action: ${props => props.isMobile ? 'manipulation' : 'auto'};
   
   &:hover {
     background: #f0f8ff;
@@ -172,10 +250,12 @@ const StandardEmojiText = styled.span`
   line-height: 1;
 `;
 
-const CategoryTitle = styled.h4`
+const CategoryTitle = styled.h4.withConfig({
+  shouldForwardProp: (prop) => prop !== 'isMobile'
+})`
   margin: 0 0 8px 0;
   color: #2c3e50;
-  font-size: 14px;
+  font-size: ${props => props.isMobile ? '16px' : '14px'};
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -192,28 +272,58 @@ const CategorySection = styled.div`
 export default function EmojiInput({ onEmojiSelect, placeholder = "Выберите эмодзи" }) {
   const emojiSettings = useEmojiSettings();
   const [showPicker, setShowPicker] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const pickerRef = useRef(null);
   const serverCustomEmojis = useCustomEmojis();
   const localCustomEmojis = useLocalCustomEmojis();
 
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (pickerRef.current && !pickerRef.current.contains(event.target)) {
-        setShowPicker(false);
-      }
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
     };
-
-    if (showPicker) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('resize', checkMobile);
     };
-  }, [showPicker]);
+  }, []);
+
+  useEffect(() => {
+    if (isMobile && showPicker) {
+      const originalStyle = window.getComputedStyle(document.body).overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = originalStyle;
+      };
+    }
+  }, [isMobile, showPicker]);
+
+  useEffect(() => {
+    if (!isMobile) {
+      const handleClickOutside = (event) => {
+        if (pickerRef.current && !pickerRef.current.contains(event.target)) {
+          setShowPicker(false);
+        }
+      };
+
+      if (showPicker) {
+        document.addEventListener('mousedown', handleClickOutside);
+      }
+
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [showPicker, isMobile]);
 
   const handleEmojiClick = (emoji) => {
     onEmojiSelect(emoji);
+    setShowPicker(false);
+  };
+
+  const handleClose = () => {
     setShowPicker(false);
   };
 
@@ -261,6 +371,66 @@ export default function EmojiInput({ onEmojiSelect, placeholder = "Выбери�
     return Array.from(map.values());
   }, [localCustomEmojis, serverCustomEmojis]);
 
+  const pickerContent = showPicker ? (
+    <>
+      {isMobile && <MobileOverlay onClick={handleClose} />}
+      <EmojiPickerContainer isMobile={isMobile}>
+        {isMobile && (
+          <MobileHeader>
+            <MobileTitle>Выберите эмодзи</MobileTitle>
+            <CloseButton onClick={handleClose}>
+              <FiX size={20} />
+            </CloseButton>
+          </MobileHeader>
+        )}
+        {emojiSettings.showStandardEmojis !== false && Object.entries(groupedEmojis).map(([category, emojis]) => (
+          <CategorySection key={category}>
+            <CategoryTitle isMobile={isMobile}>{category}</CategoryTitle>
+            <EmojiGrid isMobile={isMobile}>
+              {emojis.map((item, index) => (
+                <EmojiItem
+                  key={`${item.emoji}-${index}`}
+                  isMobile={isMobile}
+                  onClick={() => handleEmojiClick(item.emoji)}
+                  title={item.name.replace('.png', '')}
+                >
+                  {EMOJI_TO_ICON[item.emoji] ? (
+                    <EmojiImage 
+                      src={EMOJI_TO_ICON[item.emoji]} 
+                      alt={item.emoji} 
+                      size={emojiSettings.customEmojiInPicker}
+                    />
+                  ) : (
+                    <StandardEmojiText size={emojiSettings.standardEmojiInPicker}>
+                      {item.emoji}
+                    </StandardEmojiText>
+                  )}
+                </EmojiItem>
+              ))}
+            </EmojiGrid>
+          </CategorySection>
+        ))}
+        {customEmojis.length > 0 && (
+          <CategorySection>
+            <CategoryTitle isMobile={isMobile}>Кастомные</CategoryTitle>
+            <EmojiGrid isMobile={isMobile}>
+              {customEmojis.map((e, i) => (
+                <EmojiItem 
+                  key={e.name + i} 
+                  isMobile={isMobile}
+                  onClick={() => handleEmojiClick(`custom:${e.name}`)} 
+                  title={e.title || e.name}
+                >
+                  <EmojiImage src={e.url} alt={e.title || e.name} size={emojiSettings.customEmojiInPicker} />
+                </EmojiItem>
+              ))}
+            </EmojiGrid>
+          </CategorySection>
+        )}
+      </EmojiPickerContainer>
+    </>
+  ) : null;
+
   return (
     <div style={{ position: 'relative', display: 'inline-block' }} ref={pickerRef}>
       <EmojiButton
@@ -270,48 +440,8 @@ export default function EmojiInput({ onEmojiSelect, placeholder = "Выбери�
         <FiSmile size={20} />
       </EmojiButton>
 
-      {showPicker && (
-        <EmojiPickerContainer>
-          {emojiSettings.showStandardEmojis !== false && Object.entries(groupedEmojis).map(([category, emojis]) => (
-            <CategorySection key={category}>
-              <CategoryTitle>{category}</CategoryTitle>
-              <EmojiGrid>
-                {emojis.map((item, index) => (
-                  <EmojiItem
-                    key={`${item.emoji}-${index}`}
-                    onClick={() => handleEmojiClick(item.emoji)}
-                    title={item.name.replace('.png', '')}
-                  >
-                    {EMOJI_TO_ICON[item.emoji] ? (
-                      <EmojiImage 
-                        src={EMOJI_TO_ICON[item.emoji]} 
-                        alt={item.emoji} 
-                        size={emojiSettings.customEmojiInPicker}
-                      />
-                    ) : (
-                      <StandardEmojiText size={emojiSettings.standardEmojiInPicker}>
-                        {item.emoji}
-                      </StandardEmojiText>
-                    )}
-                  </EmojiItem>
-                ))}
-              </EmojiGrid>
-            </CategorySection>
-          ))}
-          {customEmojis.length > 0 && (
-            <CategorySection>
-              <CategoryTitle>Кастомные</CategoryTitle>
-              <EmojiGrid>
-                {customEmojis.map((e, i) => (
-                  <EmojiItem key={e.name + i} onClick={() => handleEmojiClick(`custom:${e.name}`)} title={e.title || e.name}>
-                    <EmojiImage src={e.url} alt={e.title || e.name} size={emojiSettings.customEmojiInPicker} />
-                  </EmojiItem>
-                ))}
-              </EmojiGrid>
-            </CategorySection>
-          )}
-        </EmojiPickerContainer>
-      )}
+      {!isMobile && pickerContent}
+      {isMobile && pickerContent && ReactDOM.createPortal(pickerContent, document.body)}
     </div>
   );
 }
