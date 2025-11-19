@@ -1544,20 +1544,22 @@ export default function AppTitleSettingsMobile({ open, onClose, onOpenMobileSide
               marginBottom: '20px',
             }}>
               <div style={{ fontSize: '13px', color: '#999', marginBottom: '12px', fontWeight: 600 }}>
-                Превью сайдбара (перетащите изображения для изменения позиции):
+                Превью сайдбара (перетащите изображения для изменения позиции, масштаб уменьшен для удобства):
               </div>
               <div 
                 ref={previewContainerRef}
                 style={{
                   background: 'linear-gradient(135deg, #232931 0%, #181c22 100%)',
                   width: '100%',
-                  minHeight: '400px',
+                  height: '600px', // Фиксированная высота для предсказуемого масштабирования
                   borderRadius: '8px',
                   position: 'relative',
-                  overflow: 'visible',
+                  overflow: 'hidden',
                   padding: '16px 20px',
-                  borderBottom: '1px solid rgba(67,233,123,0.2)',
                   boxShadow: '0 2px 12px rgba(44,62,80,0.10)',
+                  transform: 'scale(0.85)', // Уменьшенный масштаб для видимости всего сайдбара
+                  transformOrigin: 'top center',
+                  marginBottom: '-10%', // Компенсация масштабирования
                 }}
               >
                 {/* Снеговик (абсолютное позиционирование по блоку) - можно перетаскивать */}
@@ -1602,14 +1604,16 @@ export default function AppTitleSettingsMobile({ open, onClose, onOpenMobileSide
                   <span style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
                     <span role="img" aria-label="chat">💬</span> Мульти-мессенджер
                   </span>
-                  {/* Снег в превью */}
+                  {/* Снег в превью - на весь экран превью */}
                   {settings.snowEnabled !== false && (
                     <div style={{
                       position: 'absolute',
                       top: 0,
                       left: 0,
                       right: 0,
-                      height: '200px',
+                      bottom: 0,
+                      height: '100%',
+                      width: '100%',
                       pointerEvents: 'none',
                       overflow: 'visible',
                       zIndex: 1
@@ -1632,7 +1636,7 @@ export default function AppTitleSettingsMobile({ open, onClose, onOpenMobileSide
                             filter: 'drop-shadow(0 0 6px rgba(255,255,255,0.45))',
                             pointerEvents: 'none',
                             ['--snow-x']: `${-30 + (index % 7) * 12}px`,
-                            ['--snow-y']: `${140 + (index % 6) * 18}px`
+                            ['--snow-y']: `calc(100% + 20px)`
                           }}
                         >
                           ❄

@@ -397,11 +397,13 @@ export default function SidebarMobile({ open, onClose, onOpen, showNav = true, o
                 {/* Снег */}
                 {shouldShowSnow && (
                   <div className="snow-container" style={{
-                    position: 'absolute',
+                    position: 'fixed',
                     top: 0,
                     left: 0,
                     right: 0,
-                    height: '200px',
+                    bottom: 0,
+                    height: '100vh',
+                    width: '100%',
                     pointerEvents: 'none',
                     overflow: 'visible',
                     zIndex: 1
@@ -425,7 +427,7 @@ export default function SidebarMobile({ open, onClose, onOpen, showNav = true, o
                           filter: 'drop-shadow(0 0 6px rgba(255,255,255,0.45))',
                           pointerEvents: 'none',
                           ['--snow-x']: `${-30 + (index % 7) * 12}px`,
-                          ['--snow-y']: `${140 + (index % 6) * 18}px`
+                          ['--snow-y']: `calc(100vh + 20px)`
                         }}
                       >
                         ❄
@@ -735,17 +737,6 @@ export default function SidebarMobile({ open, onClose, onOpen, showNav = true, o
               </div>
             )}
 
-            {/* Подсказка о свайпе */}
-            <div style={{
-              padding: '12px 20px',
-              borderTop: '1px solid rgba(67,233,123,0.1)',
-              background: 'rgba(34,40,49,0.6)',
-              textAlign: 'center',
-              fontSize: '0.85em',
-              color: '#b2bec3'
-            }}>
-              ← Свайпните вправо, чтобы закрыть
-            </div>
           </div>
         </div>
       <style>{`
@@ -899,16 +890,18 @@ export default function SidebarMobile({ open, onClose, onOpen, showNav = true, o
             opacity: 0.9; 
           }
           100% { 
-            transform: translate3d(var(--snow-x, 40px), var(--snow-y, 160px), 0) rotate(360deg); 
+            transform: translate3d(var(--snow-x, 40px), var(--snow-y, calc(100vh + 20px)), 0) rotate(360deg); 
             opacity: 0; 
           }
         }
         .snow-container {
-          position: absolute;
+          position: fixed;
           top: 0;
           left: 0;
           right: 0;
-          height: 200px;
+          bottom: 0;
+          height: 100vh;
+          width: 100%;
           pointer-events: none;
           overflow: visible;
         }
