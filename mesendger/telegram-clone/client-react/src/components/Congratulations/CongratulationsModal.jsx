@@ -353,8 +353,22 @@ function EmployeeList({ employees, loading, onEdit, onCongrats, setEmployees, us
                   <td>{getAge(emp.birth_day, emp.birth_month, emp.birth_year)}</td>
                   <td>
                     <ActionButton
-                      onClick={() => onEdit(emp)}
-                      style={{ marginRight: '8px' }}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log('✏️ Редактировать clicked for employee:', emp);
+                        if (emp && emp.id) {
+                          onEdit(emp);
+                        } else {
+                          console.error('❌ Invalid employee object for edit:', emp);
+                          alert('Ошибка: данные сотрудника некорректны');
+                        }
+                      }}
+                      style={{ 
+                        marginRight: '8px',
+                        position: 'relative',
+                        zIndex: 10
+                      }}
                     >
                       Редактировать
                     </ActionButton>
@@ -374,7 +388,7 @@ function EmployeeList({ employees, loading, onEdit, onCongrats, setEmployees, us
                         background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
                         marginRight: '8px',
                         position: 'relative',
-                        zIndex: 1
+                        zIndex: 10
                       }}
                     >
                       Поздравить
@@ -1028,8 +1042,12 @@ export default function CongratulationsModal({ onClose }) {
 {editUser && (
   <EditUserModal 
     user={editUser} 
-    onClose={() => setEditUser(null)} 
+    onClose={() => {
+      console.log('🔒 Closing EditUserModal, editUser:', editUser);
+      setEditUser(null);
+    }} 
     onSaved={() => {
+      console.log('✅ User saved, reloading...');
       setEditUser(null);
       // Перезагружаем список сотрудников
       setLoading(true);
@@ -1061,7 +1079,7 @@ export default function CongratulationsModal({ onClose }) {
     user={congratsUser}
     open={!!congratsUser}
     onClose={() => {
-      console.log('🔒 Closing CongratulationSendModal');
+      console.log('🔒 Closing CongratulationSendModal, congratsUser:', congratsUser);
       setCongratsUser(null);
     }}
     onSent={() => {
