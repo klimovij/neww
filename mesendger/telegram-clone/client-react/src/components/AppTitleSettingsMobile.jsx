@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom';
 import { FaArrowLeft } from 'react-icons/fa';
 import { FiX, FiType, FiSave, FiRotateCcw } from 'react-icons/fi';
 import frostyImg from '../assets/icons/Frosty.png';
-import api from '../../services/api';
+import api from 'services/api';
 
 const DEFAULT_SETTINGS = {
   text: 'Issa Plus',

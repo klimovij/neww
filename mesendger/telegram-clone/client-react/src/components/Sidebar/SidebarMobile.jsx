@@ -5,7 +5,7 @@ import { useApp } from '../../context/AppContext';
 import { Avatar } from '../../styles/GlobalStyles';
 import SidebarNav from './SidebarNav';
 import frostyImg from '../../assets/icons/Frosty.png';
-import api from '../../services/api';
+import api from 'services/api';
 
 const SNOWFLAKE_COUNT = 14;
 
