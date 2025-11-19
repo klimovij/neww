@@ -642,7 +642,12 @@ export default function CongratulationsMobile({ open, onClose, onOpenMobileSideb
           }}
         />
       )}
-      {editUser && (
+    </div>,
+    document.body
+      )}
+      
+      {/* Модалки рендерятся через отдельный portal, чтобы быть выше родительского контейнера */}
+      {editUser && ReactDOM.createPortal(
         (() => {
           console.log('📱 Mobile: Rendering EditUserModal with user:', editUser);
           return (
@@ -658,9 +663,10 @@ export default function CongratulationsMobile({ open, onClose, onOpenMobileSideb
               }} 
             />
           );
-        })()
+        })(),
+        document.body
       )}
-      {congratsUser && (
+      {congratsUser && ReactDOM.createPortal(
         (() => {
           console.log('📱 Mobile: Rendering CongratulationSendMobile with user:', congratsUser);
           return (
@@ -681,10 +687,8 @@ export default function CongratulationsMobile({ open, onClose, onOpenMobileSideb
               }}
             />
           );
-        })()
-      )}
-    </div>,
-    document.body
+        })(),
+        document.body
       )}
     </>
   );
@@ -739,11 +743,12 @@ function EditUserModal({ user, onClose, onSaved }) {
         right: 0,
         bottom: 0,
         background: 'rgba(0, 0, 0, 0.9)',
-        zIndex: 20000,
+        zIndex: 200000,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         padding: '16px',
+        overflow: 'auto',
       }}
       onClick={onClose}
     >
