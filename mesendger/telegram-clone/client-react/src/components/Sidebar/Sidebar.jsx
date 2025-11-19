@@ -601,7 +601,7 @@ export default function Sidebar() {
             />
           )}
           <span style={{display:'flex',alignItems:'center',gap:6,marginLeft:-50,}}>
-            <span role="img" aria-label="chat">💬</span> Мессенджер
+            <span role="img" aria-label="chat">💬</span> Мульти-мессенджер
           </span>
           <span className="neon-issa-plus issa-plus-festive" style={(() => {
             const style = {
