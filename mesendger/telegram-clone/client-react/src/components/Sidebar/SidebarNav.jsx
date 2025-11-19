@@ -1316,6 +1316,7 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar, 
               key={`leaves-worktime-mobile-${portalKey}`} 
               open={showLeavesWorktimeModal} 
               onClose={() => setShowLeavesWorktimeModal(false)} 
+              token={localStorage.getItem('token')}
               onOpenMobileSidebar={onOpenMobileSidebar} 
             />
           ) : (
