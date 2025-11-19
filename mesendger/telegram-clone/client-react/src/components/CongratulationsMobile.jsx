@@ -23,6 +23,15 @@ export default function CongratulationsMobile({ open, onClose, onOpenMobileSideb
   const [editUser, setEditUser] = useState(null);
   const [congratsUser, setCongratsUser] = useState(null);
 
+  // Логирование изменений состояний для отладки
+  useEffect(() => {
+    console.log('📱 Mobile: editUser changed:', editUser);
+  }, [editUser]);
+
+  useEffect(() => {
+    console.log('📱 Mobile: congratsUser changed:', congratsUser);
+  }, [congratsUser]);
+
   // Защита: employees всегда массив
   const safeEmployees = Array.isArray(employees) ? employees : [];
 
@@ -468,7 +477,29 @@ export default function CongratulationsMobile({ open, onClose, onOpenMobileSideb
                         {/* Кнопки действий */}
                         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                           <button
-                            onClick={() => setEditUser(emp)}
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              console.log('✏️ Mobile: Редактировать clicked for employee:', emp);
+                              console.log('✏️ Mobile: setEditUser function:', typeof setEditUser, setEditUser);
+                              if (emp && emp.id) {
+                                try {
+                                  setEditUser(emp);
+                                  console.log('✅ Mobile: setEditUser called successfully');
+                                } catch (err) {
+                                  console.error('❌ Mobile: Error calling setEditUser:', err);
+                                  alert('Ошибка при открытии модалки редактирования: ' + err.message);
+                                }
+                              } else {
+                                console.error('❌ Mobile: Invalid employee object for edit:', emp);
+                                alert('Ошибка: данные сотрудника некорректны');
+                              }
+                            }}
+                            onTouchStart={(e) => {
+                              e.stopPropagation();
+                              console.log('✏️ Mobile: Редактировать touchStart');
+                            }}
                             style={{
                               flex: 1,
                               background: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
@@ -484,13 +515,39 @@ export default function CongratulationsMobile({ open, onClose, onOpenMobileSideb
                               justifyContent: 'center',
                               gap: '6px',
                               boxShadow: '0 2px 8px rgba(67, 233, 123, 0.3)',
+                              position: 'relative',
+                              zIndex: 1000,
+                              pointerEvents: 'auto',
+                              touchAction: 'manipulation',
                             }}
                           >
                             <FiEdit3 size={16} />
                             Редактировать
                           </button>
                           <button
-                            onClick={() => setCongratsUser(emp)}
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              console.log('🎉 Mobile: Поздравить clicked for employee:', emp);
+                              console.log('🎉 Mobile: setCongratsUser function:', typeof setCongratsUser, setCongratsUser);
+                              if (emp && emp.id) {
+                                try {
+                                  setCongratsUser(emp);
+                                  console.log('✅ Mobile: setCongratsUser called successfully');
+                                } catch (err) {
+                                  console.error('❌ Mobile: Error calling setCongratsUser:', err);
+                                  alert('Ошибка при открытии модалки поздравления: ' + err.message);
+                                }
+                              } else {
+                                console.error('❌ Mobile: Invalid employee object:', emp);
+                                alert('Ошибка: данные сотрудника некорректны');
+                              }
+                            }}
+                            onTouchStart={(e) => {
+                              e.stopPropagation();
+                              console.log('🎉 Mobile: Поздравить touchStart');
+                            }}
                             style={{
                               flex: 1,
                               background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
@@ -506,6 +563,10 @@ export default function CongratulationsMobile({ open, onClose, onOpenMobileSideb
                               justifyContent: 'center',
                               gap: '6px',
                               boxShadow: '0 2px 8px rgba(245, 87, 108, 0.3)',
+                              position: 'relative',
+                              zIndex: 1000,
+                              pointerEvents: 'auto',
+                              touchAction: 'manipulation',
                             }}
                           >
                             <FiGift size={16} />
@@ -578,25 +639,45 @@ export default function CongratulationsMobile({ open, onClose, onOpenMobileSideb
         />
       )}
       {editUser && (
-        <EditUserModal 
-          user={editUser} 
-          onClose={() => setEditUser(null)} 
-          onSaved={() => setEditUser(null)} 
-        />
+        (() => {
+          console.log('📱 Mobile: Rendering EditUserModal with user:', editUser);
+          return (
+            <EditUserModal 
+              user={editUser} 
+              onClose={() => {
+                console.log('📱 Mobile: Closing EditUserModal');
+                setEditUser(null);
+              }} 
+              onSaved={() => {
+                console.log('📱 Mobile: User saved, closing EditUserModal');
+                setEditUser(null);
+              }} 
+            />
+          );
+        })()
       )}
       {congratsUser && (
-        <CongratulationSendMobile
-          user={congratsUser}
-          open={!!congratsUser}
-          onClose={() => setCongratsUser(null)}
-          onOpenMobileSidebar={() => {
-            // Не открываем сайдбар, так как мы уже внутри модалки
-          }}
-          onSent={() => {
-            setCongratsUser(null);
-            window.dispatchEvent(new CustomEvent('news-published'));
-          }}
-        />
+        (() => {
+          console.log('📱 Mobile: Rendering CongratulationSendMobile with user:', congratsUser);
+          return (
+            <CongratulationSendMobile
+              user={congratsUser}
+              open={!!congratsUser}
+              onClose={() => {
+                console.log('📱 Mobile: Closing CongratulationSendMobile');
+                setCongratsUser(null);
+              }}
+              onOpenMobileSidebar={() => {
+                // Не открываем сайдбар, так как мы уже внутри модалки
+              }}
+              onSent={() => {
+                console.log('📱 Mobile: Congratulation sent');
+                setCongratsUser(null);
+                window.dispatchEvent(new CustomEvent('news-published'));
+              }}
+            />
+          );
+        })()
       )}
     </div>,
     document.body
