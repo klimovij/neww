@@ -114,6 +114,7 @@ export default function NewsMobile({ open, onClose, onOpenMobileSidebar }) {
             padding: '0 16px',
             zIndex: 10001,
             borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+            pointerEvents: 'auto',
           }}
         >
           <button
@@ -151,13 +152,20 @@ export default function NewsMobile({ open, onClose, onOpenMobileSidebar }) {
             Новости
           </h2>
 
-          <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+          <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end', position: 'relative', zIndex: 10002, pointerEvents: 'auto' }}>
             {canManageNews && (
               <>
                 <button
+                  type="button"
                   onClick={(e) => {
+                    e.preventDefault();
                     e.stopPropagation();
+                    console.log('📝 NewsMobile: Создать новость clicked, setting showAddModal to true');
                     setShowAddModal(true);
+                  }}
+                  onTouchStart={(e) => {
+                    e.stopPropagation();
+                    console.log('📝 NewsMobile: Создать новость touchStart');
                   }}
                   style={{
                     background: 'linear-gradient(135deg, #2193b0 0%, #43e97b 100%)',
@@ -174,6 +182,9 @@ export default function NewsMobile({ open, onClose, onOpenMobileSidebar }) {
                     boxShadow: '0 2px 8px rgba(67, 233, 123, 0.3)',
                     fontWeight: 600,
                     whiteSpace: 'nowrap',
+                    position: 'relative',
+                    zIndex: 10002,
+                    pointerEvents: 'auto',
                   }}
                   onMouseEnter={(e) => e.target.style.transform = 'scale(1.05)'}
                   onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
@@ -183,9 +194,16 @@ export default function NewsMobile({ open, onClose, onOpenMobileSidebar }) {
                   Новость
                 </button>
                 <button
+                  type="button"
                   onClick={(e) => {
+                    e.preventDefault();
                     e.stopPropagation();
+                    console.log('🗳️ NewsMobile: Голосование clicked, setting showPollModal to true');
                     setShowPollModal(true);
+                  }}
+                  onTouchStart={(e) => {
+                    e.stopPropagation();
+                    console.log('🗳️ NewsMobile: Голосование touchStart');
                   }}
                   style={{
                     background: 'linear-gradient(135deg, #ff9800 0%, #f57c00 100%)',
@@ -202,6 +220,9 @@ export default function NewsMobile({ open, onClose, onOpenMobileSidebar }) {
                     boxShadow: '0 2px 8px rgba(255, 152, 0, 0.3)',
                     fontWeight: 600,
                     whiteSpace: 'nowrap',
+                    position: 'relative',
+                    zIndex: 10002,
+                    pointerEvents: 'auto',
                   }}
                   onMouseEnter={(e) => e.target.style.transform = 'scale(1.05)'}
                   onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
@@ -303,7 +324,9 @@ export default function NewsMobile({ open, onClose, onOpenMobileSidebar }) {
       )}
       
       {/* Модалка создания новости */}
-      {showAddModal && ReactDOM.createPortal(
+      {showAddModal && (() => {
+        console.log('📝 NewsMobile: Rendering AddNewsModal, showAddModal:', showAddModal);
+        return ReactDOM.createPortal(
         <div
           style={{
             position: 'fixed',
@@ -312,7 +335,7 @@ export default function NewsMobile({ open, onClose, onOpenMobileSidebar }) {
             right: 0,
             bottom: 0,
             backgroundColor: 'rgba(0, 0, 0, 0.85)',
-            zIndex: 100001,
+            zIndex: 100003, // Выше NewsMobile (100002)
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -428,10 +451,13 @@ export default function NewsMobile({ open, onClose, onOpenMobileSidebar }) {
           </div>
         </div>,
         document.body
-      )}
+        );
+      })()}
       
       {/* Модалка создания голосования */}
-      {showPollModal && ReactDOM.createPortal(
+      {showPollModal && (() => {
+        console.log('🗳️ NewsMobile: Rendering PollModal, showPollModal:', showPollModal);
+        return ReactDOM.createPortal(
         <div
           style={{
             position: 'fixed',
@@ -440,7 +466,7 @@ export default function NewsMobile({ open, onClose, onOpenMobileSidebar }) {
             right: 0,
             bottom: 0,
             backgroundColor: 'rgba(0, 0, 0, 0.85)',
-            zIndex: 100001,
+            zIndex: 100003, // Выше NewsMobile (100002)
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -614,7 +640,8 @@ export default function NewsMobile({ open, onClose, onOpenMobileSidebar }) {
           </div>
         </div>,
         document.body
-      )}
+        );
+      })()}
     </>
   );
 }
