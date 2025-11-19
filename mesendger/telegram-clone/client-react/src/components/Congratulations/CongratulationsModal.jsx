@@ -206,6 +206,14 @@ function normalizeAvatarUrl(url) {
 function EmployeeList({ employees, loading, onEdit, onCongrats, setEmployees, usersByEmployeeId }) {
   const [search, setSearch] = useState('');
 
+  // Проверка функций при рендере
+  useEffect(() => {
+    console.log('📋 EmployeeList rendered with:');
+    console.log('  - onEdit:', typeof onEdit, onEdit);
+    console.log('  - onCongrats:', typeof onCongrats, onCongrats);
+    console.log('  - employees count:', employees?.length || 0);
+  }, [onEdit, onCongrats, employees]);
+
   const safeEmployees = Array.isArray(employees) ? employees : [];
   const filteredEmployees = safeEmployees.filter((e) =>
     (e.first_name + ' ' + e.last_name).toLowerCase().includes(search.trim().toLowerCase())
@@ -351,44 +359,78 @@ function EmployeeList({ employees, loading, onEdit, onCongrats, setEmployees, us
                       : '-'}
                   </td>
                   <td>{getAge(emp.birth_day, emp.birth_month, emp.birth_year)}</td>
-                  <td>
+                  <td 
+                    onClick={(e) => {
+                      // Останавливаем всплытие на уровне td
+                      e.stopPropagation();
+                    }}
+                    style={{ position: 'relative', zIndex: 100 }}
+                  >
                     <ActionButton
+                      type="button"
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
                         console.log('✏️ Редактировать clicked for employee:', emp);
+                        console.log('✏️ onEdit function:', typeof onEdit, onEdit);
                         if (emp && emp.id) {
-                          onEdit(emp);
+                          try {
+                            onEdit(emp);
+                            console.log('✅ onEdit called successfully');
+                          } catch (err) {
+                            console.error('❌ Error calling onEdit:', err);
+                            alert('Ошибка при открытии модалки редактирования: ' + err.message);
+                          }
                         } else {
                           console.error('❌ Invalid employee object for edit:', emp);
                           alert('Ошибка: данные сотрудника некорректны');
                         }
                       }}
+                      onMouseDown={(e) => {
+                        e.stopPropagation();
+                        console.log('✏️ Редактировать mouseDown');
+                      }}
                       style={{ 
                         marginRight: '8px',
                         position: 'relative',
-                        zIndex: 10
+                        zIndex: 1000,
+                        pointerEvents: 'auto',
+                        cursor: 'pointer'
                       }}
                     >
                       Редактировать
                     </ActionButton>
                     <ActionButton
+                      type="button"
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
                         console.log('🎉 Поздравить clicked for employee:', emp);
+                        console.log('🎉 onCongrats function:', typeof onCongrats, onCongrats);
                         if (emp && emp.id) {
-                          onCongrats(emp);
+                          try {
+                            onCongrats(emp);
+                            console.log('✅ onCongrats called successfully');
+                          } catch (err) {
+                            console.error('❌ Error calling onCongrats:', err);
+                            alert('Ошибка при открытии модалки поздравления: ' + err.message);
+                          }
                         } else {
                           console.error('❌ Invalid employee object:', emp);
                           alert('Ошибка: данные сотрудника некорректны');
                         }
                       }}
+                      onMouseDown={(e) => {
+                        e.stopPropagation();
+                        console.log('🎉 Поздравить mouseDown');
+                      }}
                       style={{ 
                         background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
                         marginRight: '8px',
                         position: 'relative',
-                        zIndex: 10
+                        zIndex: 1000,
+                        pointerEvents: 'auto',
+                        cursor: 'pointer'
                       }}
                     >
                       Поздравить
