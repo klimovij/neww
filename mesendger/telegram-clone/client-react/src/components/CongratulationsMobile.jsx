@@ -392,7 +392,7 @@ export default function CongratulationsMobile({ open, onClose, onOpenMobileSideb
         </div>
 
         {/* Контент */}
-        <div style={{ flex: 1, padding: '16px', paddingTop: '8px' }}>
+        <div style={{ flex: 1, padding: '16px', paddingTop: '16px', marginTop: '8px' }}>
           {tab === 'list' && (
             <>
               {loading ? (
