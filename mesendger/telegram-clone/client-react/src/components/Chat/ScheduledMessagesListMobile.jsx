@@ -416,13 +416,15 @@ export default function ScheduledMessagesListMobile({
         {/* Messages List */}
         <div style={{
           flex: 1,
+          minHeight: 0,
           overflowY: 'auto',
           overflowX: 'hidden',
           padding: '16px',
-          paddingBottom: `calc(16px + env(safe-area-inset-bottom, 0px))`,
+          paddingBottom: `calc(100px + env(safe-area-inset-bottom, 0px))`, // Увеличен padding для кнопок
           WebkitOverflowScrolling: 'touch',
           touchAction: 'pan-y',
-          overscrollBehavior: 'contain'
+          overscrollBehavior: 'contain',
+          position: 'relative'
         }}>
           {loading ? (
             <div style={{ 
@@ -456,8 +458,13 @@ export default function ScheduledMessagesListMobile({
               </div>
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {displayMessages.map((message) => (
+            <div style={{ 
+              display: 'flex', 
+              flexDirection: 'column', 
+              gap: '12px',
+              paddingBottom: '32px' // Дополнительный padding для последнего элемента
+            }}>
+              {displayMessages.map((message, index) => (
                 <div
                   key={message.id}
                   style={{
@@ -619,6 +626,13 @@ export default function ScheduledMessagesListMobile({
                   </div>
                 </div>
               ))}
+              {/* Дополнительное пустое пространство внизу для удобной прокрутки */}
+              <div style={{ 
+                height: '100px', 
+                minHeight: '100px',
+                width: '100%',
+                flexShrink: 0
+              }} />
             </div>
           )}
         </div>
