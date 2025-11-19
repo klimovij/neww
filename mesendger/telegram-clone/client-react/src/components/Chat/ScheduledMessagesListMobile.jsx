@@ -185,28 +185,82 @@ export default function ScheduledMessagesListMobile({
   };
 
   // Разделяем сообщения на обычные и шаблоны
-  // Шаблоны определяем по наличию template_type или если сообщение было создано через планирование шаблона
-  // В запланированных сообщениях может быть поле template_type или можно определить по другим признакам
+  // Шаблоны определяем по наличию template_type, message_type === 'template' или другим признакам
+  // Более широкая фильтрация для определения шаблонов - без ограничений по количеству
   const templateMessages = scheduledMessages.filter(msg => {
-    // Проверяем наличие template_type или других признаков шаблона
-    return msg.template_type || 
-           msg.message_type === 'template' ||
-           (msg.content && (
-             msg.content.includes('custom:emoji') || // Если содержит кастомные эмодзи - скорее всего шаблон
-             msg.content.includes('🚨') || // SOS шаблоны
-             msg.content.includes('⚠️') // Важные шаблоны
-           ));
+    // Проверяем наличие template_type (из базы данных) или templateType (из объекта)
+    const hasTemplateType = !!(msg.template_type || msg.templateType);
+    
+    // Проверяем message_type
+    const isTemplateMessageType = msg.message_type === 'template';
+    
+    // Логируем для отладки
+    if (scheduledMessages.indexOf(msg) < 3) {
+      console.log('🔍 Template filter check for message:', {
+        id: msg.id,
+        template_type: msg.template_type,
+        templateType: msg.templateType,
+        message_type: msg.message_type,
+        hasTemplateType,
+        isTemplateMessageType,
+        contentPreview: (msg.content || '').substring(0, 50)
+      });
+    }
+    
+    // Если есть template_type или message_type === 'template' - это точно шаблон
+    if (hasTemplateType || isTemplateMessageType) {
+      return true;
+    }
+    
+    // Проверяем признаки шаблона в контенте (для старых записей без template_type)
+    const content = (msg.content || '').toLowerCase();
+    const hasTemplateIndicators = 
+      content.includes('custom:emoji') || // Кастомные эмодзи
+      content.includes('🚨') || // SOS шаблоны
+      content.includes('⚠️') || // Важные шаблоны
+      content.includes('⏰') || // Часто используется в шаблонах
+      content.includes('ежедневное') || // Типичное начало шаблонов
+      content.includes('напоминание') || // Напоминания часто из шаблонов
+      content.includes('авто-перезагрузка') || // Типичный контент шаблонов
+      content.includes('автоперезагрузка') || // Вариант написания
+      content.includes('сервера 1с') || // Конкретный контент из скриншота
+      content.includes('сервера 1c') || // Вариант написания
+      content.includes('всем выйти') || // Типичный контент шаблонов
+      content.includes('перезагрузка') || // Типичный контент шаблонов
+      content.includes('пока не напишу') || // Типичный контент шаблонов
+      content.includes('начинаю перезагрузку'); // Типичный контент шаблонов
+    
+    return hasTemplateIndicators;
   });
   
   const regularMessages = scheduledMessages.filter(msg => {
-    // Обычные сообщения - все, кроме шаблонов
-    return !msg.template_type && 
-           msg.message_type !== 'template' &&
-           !(msg.content && (
-             msg.content.includes('custom:emoji') ||
-             msg.content.includes('🚨') ||
-             msg.content.includes('⚠️')
-           ));
+    // Обычные сообщения - все, что не является шаблоном
+    const hasTemplateType = !!(msg.template_type || msg.templateType);
+    const isTemplateMessageType = msg.message_type === 'template';
+    
+    // Если есть template_type или message_type === 'template' - это не обычное сообщение
+    if (hasTemplateType || isTemplateMessageType) {
+      return false;
+    }
+    
+    const content = (msg.content || '').toLowerCase();
+    const hasTemplateIndicators = 
+      content.includes('custom:emoji') ||
+      content.includes('🚨') ||
+      content.includes('⚠️') ||
+      content.includes('⏰') ||
+      content.includes('ежедневное') ||
+      content.includes('напоминание') ||
+      content.includes('авто-перезагрузка') ||
+      content.includes('автоперезагрузка') ||
+      content.includes('сервера 1с') ||
+      content.includes('сервера 1c') ||
+      content.includes('всем выйти') ||
+      content.includes('перезагрузка') ||
+      content.includes('пока не напишу') ||
+      content.includes('начинаю перезагрузку');
+    
+    return !hasTemplateIndicators;
   });
 
   const displayMessages = activeTab === 'templates' ? templateMessages : regularMessages;

@@ -94,6 +94,20 @@ const TemplatesQuickPicker = ({ isOpen, onClose, onSelectTemplate, onSendTemplat
     onClose();
   };
 
+  // Обработка планирования шаблона
+  const handleScheduleTemplate = (template) => {
+    if (onScheduleTemplate) {
+      // Передаем объект шаблона, а не только контент, чтобы сохранить информацию о типе
+      onScheduleTemplate({
+        content: template.content,
+        templateType: template.type,
+        templateId: template.id,
+        templateTitle: template.title
+      });
+    }
+    onClose();
+  };
+
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth <= 768);
@@ -481,9 +495,7 @@ const TemplatesQuickPicker = ({ isOpen, onClose, onSelectTemplate, onSendTemplat
                         Отправить
                       </button>
                       <button
-                        onClick={() => {
-                          if (onScheduleTemplate) onScheduleTemplate(template.content);
-                        }}
+                        onClick={() => handleScheduleTemplate(template)}
                         style={{
                           padding: isMobile ? '10px 16px' : '6px 12px',
                           borderRadius: '8px',

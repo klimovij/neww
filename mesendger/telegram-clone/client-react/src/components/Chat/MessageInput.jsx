@@ -717,6 +717,7 @@ export default function MessageInput({ isMobile = false }) {
   // Состояния для планирования сообщений
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [scheduledTemplateContent, setScheduledTemplateContent] = useState('');
+  const [scheduledTemplateInfo, setScheduledTemplateInfo] = useState(null); // Информация о шаблоне
   const [showScheduledMessagesModal, setShowScheduledMessagesModal] = useState(false);
   const quickPollTemplates = [
     {
@@ -946,19 +947,38 @@ const convertHtmlToEmojiCodes = (html) => {
     if (!state.currentChat) return;
     
     console.log('[MessageInput] Scheduling message:', scheduleData);
+    console.log('[MessageInput] Template info:', scheduledTemplateInfo);
+    
+    // Определяем, является ли это шаблоном
+    const isTemplate = !!scheduledTemplateInfo;
+    const templateType = scheduledTemplateInfo?.templateType || null;
+    
+    // Определяем messageType: если это шаблон, то всегда 'template', иначе 'file' или 'text'
+    let messageType = 'text';
+    if (isTemplate) {
+      messageType = 'template'; // Шаблоны всегда имеют message_type = 'template'
+    } else if (state.filePreview) {
+      messageType = 'file';
+    }
     
     const messageData = {
       chatId: Number(state.currentChat.id),
       content: scheduleData.content,
       scheduledFor: scheduleData.scheduledFor,
-      messageType: state.filePreview ? 'file' : 'text',
+      messageType: messageType,
       fileInfo: state.filePreview,
       replyToId: state.replyToMessage?.id || null,
       repeatType: scheduleData.repeatType || 'none',
       repeatDays: scheduleData.repeatDays || null,
       repeatUntil: scheduleData.repeatUntil || null,
-      timezoneOffset: scheduleData.timezoneOffset || 0
+      timezoneOffset: scheduleData.timezoneOffset || 0,
+      templateType: templateType // Передаем тип шаблона для сохранения
     };
+    
+    console.log('[MessageInput] Final messageData:', {
+      ...messageData,
+      content: messageData.content?.substring(0, 50) + '...'
+    });
     
     if (window.socket && window.socket.connected) {
       window.socket.emit('schedule_message', messageData);
@@ -971,6 +991,7 @@ const convertHtmlToEmojiCodes = (html) => {
       dispatch({ type: 'SET_FILE_PREVIEW', payload: null });
       dispatch({ type: 'SET_REPLY_TO_MESSAGE', payload: null });
       setError('');
+      setScheduledTemplateInfo(null); // Очищаем информацию о шаблоне
       
       // Показываем уведомление
       dispatch({
@@ -1798,8 +1819,12 @@ const handleFileSelect = async (e) => {
         handleSendTemplate(templateContent, templateType);
         setShowTemplatesPicker(false);
       }}
-      onScheduleTemplate={(templateContent) => {
-        setScheduledTemplateContent(templateContent || '');
+      onScheduleTemplate={(templateData) => {
+        // templateData может быть строкой (старый формат) или объектом (новый формат)
+        const content = typeof templateData === 'string' ? templateData : (templateData?.content || '');
+        const templateInfo = typeof templateData === 'object' ? templateData : null;
+        setScheduledTemplateContent(content);
+        setScheduledTemplateInfo(templateInfo);
         setShowScheduleModal(true);
         setShowTemplatesPicker(false);
       }}
@@ -1807,7 +1832,11 @@ const handleFileSelect = async (e) => {
 
     <ScheduledMessageModal
       isOpen={showScheduleModal}
-      onClose={() => { setShowScheduleModal(false); setScheduledTemplateContent(''); }}
+      onClose={() => { 
+        setShowScheduleModal(false); 
+        setScheduledTemplateContent(''); 
+        setScheduledTemplateInfo(null);
+      }}
       messageContent={scheduledTemplateContent || message}
       onSchedule={handleScheduleMessage}
     />

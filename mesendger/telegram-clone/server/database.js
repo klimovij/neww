@@ -2172,6 +2172,7 @@ class Database {
       this.db.run(`ALTER TABLE scheduled_messages ADD COLUMN is_recurring BOOLEAN DEFAULT 0`, () => {});
       this.db.run(`ALTER TABLE scheduled_messages ADD COLUMN parent_recurring_id INTEGER`, () => {});
       this.db.run(`ALTER TABLE scheduled_messages ADD COLUMN timezone_offset INTEGER DEFAULT 0`, () => {});
+      this.db.run(`ALTER TABLE scheduled_messages ADD COLUMN template_type TEXT`, () => {});
 
       // Таблица статуса прочитанности сообщений
       this.db.run(`
@@ -3566,14 +3567,14 @@ class Database {
   // === МЕТОДЫ ДЛЯ ЗАПЛАНИРОВАННЫХ СООБЩЕНИЙ ===
 
   // Создать запланированное сообщение
-  scheduleMessage(chatId, userId, content, messageType, fileInfo, replyToId, scheduledFor, repeatType = 'none', repeatDays = null, repeatUntil = null, timezoneOffset = 0) {
+  scheduleMessage(chatId, userId, content, messageType, fileInfo, replyToId, scheduledFor, repeatType = 'none', repeatDays = null, repeatUntil = null, timezoneOffset = 0, templateType = null) {
     return new Promise((resolve, reject) => {
       const sql = `
         INSERT INTO scheduled_messages (
           chat_id, user_id, content, message_type, file_info, reply_to_id, scheduled_for,
-          repeat_type, repeat_days, repeat_until, is_recurring, timezone_offset
+          repeat_type, repeat_days, repeat_until, is_recurring, timezone_offset, template_type
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
       
       const isRecurring = repeatType !== 'none' ? 1 : 0;
@@ -3581,7 +3582,7 @@ class Database {
       this.db.run(sql, [
         chatId, userId, content, messageType, 
         fileInfo ? JSON.stringify(fileInfo) : null, 
-        replyToId, scheduledFor, repeatType, repeatDays, repeatUntil, isRecurring, timezoneOffset
+        replyToId, scheduledFor, repeatType, repeatDays, repeatUntil, isRecurring, timezoneOffset, templateType
       ], function(err) {
         if (err) {
           console.error('❌ scheduleMessage error:', err);

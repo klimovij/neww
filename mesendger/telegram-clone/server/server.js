@@ -4540,7 +4540,7 @@ socket.on('delete_chat', requireAuth(async (data) => {
   
   socket.on('schedule_message', requireAuth(async (data) => {
     try {
-      let { chatId, content, scheduledFor, messageType = 'text', fileInfo = null, replyToId = null, repeatType = 'none', repeatDays = null, repeatUntil = null, timezoneOffset = 0 } = data;
+      let { chatId, content, scheduledFor, messageType = 'text', fileInfo = null, replyToId = null, repeatType = 'none', repeatDays = null, repeatUntil = null, timezoneOffset = 0, templateType = null } = data;
       chatId = Number(chatId);
       
       if (!Number.isFinite(chatId)) {
@@ -4684,7 +4684,9 @@ socket.on('delete_chat', requireAuth(async (data) => {
         scheduledDate.toISOString(), // Используем преобразованное время в UTC
         repeatType,
         repeatDays,
-        repeatUntil
+        repeatUntil,
+        timezoneOffset,
+        templateType // Передаем тип шаблона
       );
       
       // Отправляем подтверждение
