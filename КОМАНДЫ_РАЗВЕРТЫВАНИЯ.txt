@@ -1,0 +1,145 @@
+═══════════════════════════════════════════════════════════════
+КОМАНДЫ ДЛЯ РАЗВЕРТЫВАНИЯ НА GOOGLE CLOUD
+═══════════════════════════════════════════════════════════════
+
+СПОСОБ 1: Выполнить весь скрипт сразу
+───────────────────────────────────────────────────────────────
+
+1. Подключитесь к серверу через SSH (в браузере Google Cloud Console)
+2. Выполните одну команду:
+
+   curl -o- https://raw.githubusercontent.com/klimovij/neww/main/DEPLOY_COMMANDS.sh | bash
+
+   ИЛИ загрузите файл DEPLOY_COMMANDS.sh и выполните:
+   
+   chmod +x DEPLOY_COMMANDS.sh
+   bash DEPLOY_COMMANDS.sh
+
+
+СПОСОБ 2: Команды по шагам (копируйте и выполняйте по очереди)
+───────────────────────────────────────────────────────────────
+
+# Шаг 1: Обновление системы
+sudo apt-get update -y && sudo apt-get upgrade -y
+
+# Шаг 2: Установка пакетов
+sudo apt-get install -y git curl build-essential
+
+# Шаг 3: Установка Node.js 20.x
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt-get install -y nodejs
+
+# Шаг 4: Установка PM2
+sudo npm install -g pm2
+
+# Шаг 5: Установка nginx
+sudo apt-get install -y nginx
+
+# Шаг 6: Создание пользователя
+sudo useradd -m -s /bin/bash appuser || true
+sudo usermod -aG sudo appuser || true
+
+# Шаг 7: Создание директорий
+sudo mkdir -p /var/www/mesendger/{logs,server/uploads/{avatars,knowledge}}
+
+# Шаг 8: Клонирование репозитория
+cd /tmp && sudo rm -rf mesendger-god
+sudo git clone https://github.com/klimovij/neww.git mesendger-god
+
+# Шаг 9: Копирование файлов
+sudo rsync -av --exclude 'node_modules' --exclude '.git' --exclude 'build' --exclude '*.log' --exclude '*.db*' mesendger-god/mesendger/telegram-clone/ /var/www/mesendger/
+sudo chown -R appuser:appuser /var/www/mesendger
+
+# Шаг 10: Установка зависимостей сервера
+cd /var/www/mesendger/server
+sudo -u appuser npm install --production
+
+# Шаг 11: Сборка React приложения
+cd /var/www/mesendger/client-react
+sudo -u appuser npm install
+sudo -u appuser CI=false npm run build
+
+# Шаг 12: Создание env файла
+JWT_SECRET=$(openssl rand -base64 32)
+sudo -u appuser bash -c "cat > /var/www/mesendger/server/env << 'EOF'
+PORT=5000
+NODE_ENV=production
+JWT_SECRET=${JWT_SECRET}
+EXTERNAL_URL=http://35.232.108.72
+CORS_ORIGINS=http://35.232.108.72,http://localhost:3000,http://localhost:3001
+GEMINI_API_KEYS=
+EOF"
+
+# Шаг 13: Обновление CORS
+sudo sed -i "s|'http://localhost:3000',|'http://35.232.108.72', 'http://localhost:3000',|g" /var/www/mesendger/server/server.js
+sudo sed -i "s|'http://localhost:3001'|'http://35.232.108.72', 'http://localhost:3001'|g" /var/www/mesendger/server/server.js
+
+# Шаг 14: Настройка nginx
+sudo cp /var/www/mesendger/deploy/nginx.conf /etc/nginx/sites-available/mesendger
+sudo sed -i "s/YOUR_SERVER_IP_OR_DOMAIN/35.232.108.72/g" /etc/nginx/sites-available/mesendger
+sudo ln -sf /etc/nginx/sites-available/mesendger /etc/nginx/sites-enabled/
+sudo rm -f /etc/nginx/sites-enabled/default
+sudo nginx -t
+sudo systemctl restart nginx
+sudo systemctl enable nginx
+
+# Шаг 15: Запуск через PM2
+cd /var/www/mesendger
+sudo -u appuser pm2 stop all || true
+sudo -u appuser pm2 delete all || true
+sudo -u appuser pm2 start deploy/ecosystem.config.js
+sudo -u appuser pm2 save
+sudo -u appuser pm2 startup systemd -u appuser --hp /home/appuser | grep "sudo" | bash
+
+# Шаг 16: Настройка файрвола
+sudo ufw --force enable || true
+sudo ufw allow 22/tcp
+sudo ufw allow 80/tcp
+sudo ufw allow 443/tcp
+
+# Шаг 17: Проверка
+sudo -u appuser pm2 status
+sudo systemctl status nginx
+
+
+═══════════════════════════════════════════════════════════════
+ПОЛЕЗНЫЕ КОМАНДЫ ПОСЛЕ РАЗВЕРТЫВАНИЯ
+═══════════════════════════════════════════════════════════════
+
+# Просмотр логов приложения
+sudo -u appuser pm2 logs
+
+# Статус приложения
+sudo -u appuser pm2 status
+
+# Перезапуск приложения
+sudo -u appuser pm2 restart all
+
+# Остановка приложения
+sudo -u appuser pm2 stop all
+
+# Просмотр логов nginx
+sudo tail -f /var/log/nginx/mesendger-error.log
+
+# Проверка портов
+sudo netstat -tlnp | grep -E ':(80|5000)'
+
+
+═══════════════════════════════════════════════════════════════
+НАСТРОЙКА ФАЙРВОЛА GOOGLE CLOUD
+═══════════════════════════════════════════════════════════════
+
+Если приложение не открывается, настройте файрвол:
+
+1. Откройте Google Cloud Console
+2. Перейдите: VPC network → Firewall rules
+3. Убедитесь что есть правила для портов 80 и 443
+4. Или создайте новые правила через консоль
+
+
+═══════════════════════════════════════════════════════════════
+ПРИЛОЖЕНИЕ БУДЕТ ДОСТУПНО ПО АДРЕСУ:
+═══════════════════════════════════════════════════════════════
+
+http://35.232.108.72
+

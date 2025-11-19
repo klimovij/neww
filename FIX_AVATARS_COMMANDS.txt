@@ -1,0 +1,48 @@
+=== Команды для исправления аватарок на сервере ===
+
+Выполните эти команды на сервере через SSH в браузере:
+
+# 1. Переход в директорию проекта
+cd /var/www/mesendger
+
+# 2. Проверка путей к аватаркам в базе данных
+sudo -u appuser sqlite3 messenger.db "SELECT id, username, avatar FROM users WHERE avatar IS NOT NULL AND avatar != '' LIMIT 10;"
+
+# 3. Проверка существующих файлов аватарок
+ls -la /var/www/mesendger/server/uploads/avatars/ | head -15
+
+# 4. Получение списка всех аватарок из базы
+sudo -u appuser sqlite3 messenger.db "SELECT DISTINCT avatar FROM users WHERE avatar IS NOT NULL AND avatar != '';"
+
+# 5. Поиск первого существующего файла аватарки
+FIRST_AVATAR=$(ls /var/www/mesendger/server/uploads/avatars/*.png 2>/dev/null | head -1)
+if [ -n "$FIRST_AVATAR" ]; then
+    echo "Найден файл: $FIRST_AVATAR"
+    AVATAR_NAME=$(basename "$FIRST_AVATAR")
+    AVATAR_PATH="/uploads/avatars/$AVATAR_NAME"
+    echo "Путь для базы: $AVATAR_PATH"
+    
+    # 6. Обновление всех пользователей с пустыми или несуществующими аватарками
+    sudo -u appuser sqlite3 messenger.db "UPDATE users SET avatar = '$AVATAR_PATH' WHERE (avatar IS NULL OR avatar = '' OR avatar NOT LIKE '%$AVATAR_NAME%');"
+    
+    # 7. Проверка результата
+    echo "Обновленные данные:"
+    sudo -u appuser sqlite3 messenger.db "SELECT id, username, avatar FROM users LIMIT 5;"
+    
+    # 8. Проверка доступности через Nginx
+    echo "Проверка доступности через Nginx:"
+    curl -I "http://localhost/uploads/avatars/$AVATAR_NAME" 2>&1 | head -5
+else
+    echo "Файлы аватарок не найдены!"
+    # Поиск в других местах
+    find /var/www/mesendger -name "*.png" -o -name "*.jpg" | grep -i avatar | head -5
+fi
+
+# 9. Проверка структуры таблицы users
+echo "Структура таблицы users:"
+sudo -u appuser sqlite3 messenger.db ".schema users" | grep -i avatar
+
+# 10. Перезапуск PM2 для применения изменений
+cd /var/www/mesendger
+sudo -u appuser pm2 restart all
+

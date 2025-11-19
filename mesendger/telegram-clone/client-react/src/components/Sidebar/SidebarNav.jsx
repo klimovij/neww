@@ -268,7 +268,7 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar, 
       el.style.width = '100%';
       el.style.height = '100%';
       el.style.pointerEvents = 'none';
-      el.style.zIndex = '99999'; // Высокий z-index, чтобы быть поверх всего
+      el.style.zIndex = '99999'; // z-index для модального контейнера (будет переопределен в модалках)
       el.style.isolation = 'isolate'; // Создаем новый stacking context
       try {
         document.body.appendChild(el);
@@ -947,12 +947,8 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar, 
         }, 100); // Увеличена задержка для гарантированного закрытия предыдущих модалок
       });
       
-      // Закрываем мобильный сайдбар после задержки, чтобы модалка успела открыться
-      if (onCloseMobileSidebar) {
-        setTimeout(() => {
-          onCloseMobileSidebar();
-        }, 150);
-      }
+      // НЕ закрываем мобильный сайдбар навигации при открытии модалки - модалки открываются поверх него
+      // SidebarNav остается открытым, а модалки рендерятся через порталы
     } else {
       // Для не-модалок: закрываем все модалки и сайдбар
       try { window.dispatchEvent(new Event('close-all-modals')); } catch {}

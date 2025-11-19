@@ -158,7 +158,7 @@ export default function ChatAreaMobile({ open, onClose, onOpenChatsList }) {
         maxWidth: '100vw',
         maxHeight: '100vh',
         background: 'rgba(0,0,0,0.85)',
-        zIndex: 100001,
+        zIndex: 100002, // Выше SidebarNav (100001)
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden',

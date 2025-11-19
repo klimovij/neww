@@ -348,7 +348,7 @@ export default function ChatsListModalMobile({ open, onClose, onOpenMobileSideba
         right: 0,
         bottom: 0,
         background: 'rgba(0,0,0,0.85)',
-        zIndex: 100000,
+            zIndex: 100002, // Выше SidebarNav (100001)
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden'

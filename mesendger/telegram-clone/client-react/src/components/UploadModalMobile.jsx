@@ -536,7 +536,7 @@ export default function UploadModalMobile({ open, onClose, onOpenMobileSidebar }
           right: 0,
           bottom: 0,
           backgroundColor: 'rgba(0, 0, 0, 0.85)',
-          zIndex: 100001,
+          zIndex: 100002, // Выше SidebarNav (100001)
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
