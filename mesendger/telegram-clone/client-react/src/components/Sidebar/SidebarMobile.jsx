@@ -24,12 +24,14 @@ const DEFAULT_APP_TITLE_SETTINGS = {
   glowIntensity: 12,
   glowSpread: 32,
   effectType: 'neon',
+  snowEnabled: null,
   snowmanEnabled: false,
   snowmanImage: null,
   snowmanPositionX: 0,
   snowmanPositionY: 0,
   snowmanScale: 100,
   snowmanPositionType: 'relative',
+  snowmanImages: [], // Массив изображений для снеговика
   avatarImage: null,
   avatarPositionX: 0,
   avatarPositionY: 0,
@@ -150,14 +152,25 @@ export default function SidebarMobile({ open, onClose, onOpen, showNav = true, o
       try {
         const token = localStorage.getItem('token');
         if (token) {
+          console.log('📡 Loading sidebar settings from server...');
           const response = await api.get('/api/sidebar-settings');
+          console.log('📡 Server response:', response.data);
           if (response.data.success && response.data.settings) {
-            loadSettings(response.data.settings);
+            console.log('✅ Settings loaded from server:', response.data.settings);
+            // Убеждаемся, что snowmanImages инициализирован
+            const serverSettings = {
+              ...DEFAULT_APP_TITLE_SETTINGS,
+              ...response.data.settings,
+              snowmanImages: response.data.settings.snowmanImages || []
+            };
+            loadSettings(serverSettings);
             return;
+          } else {
+            console.log('⚠️ No settings on server, using defaults');
           }
         }
       } catch (error) {
-        console.error('Error loading sidebar settings from server:', error);
+        console.error('❌ Error loading sidebar settings from server:', error);
         // Продолжаем с локальными настройками
       }
       // Если не удалось загрузить с сервера, используем локальные
