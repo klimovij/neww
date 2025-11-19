@@ -380,30 +380,6 @@ export default function SidebarMobile({ open, onClose, onOpen, showNav = true, o
                   </h2>
                 </div>
 
-                {/* Индикатор связи с сервером */}
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: onOpenNav ? 'flex-start' : 'center',
-                  gap: '8px',
-                  fontSize: '0.9em',
-                  fontWeight: 600,
-                  padding: '8px',
-                  background: 'rgba(67,233,123,0.1)',
-                  borderRadius: '10px',
-                  marginBottom: '12px'
-                }}>
-                  <span style={{
-                    width: 12,
-                    height: 12,
-                    borderRadius: '50%',
-                    background: socketConnected ? '#43e97b' : '#e74c3c',
-                    display: 'inline-block',
-                    boxShadow: socketConnected ? '0 0 6px #43e97b88' : '0 0 6px #e74c3c88'
-                  }}></span>
-                  {socketConnected ? 'Онлайн' : 'Нет соединения'}
-                </div>
-
                 {/* Название приложения */}
                 <div style={{
                   padding: '12px 0',

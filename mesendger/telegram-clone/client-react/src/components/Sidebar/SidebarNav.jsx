@@ -56,6 +56,7 @@ const navs = [
 export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar, isMobileNavModal = false, open = false }) {
   const { state: appState } = useApp();
   const [active, setActive] = useState('chats');
+  const [socketConnected, setSocketConnected] = useState(() => window.socket?.connected ?? false);
   const [pendingCount, setPendingCount] = useState(0);
   const [myTasksCount, setMyTasksCount] = useState(0);
   const [showUploadModal, setShowUploadModal] = useState(false);
@@ -73,6 +74,14 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar, 
   const [isMobile, setIsMobile] = useState(() => {
     return window.innerWidth <= 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
   });
+
+  // Отслеживание статуса соединения с сервером
+  React.useEffect(() => {
+    const check = () => setSocketConnected(window.socket?.connected ?? false);
+    check();
+    const interval = setInterval(check, 1000);
+    return () => clearInterval(interval);
+  }, []);
   const [showLeaveCalendar, setShowLeaveCalendar] = useState(false);
   const [showNewsModal, setShowNewsModal] = useState(false);
   const [showTasksModal, setShowTasksModal] = useState(false);
@@ -1020,6 +1029,30 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar, 
               justifyContent: 'space-between',
               gap: '12px'
             }}>
+              {/* Индикатор связи с сервером - в левом верхнем углу */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontSize: '0.75em',
+                fontWeight: 600,
+                padding: '6px 10px',
+                background: 'rgba(67,233,123,0.1)',
+                borderRadius: '8px',
+                flexShrink: 0
+              }}>
+                <span style={{
+                  width: 10,
+                  height: 10,
+                  borderRadius: '50%',
+                  background: socketConnected ? '#43e97b' : '#e74c3c',
+                  display: 'inline-block',
+                  boxShadow: socketConnected ? '0 0 6px #43e97b88' : '0 0 6px #e74c3c88'
+                }}></span>
+                <span style={{ whiteSpace: 'nowrap' }}>
+                  {socketConnected ? 'Онлайн' : 'Офлайн'}
+                </span>
+              </div>
               <h2 style={{
                 margin: 0,
                 color: '#43e97b',
