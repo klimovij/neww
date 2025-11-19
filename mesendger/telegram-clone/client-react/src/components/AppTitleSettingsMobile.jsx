@@ -198,6 +198,12 @@ export default function AppTitleSettingsMobile({ open, onClose, onOpenMobileSide
   const [presets, setPresets] = useState([]);
   const [presetName, setPresetName] = useState('');
   const [showPresetInput, setShowPresetInput] = useState(false);
+  
+  // Для drag and drop
+  const [dragging, setDragging] = useState(null); // 'avatar' или 'snowman'
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const previewContainerRef = useRef(null);
 
   useEffect(() => {
     if (open) {
@@ -462,6 +468,84 @@ export default function AppTitleSettingsMobile({ open, onClose, onOpenMobileSide
     // Закрываем модалку, возвращаемся в AdminMobile (не в SidebarNav)
     onClose();
   }, [onClose]);
+
+  // Обработчики для drag and drop
+  const handleDragStart = useCallback((e, type) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragging(type);
+    const rect = previewContainerRef.current?.getBoundingClientRect();
+    if (rect) {
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      setDragStart({ x: clientX - rect.left, y: clientY - rect.top });
+      
+      if (type === 'avatar') {
+        setDragOffset({
+          x: settings.avatarPositionX || 0,
+          y: settings.avatarPositionY || 0
+        });
+      } else if (type === 'snowman') {
+        setDragOffset({
+          x: settings.snowmanPositionX || 0,
+          y: settings.snowmanPositionY || 0
+        });
+      }
+    }
+  }, [settings]);
+
+  const handleDragMove = useCallback((e) => {
+    if (!dragging || !previewContainerRef.current) return;
+    
+    e.preventDefault();
+    e.stopPropagation();
+    const rect = previewContainerRef.current.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    
+    const newX = clientX - rect.left - dragStart.x + dragOffset.x;
+    const newY = clientY - rect.top - dragStart.y + dragOffset.y;
+    
+    if (dragging === 'avatar') {
+      const clampedX = Math.max(-100, Math.min(100, newX));
+      const clampedY = Math.max(-100, Math.min(100, newY));
+      handleChange('avatarPositionX', Math.round(clampedX));
+      handleChange('avatarPositionY', Math.round(clampedY));
+    } else if (dragging === 'snowman') {
+      const clampedX = Math.max(-300, Math.min(300, newX));
+      const clampedY = Math.max(-300, Math.min(300, newY));
+      handleChange('snowmanPositionX', Math.round(clampedX));
+      handleChange('snowmanPositionY', Math.round(clampedY));
+    }
+  }, [dragging, dragStart, dragOffset, handleChange]);
+
+  const handleDragEnd = useCallback(() => {
+    setDragging(null);
+    setDragStart({ x: 0, y: 0 });
+    setDragOffset({ x: 0, y: 0 });
+  }, []);
+
+  // Добавляем глобальные обработчики для мыши и тач-событий
+  useEffect(() => {
+    if (!dragging) return;
+    
+    const handleMouseMove = (e) => handleDragMove(e);
+    const handleMouseUp = () => handleDragEnd();
+    const handleTouchMove = (e) => handleDragMove(e);
+    const handleTouchEnd = () => handleDragEnd();
+    
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener('touchmove', handleTouchMove, { passive: false });
+    window.addEventListener('touchend', handleTouchEnd);
+    
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [dragging, handleDragMove, handleDragEnd]);
 
   return (
     <>
@@ -1459,21 +1543,30 @@ export default function AppTitleSettingsMobile({ open, onClose, onOpenMobileSide
               border: '1px solid rgba(75, 85, 99, 0.3)',
               marginBottom: '20px',
             }}>
-              <div style={{ fontSize: '13px', color: '#999', marginBottom: '12px', fontWeight: 600 }}>Превью сайдбара:</div>
-              <div style={{
-                padding: '24px 32px 19px 32px',
-                borderBottom: '1px solid #232931',
-                background: 'linear-gradient(135deg, #232526 0%, #232931 100%)',
-                boxShadow: '0 2px 12px rgba(44,62,80,0.10)',
-                position: 'relative',
-                overflow: 'visible',
-                minHeight: '200px',
-                borderRadius: '8px',
-              }}>
+              <div style={{ fontSize: '13px', color: '#999', marginBottom: '12px', fontWeight: 600 }}>
+                Превью сайдбара (перетащите изображения для изменения позиции):
+              </div>
+              <div 
+                ref={previewContainerRef}
+                style={{
+                  background: 'linear-gradient(135deg, #232931 0%, #181c22 100%)',
+                  width: '100%',
+                  minHeight: '400px',
+                  borderRadius: '8px',
+                  position: 'relative',
+                  overflow: 'visible',
+                  padding: '16px 20px',
+                  borderBottom: '1px solid rgba(67,233,123,0.2)',
+                  boxShadow: '0 2px 12px rgba(44,62,80,0.10)',
+                }}
+              >
+                {/* Снеговик (абсолютное позиционирование по блоку) - можно перетаскивать */}
                 {settings.snowmanEnabled && settings.snowmanPositionType === 'absolute' && (
                   <img
                     src={settings.snowmanImage || frostyImg}
                     alt="Снеговик"
+                    onMouseDown={(e) => handleDragStart(e, 'snowman')}
+                    onTouchStart={(e) => handleDragStart(e, 'snowman')}
                     style={{
                       position: 'absolute',
                       left: `calc(50% + ${settings.snowmanPositionX || 0}px)`,
@@ -1481,15 +1574,20 @@ export default function AppTitleSettingsMobile({ open, onClose, onOpenMobileSide
                       transform: 'translateX(-50%)',
                       width: `${(settings.snowmanScale || 100) * 0.6}px`,
                       height: 'auto',
-                      zIndex: 10,
-                      pointerEvents: 'none',
-                      userSelect: 'none'
+                      zIndex: 100,
+                      cursor: dragging === 'snowman' ? 'grabbing' : 'grab',
+                      userSelect: 'none',
+                      touchAction: 'none',
+                      opacity: dragging === 'snowman' ? 0.8 : 1,
+                      transition: dragging === 'snowman' ? 'none' : 'opacity 0.2s',
                     }}
+                    draggable={false}
                   />
                 )}
                 
+                {/* Заголовок сайдбара */}
                 <div style={{
-                  padding: '18px 0 8px 0',
+                  padding: '16px 0',
                   textAlign: 'center',
                   fontWeight: 700,
                   fontSize: '1.18em',
@@ -1498,10 +1596,11 @@ export default function AppTitleSettingsMobile({ open, onClose, onOpenMobileSide
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
-                  position: 'relative'
+                  position: 'relative',
+                  overflow: 'visible',
                 }}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span role="img" aria-label="chat">💬</span> Мессенджер
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                    <span role="img" aria-label="chat">💬</span> Мульти-мессенджер
                   </span>
                   {/* Снег в превью */}
                   {settings.snowEnabled !== false && (
