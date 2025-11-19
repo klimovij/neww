@@ -509,9 +509,9 @@ const TemplatesQuickPicker = ({ isOpen, onClose, onSelectTemplate, onSendTemplat
                           e.currentTarget.style.backgroundColor = 'rgba(75, 85, 99, 0.2)';
                           e.currentTarget.style.transform = 'scale(1)';
                         }}
-                        title="Запланировать отправку"
+                        title="Планировать отправку"
                       >
-                        Запланировать
+                        Планировать
                       </button>
                     </div>
                   </div>
