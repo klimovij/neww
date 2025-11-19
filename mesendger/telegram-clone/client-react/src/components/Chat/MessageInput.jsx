@@ -8,6 +8,7 @@ import Emoji from '../Common/Emoji';
 import EmojiInput from '../Common/EmojiInput';
 import TemplatesQuickPicker from './TemplatesQuickPicker';
 import ScheduledMessageModal from './ScheduledMessageModal';
+import ScheduledMessagesListMobile from './ScheduledMessagesListMobile';
 
 // Простая функция debounce
 function debounce(func, wait) {
@@ -155,30 +156,30 @@ const PollButton = styled.button.withConfig({
       height: 24px;
     }
   ` : `
-    background: linear-gradient(120deg, #e3f0ff 0%, #b3d8ff 100%);
-    color: #225;
-    border: none;
-    border-radius: 12px;
+  background: linear-gradient(120deg, #e3f0ff 0%, #b3d8ff 100%);
+  color: #225;
+  border: none;
+  border-radius: 12px;
     padding: 0 14px;
     height: 38px;
     margin-right: 0.5rem;
-    font-weight: 600;
+  font-weight: 600;
     font-size: 0.98rem;
-    box-shadow: 0 2px 8px 0 rgba(80,140,255,0.10);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
+  box-shadow: 0 2px 8px 0 rgba(80,140,255,0.10);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
     justify-content: center;
-    gap: 0.5rem;
+  gap: 0.5rem;
     flex-shrink: 0;
-    transition: background 0.18s, color 0.18s, box-shadow 0.18s;
+  transition: background 0.18s, color 0.18s, box-shadow 0.18s;
     
-    &:hover {
-      background: linear-gradient(120deg, #d2e7ff 0%, #e3f0ff 100%);
-      color: #113366;
-      box-shadow: 0 5px 18px 0 rgba(80,140,255,0.18);
-      transform: scale(1.04);
-    }
+  &:hover {
+    background: linear-gradient(120deg, #d2e7ff 0%, #e3f0ff 100%);
+    color: #113366;
+    box-shadow: 0 5px 18px 0 rgba(80,140,255,0.18);
+    transform: scale(1.04);
+  }
   `}
 `;
 
@@ -716,6 +717,7 @@ export default function MessageInput({ isMobile = false }) {
   // Состояния для планирования сообщений
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [scheduledTemplateContent, setScheduledTemplateContent] = useState('');
+  const [showScheduledMessagesModal, setShowScheduledMessagesModal] = useState(false);
   const quickPollTemplates = [
     {
       question: 'У всех не работает 1с?',
@@ -1320,9 +1322,9 @@ const handleFileSelect = async (e) => {
             justifyContent: 'flex-start',
           }}>
             <InputActions isMobile={isMobile}>
-              <ActionButton isMobile={isMobile} onClick={() => fileInputRef.current?.click()} disabled={uploading} title="Прикрепить файл">
+        <ActionButton isMobile={isMobile} onClick={() => fileInputRef.current?.click()} disabled={uploading} title="Прикрепить файл">
                 <FiPaperclip size={24} />
-              </ActionButton>
+        </ActionButton>
 
               <div style={{ 
                 display: 'flex', 
@@ -1332,21 +1334,21 @@ const handleFileSelect = async (e) => {
                 height: '48px',
                 flexShrink: 0,
               }}>
-                <EmojiInput onEmojiSelect={handleEmojiSelect} placeholder="Выберите эмодзи" />
+        <EmojiInput onEmojiSelect={handleEmojiSelect} placeholder="Выберите эмодзи" />
               </div>
-              
-              <ActionButton 
-                isMobile={isMobile}
-                onClick={() => setShowTemplatesPicker(v => !v)} 
-                disabled={uploading} 
-                title="Быстрые шаблоны сообщений"
-                style={{
-                  backgroundColor: showTemplatesPicker ? 'rgba(59, 130, 246, 0.2)' : 'transparent',
-                  color: showTemplatesPicker ? '#3b82f6' : '#6b7280'
-                }}
-              >
+        
+        <ActionButton 
+          isMobile={isMobile}
+          onClick={() => setShowTemplatesPicker(v => !v)} 
+          disabled={uploading} 
+          title="Быстрые шаблоны сообщений"
+          style={{
+            backgroundColor: showTemplatesPicker ? 'rgba(59, 130, 246, 0.2)' : 'transparent',
+            color: showTemplatesPicker ? '#3b82f6' : '#6b7280'
+          }}
+        >
                 <FiFileText size={24} />
-              </ActionButton>
+        </ActionButton>
 
               {isMobile ? (
                 <ActionButton 
@@ -1362,7 +1364,7 @@ const handleFileSelect = async (e) => {
                   <FiBarChart2 size={24} />
                 </PollButton>
               )}
-            </InputActions>
+      </InputActions>
           </div>
 
           {showCreatePoll && (
@@ -1546,109 +1548,123 @@ const handleFileSelect = async (e) => {
             >
               <FiFileText size={18} />
             </ActionButton>
+            {isMobile && (
+              <ActionButton
+                isMobile={isMobile}
+                onClick={() => setShowScheduledMessagesModal(true)}
+                disabled={uploading}
+                title="Запланированные сообщения"
+                style={{
+                  backgroundColor: showScheduledMessagesModal ? 'rgba(109, 213, 237, 0.2)' : 'transparent',
+                  color: showScheduledMessagesModal ? '#6dd5ed' : '#6b7280'
+                }}
+              >
+                <FiClock size={18} />
+              </ActionButton>
+            )}
           </InputActions>
 
-          <PollButton isMobile={isMobile} type="button" onClick={() => setShowCreatePoll(true)} title="Быстрое голосование">
-            🗳️ Быстрое голосование
-          </PollButton>
+      <PollButton isMobile={isMobile} type="button" onClick={() => setShowCreatePoll(true)} title="Быстрое голосование">
+        🗳️ Быстрое голосование
+      </PollButton>
 
-          {showCreatePoll && (
-            <CreatePollModalOverlay style={isMobile ? { padding: '16px' } : {}}>
-              <CreatePollModal style={isMobile ? { width: 'calc(100vw - 32px)', maxWidth: '500px', padding: '20px' } : {}}>
-                <PollTitle>Создать голосование</PollTitle>
-                <form
-                  onSubmit={e => {
-                    e.preventDefault();
-                    if (!pollQuestion.trim() || pollOptions.some(opt => !opt.trim())) return;
-                    if (!state.currentChat || !window.socket || !window.socket.connected) return;
-                    const pollData = {
-                      chatId: state.currentChat.id,
-                      content: pollQuestion.trim(),
-                      messageType: 'poll',
-                      pollOptions: pollOptions.map(opt => opt.trim()),
-                      fileInfo: null,
-                      replyToId: state.replyToMessage?.id || null,
-                    };
-                    window.socket.emit('send_message', pollData);
-                    playNotificationSound(0.3);
-                    setShowCreatePoll(false);
-                    setPollQuestion('');
-                    setPollOptions(['', '']);
-                    dispatch({ type: 'SET_REPLY_TO_MESSAGE', payload: null });
-                    setError('');
-                    if (typingTimeoutRef.current) {
-                      clearTimeout(typingTimeoutRef.current);
-                      window.socket.emit('stop_typing', { chatId: state.currentChat.id });
-                    }
-                  }}
-                  style={{ width: '100%' }}
-                >
-                  <PollFormLabel htmlFor="poll-question">Тема голосования</PollFormLabel>
+      {showCreatePoll && (
+        <CreatePollModalOverlay style={isMobile ? { padding: '16px' } : {}}>
+          <CreatePollModal style={isMobile ? { width: 'calc(100vw - 32px)', maxWidth: '500px', padding: '20px' } : {}}>
+            <PollTitle>Создать голосование</PollTitle>
+            <form
+              onSubmit={e => {
+                e.preventDefault();
+                if (!pollQuestion.trim() || pollOptions.some(opt => !opt.trim())) return;
+                if (!state.currentChat || !window.socket || !window.socket.connected) return;
+                const pollData = {
+                  chatId: state.currentChat.id,
+                  content: pollQuestion.trim(),
+                  messageType: 'poll',
+                  pollOptions: pollOptions.map(opt => opt.trim()),
+                  fileInfo: null,
+                  replyToId: state.replyToMessage?.id || null,
+                };
+                window.socket.emit('send_message', pollData);
+                playNotificationSound(0.3);
+                setShowCreatePoll(false);
+                setPollQuestion('');
+                setPollOptions(['', '']);
+                dispatch({ type: 'SET_REPLY_TO_MESSAGE', payload: null });
+                setError('');
+                if (typingTimeoutRef.current) {
+                  clearTimeout(typingTimeoutRef.current);
+                  window.socket.emit('stop_typing', { chatId: state.currentChat.id });
+                }
+              }}
+              style={{ width: '100%' }}
+            >
+              <PollFormLabel htmlFor="poll-question">Тема голосования</PollFormLabel>
+              <PollFormInput
+                id="poll-question"
+                type="text"
+                value={pollQuestion}
+                onChange={e => setPollQuestion(e.target.value)}
+                placeholder="Введите тему..."
+                required
+                maxLength={120}
+                autoFocus
+              />
+              <PollFormLabel>Варианты ответа</PollFormLabel>
+              {pollOptions.map((opt, idx) => (
+                <PollFormOptionRow key={idx}>
                   <PollFormInput
-                    id="poll-question"
                     type="text"
-                    value={pollQuestion}
-                    onChange={e => setPollQuestion(e.target.value)}
-                    placeholder="Введите тему..."
+                    value={opt}
+                    onChange={e => setPollOptions(
+                      pollOptions.map((o, i) => i === idx ? e.target.value : o)
+                    )}
+                    placeholder={`Вариант ${idx + 1}`}
                     required
-                    maxLength={120}
-                    autoFocus
+                    maxLength={60}
                   />
-                  <PollFormLabel>Варианты ответа</PollFormLabel>
-                  {pollOptions.map((opt, idx) => (
-                    <PollFormOptionRow key={idx}>
-                      <PollFormInput
-                        type="text"
-                        value={opt}
-                        onChange={e => setPollOptions(
-                          pollOptions.map((o, i) => i === idx ? e.target.value : o)
-                        )}
-                        placeholder={`Вариант ${idx + 1}`}
-                        required
-                        maxLength={60}
-                      />
-                      {pollOptions.length > 2 && (
-                        <RemoveOptionBtn type="button" onClick={() => setPollOptions(pollOptions.filter((_, i) => i !== idx))} title="Удалить вариант">×</RemoveOptionBtn>
-                      )}
-                    </PollFormOptionRow>
-                  ))}
-                  <AddOptionBtn type="button" onClick={() => setPollOptions([...pollOptions, ''])}>+ Добавить вариант</AddOptionBtn>
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1.2rem' }}>
-                    <PollClose type="button" onClick={() => { setShowCreatePoll(false); setPollQuestion(''); setPollOptions(['', '']); }} title="Отмена">Отмена</PollClose>
-                    <PollOptionButton as="button" type="submit" style={{ minWidth: 120 }}>Создать</PollOptionButton>
-                  </div>
-                </form>
-              </CreatePollModal>
-            </CreatePollModalOverlay>
-          )}
+                  {pollOptions.length > 2 && (
+                    <RemoveOptionBtn type="button" onClick={() => setPollOptions(pollOptions.filter((_, i) => i !== idx))} title="Удалить вариант">×</RemoveOptionBtn>
+                  )}
+                </PollFormOptionRow>
+              ))}
+              <AddOptionBtn type="button" onClick={() => setPollOptions([...pollOptions, ''])}>+ Добавить вариант</AddOptionBtn>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1.2rem' }}>
+                <PollClose type="button" onClick={() => { setShowCreatePoll(false); setPollQuestion(''); setPollOptions(['', '']); }} title="Отмена">Отмена</PollClose>
+                <PollOptionButton as="button" type="submit" style={{ minWidth: 120 }}>Создать</PollOptionButton>
+              </div>
+            </form>
+          </CreatePollModal>
+        </CreatePollModalOverlay>
+      )}
 
-          <div
-            ref={textareaRef}
-            contentEditable
-            dir="ltr"
-            onInput={(e) => {
-              const html = e.currentTarget ? e.currentTarget.innerHTML : '';
-              setMessage(html);
-            }}
-            onKeyPress={handleKeyPress}
-            onPaste={(e) => {
-              e.preventDefault();
-              const text = e.clipboardData.getData('text/plain');
-              const selection = window.getSelection();
-              if (selection.rangeCount > 0) {
-                const range = selection.getRangeAt(0);
-                range.deleteContents();
-                const textNode = document.createTextNode(text);
-                range.insertNode(textNode);
-                range.setStartAfter(textNode);
-                range.setEndAfter(textNode);
-                selection.removeAllRanges();
-                selection.addRange(range);
-              }
-              const html = e.currentTarget ? e.currentTarget.innerHTML : '';
-              setMessage(html);
-            }}
-            suppressContentEditableWarning
+      <div
+        ref={textareaRef}
+        contentEditable
+        dir="ltr"
+        onInput={(e) => {
+          const html = e.currentTarget ? e.currentTarget.innerHTML : '';
+          setMessage(html);
+        }}
+        onKeyPress={handleKeyPress}
+        onPaste={(e) => {
+          e.preventDefault();
+          const text = e.clipboardData.getData('text/plain');
+          const selection = window.getSelection();
+          if (selection.rangeCount > 0) {
+            const range = selection.getRangeAt(0);
+            range.deleteContents();
+            const textNode = document.createTextNode(text);
+            range.insertNode(textNode);
+            range.setStartAfter(textNode);
+            range.setEndAfter(textNode);
+            selection.removeAllRanges();
+            selection.addRange(range);
+          }
+          const html = e.currentTarget ? e.currentTarget.innerHTML : '';
+          setMessage(html);
+        }}
+        suppressContentEditableWarning
             style={{ 
               flex: 1, 
               minHeight: 44, 
@@ -1673,30 +1689,30 @@ const handleFileSelect = async (e) => {
               minWidth: 0,
               flexShrink: 1,
             }}
-          />
+      />
 
-          <SendButtonGroup>
-            <SendButton 
-              isMobile={isMobile}
-              onClick={handleSend} 
-              disabled={(!message.trim() && !state.filePreview) || uploading} 
-              title="Отправить сейчас"
-              single={!message.trim() && !state.filePreview}
-            >
-              <span style={{ fontWeight: 600, letterSpacing: '0.01em', marginRight: 6, color: '#225' }}>Отправить</span>
+      <SendButtonGroup>
+        <SendButton 
+          isMobile={isMobile}
+          onClick={handleSend} 
+          disabled={(!message.trim() && !state.filePreview) || uploading} 
+          title="Отправить сейчас"
+          single={!message.trim() && !state.filePreview}
+        >
+          <span style={{ fontWeight: 600, letterSpacing: '0.01em', marginRight: 6, color: '#225' }}>Отправить</span>
               <FiArrowRight size={22} color="#225" />
-            </SendButton>
-            
-            {(message.trim() || state.filePreview) && !uploading && (
-              <ScheduleButton 
-                isMobile={isMobile}
-                onClick={() => setShowScheduleModal(true)}
-                title="Запланировать отправку"
-              >
+        </SendButton>
+        
+        {(message.trim() || state.filePreview) && !uploading && (
+          <ScheduleButton 
+            isMobile={isMobile}
+            onClick={() => setShowScheduleModal(true)}
+            title="Запланировать отправку"
+          >
                 <FiClock size={18} color="#225" />
-              </ScheduleButton>
-            )}
-          </SendButtonGroup>
+          </ScheduleButton>
+        )}
+      </SendButtonGroup>
         </>
       )}
     </InputRow>
@@ -1769,6 +1785,13 @@ const handleFileSelect = async (e) => {
       messageContent={scheduledTemplateContent || message}
       onSchedule={handleScheduleMessage}
     />
+
+    {isMobile && (
+      <ScheduledMessagesListMobile
+        isOpen={showScheduledMessagesModal}
+        onClose={() => setShowScheduledMessagesModal(false)}
+      />
+    )}
   </InputContainer>
 );
 }
