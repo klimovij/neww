@@ -854,7 +854,7 @@ export default function SidebarMobile({ open, onClose, onOpen, showNav = true, o
         }
         .issa-plus-festive { position: relative; }
         .issa-plus-text { position: relative; display: inline-flex; align-items: center; gap: 10px; }
-        .issa-plus-word { position: relative; display: inline-flex; align-items: flex-start; gap: 2px; }
+        .issa-plus-word { position: relative; display: inline-flex; align-items: flex-start; gap: 2px; white-space: nowrap; }
         .issa-plus-last { position: relative; display: inline-block; padding-right: 2px; }
         .santa-hat { position: absolute; top: -12px; left: -4px; width: 24px; height: 18px; transform: rotate(-15deg); }
         .santa-hat::before {
