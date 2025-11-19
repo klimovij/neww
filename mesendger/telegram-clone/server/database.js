@@ -10,8 +10,16 @@ class Database {
   // ==================== ШАБЛОНЫ СООБЩЕНИЙ ПО ДЕПАРТАМЕНТАМ ====================
   async getTemplatesByDepartment(department) {
     return new Promise((resolve, reject) => {
-      // SOS шаблоны видны всем пользователям, департаментские - только своему департаменту
-      const sql = 'SELECT id, department, title, content, type, active, created_at FROM quick_templates WHERE (type = "sos" OR (department = ? AND department != "")) AND COALESCE(active,1)=1 ORDER BY type DESC, id DESC';
+      // SOS, urgent, important шаблоны видны всем пользователям, департаментские - только своему департаменту
+      // Шаблоны типа "urgent" и "important" также могут быть привязаны к департаменту
+      const sql = `SELECT id, department, title, content, type, active, created_at 
+                   FROM quick_templates 
+                   WHERE (
+                     type IN ('sos', 'urgent', 'important') 
+                     OR (department = ? AND department != '')
+                   ) 
+                   AND COALESCE(active,1)=1 
+                   ORDER BY type DESC, id DESC`;
       console.log('🔍 getTemplatesByDepartment SQL:', sql);
       console.log('🔍 getTemplatesByDepartment params:', [department || '']);
       
