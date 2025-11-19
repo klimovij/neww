@@ -384,37 +384,67 @@ function EmployeeList({ employees, loading, onEdit, onCongrats, setEmployees, us
                       onClick={async () => {
                         if (window.confirm('Удалить сотрудника и связанного пользователя?')) {
                           try {
+                            console.log('🗑️ Deleting employee with id:', emp.id);
                             const response = await api.delete(`/api/employees/${emp.id}`);
-                            console.log('✅ Employee deleted:', response);
+                            console.log('✅ Delete response:', response);
                             
-                            // Обновляем список сотрудников
-                            setEmployees((prev) => prev.filter(e => e.id !== emp.id));
-                            
-                            // Обновляем карту пользователей
-                            const usersMap = usersByEmployeeId || {};
-                            const user = usersMap[String(emp.id)];
-                            if (user && user.id) {
-                              try { 
-                                await api.delete(`/api/users/${user.id}`);
-                                console.log('✅ Linked user deleted');
-                              } catch(e) {
-                                console.error('⚠️ Error deleting linked user:', e);
+                            // Проверяем, что ответ успешный
+                            if (response && response.status >= 200 && response.status < 300) {
+                              console.log('✅ Employee deleted successfully');
+                              
+                              // Обновляем список сотрудников
+                              setEmployees((prev) => prev.filter(e => e.id !== emp.id));
+                              
+                              // Обновляем карту пользователей
+                              const usersMap = usersByEmployeeId || {};
+                              const user = usersMap[String(emp.id)];
+                              if (user && user.id) {
+                                try { 
+                                  console.log('🗑️ Deleting linked user with id:', user.id);
+                                  await api.delete(`/api/users/${user.id}`);
+                                  console.log('✅ Linked user deleted');
+                                } catch(e) {
+                                  console.error('⚠️ Error deleting linked user:', e);
+                                  // Не показываем ошибку пользователю, т.к. сотрудник уже удален
+                                }
                               }
+                              
+                              // Перезагружаем список сотрудников для синхронизации
+                              setTimeout(async () => {
+                                try {
+                                  const empRes = await api.get('/api/employees');
+                                  const empArr = Array.isArray(empRes.data) ? empRes.data : [];
+                                  setEmployees(empArr);
+                                } catch (e) {
+                                  console.error('⚠️ Error reloading employees:', e);
+                                }
+                              }, 100);
+                            } else {
+                              throw new Error('Неожиданный ответ сервера');
                             }
-                            
-                            // Перезагружаем список сотрудников для синхронизации
-                            setTimeout(async () => {
-                              try {
-                                const empRes = await api.get('/api/employees');
-                                const empArr = Array.isArray(empRes.data) ? empRes.data : [];
-                                setEmployees(empArr);
-                              } catch (e) {
-                                console.error('⚠️ Error reloading employees:', e);
-                              }
-                            }, 100);
                           } catch (err) {
                             console.error('❌ Error deleting employee:', err);
-                            alert(`Ошибка при удалении сотрудника: ${err.response?.data?.error || err.message || 'Неизвестная ошибка'}`);
+                            console.error('❌ Error details:', {
+                              message: err.message,
+                              response: err.response,
+                              status: err.response?.status,
+                              data: err.response?.data,
+                              config: err.config
+                            });
+                            
+                            let errorMessage = 'Неизвестная ошибка';
+                            if (err.response) {
+                              // Сервер вернул ответ с ошибкой
+                              errorMessage = err.response.data?.error || err.response.data?.message || `Ошибка ${err.response.status}`;
+                            } else if (err.request) {
+                              // Запрос был отправлен, но ответа не получено
+                              errorMessage = 'Не удалось получить ответ от сервера';
+                            } else {
+                              // Ошибка при настройке запроса
+                              errorMessage = err.message || 'Ошибка при отправке запроса';
+                            }
+                            
+                            alert(`Ошибка при удалении сотрудника: ${errorMessage}`);
                           }
                         }
                       }}
