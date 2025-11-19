@@ -122,16 +122,41 @@ export default function SidebarMobile({ open, onClose, onOpen, showNav = true, o
       // Приоритет: настройки с сервера > localStorage
       let settings;
       if (serverSettings) {
-        settings = serverSettings;
+        // Объединяем с дефолтными настройками, чтобы все поля были заполнены
+        settings = {
+          ...DEFAULT_APP_TITLE_SETTINGS,
+          ...serverSettings,
+          // Убеждаемся, что snowmanImages всегда массив
+          snowmanImages: Array.isArray(serverSettings.snowmanImages) 
+            ? serverSettings.snowmanImages 
+            : []
+        };
+        console.log('✅ Loading settings (from server):', settings);
+        console.log('🖼️ Snowman images:', settings.snowmanImages?.length || 0, 'images');
         // Сохраняем настройки с сервера в localStorage для офлайн-доступа
         try {
-          localStorage.setItem('appTitleSettings', JSON.stringify(serverSettings));
+          localStorage.setItem('appTitleSettings', JSON.stringify(settings));
         } catch (e) {
           console.error('Error saving server settings to localStorage:', e);
         }
       } else {
-        settings = getAppTitleSettings();
+        const localSettings = getAppTitleSettings();
+        settings = {
+          ...DEFAULT_APP_TITLE_SETTINGS,
+          ...localSettings,
+          // Убеждаемся, что snowmanImages всегда массив
+          snowmanImages: Array.isArray(localSettings.snowmanImages) 
+            ? localSettings.snowmanImages 
+            : []
+        };
+        console.log('✅ Loading settings (from local):', settings);
+        console.log('🖼️ Snowman images:', settings.snowmanImages?.length || 0, 'images');
       }
+      
+      console.log('📦 Final settings to apply:', settings);
+      console.log('❄️ Snow enabled:', settings.snowEnabled);
+      console.log('⛄ Snowman enabled:', settings.snowmanEnabled);
+      console.log('🖼️ Snowman images array:', settings.snowmanImages);
       
       setAppTitleSettings(settings);
       
@@ -187,14 +212,46 @@ export default function SidebarMobile({ open, onClose, onOpen, showNav = true, o
     
     // Обработчик обновления настроек через WebSocket (изменения от других пользователей)
     const socketHandler = (data) => {
+      console.log('📡 Received sidebar-settings-updated event via WebSocket:', data);
       if (data && data.settings) {
-        loadSettings(data.settings);
+        console.log('✅ Loading settings from WebSocket:', data.settings);
+        const serverSettings = {
+          ...DEFAULT_APP_TITLE_SETTINGS,
+          ...data.settings,
+          snowmanImages: Array.isArray(data.settings.snowmanImages) ? data.settings.snowmanImages : []
+        };
+        loadSettings(serverSettings);
+      } else {
+        // Если настройки не в data.settings, перезагружаем с сервера
+        console.log('⚠️ Settings not in WebSocket data, reloading from server...');
+        loadServerSettings();
       }
     };
     
-    if (window.socket) {
-      window.socket.on('sidebar-settings-updated', socketHandler);
-    }
+    // Настройка обработчика WebSocket с проверкой подключения
+    const setupSocketListener = () => {
+      if (window.socket) {
+        if (window.socket.connected) {
+          console.log('✅ Socket connected, setting up sidebar-settings-updated listener');
+          window.socket.on('sidebar-settings-updated', socketHandler);
+        } else {
+          console.log('⚠️ Socket not connected yet, waiting...');
+          window.socket.once('connect', () => {
+            console.log('✅ Socket connected, setting up sidebar-settings-updated listener');
+            window.socket.on('sidebar-settings-updated', socketHandler);
+          });
+        }
+      } else {
+        // Если socket еще не создан, пробуем через небольшую задержку
+        setTimeout(() => {
+          if (window.socket) {
+            setupSocketListener();
+          }
+        }, 1000);
+      }
+    };
+    
+    setupSocketListener();
     
     return () => {
       window.removeEventListener('appTitleSettingsUpdated', handler);
