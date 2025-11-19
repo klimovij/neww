@@ -197,6 +197,7 @@ function Messenger() {
           onClose={() => setShowMobileSidebar(false)}
           onOpen={() => setShowMobileSidebar(true)}
           showNav={false} // Не показываем навигацию внутри SidebarMobile на мобильных
+          onOpenNav={() => setShowMobileSidebarNav(true)} // Кнопка стрелки назад открывает SidebarNav
         />
       )}
       

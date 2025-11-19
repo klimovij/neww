@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import ReactDOM from 'react-dom';
-import { FiLogOut, FiX } from 'react-icons/fi';
+import { FiLogOut, FiX, FiArrowLeft } from 'react-icons/fi';
 import { useApp } from '../../context/AppContext';
 import { Avatar } from '../../styles/GlobalStyles';
 import SidebarNav from './SidebarNav';
@@ -48,7 +48,7 @@ function getAppTitleSettings() {
   return DEFAULT_APP_TITLE_SETTINGS;
 }
 
-export default function SidebarMobile({ open, onClose, onOpen, showNav = true }) {
+export default function SidebarMobile({ open, onClose, onOpen, showNav = true, onOpenNav }) {
   const { state, dispatch } = useApp();
   const fileInputRef = useRef();
   const [avatarHover, setAvatarHover] = useState(false);
@@ -251,6 +251,10 @@ export default function SidebarMobile({ open, onClose, onOpen, showNav = true })
             left: 0,
             right: 0,
             bottom: 0,
+            width: '100vw',
+            height: '100vh',
+            maxWidth: '100vw',
+            maxHeight: '100vh',
             background: 'rgba(0,0,0,0.85)',
             zIndex: 100000,
             display: open ? 'flex' : 'none',
@@ -270,6 +274,7 @@ export default function SidebarMobile({ open, onClose, onOpen, showNav = true })
               background: 'linear-gradient(135deg, #232931 0%, #181c22 100%)',
               width: '100%',
               height: '100%',
+              minHeight: '100vh',
               display: 'flex',
               flexDirection: 'column',
               position: 'relative',
@@ -277,7 +282,7 @@ export default function SidebarMobile({ open, onClose, onOpen, showNav = true })
               overflow: 'hidden'
             }}
           >
-            {/* Заголовок с кнопкой закрытия */}
+            {/* Заголовок с кнопкой стрелки назад */}
             <div style={{
               padding: '16px 20px',
               borderBottom: '1px solid rgba(67,233,123,0.2)',
@@ -285,82 +290,133 @@ export default function SidebarMobile({ open, onClose, onOpen, showNav = true })
               position: 'sticky',
               top: 0,
               zIndex: 10,
-              overflow: 'visible'
+              overflow: 'visible',
+              display: 'flex',
+              alignItems: 'flex-start',
+              justifyContent: 'flex-start',
+              gap: '12px'
             }}>
-              {/* Снеговик (абсолютное позиционирование по блоку) */}
-              {appTitleSettings.snowmanEnabled && appTitleSettings.snowmanPositionType === 'absolute' && (
-                <img
-                  src={appTitleSettings.snowmanImage || frostyImg}
-                  alt="Снеговик"
-                  style={{
-                    position: 'absolute',
-                    left: `calc(50% + ${appTitleSettings.snowmanPositionX || 0}px)`,
-                    top: `${appTitleSettings.snowmanPositionY || 0}px`,
-                    transform: 'translateX(-50%)',
-                    width: `${(appTitleSettings.snowmanScale || 100) * 0.6}px`,
-                    height: 'auto',
-                    zIndex: 10,
-                    pointerEvents: 'none',
-                    userSelect: 'none'
+              {/* Кнопка стрелки назад - показываем только если есть onOpenNav (для мобильных) */}
+              {onOpenNav && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onClose();
+                    // Небольшая задержка для плавного перехода
+                    setTimeout(() => {
+                      if (onOpenNav) {
+                        onOpenNav();
+                      }
+                    }, 100);
                   }}
-                />
+                  style={{
+                    background: 'rgba(67,233,123,0.2)',
+                    border: '1px solid #43e97b',
+                    borderRadius: '12px',
+                    width: 48,
+                    height: 48,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    color: '#43e97b',
+                    fontSize: '24px',
+                    padding: 0,
+                    boxShadow: '0 4px 12px rgba(67,233,123,0.3)',
+                    transition: 'all 0.2s',
+                    flexShrink: 0,
+                    marginTop: '0'
+                  }}
+                  title="Назад к навигации"
+                  onMouseEnter={(e) => {
+                    e.target.style.background = 'rgba(67,233,123,0.3)';
+                    e.target.style.transform = 'scale(1.05)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.background = 'rgba(67,233,123,0.2)';
+                    e.target.style.transform = 'none';
+                  }}
+                >
+                  <FiArrowLeft />
+                </button>
               )}
               
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: '12px'
-              }}>
-                <h2 style={{
-                  margin: 0,
-                  color: '#43e97b',
-                  fontWeight: 900,
-                  fontSize: '1.3em',
-                  textAlign: 'center'
+              <div style={{ flex: 1, position: 'relative' }}>
+                {/* Снеговик (абсолютное позиционирование по блоку) */}
+                {appTitleSettings.snowmanEnabled && appTitleSettings.snowmanPositionType === 'absolute' && (
+                  <img
+                    src={appTitleSettings.snowmanImage || frostyImg}
+                    alt="Снеговик"
+                    style={{
+                      position: 'absolute',
+                      left: `calc(50% + ${appTitleSettings.snowmanPositionX || 0}px)`,
+                      top: `${appTitleSettings.snowmanPositionY || 0}px`,
+                      transform: 'translateX(-50%)',
+                      width: `${(appTitleSettings.snowmanScale || 100) * 0.6}px`,
+                      height: 'auto',
+                      zIndex: 10,
+                      pointerEvents: 'none',
+                      userSelect: 'none'
+                    }}
+                  />
+                )}
+                
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: onOpenNav ? 'flex-start' : 'center',
+                  marginBottom: '12px'
                 }}>
-                  Меню
-                </h2>
-              </div>
+                  <h2 style={{
+                    margin: 0,
+                    color: '#43e97b',
+                    fontWeight: 900,
+                    fontSize: '1.3em',
+                    textAlign: onOpenNav ? 'left' : 'center',
+                    flex: 1
+                  }}>
+                    Меню
+                  </h2>
+                </div>
 
-              {/* Индикатор связи с сервером */}
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-                fontSize: '0.9em',
-                fontWeight: 600,
-                padding: '8px',
-                background: 'rgba(67,233,123,0.1)',
-                borderRadius: '10px',
-                marginBottom: '12px'
-              }}>
-                <span style={{
-                  width: 12,
-                  height: 12,
-                  borderRadius: '50%',
-                  background: socketConnected ? '#43e97b' : '#e74c3c',
-                  display: 'inline-block',
-                  boxShadow: socketConnected ? '0 0 6px #43e97b88' : '0 0 6px #e74c3c88'
-                }}></span>
-                {socketConnected ? 'Онлайн' : 'Нет соединения'}
-              </div>
+                {/* Индикатор связи с сервером */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: onOpenNav ? 'flex-start' : 'center',
+                  gap: '8px',
+                  fontSize: '0.9em',
+                  fontWeight: 600,
+                  padding: '8px',
+                  background: 'rgba(67,233,123,0.1)',
+                  borderRadius: '10px',
+                  marginBottom: '12px'
+                }}>
+                  <span style={{
+                    width: 12,
+                    height: 12,
+                    borderRadius: '50%',
+                    background: socketConnected ? '#43e97b' : '#e74c3c',
+                    display: 'inline-block',
+                    boxShadow: socketConnected ? '0 0 6px #43e97b88' : '0 0 6px #e74c3c88'
+                  }}></span>
+                  {socketConnected ? 'Онлайн' : 'Нет соединения'}
+                </div>
 
-              {/* Название приложения */}
-              <div style={{
-                padding: '12px 0',
-                textAlign: 'center',
-                fontWeight: 700,
-                fontSize: '1em',
-                letterSpacing: '0.01em',
-                color: '#fff',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                position: 'relative',
-                overflow: 'visible'
-              }}>
+                {/* Название приложения */}
+                <div style={{
+                  padding: '12px 0',
+                  textAlign: onOpenNav ? 'left' : 'center',
+                  fontWeight: 700,
+                  fontSize: '1em',
+                  letterSpacing: '0.01em',
+                  color: '#fff',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: onOpenNav ? 'flex-start' : 'center',
+                  position: 'relative',
+                  overflow: 'visible'
+                }}>
                 {/* Снег */}
                 {shouldShowSnow && (
                   <div className="snow-container" style={{
@@ -493,6 +549,7 @@ export default function SidebarMobile({ open, onClose, onOpen, showNav = true })
                     </span>
                   </span>
                 </span>
+                </div>
               </div>
 
               {/* Информация о пользователе */}
@@ -673,6 +730,7 @@ export default function SidebarMobile({ open, onClose, onOpen, showNav = true })
                   <FiLogOut size={18} />
                   Выйти
                 </button>
+              </div>
               </div>
             </div>
 
