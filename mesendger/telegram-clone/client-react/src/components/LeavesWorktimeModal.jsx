@@ -2257,7 +2257,7 @@ const resetWorktime = async () => {
   const modalStyles = isMobileDevice ? {
     overlay: {
       backgroundColor: 'rgba(0, 0, 0, 0.85)',
-      zIndex: 100000,
+      zIndex: 100003, // Выше SidebarNav (100001) и других модалок
       top: 0,
       right: 0,
       bottom: 0,
