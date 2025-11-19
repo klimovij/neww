@@ -178,6 +178,7 @@ export default function TemplatesManagementMobile({ open, onClose, onOpenMobileS
 
     if (distance > minSwipeDistance) {
       if (showCreateForm) {
+        // Если открыта форма создания/редактирования - закрываем её
         setShowCreateForm(false);
         setEditingTemplate(null);
         setFormData({
@@ -187,19 +188,18 @@ export default function TemplatesManagementMobile({ open, onClose, onOpenMobileS
           department: state.user?.department || ''
         });
       } else {
-        if (onOpenMobileSidebar) {
-          onOpenMobileSidebar();
-        }
+        // Закрываем модалку, возвращаемся в AdminMobile (не в SidebarNav)
         onClose();
       }
     }
 
     touchStartX.current = null;
     touchEndX.current = null;
-  }, [onClose, onOpenMobileSidebar, showCreateForm, state.user?.department]);
+  }, [onClose, showCreateForm, state.user?.department]);
 
   const handleClose = useCallback(() => {
     if (showCreateForm) {
+      // Если открыта форма создания/редактирования - закрываем её
       setShowCreateForm(false);
       setEditingTemplate(null);
       setFormData({
@@ -209,12 +209,10 @@ export default function TemplatesManagementMobile({ open, onClose, onOpenMobileS
         department: state.user?.department || ''
       });
     } else {
-      if (onOpenMobileSidebar) {
-        onOpenMobileSidebar();
-      }
+      // Закрываем модалку, возвращаемся в AdminMobile (не в SidebarNav)
       onClose();
     }
-  }, [onClose, onOpenMobileSidebar, showCreateForm, state.user?.department]);
+  }, [onClose, showCreateForm, state.user?.department]);
 
   return (
     <>
