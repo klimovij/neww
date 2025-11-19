@@ -5019,7 +5019,16 @@ app.post('/api/ai/generate', async (req, res) => {
 app.delete('/api/employees/:id', async (req, res) => {
   try {
     const employeeId = Number(req.params.id);
+    console.log(`🗑️ [DELETE] Запрос на удаление сотрудника с id=${employeeId}`);
+    
+    if (!employeeId || isNaN(employeeId)) {
+      console.warn(`❌ [DELETE] Неверный id сотрудника: ${req.params.id}`);
+      return res.status(400).json({ error: 'Неверный id сотрудника' });
+    }
+    
     const result = await db.deleteEmployee(employeeId);
+    console.log(`✅ [DELETE] Результат удаления сотрудника: ${result} записей`);
+    
     if (result) {
       res.json({ success: true });
     } else {
@@ -5027,7 +5036,12 @@ app.delete('/api/employees/:id', async (req, res) => {
     }
   } catch (error) {
     console.error('❌ /api/employees/:id DELETE error:', error);
-    res.status(500).json({ error: 'Ошибка удаления сотрудника' });
+    console.error('❌ Error stack:', error.stack);
+    console.error('❌ Error message:', error.message);
+    res.status(500).json({ 
+      error: 'Ошибка удаления сотрудника',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 });
 

@@ -1525,14 +1525,24 @@ class Database {
     });
 
     // Если существует пользователь, связанный с этим сотрудником — удаляем и его каскадно
-    const linkedUser = await new Promise((resolve, reject) => {
-      this.db.get('SELECT id FROM users WHERE employee_id = ?', [id], (err, row) => {
-        if (err) reject(err); else resolve(row);
+    try {
+      const linkedUser = await new Promise((resolve, reject) => {
+        this.db.get('SELECT id FROM users WHERE employee_id = ?', [id], (err, row) => {
+          if (err) reject(err); else resolve(row);
+        });
       });
-    });
 
-    if (linkedUser && linkedUser.id) {
-      await this.deleteUserCascade(linkedUser.id);
+      if (linkedUser && linkedUser.id) {
+        try {
+          await this.deleteUserCascade(linkedUser.id);
+        } catch (cascadeErr) {
+          console.error(`⚠️ Ошибка каскадного удаления пользователя ${linkedUser.id}:`, cascadeErr);
+          // Продолжаем удаление сотрудника даже если удаление пользователя не удалось
+        }
+      }
+    } catch (userErr) {
+      console.error(`⚠️ Ошибка при проверке связанного пользователя:`, userErr);
+      // Продолжаем удаление сотрудника даже если проверка пользователя не удалась
     }
 
     // Удаляем самого сотрудника
@@ -2559,27 +2569,50 @@ class Database {
   async deleteUserCascade(userId) {
     return new Promise((resolve, reject) => {
       this.db.serialize(() => {
+        let hasError = false;
+        
         // Удаляем связи пользователя в чатах
-        this.db.run('DELETE FROM chat_participants WHERE user_id = ?', [userId]);
+        this.db.run('DELETE FROM chat_participants WHERE user_id = ?', [userId], (err) => {
+          if (err && !hasError) { hasError = true; reject(err); }
+        });
         // Удаляем лайки и прочтения сообщений пользователя
-        this.db.run('DELETE FROM message_likes WHERE user_id = ?', [userId]);
-        this.db.run('DELETE FROM message_reads WHERE user_id = ?', [userId]);
+        this.db.run('DELETE FROM message_likes WHERE user_id = ?', [userId], (err) => {
+          if (err && !hasError) { hasError = true; reject(err); }
+        });
+        this.db.run('DELETE FROM message_reads WHERE user_id = ?', [userId], (err) => {
+          if (err && !hasError) { hasError = true; reject(err); }
+        });
         // Удаляем комментарии/лайки/новости пользователя
-        this.db.run('DELETE FROM news_comments WHERE user_id = ?', [userId]);
-        this.db.run('DELETE FROM news_likes WHERE user_id = ?', [userId]);
+        this.db.run('DELETE FROM news_comments WHERE user_id = ?', [userId], (err) => {
+          if (err && !hasError) { hasError = true; reject(err); }
+        });
+        this.db.run('DELETE FROM news_likes WHERE user_id = ?', [userId], (err) => {
+          if (err && !hasError) { hasError = true; reject(err); }
+        });
         // Сообщения пользователя
-        this.db.run('DELETE FROM messages WHERE user_id = ?', [userId]);
+        this.db.run('DELETE FROM messages WHERE user_id = ?', [userId], (err) => {
+          if (err && !hasError) { hasError = true; reject(err); }
+        });
         // Поздравления: комментарии и лайки пользователя
-        this.db.run('DELETE FROM congrat_comments WHERE user_id = ?', [userId]);
-        this.db.run('DELETE FROM congrat_likes WHERE user_id = ?', [userId]);
+        this.db.run('DELETE FROM congrat_comments WHERE user_id = ?', [userId], (err) => {
+          if (err && !hasError) { hasError = true; reject(err); }
+        });
+        this.db.run('DELETE FROM congrat_likes WHERE user_id = ?', [userId], (err) => {
+          if (err && !hasError) { hasError = true; reject(err); }
+        });
         // Заявки на отпуска
-        this.db.run('DELETE FROM leaves WHERE userId = ?', [userId]);
+        this.db.run('DELETE FROM leaves WHERE userId = ?', [userId], (err) => {
+          if (err && !hasError) { hasError = true; reject(err); }
+        });
         // Задачи
-        this.db.run('DELETE FROM tasks WHERE assignedTo = ? OR authorId = ?', [userId, userId]);
+        this.db.run('DELETE FROM tasks WHERE assignedTo = ? OR authorId = ?', [userId, userId], (err) => {
+          if (err && !hasError) { hasError = true; reject(err); }
+        });
 
         // Наконец удаляем пользователя
         this.db.run('DELETE FROM users WHERE id = ?', [userId], function(err){
           if (err) return reject(err);
+          resolve(this.changes);
         });
       });
     });
