@@ -1082,35 +1082,48 @@ export default function AdminMobile({
         )}
       </div>
       
-      {/* Emoji Settings Mobile Modal */}
-      <EmojiSettingsMobile
-        open={showEmojiSettings}
-        onClose={() => setShowEmojiSettings(false)}
-        onOpenMobileSidebar={onOpenMobileSidebar}
-      />
-      
-      {/* Templates Management Mobile Modal */}
-      <TemplatesManagementMobile
-        open={showTemplates}
-        onClose={() => setShowTemplates(false)}
-        onOpenMobileSidebar={onOpenMobileSidebar}
-      />
-      
-      {/* App Title Settings Mobile Modal */}
-      <AppTitleSettingsMobile
-        open={showAppTitleSettings}
-        onClose={() => setShowAppTitleSettings(false)}
-        onOpenMobileSidebar={onOpenMobileSidebar}
-      />
-      
-      {/* User Rights Mobile Modal */}
-      <UserRightsMobile
-        open={showUserRights}
-        onClose={() => setShowUserRights(false)}
-        onOpenMobileSidebar={onOpenMobileSidebar}
-      />
     </div>,
     document.body
+      )}
+      
+      {/* Emoji Settings Mobile Modal - рендерим через отдельный портал с высоким z-index */}
+      {showEmojiSettings && ReactDOM.createPortal(
+        <EmojiSettingsMobile
+          open={showEmojiSettings}
+          onClose={() => setShowEmojiSettings(false)}
+          onOpenMobileSidebar={onOpenMobileSidebar}
+        />,
+        document.body
+      )}
+      
+      {/* Templates Management Mobile Modal - рендерим через отдельный портал с высоким z-index */}
+      {showTemplates && ReactDOM.createPortal(
+        <TemplatesManagementMobile
+          open={showTemplates}
+          onClose={() => setShowTemplates(false)}
+          onOpenMobileSidebar={onOpenMobileSidebar}
+        />,
+        document.body
+      )}
+      
+      {/* App Title Settings Mobile Modal - рендерим через отдельный портал с высоким z-index */}
+      {showAppTitleSettings && ReactDOM.createPortal(
+        <AppTitleSettingsMobile
+          open={showAppTitleSettings}
+          onClose={() => setShowAppTitleSettings(false)}
+          onOpenMobileSidebar={onOpenMobileSidebar}
+        />,
+        document.body
+      )}
+      
+      {/* User Rights Mobile Modal - рендерим через отдельный портал с высоким z-index */}
+      {showUserRights && ReactDOM.createPortal(
+        <UserRightsMobile
+          open={showUserRights}
+          onClose={() => setShowUserRights(false)}
+          onOpenMobileSidebar={onOpenMobileSidebar}
+        />,
+        document.body
       )}
     </>
   );
