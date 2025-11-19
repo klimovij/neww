@@ -205,7 +205,7 @@ export default function LeavesWorktimeMobile({ open, onClose, token, onOpenMobil
             body > div.ReactModal__Overlay.ReactModal__Overlay--after-open {
               background: rgba(0, 0, 0, 0.85) !important;
               backdrop-filter: blur(8px) !important;
-              z-index: 100002 !important; /* Выше SidebarNav (100001) */
+              z-index: 100003 !important; /* Выше SidebarNav (100001) и других модалок */
               position: fixed !important;
               top: 0 !important;
               left: 0 !important;
