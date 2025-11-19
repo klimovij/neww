@@ -485,8 +485,10 @@ export default function CongratulationsMobile({ open, onClose, onOpenMobileSideb
                               console.log('✏️ Mobile: setEditUser function:', typeof setEditUser, setEditUser);
                               if (emp && emp.id) {
                                 try {
+                                  // Сбрасываем congratsUser перед установкой editUser
+                                  setCongratsUser(null);
                                   setEditUser(emp);
-                                  console.log('✅ Mobile: setEditUser called successfully');
+                                  console.log('✅ Mobile: setEditUser called successfully, congratsUser cleared');
                                 } catch (err) {
                                   console.error('❌ Mobile: Error calling setEditUser:', err);
                                   alert('Ошибка при открытии модалки редактирования: ' + err.message);
@@ -533,8 +535,10 @@ export default function CongratulationsMobile({ open, onClose, onOpenMobileSideb
                               console.log('🎉 Mobile: setCongratsUser function:', typeof setCongratsUser, setCongratsUser);
                               if (emp && emp.id) {
                                 try {
+                                  // Сбрасываем editUser перед установкой congratsUser
+                                  setEditUser(null);
                                   setCongratsUser(emp);
-                                  console.log('✅ Mobile: setCongratsUser called successfully');
+                                  console.log('✅ Mobile: setCongratsUser called successfully, editUser cleared');
                                 } catch (err) {
                                   console.error('❌ Mobile: Error calling setCongratsUser:', err);
                                   alert('Ошибка при открытии модалки поздравления: ' + err.message);
