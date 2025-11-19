@@ -3487,6 +3487,11 @@ app.get('/api/users', authenticateToken, async (req, res) => {
 app.get('/api/sidebar-settings', authenticateToken, async (req, res) => {
   try {
     const settings = await db.getSidebarSettings();
+    console.log('📡 GET /api/sidebar-settings - Settings retrieved:', settings ? 'Found' : 'Not found');
+    if (settings) {
+      console.log('📦 Settings data:', JSON.stringify(settings).substring(0, 200) + '...');
+      console.log('🖼️ Snowman images count:', settings.snowmanImages ? settings.snowmanImages.length : 0);
+    }
     res.json({ success: true, settings });
   } catch (error) {
     console.error('❌ Error getting sidebar settings:', error);
@@ -3507,10 +3512,13 @@ app.post('/api/sidebar-settings', authenticateToken, async (req, res) => {
       return res.status(400).json({ success: false, error: 'Настройки не предоставлены' });
     }
 
-    const id = await db.saveSidebarSettings(settings, req.user.id);
+    const settingsJson = JSON.stringify(settings);
+    const id = await db.saveSidebarSettings(settingsJson, req.user.id);
     
     // Отправляем обновление всем подключенным клиентам через WebSocket
     if (io) {
+      console.log('📡 Emitting sidebar-settings-updated event to all clients');
+      console.log('📦 Settings data:', settings);
       io.emit('sidebar-settings-updated', { settings });
     }
 
