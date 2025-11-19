@@ -190,8 +190,6 @@ function deletePreset(presetId) {
 }
 
 export default function AppTitleSettingsMobile({ open, onClose, onOpenMobileSidebar }) {
-  const touchStartX = useRef(null);
-  const touchEndX = useRef(null);
   const modalRef = useRef(null);
   
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
@@ -551,28 +549,7 @@ export default function AppTitleSettingsMobile({ open, onClose, onOpenMobileSide
     return style;
   };
 
-  const handleTouchStart = useCallback((e) => {
-    touchStartX.current = e.touches[0].clientX;
-  }, []);
-
-  const handleTouchMove = useCallback((e) => {
-    touchEndX.current = e.touches[0].clientX;
-  }, []);
-
-  const handleTouchEnd = useCallback(() => {
-    if (!touchStartX.current || !touchEndX.current) return;
-    
-    const distance = touchStartX.current - touchEndX.current;
-    const minSwipeDistance = 50;
-
-    if (distance > minSwipeDistance) {
-      // Закрываем модалку, возвращаемся в AdminMobile (не в SidebarNav)
-      onClose();
-    }
-
-    touchStartX.current = null;
-    touchEndX.current = null;
-  }, [onClose]);
+  // Свайп отключен в этой модалке
 
   const handleClose = useCallback(() => {
     // Закрываем модалку, возвращаемся в AdminMobile (не в SidebarNav)
@@ -711,9 +688,6 @@ export default function AppTitleSettingsMobile({ open, onClose, onOpenMobileSide
             boxSizing: 'border-box',
           }}
           onClick={(e) => e.stopPropagation()}
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
         >
           {/* Header */}
           <div

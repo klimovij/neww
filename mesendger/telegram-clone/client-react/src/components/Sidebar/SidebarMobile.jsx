@@ -115,17 +115,28 @@ export default function SidebarMobile({ open, onClose, onOpen, showNav = true, o
   }, []);
 
   useEffect(() => {
-    const settings = getAppTitleSettings();
-    setAppTitleSettings(settings);
+    const loadSettings = () => {
+      const settings = getAppTitleSettings();
+      setAppTitleSettings(settings);
+      
+      if (settings.customFontUrl) {
+        const existingLink = document.querySelector(`link[data-custom-font="${settings.customFontUrl}"]`);
+        if (!existingLink) {
+          const link = document.createElement('link');
+          link.rel = 'stylesheet';
+          link.href = settings.customFontUrl;
+          link.setAttribute('data-custom-font', settings.customFontUrl);
+          document.head.appendChild(link);
+        }
+      }
+    };
     
-    if (settings.customFontUrl) {
-      const link = document.createElement('link');
-      link.rel = 'stylesheet';
-      link.href = settings.customFontUrl;
-      document.head.appendChild(link);
-    }
+    // Загружаем настройки при монтировании
+    loadSettings();
     
+    // Обработчик обновления настроек через событие
     const handler = () => {
+      loadSettings();
       const newSettings = getAppTitleSettings();
       setAppTitleSettings(newSettings);
       
