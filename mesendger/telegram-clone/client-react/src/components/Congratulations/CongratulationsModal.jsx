@@ -359,10 +359,22 @@ function EmployeeList({ employees, loading, onEdit, onCongrats, setEmployees, us
                       Редактировать
                     </ActionButton>
                     <ActionButton
-                      onClick={() => onCongrats(emp)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log('🎉 Поздравить clicked for employee:', emp);
+                        if (emp && emp.id) {
+                          onCongrats(emp);
+                        } else {
+                          console.error('❌ Invalid employee object:', emp);
+                          alert('Ошибка: данные сотрудника некорректны');
+                        }
+                      }}
                       style={{ 
                         background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-                        marginRight: '8px'
+                        marginRight: '8px',
+                        position: 'relative',
+                        zIndex: 1
                       }}
                     >
                       Поздравить
@@ -372,16 +384,37 @@ function EmployeeList({ employees, loading, onEdit, onCongrats, setEmployees, us
                       onClick={async () => {
                         if (window.confirm('Удалить сотрудника и связанного пользователя?')) {
                           try {
-                            await api.delete(`/api/employees/${emp.id}`);
-                            // Пытаемся удалить связанного пользователя, если он есть
-                            const usersMap = usersByEmployeeId || {};
-                            const user = usersMap[emp.id];
-                            if (user && user.id) {
-                              try { await api.delete(`/api/users/${user.id}`); } catch(e) {}
-                            }
+                            const response = await api.delete(`/api/employees/${emp.id}`);
+                            console.log('✅ Employee deleted:', response);
+                            
+                            // Обновляем список сотрудников
                             setEmployees((prev) => prev.filter(e => e.id !== emp.id));
+                            
+                            // Обновляем карту пользователей
+                            const usersMap = usersByEmployeeId || {};
+                            const user = usersMap[String(emp.id)];
+                            if (user && user.id) {
+                              try { 
+                                await api.delete(`/api/users/${user.id}`);
+                                console.log('✅ Linked user deleted');
+                              } catch(e) {
+                                console.error('⚠️ Error deleting linked user:', e);
+                              }
+                            }
+                            
+                            // Перезагружаем список сотрудников для синхронизации
+                            setTimeout(async () => {
+                              try {
+                                const empRes = await api.get('/api/employees');
+                                const empArr = Array.isArray(empRes.data) ? empRes.data : [];
+                                setEmployees(empArr);
+                              } catch (e) {
+                                console.error('⚠️ Error reloading employees:', e);
+                              }
+                            }, 100);
                           } catch (err) {
-                            // Ошибки не отображаем
+                            console.error('❌ Error deleting employee:', err);
+                            alert(`Ошибка при удалении сотрудника: ${err.response?.data?.error || err.message || 'Неизвестная ошибка'}`);
                           }
                         }
                       }}
@@ -427,12 +460,17 @@ function EditUserModal({ user, onClose, onSaved }) {
       formData.append('avatar', avatar);
     }
     try {
-      await api.post('/api/congratulations/edit-employee', formData, {
+      const response = await api.post('/api/congratulations/edit-employee', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
+      console.log('✅ Employee updated:', response);
+      
+      // Сохраняем изменения - onSaved вызовет перезагрузку списка
       onSaved();
     } catch (err) {
-      alert('Ошибка при сохранении');
+      console.error('❌ Error updating employee:', err);
+      const errorMessage = err.response?.data?.error || err.message || 'Неизвестная ошибка';
+      alert(`Ошибка при сохранении: ${errorMessage}`);
     } finally {
       setSaving(false);
     }
@@ -840,6 +878,15 @@ export default function CongratulationsModal({ onClose }) {
   const [editUser, setEditUser] = useState(null);
   const [congratsUser, setCongratsUser] = useState(null);
 
+  // Логирование изменений congratsUser для отладки
+  useEffect(() => {
+    if (congratsUser) {
+      console.log('🎉 congratsUser set to:', congratsUser);
+    } else {
+      console.log('🔒 congratsUser cleared');
+    }
+  }, [congratsUser]);
+
   // Защита: employees всегда массив
   const safeEmployees = Array.isArray(employees) ? employees : [];
 
@@ -948,13 +995,47 @@ export default function CongratulationsModal({ onClose }) {
       )}
 {tab === 'calendar' && <BirthdayCalendar employees={employees} />}
 {showAddModal && <AddUserModal onClose={() => setShowAddModal(false)} onAdded={() => setShowAddModal(false)} />}
-{editUser && <EditUserModal user={editUser} onClose={() => setEditUser(null)} onSaved={() => setEditUser(null)} />}
+{editUser && (
+  <EditUserModal 
+    user={editUser} 
+    onClose={() => setEditUser(null)} 
+    onSaved={() => {
+      setEditUser(null);
+      // Перезагружаем список сотрудников
+      setLoading(true);
+      Promise.all([
+        api.get('/api/employees'),
+        api.get('/api/users').catch(() => ({ data: [] }))
+      ])
+        .then(([empRes, usersRes]) => {
+          const empArr = Array.isArray(empRes.data) ? empRes.data : [];
+          const usersArr = Array.isArray(usersRes.data) ? usersRes.data : [];
+          const map = {};
+          usersArr.forEach(u => {
+            const key = String(u.employee_id || u.employeeId || '');
+            if (key) map[key] = u;
+          });
+          setUsersByEmployeeId(map);
+          setEmployees(empArr);
+        })
+        .catch(() => {
+          setUsersByEmployeeId({});
+          setEmployees([]);
+        })
+        .finally(() => setLoading(false));
+    }} 
+  />
+)}
 {congratsUser && (
   <CongratulationSendModal
     user={congratsUser}
     open={!!congratsUser}
-    onClose={() => setCongratsUser(null)}
+    onClose={() => {
+      console.log('🔒 Closing CongratulationSendModal');
+      setCongratsUser(null);
+    }}
     onSent={() => {
+      console.log('✅ Congratulation sent');
       setCongratsUser(null);
       window.dispatchEvent(new CustomEvent('news-published'));
     }}
