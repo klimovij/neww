@@ -266,24 +266,97 @@ export default function AppTitleSettingsMobile({ open, onClose, onOpenMobileSide
 
   const handleSnowmanImageUpload = async (event) => {
     const file = event.target.files[0];
-    if (file) {
-      const maxSize = 5 * 1024 * 1024;
-      if (file.size > maxSize) {
-        alert('Файл слишком большой. Максимальный размер: 5MB. Файл будет сжат после загрузки.');
-      }
-      
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        try {
-          const compressed = await compressImage(reader.result, 300, 300, 0.75);
-          handleChange('snowmanImage', compressed);
-        } catch (error) {
-          console.error('Ошибка при сжатии изображения снеговика:', error);
-          alert('Ошибка при обработке изображения. Попробуйте другое изображение.');
-        }
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+    
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      alert('Файл слишком большой. Максимальный размер: 5MB. Файл будет сжат после загрузки.');
     }
+    
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      try {
+        const compressed = await compressImage(reader.result, 300, 300, 0.75);
+        const newImage = {
+          id: Date.now().toString(),
+          image: compressed,
+          positionX: 0,
+          positionY: 0,
+          scale: 100,
+          positionType: 'relative',
+          enabled: true,
+          selected: false
+        };
+        
+        const images = settings.snowmanImages || [];
+        // Если это первое изображение, делаем его выбранным
+        if (images.length === 0) {
+          newImage.selected = true;
+        }
+        
+        // Для обратной совместимости: если есть старое snowmanImage, добавляем его в массив
+        let updatedImages = [...images, newImage];
+        if (!images.length && settings.snowmanImage) {
+          updatedImages = [{
+            id: 'legacy-1',
+            image: settings.snowmanImage,
+            positionX: settings.snowmanPositionX || 0,
+            positionY: settings.snowmanPositionY || 0,
+            scale: settings.snowmanScale || 100,
+            positionType: settings.snowmanPositionType || 'relative',
+            enabled: true,
+            selected: false
+          }, newImage];
+          newImage.selected = true;
+        }
+        
+        setSettings({ ...settings, snowmanImages: updatedImages });
+        setHasChanges(true);
+      } catch (error) {
+        console.error('Ошибка при сжатии изображения снеговика:', error);
+        alert('Ошибка при обработке изображения. Попробуйте другое изображение.');
+      }
+    };
+    reader.readAsDataURL(file);
+    // Сброс input для возможности повторной загрузки того же файла
+    event.target.value = '';
+  };
+  
+  // Удаление изображения
+  const handleRemoveSnowmanImage = (imageId) => {
+    const images = settings.snowmanImages || [];
+    const filtered = images.filter(img => img.id !== imageId);
+    
+    // Если удаляем выбранное изображение, выбираем первое из оставшихся
+    if (filtered.length > 0 && images.find(img => img.id === imageId)?.selected) {
+      filtered[0].selected = true;
+    }
+    
+    setSettings({ ...settings, snowmanImages: filtered });
+    setHasChanges(true);
+  };
+  
+  // Выбор активного изображения
+  const handleSelectSnowmanImage = (imageId) => {
+    const images = settings.snowmanImages || [];
+    const updated = images.map(img => ({
+      ...img,
+      selected: img.id === imageId
+    }));
+    setSettings({ ...settings, snowmanImages: updated });
+    setHasChanges(true);
+  };
+  
+  // Обновление параметров активного изображения
+  const updateActiveSnowmanImage = (updates) => {
+    const images = settings.snowmanImages || [];
+    const activeIndex = images.findIndex(img => img.selected === true);
+    if (activeIndex === -1) return;
+    
+    const updated = [...images];
+    updated[activeIndex] = { ...updated[activeIndex], ...updates };
+    setSettings({ ...settings, snowmanImages: updated });
+    setHasChanges(true);
   };
 
   const handleSavePreset = () => {
