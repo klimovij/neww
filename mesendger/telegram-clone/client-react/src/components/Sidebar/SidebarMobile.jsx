@@ -5,6 +5,7 @@ import { useApp } from '../../context/AppContext';
 import { Avatar } from '../../styles/GlobalStyles';
 import SidebarNav from './SidebarNav';
 import frostyImg from '../../assets/icons/Frosty.png';
+import api from '../../services/api';
 
 const SNOWFLAKE_COUNT = 14;
 
@@ -115,8 +116,21 @@ export default function SidebarMobile({ open, onClose, onOpen, showNav = true, o
   }, []);
 
   useEffect(() => {
-    const loadSettings = () => {
-      const settings = getAppTitleSettings();
+    const loadSettings = (serverSettings = null) => {
+      // Приоритет: настройки с сервера > localStorage
+      let settings;
+      if (serverSettings) {
+        settings = serverSettings;
+        // Сохраняем настройки с сервера в localStorage для офлайн-доступа
+        try {
+          localStorage.setItem('appTitleSettings', JSON.stringify(serverSettings));
+        } catch (e) {
+          console.error('Error saving server settings to localStorage:', e);
+        }
+      } else {
+        settings = getAppTitleSettings();
+      }
+      
       setAppTitleSettings(settings);
       
       if (settings.customFontUrl) {
@@ -131,27 +145,50 @@ export default function SidebarMobile({ open, onClose, onOpen, showNav = true, o
       }
     };
     
-    // Загружаем настройки при монтировании
-    loadSettings();
+    // Загружаем настройки с сервера при монтировании
+    const loadServerSettings = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (token) {
+          const response = await api.get('/api/sidebar-settings');
+          if (response.data.success && response.data.settings) {
+            loadSettings(response.data.settings);
+            return;
+          }
+        }
+      } catch (error) {
+        console.error('Error loading sidebar settings from server:', error);
+        // Продолжаем с локальными настройками
+      }
+      // Если не удалось загрузить с сервера, используем локальные
+      loadSettings();
+    };
     
-    // Обработчик обновления настроек через событие
+    loadServerSettings();
+    
+    // Обработчик обновления настроек через событие (локальные изменения)
     const handler = () => {
       loadSettings();
-      const newSettings = getAppTitleSettings();
-      setAppTitleSettings(newSettings);
-      
-      if (newSettings.customFontUrl) {
-        const existingLink = document.querySelector(`link[href="${newSettings.customFontUrl}"]`);
-        if (!existingLink) {
-          const link = document.createElement('link');
-          link.rel = 'stylesheet';
-          link.href = newSettings.customFontUrl;
-          document.head.appendChild(link);
-        }
-      }
     };
     window.addEventListener('appTitleSettingsUpdated', handler);
-    return () => window.removeEventListener('appTitleSettingsUpdated', handler);
+    
+    // Обработчик обновления настроек через WebSocket (изменения от других пользователей)
+    const socketHandler = (data) => {
+      if (data && data.settings) {
+        loadSettings(data.settings);
+      }
+    };
+    
+    if (window.socket) {
+      window.socket.on('sidebar-settings-updated', socketHandler);
+    }
+    
+    return () => {
+      window.removeEventListener('appTitleSettingsUpdated', handler);
+      if (window.socket) {
+        window.socket.off('sidebar-settings-updated', socketHandler);
+      }
+    };
   }, []);
 
   React.useEffect(() => {

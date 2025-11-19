@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom';
 import { FaArrowLeft } from 'react-icons/fa';
 import { FiX, FiType, FiSave, FiRotateCcw } from 'react-icons/fi';
 import frostyImg from '../assets/icons/Frosty.png';
+import api from '../../services/api';
 
 const DEFAULT_SETTINGS = {
   text: 'Issa Plus',
@@ -469,9 +470,28 @@ export default function AppTitleSettingsMobile({ open, onClose, onOpenMobileSide
         }
       }
       
+      // Сохраняем в localStorage для локального использования
       setAppTitleSettings(settingsToSave);
       setHasChanges(false);
-      alert('Настройки названия приложения сохранены!');
+      
+      // Сохраняем на сервере для синхронизации между всеми пользователями
+      try {
+        const response = await api.post('/api/sidebar-settings', { settings: settingsToSave });
+        if (response.data.success) {
+          alert('Настройки названия приложения сохранены и синхронизированы со всеми пользователями!');
+        } else {
+          alert('Настройки сохранены локально, но не удалось синхронизировать с сервером.');
+        }
+      } catch (error) {
+        console.error('Ошибка синхронизации настроек с сервером:', error);
+        // Показываем предупреждение, но не блокируем сохранение
+        if (error.response?.status === 403) {
+          alert('Настройки сохранены локально. Для синхронизации с другими пользователями необходимы права администратора.');
+        } else {
+          alert('Настройки сохранены локально, но не удалось синхронизировать с сервером. Проверьте подключение к интернету.');
+        }
+      }
+      
       onClose();
     } catch (error) {
       console.error('Ошибка при сохранении:', error);

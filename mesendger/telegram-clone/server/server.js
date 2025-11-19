@@ -3482,6 +3482,45 @@ app.get('/api/users', authenticateToken, async (req, res) => {
   }
 });
 
+// ==================== НАСТРОЙКИ САЙДБАРА ====================
+// Получить настройки сайдбара
+app.get('/api/sidebar-settings', authenticateToken, async (req, res) => {
+  try {
+    const settings = await db.getSidebarSettings();
+    res.json({ success: true, settings });
+  } catch (error) {
+    console.error('❌ Error getting sidebar settings:', error);
+    res.status(500).json({ success: false, error: 'Ошибка получения настроек сайдбара' });
+  }
+});
+
+// Сохранить настройки сайдбара (только для админов)
+app.post('/api/sidebar-settings', authenticateToken, async (req, res) => {
+  try {
+    // Проверяем права доступа - только админы могут изменять настройки
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, error: 'Нет прав доступа. Только администраторы могут изменять настройки сайдбара.' });
+    }
+
+    const settings = req.body.settings;
+    if (!settings) {
+      return res.status(400).json({ success: false, error: 'Настройки не предоставлены' });
+    }
+
+    const id = await db.saveSidebarSettings(settings, req.user.id);
+    
+    // Отправляем обновление всем подключенным клиентам через WebSocket
+    if (io) {
+      io.emit('sidebar-settings-updated', { settings });
+    }
+
+    res.json({ success: true, id, message: 'Настройки сайдбара сохранены' });
+  } catch (error) {
+    console.error('❌ Error saving sidebar settings:', error);
+    res.status(500).json({ success: false, error: 'Ошибка сохранения настроек сайдбара' });
+  }
+});
+
 // Назначить департамент пользователю (top-level)
 app.post('/api/users/:id/department', authenticateToken, async (req, res) => {
   try {

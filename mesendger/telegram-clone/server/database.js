@@ -2116,6 +2116,17 @@ class Database {
       this.db.run(`ALTER TABLE messages ADD COLUMN poll_votes TEXT`, (err) => {});
       this.db.run(`ALTER TABLE messages ADD COLUMN poll_voters TEXT`, (err) => {});
 
+      // Таблица настроек сайдбара (глобальные настройки для всех пользователей)
+      this.db.run(`
+        CREATE TABLE IF NOT EXISTS app_sidebar_settings (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          settings TEXT NOT NULL,
+          updated_by INTEGER,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (updated_by) REFERENCES users (id)
+        )
+      `);
+
       // Таблица задач
       this.db.run(`
         CREATE TABLE IF NOT EXISTS tasks (
@@ -4222,6 +4233,58 @@ class Database {
               passwordsMap[row.username] = row.password;
             });
             resolve(passwordsMap);
+          }
+        }
+      );
+    });
+  }
+
+  // ==================== НАСТРОЙКИ САЙДБАРА ====================
+  
+  // Получить текущие настройки сайдбара
+  async getSidebarSettings() {
+    return new Promise((resolve, reject) => {
+      this.db.get(
+        'SELECT settings, updated_at, updated_by FROM app_sidebar_settings ORDER BY updated_at DESC LIMIT 1',
+        [],
+        (err, row) => {
+          if (err) {
+            console.error('Error getting sidebar settings:', err);
+            reject(err);
+          } else if (row) {
+            try {
+              const settings = JSON.parse(row.settings);
+              resolve({
+                ...settings,
+                updated_at: row.updated_at,
+                updated_by: row.updated_by
+              });
+            } catch (parseErr) {
+              console.error('Error parsing sidebar settings:', parseErr);
+              reject(parseErr);
+            }
+          } else {
+            // Возвращаем null если настроек нет
+            resolve(null);
+          }
+        }
+      );
+    });
+  }
+
+  // Сохранить настройки сайдбара
+  async saveSidebarSettings(settings, userId) {
+    return new Promise((resolve, reject) => {
+      const settingsJson = JSON.stringify(settings);
+      this.db.run(
+        'INSERT INTO app_sidebar_settings (settings, updated_by, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP)',
+        [settingsJson, userId || null],
+        function(err) {
+          if (err) {
+            console.error('Error saving sidebar settings:', err);
+            reject(err);
+          } else {
+            resolve(this.lastID);
           }
         }
       );
