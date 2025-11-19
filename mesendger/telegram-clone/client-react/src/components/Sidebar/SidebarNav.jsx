@@ -1643,29 +1643,6 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar, 
         ),
         showWorkTimeModal
       )}
-      
-      {(() => {
-        console.log('SidebarNav: Rendering leaves-worktime modal, isMobile:', isMobile, 'showLeavesWorktimeModal:', showLeavesWorktimeModal);
-        // Для react-modal не используем createSafePortal, так как react-modal сам управляет порталом
-        if (isMobile) {
-          return (
-          <LeavesWorktimeMobile 
-            key={`leaves-worktime-mobile-${portalKey}`} 
-            open={showLeavesWorktimeModal} 
-              onClose={() => {
-                console.log('SidebarNav: Closing leaves-worktime modal');
-                setShowLeavesWorktimeModal(false);
-              }} 
-            token={localStorage.getItem('token')}
-            onOpenMobileSidebar={onOpenMobileSidebar}
-          />
-          );
-        } else {
-          return showLeavesWorktimeModal ? (
-          <LeavesWorktimeModal key={`leaves-worktime-${portalKey}`} isOpen={showLeavesWorktimeModal} onRequestClose={() => setShowLeavesWorktimeModal(false)} token={localStorage.getItem('token')} />
-          ) : null;
-        }
-      })()}
       {createSafePortal(
         isMobile ? (
           <AdminMobile
