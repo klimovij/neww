@@ -625,6 +625,12 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
                     border: '1px solid rgba(255, 224, 130, 0.2)',
                   }}
                 >
+                  {(() => {
+                    // Prefer FIO, but if оно битое (вопросительные знаки) или пустое — показываем username
+                    const displayName =
+                      row.fio && !row.fio.includes('?') ? row.fio : row.username;
+
+                    return (
                   <div style={{
                     display: 'flex',
                     justifyContent: 'space-between',
@@ -637,13 +643,17 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
                       fontSize: '16px',
                       fontWeight: 700,
                     }}>
-                      {row.fio || row.username}
+                      {displayName}
                     </h3>
                     <button
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        setDetailsModal({ open: true, logs: row.sessions || row.logs || [], username: row.fio || row.username });
+                        setDetailsModal({
+                          open: true,
+                          logs: row.sessions || row.logs || [],
+                          username: displayName,
+                        });
                       }}
                       style={{
                         padding: '8px 14px',
@@ -659,6 +669,8 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
                       Подробнее
                     </button>
                   </div>
+                    );
+                  })()}
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
