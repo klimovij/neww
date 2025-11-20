@@ -1447,11 +1447,11 @@ class Database {
   }
 
   // Создать пользователя с employee_id
-  async createUserWithEmployee({ employee_id, password, username }) {
+  async createUserWithEmployee({ employee_id, password, username, role = 'user' }) {
     return new Promise(async (resolve, reject) => {
       try {
         const hash = await require('bcrypt').hash(password, 10);
-        this.db.run('INSERT INTO users (employee_id, password, username) VALUES (?, ?, ?)', [employee_id, hash, username], function(err) {
+        this.db.run('INSERT INTO users (employee_id, password, username, role) VALUES (?, ?, ?, ?)', [employee_id, hash, username, role], function(err) {
           if (err) reject(err);
           else resolve(this.lastID);
         });
