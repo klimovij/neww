@@ -199,14 +199,14 @@ export default function UserRightsMobile({ open, onClose, onOpenMobileSidebar })
             right: 0,
             bottom: 0,
             backgroundColor: 'rgba(0, 0, 0, 0.85)',
-            zIndex: 100001,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          backdropFilter: 'blur(8px)',
-        }}
-        onClick={handleClose}
-      >
+            zIndex: 100003,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backdropFilter: 'blur(8px)',
+          }}
+          onClick={handleClose}
+        >
         <div
           ref={modalRef}
           style={{
@@ -241,7 +241,7 @@ export default function UserRightsMobile({ open, onClose, onOpenMobileSidebar })
               alignItems: 'center',
               justifyContent: 'space-between',
               padding: '0 16px',
-              zIndex: 10002,
+              zIndex: 100004,
               boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)',
             }}
           >
@@ -319,7 +319,7 @@ export default function UserRightsMobile({ open, onClose, onOpenMobileSidebar })
               borderRadius: '12px',
               fontSize: '0.75rem',
               fontWeight: 600,
-              zIndex: 10002,
+              zIndex: 100004,
               pointerEvents: 'none',
               animation: 'fadeOut 3s forwards',
             }}

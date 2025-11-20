@@ -4253,7 +4253,17 @@ class Database {
             reject(err);
           } else if (row) {
             try {
-              const settings = JSON.parse(row.settings);
+              let settings = JSON.parse(row.settings);
+              // Если после парсинга получилась строка, значит была двойная сериализация
+              if (typeof settings === 'string') {
+                try {
+                  settings = JSON.parse(settings);
+                } catch (doubleParseErr) {
+                  console.error('Error parsing double-serialized sidebar settings:', doubleParseErr);
+                  reject(doubleParseErr);
+                  return;
+                }
+              }
               resolve({
                 ...settings,
                 updated_at: row.updated_at,

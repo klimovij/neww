@@ -83,8 +83,8 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-producti
 // ==================== ИНИЦИАЛИЗАЦИЯ EXPRESS ====================
 const app = express();
 // Парсинг JSON и URL-encoded
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Настройка CORS (один раз, до маршрутов)
 app.use(cors({
@@ -122,8 +122,8 @@ app.use(cors({
 }));
 
 // Парсинг JSON и URL-encoded
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Статическая раздача файлов
 app.use('/uploads', express.static(path.join(__dirname, './uploads')));
@@ -3580,13 +3580,23 @@ app.get('/api/users', authenticateToken, async (req, res) => {
 // Получить настройки сайдбара
 app.get('/api/sidebar-settings', authenticateToken, async (req, res) => {
   try {
-    const settings = await db.getSidebarSettings();
-    console.log('📡 GET /api/sidebar-settings - Settings retrieved:', settings ? 'Found' : 'Not found');
-    if (settings) {
-      console.log('📦 Settings data:', JSON.stringify(settings).substring(0, 200) + '...');
+    const settingsData = await db.getSidebarSettings();
+    console.log('📡 GET /api/sidebar-settings - Settings retrieved:', settingsData ? 'Found' : 'Not found');
+    
+    if (settingsData) {
+      // Удаляем служебные поля (updated_at, updated_by) перед отправкой клиенту
+      const { updated_at, updated_by, ...settings } = settingsData;
+      
+      console.log('📦 Settings type:', typeof settings);
+      console.log('📦 Settings keys:', Object.keys(settings).slice(0, 10));
+      console.log('📦 Settings data preview:', JSON.stringify(settings).substring(0, 200) + '...');
       console.log('🖼️ Snowman images count:', settings.snowmanImages ? settings.snowmanImages.length : 0);
+      
+      // Убеждаемся, что отправляем объект, а не строку
+      res.json({ success: true, settings });
+    } else {
+      res.json({ success: true, settings: null });
     }
-    res.json({ success: true, settings });
   } catch (error) {
     console.error('❌ Error getting sidebar settings:', error);
     res.status(500).json({ success: false, error: 'Ошибка получения настроек сайдбара' });
@@ -3606,14 +3616,27 @@ app.post('/api/sidebar-settings', authenticateToken, async (req, res) => {
       return res.status(400).json({ success: false, error: 'Настройки не предоставлены' });
     }
 
-    const settingsJson = JSON.stringify(settings);
-    const id = await db.saveSidebarSettings(settingsJson, req.user.id);
+    // saveSidebarSettings сам делает JSON.stringify, поэтому передаем объект
+    const id = await db.saveSidebarSettings(settings, req.user.id);
+    
+    // Убеждаемся, что настройки - это объект, а не строка
+    let settingsToEmit = settings;
+    if (typeof settingsToEmit === 'string') {
+      try {
+        settingsToEmit = JSON.parse(settingsToEmit);
+      } catch (e) {
+        console.error('❌ Error parsing settings before emitting:', e);
+        return res.status(500).json({ success: false, error: 'Ошибка парсинга настроек' });
+      }
+    }
     
     // Отправляем обновление всем подключенным клиентам через WebSocket
     if (io) {
       console.log('📡 Emitting sidebar-settings-updated event to all clients');
-      console.log('📦 Settings data:', settings);
-      io.emit('sidebar-settings-updated', { settings });
+      console.log('📦 Settings data type:', typeof settingsToEmit);
+      console.log('📦 Settings data:', JSON.stringify(settingsToEmit).substring(0, 200) + '...');
+      // Отправляем объект напрямую, Socket.io сам сериализует его
+      io.emit('sidebar-settings-updated', { settings: settingsToEmit });
     }
 
     res.json({ success: true, id, message: 'Настройки сайдбара сохранены' });
@@ -3737,8 +3760,14 @@ io.on('connection', (socket) => {
   // Отправляем текущие настройки сайдбара новому подключению
   db.getSidebarSettings().then(settings => {
     if (settings) {
+      // Удаляем служебные поля (updated_at, updated_by) перед отправкой клиенту
+      const { updated_at, updated_by, ...settingsToSend } = settings;
+      
       console.log('📡 Sending sidebar settings to new connection:', socket.id);
-      socket.emit('sidebar-settings-updated', { settings });
+      console.log('📦 Settings type:', typeof settingsToSend);
+      console.log('📦 Settings keys:', Object.keys(settingsToSend).slice(0, 10));
+      // Отправляем объект напрямую
+      socket.emit('sidebar-settings-updated', { settings: settingsToSend });
     }
   }).catch(err => {
     console.error('❌ Error sending sidebar settings to new connection:', err);

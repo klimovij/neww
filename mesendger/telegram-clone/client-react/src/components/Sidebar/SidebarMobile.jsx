@@ -118,26 +118,96 @@ export default function SidebarMobile({ open, onClose, onOpen, showNav = true, o
   }, []);
 
   useEffect(() => {
+    // Функция для оптимизации настроек перед сохранением в localStorage
+    // Удаляет base64 изображения, чтобы избежать QuotaExceededError
+    const optimizeForLocalStorage = (settings) => {
+      const optimized = { ...settings };
+      
+      // Удаляем base64 изображения из снеговиков
+      if (Array.isArray(optimized.snowmanImages)) {
+        optimized.snowmanImages = optimized.snowmanImages.map(img => {
+          if (typeof img === 'object' && img !== null) {
+            const imgCopy = { ...img };
+            // Если изображение base64, удаляем его, оставляем только URL
+            if (imgCopy.image && imgCopy.image.startsWith('data:image')) {
+              imgCopy.image = null; // Удаляем base64, но сохраняем структуру
+            }
+            return imgCopy;
+          }
+          return img;
+        });
+      }
+      
+      // Удаляем base64 из одиночного изображения снеговика
+      if (optimized.snowmanImage && optimized.snowmanImage.startsWith('data:image')) {
+        optimized.snowmanImage = null;
+      }
+      
+      // Удаляем base64 из изображения аватара
+      if (optimized.avatarImage && optimized.avatarImage.startsWith('data:image')) {
+        optimized.avatarImage = null;
+      }
+      
+      return optimized;
+    };
+
     const loadSettings = (serverSettings = null) => {
       // Приоритет: настройки с сервера > localStorage
       let settings;
       if (serverSettings) {
+        // Проверяем, что настройки - это объект, а не строка
+        let parsedServerSettings = serverSettings;
+        if (typeof serverSettings === 'string') {
+          try {
+            parsedServerSettings = JSON.parse(serverSettings);
+          } catch (e) {
+            console.error('Error parsing serverSettings string:', e);
+            parsedServerSettings = {};
+          }
+        }
+        
+        // Если это строка, разбитая на символы (объект с числовыми ключами), это ошибка
+        if (parsedServerSettings && typeof parsedServerSettings === 'object' && !Array.isArray(parsedServerSettings)) {
+          const keys = Object.keys(parsedServerSettings);
+          // Если все ключи - числа от 0 до N, это строка, разбитая на символы
+          if (keys.length > 0 && keys.every((k, i) => k === String(i))) {
+            console.error('❌ Settings came as string split into characters, trying to join and parse...');
+            try {
+              const joinedString = keys.map(k => parsedServerSettings[k]).join('');
+              parsedServerSettings = JSON.parse(joinedString);
+            } catch (e) {
+              console.error('Error parsing joined string:', e);
+              parsedServerSettings = {};
+            }
+          }
+        }
+        
         // Объединяем с дефолтными настройками, чтобы все поля были заполнены
         settings = {
           ...DEFAULT_APP_TITLE_SETTINGS,
-          ...serverSettings,
+          ...parsedServerSettings,
           // Убеждаемся, что snowmanImages всегда массив
-          snowmanImages: Array.isArray(serverSettings.snowmanImages) 
-            ? serverSettings.snowmanImages 
+          snowmanImages: Array.isArray(parsedServerSettings.snowmanImages) 
+            ? parsedServerSettings.snowmanImages 
             : []
         };
         console.log('✅ Loading settings (from server):', settings);
         console.log('🖼️ Snowman images:', settings.snowmanImages?.length || 0, 'images');
         // Сохраняем настройки с сервера в localStorage для офлайн-доступа
+        // Оптимизируем, удаляя base64 изображения
         try {
-          localStorage.setItem('appTitleSettings', JSON.stringify(settings));
+          const optimizedSettings = optimizeForLocalStorage(settings);
+          localStorage.setItem('appTitleSettings', JSON.stringify(optimizedSettings));
         } catch (e) {
           console.error('Error saving server settings to localStorage:', e);
+          // Если ошибка, попробуем очистить старые данные и сохранить заново
+          try {
+            localStorage.removeItem('appTitleSettings');
+            const optimizedSettings = optimizeForLocalStorage(settings);
+            localStorage.setItem('appTitleSettings', JSON.stringify(optimizedSettings));
+          } catch (e2) {
+            console.error('Failed to save even after cleanup:', e2);
+          }
         }
       } else {
         const localSettings = getAppTitleSettings();
@@ -182,11 +252,25 @@ export default function SidebarMobile({ open, onClose, onOpen, showNav = true, o
           console.log('📡 Server response:', response.data);
           if (response.data.success && response.data.settings) {
             console.log('✅ Settings loaded from server:', response.data.settings);
-            // Убеждаемся, что snowmanImages инициализирован
+            
+            // Парсим настройки, если они пришли как строка
+            let parsedSettings = response.data.settings;
+            if (typeof parsedSettings === 'string') {
+              try {
+                parsedSettings = JSON.parse(parsedSettings);
+              } catch (e) {
+                console.error('Error parsing settings string:', e);
+                parsedSettings = {};
+              }
+            }
+            
+            // Убеждаемся, что snowmanImages всегда массив
             const serverSettings = {
               ...DEFAULT_APP_TITLE_SETTINGS,
-              ...response.data.settings,
-              snowmanImages: response.data.settings.snowmanImages || []
+              ...parsedSettings,
+              snowmanImages: Array.isArray(parsedSettings.snowmanImages) 
+                ? parsedSettings.snowmanImages 
+                : []
             };
             loadSettings(serverSettings);
             return;
@@ -213,12 +297,45 @@ export default function SidebarMobile({ open, onClose, onOpen, showNav = true, o
     // Обработчик обновления настроек через WebSocket (изменения от других пользователей)
     const socketHandler = (data) => {
       console.log('📡 Received sidebar-settings-updated event via WebSocket:', data);
+      console.log('📡 Data type:', typeof data);
+      console.log('📡 Settings type:', typeof data?.settings);
+      
       if (data && data.settings) {
         console.log('✅ Loading settings from WebSocket:', data.settings);
+        
+        // Парсим настройки, если они пришли как строка
+        let parsedSettings = data.settings;
+        if (typeof parsedSettings === 'string') {
+          try {
+            parsedSettings = JSON.parse(parsedSettings);
+          } catch (e) {
+            console.error('Error parsing WebSocket settings string:', e);
+            parsedSettings = {};
+          }
+        }
+        
+        // Если это строка, разбитая на символы (объект с числовыми ключами), это ошибка
+        if (parsedSettings && typeof parsedSettings === 'object' && !Array.isArray(parsedSettings)) {
+          const keys = Object.keys(parsedSettings);
+          // Если все ключи - числа от 0 до N, это строка, разбитая на символы
+          if (keys.length > 0 && keys.every((k, i) => k === String(i))) {
+            console.error('❌ WebSocket settings came as string split into characters, trying to join and parse...');
+            try {
+              const joinedString = keys.map(k => parsedSettings[k]).join('');
+              parsedSettings = JSON.parse(joinedString);
+            } catch (e) {
+              console.error('Error parsing joined WebSocket string:', e);
+              parsedSettings = {};
+            }
+          }
+        }
+        
         const serverSettings = {
           ...DEFAULT_APP_TITLE_SETTINGS,
-          ...data.settings,
-          snowmanImages: Array.isArray(data.settings.snowmanImages) ? data.settings.snowmanImages : []
+          ...parsedSettings,
+          snowmanImages: Array.isArray(parsedSettings.snowmanImages) 
+            ? parsedSettings.snowmanImages 
+            : []
         };
         loadSettings(serverSettings);
       } else {
