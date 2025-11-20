@@ -289,7 +289,14 @@ export default function AppTitleSettingsMobile({ open, onClose, onOpenMobileSide
 
   useEffect(() => {
     if (open) {
+      // Загружаем настройки из localStorage - они должны содержать сохраненные изображения
       const saved = getAppTitleSettings();
+      // Убеждаемся, что snowmanImages - это массив
+      if (saved.snowmanImages && !Array.isArray(saved.snowmanImages)) {
+        saved.snowmanImages = [];
+      } else if (!saved.snowmanImages) {
+        saved.snowmanImages = [];
+      }
       setSettings(saved);
       setHasChanges(false);
       setPresets(getPresets());
@@ -435,7 +442,8 @@ export default function AppTitleSettingsMobile({ open, onClose, onOpenMobileSide
       return;
     }
 
-    const textSettings = {
+    // Сохраняем все настройки, включая изображения и их позиции
+    const presetSettings = {
       text: settings.text,
       fontSize: settings.fontSize,
       fontFamily: settings.fontFamily,
@@ -449,13 +457,26 @@ export default function AppTitleSettingsMobile({ open, onClose, onOpenMobileSide
       glowColor: settings.glowColor,
       glowIntensity: settings.glowIntensity,
       glowSpread: settings.glowSpread,
-      effectType: settings.effectType
+      effectType: settings.effectType,
+      // Сохраняем настройки изображений
+      snowmanEnabled: settings.snowmanEnabled,
+      snowmanImages: settings.snowmanImages ? JSON.parse(JSON.stringify(settings.snowmanImages)) : [], // Глубокая копия массива
+      snowmanImage: settings.snowmanImage, // Для обратной совместимости
+      snowmanPositionX: settings.snowmanPositionX,
+      snowmanPositionY: settings.snowmanPositionY,
+      snowmanScale: settings.snowmanScale,
+      snowmanPositionType: settings.snowmanPositionType,
+      avatarImage: settings.avatarImage,
+      avatarPositionX: settings.avatarPositionX,
+      avatarPositionY: settings.avatarPositionY,
+      avatarWidth: settings.avatarWidth,
+      avatarHeight: settings.avatarHeight
     };
 
     const preset = {
       id: Date.now().toString(),
       name: presetName.trim(),
-      settings: textSettings,
+      settings: presetSettings,
       createdAt: new Date().toISOString()
     };
 
@@ -463,20 +484,34 @@ export default function AppTitleSettingsMobile({ open, onClose, onOpenMobileSide
       setPresets(getPresets());
       setPresetName('');
       setShowPresetInput(false);
-      alert(`Пресет "${preset.name}" сохранен!`);
+      alert(`Пресет "${preset.name}" сохранен со всеми настройками и изображениями!`);
     } else {
       alert('Ошибка при сохранении пресета');
     }
   };
 
   const handleApplyPreset = (preset) => {
+    // Применяем все настройки из пресета, включая изображения
     const newSettings = {
       ...settings,
       ...preset.settings
     };
+    // Убеждаемся, что snowmanImages - это массив
+    if (newSettings.snowmanImages && !Array.isArray(newSettings.snowmanImages)) {
+      newSettings.snowmanImages = [];
+    } else if (!newSettings.snowmanImages) {
+      newSettings.snowmanImages = [];
+    }
+    // Убеждаемся, что хотя бы одно изображение выбрано, если есть изображения
+    if (newSettings.snowmanImages.length > 0) {
+      const hasSelected = newSettings.snowmanImages.some(img => img.selected === true);
+      if (!hasSelected) {
+        newSettings.snowmanImages[0].selected = true;
+      }
+    }
     setSettings(newSettings);
     setHasChanges(true);
-    alert(`Пресет "${preset.name}" применен!`);
+    alert(`Пресет "${preset.name}" применен со всеми настройками и изображениями!`);
   };
 
   const handleDeletePreset = (presetId, presetName) => {
@@ -597,6 +632,8 @@ export default function AppTitleSettingsMobile({ open, onClose, onOpenMobileSide
       
       // Сохраняем в localStorage для локального использования
       setAppTitleSettings(settingsToSave);
+      // Обновляем состояние, чтобы изображения оставались в превью
+      setSettings(settingsToSave);
       setHasChanges(false);
       
       // Сохраняем на сервере для синхронизации между всеми пользователями
@@ -1363,7 +1400,7 @@ export default function AppTitleSettingsMobile({ open, onClose, onOpenMobileSide
                     </button>
                   </div>
                   <div style={{ fontSize: '12px', color: '#999', marginTop: '8px' }}>
-                    Сохранит текущие настройки текста: цвет, градиент, свечение, эффекты, шрифт
+                    Сохранит текущие настройки: текст, цвет, градиент, свечение, эффекты, шрифт, а также все изображения (елка, снеговик) с их позициями и размерами
                   </div>
                 </div>
               )}
