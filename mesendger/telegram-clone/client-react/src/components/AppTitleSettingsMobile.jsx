@@ -44,6 +44,68 @@ function getAppTitleSettings() {
       if (settings.avatarImage && (settings.avatarImage.includes('Frosty.png') || settings.avatarImage.includes('snowman') || settings.avatarImage === settings.snowmanImage)) {
         settings.avatarImage = null;
       }
+      
+      // Валидация и очистка массива snowmanImages
+      if (settings.snowmanImages && Array.isArray(settings.snowmanImages)) {
+        const seenIds = new Set();
+        const seenImages = new Set();
+        const validImages = [];
+        
+        settings.snowmanImages.forEach((img, index) => {
+          // Проверяем, что объект существует и имеет необходимые поля
+          if (!img || typeof img !== 'object') return;
+          
+          // Генерируем уникальный ID, если он отсутствует или дублируется
+          let imageId = img.id;
+          if (!imageId || seenIds.has(imageId)) {
+            imageId = `img-${Date.now()}-${index}-${Math.random().toString(36).substr(2, 9)}`;
+          }
+          seenIds.add(imageId);
+          
+          // Проверяем, что изображение уникально (не дублируется)
+          const imageData = img.image;
+          if (!imageData || seenImages.has(imageData)) {
+            return; // Пропускаем дубликаты
+          }
+          seenImages.add(imageData);
+          
+          // Создаем валидный объект изображения
+          validImages.push({
+            id: imageId,
+            image: imageData,
+            positionX: typeof img.positionX === 'number' ? img.positionX : 0,
+            positionY: typeof img.positionY === 'number' ? img.positionY : 0,
+            scale: typeof img.scale === 'number' ? img.scale : 100,
+            positionType: img.positionType === 'absolute' ? 'absolute' : 'relative',
+            enabled: img.enabled !== false,
+            selected: img.selected === true
+          });
+        });
+        
+        // Убеждаемся, что только одно изображение выбрано
+        const selectedCount = validImages.filter(img => img.selected).length;
+        if (selectedCount > 1) {
+          // Если выбрано несколько, оставляем только первое
+          let firstSelected = true;
+          validImages.forEach(img => {
+            if (img.selected && !firstSelected) {
+              img.selected = false;
+            }
+            if (img.selected) {
+              firstSelected = false;
+            }
+          });
+        } else if (selectedCount === 0 && validImages.length > 0) {
+          // Если ни одно не выбрано, выбираем первое
+          validImages[0].selected = true;
+        }
+        
+        settings.snowmanImages = validImages;
+      } else if (!Array.isArray(settings.snowmanImages)) {
+        // Если snowmanImages не массив, создаем пустой массив
+        settings.snowmanImages = [];
+      }
+      
       return settings;
     }
   } catch (e) {
@@ -283,8 +345,10 @@ export default function AppTitleSettingsMobile({ open, onClose, onOpenMobileSide
     reader.onloadend = async () => {
       try {
         const compressed = await compressImage(reader.result, 300, 300, 0.75);
+        // Генерируем уникальный ID с временной меткой и случайным числом
+        const uniqueId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         const newImage = {
-          id: Date.now().toString(),
+          id: uniqueId,
           image: compressed,
           positionX: 0,
           positionY: 0,
@@ -304,7 +368,7 @@ export default function AppTitleSettingsMobile({ open, onClose, onOpenMobileSide
         let updatedImages = [...images, newImage];
         if (!images.length && settings.snowmanImage) {
           updatedImages = [{
-            id: 'legacy-1',
+            id: `legacy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
             image: settings.snowmanImage,
             positionX: settings.snowmanPositionX || 0,
             positionY: settings.snowmanPositionY || 0,
@@ -444,26 +508,82 @@ export default function AppTitleSettingsMobile({ open, onClose, onOpenMobileSide
         }
       }
       
-      // Сжимаем изображения в массиве snowmanImages
+      // Сжимаем изображения в массиве snowmanImages и валидируем их
       if (settingsToSave.snowmanImages && Array.isArray(settingsToSave.snowmanImages)) {
         try {
+          const seenIds = new Set();
+          const seenImages = new Set();
+          const validImages = [];
+          
           settingsToSave.snowmanImages = await Promise.all(
-            settingsToSave.snowmanImages.map(async (img) => {
-              if (img.image && img.image.startsWith('data:image')) {
+            settingsToSave.snowmanImages.map(async (img, index) => {
+              // Пропускаем невалидные объекты
+              if (!img || typeof img !== 'object') return null;
+              
+              // Генерируем уникальный ID, если он отсутствует или дублируется
+              let imageId = img.id;
+              if (!imageId || seenIds.has(imageId)) {
+                imageId = `img-${Date.now()}-${index}-${Math.random().toString(36).substr(2, 9)}`;
+              }
+              seenIds.add(imageId);
+              
+              // Сжимаем изображение, если это base64
+              let imageData = img.image;
+              if (imageData && imageData.startsWith('data:image')) {
                 try {
-                  const compressed = await compressImage(img.image, 300, 300, 0.75);
-                  return { ...img, image: compressed };
+                  imageData = await compressImage(imageData, 300, 300, 0.75);
                 } catch (error) {
                   console.error('Ошибка при сжатии изображения снеговика:', error);
-                  return img;
+                  // Продолжаем с исходным изображением
                 }
               }
-              return img;
+              
+              // Проверяем, что изображение уникально (не дублируется)
+              if (!imageData || seenImages.has(imageData)) {
+                return null; // Пропускаем дубликаты
+              }
+              seenImages.add(imageData);
+              
+              // Возвращаем валидный объект изображения
+              return {
+                id: imageId,
+                image: imageData,
+                positionX: typeof img.positionX === 'number' ? img.positionX : 0,
+                positionY: typeof img.positionY === 'number' ? img.positionY : 0,
+                scale: typeof img.scale === 'number' ? img.scale : 100,
+                positionType: img.positionType === 'absolute' ? 'absolute' : 'relative',
+                enabled: img.enabled !== false,
+                selected: img.selected === true
+              };
             })
           );
+          
+          // Удаляем null значения (невалидные объекты)
+          settingsToSave.snowmanImages = settingsToSave.snowmanImages.filter(img => img !== null);
+          
+          // Убеждаемся, что только одно изображение выбрано
+          const selectedCount = settingsToSave.snowmanImages.filter(img => img.selected).length;
+          if (selectedCount > 1) {
+            // Если выбрано несколько, оставляем только первое
+            let firstSelected = true;
+            settingsToSave.snowmanImages.forEach(img => {
+              if (img.selected && !firstSelected) {
+                img.selected = false;
+              }
+              if (img.selected) {
+                firstSelected = false;
+              }
+            });
+          } else if (selectedCount === 0 && settingsToSave.snowmanImages.length > 0) {
+            // Если ни одно не выбрано, выбираем первое
+            settingsToSave.snowmanImages[0].selected = true;
+          }
         } catch (error) {
           console.error('Ошибка при сжатии изображений снеговика:', error);
         }
+      } else if (!Array.isArray(settingsToSave.snowmanImages)) {
+        // Если snowmanImages не массив, создаем пустой массив
+        settingsToSave.snowmanImages = [];
       }
       
       // Обратная совместимость: сжимаем старое одиночное изображение
@@ -2257,4 +2377,5 @@ export default function AppTitleSettingsMobile({ open, onClose, onOpenMobileSide
     </>
   );
 }
+
 
