@@ -1555,33 +1555,87 @@ app.post('/api/login', async (req, res) => {
       return res.status(400).json({ error: 'Имя, фамилия и пароль обязательны' });
     }
     
-    // Ищем сотрудника
-    const employee = await withSqliteRetry(() => db.findEmployeeByName(first_name, last_name));
+    // Нормализуем ввод: убираем лишние пробелы и приводим к единому формату
+    const normalizedFirstName = String(first_name).trim();
+    const normalizedLastName = String(last_name).trim();
+    
+    console.log('🔐 Login attempt:', { first_name: normalizedFirstName, last_name: normalizedLastName });
+    
+    // Ищем сотрудника (поиск нечувствителен к регистру и пробелам)
+    const employee = await withSqliteRetry(() => db.findEmployeeByName(normalizedFirstName, normalizedLastName));
     if (!employee) {
-      return res.status(400).json({ error: 'Сотрудник не найден' });
+      console.log('❌ Employee not found:', { first_name: normalizedFirstName, last_name: normalizedLastName });
+      // Попробуем найти с учетом регистра (для обратной совместимости)
+      const allEmployees = await withSqliteRetry(() => db.getAllEmployees());
+      const foundEmployee = allEmployees?.find(emp => 
+        emp.first_name?.toLowerCase().trim() === normalizedFirstName.toLowerCase().trim() &&
+        emp.last_name?.toLowerCase().trim() === normalizedLastName.toLowerCase().trim()
+      );
+      if (foundEmployee) {
+        console.log('✅ Employee found with case-insensitive search:', foundEmployee.id);
+        // Обновляем запрос с найденным сотрудником
+        const user = await withSqliteRetry(() => db.getUserByEmployeeId(foundEmployee.id));
+        if (!user) {
+          console.log('❌ User not found for employee_id:', foundEmployee.id);
+          return res.status(400).json({ error: 'Пользователь не найден' });
+        }
+        
+        const validPassword = await bcrypt.compare(password, user.password);
+        if (!validPassword) {
+          console.log('❌ Invalid password for user:', user.id);
+          return res.status(400).json({ error: 'Неверные учетные данные' });
+        }
+        
+        const token = jwt.sign({ userId: user.id, employee_id: foundEmployee.id, first_name: foundEmployee.first_name, last_name: foundEmployee.last_name, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
+        await withSqliteRetry(() => db.setUserToken(user.id, token));
+        
+        console.log('✅ Login successful:', { userId: user.id, employee_id: foundEmployee.id });
+        
+        res.json({
+          token,
+          user: {
+            id: user.id,
+            employee_id: foundEmployee.id,
+            first_name: foundEmployee.first_name,
+            last_name: foundEmployee.last_name,
+            avatarUrl: user.avatar || foundEmployee.avatar_url || '',
+            role: user.role,
+            department: foundEmployee.department || ''
+          },
+          message: 'Вход выполнен успешно'
+        });
+        return;
+      }
+      return res.status(400).json({ error: 'Сотрудник не найден. Проверьте правильность написания имени и фамилии.' });
     }
     
     // Ищем пользователя по employee_id
     const user = await withSqliteRetry(() => db.getUserByEmployeeId(employee.id));
     if (!user) {
-      return res.status(400).json({ error: 'Пользователь не найден' });
+      console.log('❌ User not found for employee_id:', employee.id);
+      return res.status(400).json({ error: 'Пользователь не найден. Обратитесь к администратору.' });
     }
+    
+    console.log('✅ User found:', { userId: user.id, employee_id: employee.id });
     
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) {
+      console.log('❌ Invalid password for user:', user.id);
       return res.status(400).json({ error: 'Неверные учетные данные' });
     }
     
-    const token = jwt.sign({ userId: user.id, employee_id: employee.id, first_name, last_name, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
+    const token = jwt.sign({ userId: user.id, employee_id: employee.id, first_name: employee.first_name, last_name: employee.last_name, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
     await withSqliteRetry(() => db.setUserToken(user.id, token));
+    
+    console.log('✅ Login successful:', { userId: user.id, employee_id: employee.id });
     
     res.json({
       token,
       user: {
         id: user.id,
         employee_id: employee.id,
-        first_name,
-        last_name,
+        first_name: employee.first_name,
+        last_name: employee.last_name,
         avatarUrl: user.avatar || employee.avatar_url || '',
         role: user.role,
         department: employee.department || ''
