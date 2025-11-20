@@ -1492,6 +1492,34 @@ app.post('/api/register', async (req, res) => {
       return res.status(400).json({ error: 'Пользователь с такими данными уже существует' });
     }
     
+    // Определяем роль пользователя на основе должности и имени
+    let userRole = 'user'; // Дефолтная роль
+    
+    // Нормализуем имена для сравнения (без учета регистра и пробелов)
+    const normalizedFirstName = String(first_name).trim().toLowerCase();
+    const normalizedLastName = String(last_name).trim().toLowerCase();
+    const normalizedDepartment = String(department || '').trim();
+    
+    // Если должность "Системный администратор" и имя "Олег Ксендзик", присваиваем роль admin
+    if (
+      normalizedDepartment === 'системный администратор' &&
+      normalizedFirstName === 'олег' &&
+      normalizedLastName === 'ксендзик'
+    ) {
+      userRole = 'admin';
+      console.log('✅ Автоматически присвоена роль admin для:', first_name, last_name);
+    }
+    // Если должность "HR-менеджер (менеджер по персоналу)", присваиваем роль hr
+    else if (
+      normalizedDepartment === 'hr-менеджер (менеджер по персоналу)' ||
+      normalizedDepartment === 'hr менеджер (менеджер по персоналу)' ||
+      normalizedDepartment.includes('hr-менеджер') ||
+      normalizedDepartment.includes('hr менеджер')
+    ) {
+      userRole = 'hr';
+      console.log('✅ Автоматически присвоена роль hr для:', first_name, last_name);
+    }
+    
     // Создаём пользователя
     let username = `${first_name} ${last_name}`.replace(/\s+/g, ' ').trim();
     
@@ -1516,7 +1544,7 @@ app.post('/api/register', async (req, res) => {
       username = uniqueUsername;
     }
     
-    const userId = await withSqliteRetry(() => db.createUserWithEmployee({ employee_id: employee.id, password, username }));
+    const userId = await withSqliteRetry(() => db.createUserWithEmployee({ employee_id: employee.id, password, username, role: userRole }));
     
     // Получаем роль пользователя
     const user = await withSqliteRetry(() => db.getUserById(userId));
