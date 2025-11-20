@@ -39,7 +39,12 @@ function getAppTitleSettings() {
   try {
     const saved = localStorage.getItem('appTitleSettings');
     if (saved) {
-      return { ...DEFAULT_SETTINGS, ...JSON.parse(saved) };
+      const settings = { ...DEFAULT_SETTINGS, ...JSON.parse(saved) };
+      // Исправление: если avatarImage указывает на изображение снеговика, сбрасываем его
+      if (settings.avatarImage && (settings.avatarImage.includes('Frosty.png') || settings.avatarImage.includes('snowman') || settings.avatarImage === settings.snowmanImage)) {
+        settings.avatarImage = null;
+      }
+      return settings;
     }
   } catch (e) {
     console.error('Error loading app title settings:', e);
@@ -2166,7 +2171,7 @@ export default function AppTitleSettingsMobile({ open, onClose, onOpenMobileSide
                     width: `${settings.avatarWidth || 88}px`,
                     height: `${settings.avatarHeight || 88}px`,
                     borderRadius: '12px',
-                    background: settings.avatarImage ? 'transparent' : '#e3eaf2',
+                    background: (settings.avatarImage && settings.avatarImage.trim() !== '') ? 'transparent' : '#e3eaf2',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -2178,7 +2183,11 @@ export default function AppTitleSettingsMobile({ open, onClose, onOpenMobileSide
                     left: `${settings.avatarPositionX || 0}px`,
                     top: `${settings.avatarPositionY || 0}px`
                   }}>
-                    {settings.avatarImage ? (
+                    {(settings.avatarImage && 
+                      settings.avatarImage.trim() !== '' && 
+                      !settings.avatarImage.includes('Frosty.png') && 
+                      settings.avatarImage !== settings.snowmanImage &&
+                      (!settings.snowmanImages || !settings.snowmanImages.some(img => img.image === settings.avatarImage))) ? (
                       <img
                         src={settings.avatarImage}
                         alt="Аватарка"
