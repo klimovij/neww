@@ -915,6 +915,14 @@ function runPowershell(command) {
 app.get('/api/admin/local-users', authenticateToken, async (req, res) => {
   try {
     if (req.user?.role !== 'admin') return res.status(403).json({ success: false, error: 'Forbidden' });
+    
+    // Проверяем, что мы на Windows системе
+    if (process.platform !== 'win32') {
+      // На Linux/Unix системах возвращаем пустой массив, так как локальные пользователи Windows недоступны
+      console.log('⚠️ /api/admin/local-users: This endpoint is only available on Windows. Server is running on ' + process.platform);
+      return res.json([]);
+    }
+    
     const ps = `
       $result = $null
       try {
