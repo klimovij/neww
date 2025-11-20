@@ -1,5 +1,7 @@
 var sqlite3 = require('sqlite3').verbose();
 var bcrypt = require('bcrypt');
+var https = require('https');
+var http = require('http');
 
 class Database {
   // Публичный метод для комментария к поздравлению
@@ -1994,17 +1996,128 @@ class Database {
     });
   }
 
-    async addWorkTimeLog({ username, event_type, event_time, event_id }) {
+    async addWorkTimeLog({ username, event_type, event_time, event_id, skipGoogleSync = false }) {
       return new Promise((resolve, reject) => {
         this.db.run(
           'INSERT OR IGNORE INTO work_time_logs (username, event_type, event_time, event_id) VALUES (?, ?, ?, ?)',
           [username, event_type, event_time, event_id],
-          function(err) {
-            if (err) reject(err);
-            else resolve(this.lastID);
+          (err) => {
+            if (err) {
+              reject(err);
+              return;
+            }
+            
+            // Отправляем данные на Google сервер асинхронно (не блокируя основную операцию)
+            if (!skipGoogleSync) {
+              this.sendToGoogleServer({ username, event_type, event_time, event_id }).catch(error => {
+                // Логируем ошибку, но не прерываем операцию
+                console.error('⚠️  Ошибка отправки данных на Google сервер:', error.message);
+              });
+            }
+            
+            resolve(this.lastID);
           }
         );
       });
+    }
+    
+    // Функция для отправки данных на Google сервер
+    async sendToGoogleServer({ username, event_type, event_time, event_id }) {
+      const googleServerUrl = process.env.GOOGLE_SERVER_URL;
+      const apiKey = process.env.REMOTE_WORKTIME_API_KEY;
+      
+      // Если не настроен URL Google сервера или API ключ, пропускаем отправку
+      if (!googleServerUrl || !apiKey) {
+        return;
+      }
+      
+      // Проверяем, не на Google сервере ли мы уже (избегаем бесконечного цикла)
+      // Если установлена переменная IS_GOOGLE_SERVER=true, значит мы уже на Google сервере
+      if (process.env.IS_GOOGLE_SERVER === 'true') {
+        return;
+      }
+      
+      // Дополнительная проверка: если GOOGLE_SERVER_URL указывает на localhost или текущий хост
+      try {
+        const url = new URL(googleServerUrl);
+        if (url.hostname === 'localhost' || url.hostname === '127.0.0.1' || url.hostname.includes('0.0.0.0')) {
+          // Вероятно, мы уже на том же сервере
+          return;
+        }
+      } catch (e) {
+        // Игнорируем ошибки парсинга URL
+      }
+      
+      try {
+        const url = new URL(googleServerUrl);
+        const isHttps = url.protocol === 'https:';
+        const httpModule = isHttps ? https : http;
+        
+        const eventData = {
+          username,
+          event_type,
+          event_time,
+          event_id
+        };
+        
+        const postData = JSON.stringify(eventData);
+        
+        // Формируем путь к API (убеждаемся, что он заканчивается на /api/remote-worktime)
+        let apiPath = url.pathname || '/api';
+        if (!apiPath.endsWith('/')) {
+          apiPath += '/';
+        }
+        if (!apiPath.includes('/remote-worktime')) {
+          apiPath += 'remote-worktime';
+        }
+        
+        const options = {
+          hostname: url.hostname,
+          port: url.port || (isHttps ? 443 : 80),
+          path: apiPath,
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Content-Length': Buffer.byteLength(postData),
+            'X-API-Key': apiKey
+          },
+          timeout: 5000 // 5 секунд таймаут
+        };
+        
+        return new Promise((resolve, reject) => {
+          const req = httpModule.request(options, (res) => {
+            let data = '';
+            
+            res.on('data', (chunk) => {
+              data += chunk;
+            });
+            
+            res.on('end', () => {
+              if (res.statusCode >= 200 && res.statusCode < 300) {
+                console.log(`✅ Данные отправлены на Google сервер: ${username} - ${event_type} - ${event_time}`);
+                resolve(data);
+              } else {
+                reject(new Error(`HTTP ${res.statusCode}: ${data}`));
+              }
+            });
+          });
+          
+          req.on('error', (error) => {
+            reject(error);
+          });
+          
+          req.on('timeout', () => {
+            req.destroy();
+            reject(new Error('Request timeout'));
+          });
+          
+          req.write(postData);
+          req.end();
+        });
+      } catch (error) {
+        // Игнорируем ошибки отправки, чтобы не блокировать основную операцию
+        throw error;
+      }
     }
 
     async getWorkTimeLogs({ start, end, username }) {

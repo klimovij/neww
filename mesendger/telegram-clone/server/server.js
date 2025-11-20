@@ -501,9 +501,11 @@ app.delete('/api/custom-emoji/:file', authenticateToken, async (req, res) => {
 try {
   const quickCsvReportRouter = require('./routes/quickCsvReport');
   const congratulationsRouter = require('./routes/congratulations');
+  const remoteWorktimeRouter = require('./routes/remoteWorktime');
   // Подключаем importWorktimeCsvRoutes первым, чтобы избежать конфликта с quickCsvReportRouter
   app.use('/api', importWorktimeCsvRoutes);
   app.use('/api', quickCsvReportRouter);
+  app.use('/api', remoteWorktimeRouter);
   app.use('/api/congratulations', congratulationsRouter);
 } catch (e) {
   console.log('⚠️ quickCsvReportRouter not found, skipping...');
