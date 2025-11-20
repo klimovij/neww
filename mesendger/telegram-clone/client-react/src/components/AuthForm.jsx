@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
+import { FiEye, FiEyeOff } from 'react-icons/fi';
 
 const Wrapper = styled.div`
   min-height: 100vh;
@@ -79,6 +80,40 @@ const AvatarPreview = styled.img`
   box-shadow: 0 2px 12px #2193b044;
 `;
 
+const PasswordWrapper = styled.div`
+  position: relative;
+  width: 100%;
+  margin-bottom: 16px;
+`;
+
+const PasswordInput = styled(Input)`
+  padding-right: 45px;
+`;
+
+const EyeIcon = styled.button`
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #666;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  transition: color 0.2s;
+  
+  &:hover {
+    color: #2193b0;
+  }
+  
+  &:focus {
+    outline: none;
+  }
+`;
+
 export default function AuthForm() {
   const [mode, setMode] = useState('login');
   const [form, setForm] = useState({
@@ -93,6 +128,7 @@ export default function AuthForm() {
   });
   const [avatarPreview, setAvatarPreview] = useState(null);
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleChange = e => {
     const { name, value, files } = e.target;
@@ -196,7 +232,23 @@ export default function AuthForm() {
         <form onSubmit={handleSubmit}>
           <Input name="first_name" placeholder="Имя" value={form.first_name} onChange={handleChange} autoFocus required />
           <Input name="last_name" placeholder="Фамилия" value={form.last_name} onChange={handleChange} required />
-          <Input name="password" type="password" placeholder="Пароль" value={form.password} onChange={handleChange} required />
+          <PasswordWrapper>
+            <PasswordInput
+              name="password"
+              type={showPassword ? 'text' : 'password'}
+              placeholder="Пароль"
+              value={form.password}
+              onChange={handleChange}
+              required
+            />
+            <EyeIcon
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              aria-label={showPassword ? 'Скрыть пароль' : 'Показать пароль'}
+            >
+              {showPassword ? <FiEyeOff size={20} /> : <FiEye size={20} />}
+            </EyeIcon>
+          </PasswordWrapper>
           {mode === 'register' && (
             <>
               <Input name="birth_day" type="number" min="1" max="31" placeholder="День рождения" value={form.birth_day} onChange={handleChange} required />
