@@ -635,7 +635,7 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
                         {item.username}
                       </span>
                       <span style={{ color: '#43e97b', fontWeight: 600 }}>
-                        {item.totalActiveMinutes} мин актив / {item.totalIdleMinutes} мин idle
+                        {item.totalActiveMinutes} мин активно / {item.totalIdleMinutes} мин простоя
                       </span>
                     </div>
                     {item.topApps && item.topApps.length > 0 && (
