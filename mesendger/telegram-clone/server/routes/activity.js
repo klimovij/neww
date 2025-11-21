@@ -117,7 +117,23 @@ router.get('/activity-summary', async (req, res) => {
       bucket.apps[proc] = (bucket.apps[proc] || 0) + 1;
     }
 
-    // Приводим к массиву и добавляем topApps
+    // Подтягиваем ФИО из таблицы users, чтобы в отчётах видеть русские имена
+    const usernames = Object.keys(perUser);
+    const fioByUsername = {};
+
+    for (const u of usernames) {
+      try {
+        const userRow = await db.getUserByUsername(u);
+        if (userRow && userRow.fio) {
+          fioByUsername[u] = userRow.fio;
+        }
+      } catch (e) {
+        // Не падаем, если что-то пошло не так с конкретным пользователем
+        console.error('Ошибка при получении ФИО для пользователя', u, e);
+      }
+    }
+
+    // Приводим к массиву и добавляем topApps + fio
     const summary = Object.values(perUser).map((u) => {
       const appsArray = Object.entries(u.apps)
         .sort((a, b) => b[1] - a[1])
@@ -126,6 +142,7 @@ router.get('/activity-summary', async (req, res) => {
 
       return {
         username: u.username,
+        fio: fioByUsername[u.username] || null,
         totalActiveMinutes: u.totalActiveMinutes,
         totalIdleMinutes: u.totalIdleMinutes,
         topApps: appsArray,

@@ -620,7 +620,10 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
                 </div>
               )}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {activitySummary.map((item, idx) => (
+                {activitySummary.map((item, idx) => {
+                  const displayName =
+                    item.fio && !item.fio.includes('?') ? item.fio : item.username;
+                  return (
                   <div
                     key={idx}
                     style={{
@@ -632,7 +635,7 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
                       <span style={{ color: '#ffe082', fontWeight: 600 }}>
-                        {item.username}
+                        {displayName}
                       </span>
                       <span style={{ color: '#43e97b', fontWeight: 600 }}>
                         {item.totalActiveMinutes} мин активно / {item.totalIdleMinutes} мин простоя
@@ -647,7 +650,7 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
                       </div>
                     )}
                   </div>
-                ))}
+                )})}
               </div>
             </div>
           )}
