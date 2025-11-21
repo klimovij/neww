@@ -71,7 +71,7 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
   });
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [detailsModal, setDetailsModal] = useState({ open: false, logs: [], username: '' });
+  const [detailsModal, setDetailsModal] = useState({ open: false, logs: [], username: '', activityStats: null });
   const [importing, setImporting] = useState(false);
   const [importOk, setImportOk] = useState(null);
   const [showAppUsage, setShowAppUsage] = useState(false);
@@ -708,10 +708,14 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
+                        const statsForUser = activitySummary.find(
+                          (s) => s.username === row.username
+                        ) || null;
                         setDetailsModal({
                           open: true,
                           logs: row.sessions || row.logs || [],
                           username: displayName,
+                          activityStats: statsForUser,
                         });
                       }}
                       style={{
@@ -784,9 +788,10 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
         {isMobile ? (
           <UserWorkTimeDetailsMobile
             open={detailsModal.open}
-            onClose={() => setDetailsModal({ open: false, logs: [], username: '' })}
+            onClose={() => setDetailsModal({ open: false, logs: [], username: '', activityStats: null })}
             logs={detailsModal.logs}
             username={detailsModal.username}
+            activityStats={detailsModal.activityStats}
             onOpenMobileSidebar={() => {
               // Не открываем сайдбар, так как мы уже внутри модалки
             }}
@@ -794,9 +799,10 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
         ) : (
           <UserWorkTimeDetailsModal
             isOpen={detailsModal.open}
-            onRequestClose={() => setDetailsModal({ open: false, logs: [], username: '' })}
+            onRequestClose={() => setDetailsModal({ open: false, logs: [], username: '', activityStats: null })}
             logs={detailsModal.logs}
             username={detailsModal.username}
+            activityStats={detailsModal.activityStats}
           />
         )}
         {isMobile ? (

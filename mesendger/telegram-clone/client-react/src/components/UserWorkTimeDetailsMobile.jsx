@@ -9,7 +9,14 @@ function formatTime(dtStr) {
   return `${d.toLocaleDateString('ru-RU')}, ${d.toLocaleTimeString('ru-RU')}`;
 }
 
-export default function UserWorkTimeDetailsMobile({ open, onClose, logs, username, onOpenMobileSidebar }) {
+export default function UserWorkTimeDetailsMobile({
+  open,
+  onClose,
+  logs,
+  username,
+  activityStats,
+  onOpenMobileSidebar,
+}) {
   const touchStartX = useRef(null);
   const touchEndX = useRef(null);
   const modalRef = useRef(null);
@@ -277,6 +284,25 @@ export default function UserWorkTimeDetailsMobile({ open, onClose, logs, usernam
                     {sortedLogs.filter(l => l.event_type === 'logout').length}
                   </span>
                 </div>
+                {activityStats && (
+                  <>
+                    <div style={{ height: 1, background: 'rgba(255,255,255,0.1)', margin: '8px 0' }} />
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
+                      <span style={{ color: 'rgba(255, 255, 255, 0.6)' }}>Активность за период:</span>
+                      <span style={{ color: '#43e97b', fontWeight: 600 }}>
+                        {activityStats.totalActiveMinutes} мин активно / {activityStats.totalIdleMinutes} мин простоя
+                      </span>
+                    </div>
+                    {activityStats.topApps && activityStats.topApps.length > 0 && (
+                      <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.7)' }}>
+                        Топ приложений:{' '}
+                        {activityStats.topApps
+                          .map(app => `${app.name || 'unknown'} (${app.minutes} мин)`)
+                          .join(', ')}
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
             </div>
           )}
