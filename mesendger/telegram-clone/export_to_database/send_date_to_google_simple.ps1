@@ -186,26 +186,29 @@ try {
 
     Write-Host "Events to send: $($events.Count)" -ForegroundColor Green
 
-    $apiUrl = "$GOOGLE_SERVER_URL/api/remote-worktime-batch"
-    $headers = @{
-        "X-API-Key"   = $REMOTE_WORKTIME_API_KEY
-        "Content-Type" = "application/json"
-    }
+           $apiUrl = "$GOOGLE_SERVER_URL/api/remote-worktime-batch"
+           $headers = @{
+               "X-API-Key"   = $REMOTE_WORKTIME_API_KEY
+               "Content-Type" = "application/json; charset=utf-8"
+           }
 
-    $eventsArray = @()
-    foreach ($e in $events) {
-        $eventsArray += @{
-            username   = $e.username
-            event_type = $e.event_type
-            event_time = $e.event_time
-            event_id   = $e.event_id
-        }
-    }
+           $eventsArray = @()
+           foreach ($e in $events) {
+               $eventsArray += @{
+                   username   = $e.username
+                   event_type = $e.event_type
+                   event_time = $e.event_time
+                   event_id   = $e.event_id
+               }
+           }
 
-    $body = @{ events = $eventsArray } | ConvertTo-Json -Depth 10
+           # Явно кодируем тело запроса в UTF-8, чтобы русские имена не превращались в вопросительные знаки на сервере
+           $bodyObject = @{ events = $eventsArray }
+           $bodyJson   = $bodyObject | ConvertTo-Json -Depth 10
+           $bodyBytes  = [System.Text.Encoding]::UTF8.GetBytes($bodyJson)
 
-    Write-Host "Sending to $apiUrl ..." -ForegroundColor Yellow
-    $resp = Invoke-RestMethod -Uri $apiUrl -Method POST -Headers $headers -Body $body -TimeoutSec 30
+           Write-Host "Sending to $apiUrl ..." -ForegroundColor Yellow
+           $resp = Invoke-RestMethod -Uri $apiUrl -Method POST -Headers $headers -Body $bodyBytes -TimeoutSec 30
 
     Write-Host "Server response:" -ForegroundColor Cyan
     $resp | ConvertTo-Json -Depth 5 | Write-Host

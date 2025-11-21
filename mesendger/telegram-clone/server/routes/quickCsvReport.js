@@ -41,6 +41,20 @@ async function getDbShortReport({ start, end, username }) {
   for (const [user, sessions] of Object.entries(userMap)) {
     if (!user || !sessions.length) continue;
     
+    // Пытаемся обогатить данные ФИО из таблицы users
+    // Это позволяет исправить ситуации, когда в work_time_logs имя хранится битым (????),
+    // но в users.fio оно сохранено корректно.
+    let displayName = user;
+    try {
+      const userRow = await db.getUserByUsername(user);
+      if (userRow) {
+        displayName = userRow.fio || userRow.username || user;
+      }
+    } catch (e) {
+      // В случае ошибки просто используем исходное значение user
+      displayName = user;
+    }
+    
     sessions.sort((a, b) => new Date(a.event_time) - new Date(b.event_time));
     
     // Только события в пределах дня
@@ -59,7 +73,8 @@ async function getDbShortReport({ start, end, username }) {
     }
     
     report.push({
-      fio: user,
+      // fio берём из users.fio, если есть, иначе используем username из логов
+      fio: displayName,
       firstLogin: firstLogin ? firstLogin.event_time : '',
       lastLogout: lastLogout ? lastLogout.event_time : '',
       totalHours: firstLogin && lastLogout ? 

@@ -2157,6 +2157,64 @@ class Database {
       });
     }
 
+    // ======== АКТИВНОСТЬ ПОЛЬЗОВАТЕЛЕЙ (activity_logs) ========
+
+    async addActivityLogsBatch(events) {
+      if (!Array.isArray(events) || events.length === 0) return 0;
+
+      return new Promise((resolve, reject) => {
+        this.db.serialize(() => {
+          this.db.run('BEGIN TRANSACTION');
+
+          const stmt = this.db.prepare(
+            `INSERT INTO activity_logs
+              (username, timestamp, idle_minutes, proc_name, window_title)
+             VALUES (?, ?, ?, ?, ?)`
+          );
+
+          for (const ev of events) {
+            stmt.run(
+              ev.username,
+              ev.timestamp,
+              typeof ev.idleMinutes === 'number' ? ev.idleMinutes : 0,
+              ev.procName || '',
+              ev.windowTitle || ''
+            );
+          }
+
+          stmt.finalize((err) => {
+            if (err) {
+              this.db.run('ROLLBACK');
+              return reject(err);
+            }
+            this.db.run('COMMIT', (err2) => {
+              if (err2) return reject(err2);
+              resolve(events.length);
+            });
+          });
+        });
+      });
+    }
+
+    async getActivityLogsBetween({ start, end }) {
+      return new Promise((resolve, reject) => {
+        let query = 'SELECT * FROM activity_logs WHERE 1=1';
+        const params = [];
+
+        if (start && end) {
+          query +=
+            ' AND date(timestamp) >= ? AND date(timestamp) <= ?';
+          params.push(start);
+          params.push(end);
+        }
+
+        this.db.all(query, params, (err, rows) => {
+          if (err) reject(err);
+          else resolve(rows || []);
+        });
+      });
+    }
+
   // ==================== МЕТОДЫ ДЛЯ ИНИЦИАЛИЗАЦИИ БАЗЫ ДАННЫХ ====================
 
   init() {
@@ -2174,6 +2232,19 @@ class Database {
           employee_id INTEGER,
           token TEXT DEFAULT '',
           department TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+
+      // Таблица логов активности пользователей
+      this.db.run(`
+        CREATE TABLE IF NOT EXISTS activity_logs (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          username TEXT NOT NULL,
+          timestamp TEXT NOT NULL,
+          idle_minutes INTEGER DEFAULT 0,
+          proc_name TEXT DEFAULT '',
+          window_title TEXT DEFAULT '',
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )
       `);

@@ -3,17 +3,44 @@
 
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
+# Параметры скрипта:
+#   -ServerUrl: URL вашего Google сервера
+#   -ApiKey: API ключ для аутентификации (получите у администратора)
+#   -StartDate: Начальная дата в формате YYYY-MM-DD (если не указана, берется вчерашний день)
+#   -EndDate: Конечная дата в формате YYYY-MM-DD (если не указана, берется вчерашний день)
+#   -DaysBack: Количество дней назад для импорта (по умолчанию 1 - вчерашний день)
+#   -Auto: Автоматический режим (без запросов пользователя)
 param(
-    [string]$ServerUrl = "https://your-google-server.com/api",  # URL вашего Google сервера
-    [string]$ApiKey = "",  # API ключ для аутентификации (получите у администратора)
-    [string]$StartDate = "",  # Начальная дата в формате YYYY-MM-DD (если не указана, берется вчерашний день)
-    [string]$EndDate = "",  # Конечная дата в формате YYYY-MM-DD (если не указана, берется вчерашний день)
-    [int]$DaysBack = 1,  # Количество дней назад для импорта (по умолчанию 1 - вчерашний день)
-    [switch]$Auto  # Автоматический режим (без запросов пользователя)
+    [Parameter()]
+    [string]$ServerUrl,
+    [Parameter()]
+    [string]$ApiKey,
+    [Parameter()]
+    [string]$StartDate,
+    [Parameter()]
+    [string]$EndDate,
+    [Parameter()]
+    [int]$DaysBack = 1,
+    [Parameter()]
+    [switch]$Auto
 )
 
 # Настройки
 $ErrorActionPreference = "Continue"
+
+# Инициализация параметров со значениями по умолчанию
+if (-not $ServerUrl) {
+    $ServerUrl = "https://your-google-server.com/api"
+}
+if (-not $ApiKey) {
+    $ApiKey = ""
+}
+if (-not $StartDate) {
+    $StartDate = ""
+}
+if (-not $EndDate) {
+    $EndDate = ""
+}
 
 # Функция для логирования
 function Write-Log {
@@ -60,7 +87,7 @@ function Normalize-Username {
     if (-not $RawUsername) { return "" }
     $username = $RawUsername.Trim()
     # Убираем кавычки
-    $username = $username -replace '^"|"$', ''
+    $username = $username -replace '^"', '' -replace '"$', ''
     # Убираем домен (DOMAIN\user -> user)
     if ($username -like '*\*') {
         $username = $username.Split('\')[-1]
@@ -88,7 +115,7 @@ function Test-ServerConnection {
             'X-API-Key' = $ApiKey
             'Content-Type' = 'application/json'
         }
-        $response = Invoke-RestMethod -Uri "$ServerUrl/remote-worktime-health" -Method GET -Headers $headers -TimeoutSec 10
+        $null = Invoke-RestMethod -Uri "$ServerUrl/remote-worktime-health" -Method GET -Headers $headers -TimeoutSec 10
         return $true
     } catch {
         return $false
@@ -166,8 +193,6 @@ try {
         'X-API-Key' = $ApiKey
         'Content-Type' = 'application/json; charset=utf-8'
     }
-    
-    $body = $eventsToSend | ConvertTo-Json -Depth 3 -Compress
     
     # Для больших объемов данных можно разбить на пакеты
     $batchSize = 100

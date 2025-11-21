@@ -56,6 +56,9 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
   const [usersList, setUsersList] = useState([]);
   const [userOptions, setUserOptions] = useState([]);
   const [showAutocomplete, setShowAutocomplete] = useState(false);
+  const [activitySummary, setActivitySummary] = useState([]);
+  const [activityLoading, setActivityLoading] = useState(false);
+  const [activityError, setActivityError] = useState('');
   const [startDate, setStartDate] = useState(() => {
     const d = new Date();
     d.setDate(d.getDate() - 1);
@@ -144,6 +147,29 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
       setImportOk(false);
     }
     setImporting(false);
+  };
+
+  const loadActivitySummary = async () => {
+    if (!startDate || !endDate) return;
+    setActivityLoading(true);
+    setActivityError('');
+    try {
+      const params = new URLSearchParams({
+        start: startDate,
+        end: endDate,
+      });
+      const res = await fetch(`/api/activity-summary?${params.toString()}`);
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Ошибка загрузки отчёта активности');
+      }
+      setActivitySummary(Array.isArray(data.summary) ? data.summary : []);
+    } catch (e) {
+      console.error('Ошибка загрузки activity-summary', e);
+      setActivityError(e.message || 'Не удалось получить отчёт активности');
+      setActivitySummary([]);
+    }
+    setActivityLoading(false);
   };
 
   // Фильтрация строк таблицы
@@ -541,21 +567,21 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
               </button>
 
               <button
-                onClick={triggerYesterdayImport}
-                disabled={importing}
+                onClick={loadActivitySummary}
+                disabled={activityLoading}
                 style={{
                   flex: 1,
                   padding: '14px',
                   borderRadius: '12px',
                   border: '2px solid rgba(56, 217, 169, 0.3)',
-                  background: importing
+                  background: activityLoading
                     ? 'rgba(56, 217, 169, 0.3)'
                     : 'rgba(56, 217, 169, 0.15)',
                   color: '#38d9a9',
-                  cursor: importing ? 'not-allowed' : 'pointer',
+                  cursor: activityLoading ? 'not-allowed' : 'pointer',
                   fontWeight: 600,
                   fontSize: '15px',
-                  opacity: importing ? 0.6 : 1,
+                  opacity: activityLoading ? 0.6 : 1,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -563,7 +589,7 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
                   position: 'relative',
                 }}
               >
-                {importing ? (
+                {activityLoading ? (
                   <>
                     <span style={{
                       width: '16px',
@@ -573,25 +599,58 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
                       borderRadius: '50%',
                       animation: 'spin 0.6s linear infinite',
                     }} />
-                    Получение...
+                    Отчёт активности...
                   </>
                 ) : (
-                  'Получить данные'
+                  'Отчёт активности'
                 )}
-                <div
-                  title={importOk === true ? 'Импорт успешен' : importOk === false ? 'Импорт не выполнен' : 'Статус импорта неизвестен'}
-                  style={{
-                    position: 'absolute',
-                    right: '12px',
-                    width: '10px',
-                    height: '10px',
-                    borderRadius: '50%',
-                    background: importOk === true ? '#43e97b' : importOk === false ? '#e74c3c' : '#95a5a6',
-                  }}
-                />
               </button>
             </div>
           </div>
+
+          {/* Отчёт активности по всем сотрудникам */}
+          {activitySummary && activitySummary.length > 0 && (
+            <div style={{ marginBottom: '20px', marginTop: '10px' }}>
+              <h3 style={{ color: '#ffe082', fontSize: '15px', marginBottom: '8px' }}>
+                Отчёт активности (все сотрудники)
+              </h3>
+              {activityError && (
+                <div style={{ color: '#e74c3c', marginBottom: '8px', fontSize: '13px' }}>
+                  {activityError}
+                </div>
+              )}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {activitySummary.map((item, idx) => (
+                  <div
+                    key={idx}
+                    style={{
+                      background: 'rgba(255, 255, 255, 0.03)',
+                      borderRadius: '10px',
+                      padding: '10px 12px',
+                      border: '1px solid rgba(56, 217, 169, 0.25)',
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                      <span style={{ color: '#ffe082', fontWeight: 600 }}>
+                        {item.username}
+                      </span>
+                      <span style={{ color: '#43e97b', fontWeight: 600 }}>
+                        {item.totalActiveMinutes} мин актив / {item.totalIdleMinutes} мин idle
+                      </span>
+                    </div>
+                    {item.topApps && item.topApps.length > 0 && (
+                      <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.7)' }}>
+                        Топ приложений:{' '}
+                        {item.topApps
+                          .map(app => `${app.name || 'unknown'} (${app.minutes} мин)`)
+                          .join(', ')}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Результаты */}
           {loading ? (

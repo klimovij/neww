@@ -497,18 +497,20 @@ app.delete('/api/custom-emoji/:file', authenticateToken, async (req, res) => {
 });
 
 // ==================== API МАРШРУТЫ ====================
-// --- ОТЧЁТЫ ПО РАБОЧЕМУ ВРЕМЕНИ ---
+// --- ОТЧЁТЫ ПО РАБОЧЕМУ ВРЕМЕНИ И АКТИВНОСТИ ---
 try {
   const quickCsvReportRouter = require('./routes/quickCsvReport');
   const congratulationsRouter = require('./routes/congratulations');
   const remoteWorktimeRouter = require('./routes/remoteWorktime');
+  const activityRouter = require('./routes/activity');
   // Подключаем importWorktimeCsvRoutes первым, чтобы избежать конфликта с quickCsvReportRouter
   app.use('/api', importWorktimeCsvRoutes);
   app.use('/api', quickCsvReportRouter);
   app.use('/api', remoteWorktimeRouter);
+  app.use('/api', activityRouter);
   app.use('/api/congratulations', congratulationsRouter);
 } catch (e) {
-  console.log('⚠️ quickCsvReportRouter not found, skipping...');
+  console.log('⚠️ quickCsvReportRouter or related routes not found, skipping...', e.message);
 }
 
 // === ДОКУМЕНТЫ: таблица и маршруты ===
