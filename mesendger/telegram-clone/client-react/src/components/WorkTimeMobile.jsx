@@ -99,10 +99,13 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
             if (selectedUser) url += `&username=${encodeURIComponent(selectedUser)}`;
             const res = await fetch(url);
             const data = await res.json();
-            console.log('Данные из quick-db-report (автозагрузка):', data);
+            console.log('📊 [WorkTimeMobile] Данные из quick-db-report (автозагрузка):', data);
             if (data.report && data.report.length > 0) {
-              console.log('Первый элемент отчёта:', data.report[0]);
-              console.log('FIO:', data.report[0].fio, 'Username:', data.report[0].username);
+              console.log('📊 [WorkTimeMobile] Первый элемент отчёта:', JSON.stringify(data.report[0], null, 2));
+              console.log('📊 [WorkTimeMobile] FIO:', data.report[0].fio, 'Username:', data.report[0].username);
+              console.log('📊 [WorkTimeMobile] Sessions:', data.report[0].sessions?.length || 0, 'sessions');
+            } else {
+              console.warn('⚠️ [WorkTimeMobile] Нет данных в отчёте!', data);
             }
             setLogs(Array.isArray(data.report) ? data.report : []);
           } catch {
@@ -147,10 +150,12 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
       if (selectedUser) url += `&username=${encodeURIComponent(selectedUser)}`;
       const res = await fetch(url);
       const data = await res.json();
-      console.log('Данные из quick-db-report:', data);
+      console.log('📊 [WorkTimeMobile] Данные из quick-db-report:', data);
       if (data.report && data.report.length > 0) {
-        console.log('Первый элемент отчёта:', data.report[0]);
-        console.log('FIO:', data.report[0].fio, 'Username:', data.report[0].username, 'Sessions:', data.report[0].sessions);
+        console.log('📊 [WorkTimeMobile] Первый элемент отчёта:', JSON.stringify(data.report[0], null, 2));
+        console.log('📊 [WorkTimeMobile] FIO:', data.report[0].fio, 'Username:', data.report[0].username, 'Sessions:', data.report[0].sessions?.length || 0);
+      } else {
+        console.warn('⚠️ [WorkTimeMobile] Нет данных в отчёте!', data);
       }
       setLogs(Array.isArray(data.report) ? data.report : []);
     } catch {
@@ -627,6 +632,8 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
                     const displayName =
                       row.fio && !row.fio.includes('?') && row.fio.trim() ? row.fio : (row.username || 'Неизвестный');
 
+                    console.log('🔍 [WorkTimeMobile] Рендер строки:', { displayName, fio: row.fio, username: row.username, hasSessions: !!row.sessions });
+
                     return (
                   <div style={{
                     display: 'flex',
@@ -645,9 +652,14 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
                     <button
                       type="button"
                       onClick={async (e) => {
+                        e.preventDefault();
                         e.stopPropagation();
-                        console.log('Кнопка "Подробнее" нажата для:', displayName, 'Row:', row);
-                        console.log('Row sessions:', row.sessions, 'Row logs:', row.logs, 'Row username:', row.username);
+                        console.log('🔘 [WorkTimeMobile] Кнопка "Подробнее" нажата!');
+                        console.log('🔘 [WorkTimeMobile] DisplayName:', displayName);
+                        console.log('🔘 [WorkTimeMobile] Row:', JSON.stringify(row, null, 2));
+                        console.log('🔘 [WorkTimeMobile] Row sessions:', row.sessions?.length || 0, 'items');
+                        console.log('🔘 [WorkTimeMobile] Row logs:', row.logs?.length || 0, 'items');
+                        console.log('🔘 [WorkTimeMobile] Row username:', row.username);
                         // Загружаем отчет активности для конкретного пользователя
                         let userActivityStats = null;
                         try {
@@ -667,14 +679,17 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
                           console.error('Ошибка загрузки активности для пользователя', err);
                         }
                         const logsToShow = row.sessions || row.logs || [];
-                        console.log('Открываем модалку с logs:', logsToShow, 'username:', displayName);
-                        setDetailsModal({
+                        console.log('🔘 [WorkTimeMobile] Открываем модалку с logs:', logsToShow.length, 'items, username:', displayName);
+                        console.log('🔘 [WorkTimeMobile] ActivityStats:', userActivityStats);
+                        const newModalState = {
                           open: true,
                           logs: logsToShow,
                           username: displayName,
                           activityStats: userActivityStats,
-                        });
-                        console.log('Модалка должна открыться. detailsModal установлен.');
+                        };
+                        console.log('🔘 [WorkTimeMobile] Новое состояние модалки:', newModalState);
+                        setDetailsModal(newModalState);
+                        console.log('✅ [WorkTimeMobile] Модалка должна открыться. detailsModal установлен.');
                       }}
                       style={{
                         padding: '8px 14px',
