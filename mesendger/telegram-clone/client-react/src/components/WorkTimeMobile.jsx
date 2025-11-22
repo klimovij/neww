@@ -646,6 +646,8 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
                       type="button"
                       onClick={async (e) => {
                         e.stopPropagation();
+                        console.log('Кнопка "Подробнее" нажата для:', displayName, 'Row:', row);
+                        console.log('Row sessions:', row.sessions, 'Row logs:', row.logs, 'Row username:', row.username);
                         // Загружаем отчет активности для конкретного пользователя
                         let userActivityStats = null;
                         try {
@@ -659,16 +661,20 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
                             userActivityStats = data.summary.find(
                               (s) => s.username === row.username
                             ) || null;
+                            console.log('Activity stats для пользователя:', userActivityStats);
                           }
                         } catch (err) {
                           console.error('Ошибка загрузки активности для пользователя', err);
                         }
+                        const logsToShow = row.sessions || row.logs || [];
+                        console.log('Открываем модалку с logs:', logsToShow, 'username:', displayName);
                         setDetailsModal({
                           open: true,
-                          logs: row.sessions || row.logs || [],
+                          logs: logsToShow,
                           username: displayName,
                           activityStats: userActivityStats,
                         });
+                        console.log('Модалка должна открыться. detailsModal установлен.');
                       }}
                       style={{
                         padding: '8px 14px',
