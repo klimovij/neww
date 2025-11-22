@@ -582,6 +582,7 @@ try {
         $errorDetails | Out-File -FilePath $StartupLogFile -Append -Encoding UTF8
         Start-Sleep -Seconds 60
     }
+    }  # Закрытие цикла while ($true)
 } catch {
     # Критическая ошибка, которая может завершить скрипт
     $criticalError = "[$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')] CRITICAL ERROR - Agent will exit: $($_.Exception.Message)"
