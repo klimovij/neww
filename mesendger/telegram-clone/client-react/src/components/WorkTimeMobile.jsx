@@ -754,15 +754,23 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
                             endDate: endDate,
                           };
                           
-                          console.log('🚀 [WorkTimeMobile] Открываем модалку:', {
-                            ...newModalState,
+                          console.log('🚀 [WorkTimeMobile] Открываем модалку с данными:', {
+                            open: true,
+                            logsCount: logsToShow.length,
+                            username: displayName,
+                            activityStats: userActivityStats ? 'present' : 'null',
                             urlsCount: urls?.length || 0,
                             screenshotsCount: screenshots?.length || 0,
+                            startDate,
+                            endDate,
                             urlsPreview: urls?.slice(0, 2),
-                            screenshotsPreview: screenshots?.slice(0, 2)
+                            screenshotsPreview: screenshots?.slice(0, 2),
+                            fullUrls: urls,
+                            fullScreenshots: screenshots
                           });
                           setDetailsModal(newModalState);
-                          console.log('✅ [WorkTimeMobile] Модалка открыта! urls:', urls?.length || 0, 'screenshots:', screenshots?.length || 0);
+                          console.log('✅ [WorkTimeMobile] setDetailsModal вызван! urls:', urls?.length || 0, 'screenshots:', screenshots?.length || 0);
+                          console.log('✅ [WorkTimeMobile] Содержимое newModalState:', JSON.stringify(newModalState, null, 2));
                         })();
                       }}
                       style={{

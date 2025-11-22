@@ -62,6 +62,16 @@ export default function UserWorkTimeDetailsMobile({
   console.log('[UserWorkTimeDetailsMobile] Компонент рендерится, open =', open, 'logs:', logs?.length || 0, 'username:', username);
   console.log('[UserWorkTimeDetailsMobile] URLs:', urls?.length || 0, urls);
   console.log('[UserWorkTimeDetailsMobile] Screenshots:', screenshots?.length || 0, screenshots);
+  console.log('[UserWorkTimeDetailsMobile] Полные props:', {
+    open,
+    logsCount: logs?.length || 0,
+    username,
+    urlsCount: urls?.length || 0,
+    screenshotsCount: screenshots?.length || 0,
+    startDate,
+    endDate,
+    hasActivityStats: !!activityStats
+  });
 
   if (!open) {
     console.log('[UserWorkTimeDetailsMobile] Модалка закрыта, возвращаем null');
