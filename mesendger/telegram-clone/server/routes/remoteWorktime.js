@@ -8,9 +8,12 @@ const REMOTE_WORKTIME_API_KEY = 'BsKFpZmdp6ocPKUD6g6YxTgMSTZEaPZXkbddxsifERA=';
 
 // Middleware для проверки API ключа
 const authenticateRemoteRequest = (req, res, next) => {
-  const apiKey = req.headers['x-api-key'] || req.query.apiKey;
+  // Проверяем заголовок в разных регистрах (HTTP заголовки case-insensitive, но Express приводит к нижнему регистру)
+  const apiKey = req.headers['x-api-key'] || req.headers['X-API-Key'] || req.query.apiKey;
   
+  // Логируем для отладки (только если ключ не совпадает)
   if (!apiKey) {
+    console.log('[REMOTE-WORKTIME] No API key provided. Headers:', Object.keys(req.headers).filter(k => k.toLowerCase().includes('api')));
     return res.status(401).json({ 
       success: false, 
       error: 'API key required. Provide it in header: X-API-Key or query parameter: apiKey' 
@@ -18,6 +21,7 @@ const authenticateRemoteRequest = (req, res, next) => {
   }
   
   if (apiKey !== REMOTE_WORKTIME_API_KEY) {
+    console.log(`[REMOTE-WORKTIME] Invalid API key. Expected: ${REMOTE_WORKTIME_API_KEY.substring(0, 10)}..., Received: ${apiKey.substring(0, 10)}...`);
     return res.status(403).json({ 
       success: false, 
       error: 'Invalid API key' 

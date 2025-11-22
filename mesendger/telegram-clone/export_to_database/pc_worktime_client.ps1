@@ -59,13 +59,22 @@ $logFile = Join-Path $PSScriptRoot "pc_worktime_log.txt"
 
 try {
     $body = @{ events = @($event) } | ConvertTo-Json -Depth 5
-    "[$((Get-Date).ToString("u"))] Sending $EventType ($workEventType) for $($event.username) : $body" | Out-File -FilePath $logFile -Append -Encoding UTF8
+    "[$((Get-Date).ToString("u"))] Sending $EventType ($workEventType) for $($event.username)" | Out-File -FilePath $logFile -Append -Encoding UTF8
+    "[$((Get-Date).ToString("u"))] URL: $apiUrl" | Out-File -FilePath $logFile -Append -Encoding UTF8
+    "[$((Get-Date).ToString("u"))] API Key (first 10 chars): $($REMOTE_WORKTIME_API_KEY.Substring(0, [Math]::Min(10, $REMOTE_WORKTIME_API_KEY.Length)))..." | Out-File -FilePath $logFile -Append -Encoding UTF8
+    "[$((Get-Date).ToString("u"))] Body: $body" | Out-File -FilePath $logFile -Append -Encoding UTF8
 
     $response = Invoke-RestMethod -Uri $apiUrl -Method POST -Headers $headers -Body $body -TimeoutSec 15
 
     "[$((Get-Date).ToString("u"))] RESPONSE: $($response | ConvertTo-Json -Depth 5)" | Out-File -FilePath $logFile -Append -Encoding UTF8
 }
 catch {
-    "[$((Get-Date).ToString("u"))] ERROR: $($_.Exception.Message)" | Out-File -FilePath $logFile -Append -Encoding UTF8
+    $errorMsg = $_.Exception.Message
+    if ($_.ErrorDetails.Message) {
+        $errorMsg += " | Details: $($_.ErrorDetails.Message)"
+    }
+    "[$((Get-Date).ToString("u"))] ERROR: $errorMsg" | Out-File -FilePath $logFile -Append -Encoding UTF8
+    # Выводим также в консоль для отладки
+    Write-Host "❌ Error: $errorMsg" -ForegroundColor Red
 }
 
