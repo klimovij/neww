@@ -111,6 +111,24 @@ router.post('/activity-log-batch', authenticateActivityRequest, async (req, res)
         browserUrl: (e.browserUrl || e.url || '').toString().slice(0, 512),
       }))
       .filter((e) => e.username && e.timestamp);
+    
+    // Логируем события с browserUrl для отладки
+    const eventsWithBrowserUrl = sanitized.filter(e => e.browserUrl && e.browserUrl.trim() !== '');
+    if (eventsWithBrowserUrl.length > 0) {
+      console.log(`📊 [activity-log-batch] Событий с browserUrl: ${eventsWithBrowserUrl.length} из ${sanitized.length}`);
+      console.log(`📊 [activity-log-batch] Пример browserUrl:`, eventsWithBrowserUrl[0].browserUrl.substring(0, 100));
+    } else if (sanitized.length > 0) {
+      console.log(`⚠️ [activity-log-batch] НЕТ событий с browserUrl из ${sanitized.length} событий`);
+      const firstEvent = sanitized[0];
+      console.log(`⚠️ [activity-log-batch] Первое событие:`, {
+        username: firstEvent.username,
+        procName: firstEvent.procName,
+        windowTitle: firstEvent.windowTitle?.substring(0, 50),
+        browserUrl: firstEvent.browserUrl || '(empty)',
+        rawEventKeys: Object.keys(events[0] || {}),
+        rawEventBrowserUrl: events[0]?.browserUrl || '(not in raw)'
+      });
+    }
 
     if (!sanitized.length) {
       return res.status(400).json({
