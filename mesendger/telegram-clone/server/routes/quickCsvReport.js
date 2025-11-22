@@ -47,10 +47,16 @@ async function getDbShortReport({ start, end, username }) {
     let displayName = user;
     try {
       const userRow = await db.getUserByUsername(user);
+      console.log(`[quickCsvReport] getUserByUsername для "${user}":`, userRow);
       if (userRow) {
-        displayName = userRow.fio || userRow.username || user;
+        // Проверяем различные варианты поля для ФИО
+        displayName = userRow.fio || userRow.full_name || userRow.name || userRow.username || user;
+        console.log(`[quickCsvReport] displayName для "${user}":`, displayName);
+      } else {
+        console.log(`[quickCsvReport] Пользователь "${user}" не найден в таблице users`);
       }
     } catch (e) {
+      console.error(`[quickCsvReport] Ошибка при получении пользователя "${user}":`, e);
       // В случае ошибки просто используем исходное значение user
       displayName = user;
     }
