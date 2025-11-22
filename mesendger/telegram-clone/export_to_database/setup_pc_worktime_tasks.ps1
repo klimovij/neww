@@ -143,25 +143,14 @@ if ($actualScriptPath) {
         -Argument "-ExecutionPolicy Bypass -WindowStyle Hidden -File `"$actualScriptPath`" -User $userParam" `
         -WorkingDirectory (Split-Path $actualScriptPath -Parent)
 
-    # Запуск при входе пользователя с задержкой 30 секунд
+    # Запуск при входе пользователя
     # Не указываем UserId явно в триггере - он будет использовать пользователя из Principal
+    # ВАЖНО: Delay не устанавливаем здесь, так как свойство Delay в PowerShell не поддерживает
+    # прямой формат для триггера AtLogOn. Вместо этого задержка будет добавлена в самом скрипте агента.
     $triggerActivity = New-ScheduledTaskTrigger -AtLogOn
     $triggerActivity.Enabled = $true
-    # Задержка 30 секунд после входа
-    # В PowerShell 7 свойство Delay принимает строку в формате ISO 8601 duration: PT[n]S
-    # Для совместимости сначала создадим триггер без задержки, затем добавим задержку через XML
-    # Или используем альтернативный способ: запуск через 30 секунд после входа
-    try {
-        # В PowerShell 7 Delay может принимать строку в формате ISO 8601
-        $delayValue = [System.Xml.XmlConvert]::ToString((New-TimeSpan -Seconds 30))
-        # Или просто используем строку "PT30S"
-        $triggerActivity.Delay = "PT30S"
-    } catch {
-        # Если Delay не поддерживается, создадим триггер без задержки
-        # В скрипте агента можно добавить Start-Sleep в начале
-        Write-Host "   ⚠️  Не удалось установить задержку триггера, задача запустится сразу при входе" -ForegroundColor Yellow
-        Write-Host "      Скрипт агента сам добавит задержку при необходимости" -ForegroundColor Gray
-    }
+    # Задержка будет в самом скрипте агента (Start-Sleep в начале выполнения)
+    Write-Host "   ℹ️  Задержка 30 секунд будет применена в самом скрипте агента" -ForegroundColor Gray
 
     # Principal должен совпадать с пользователем, который входит в систему
     $principalActivity = New-ScheduledTaskPrincipal -UserId $env:USERNAME -LogonType Interactive -RunLevel Highest
