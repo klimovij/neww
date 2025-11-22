@@ -101,20 +101,32 @@ Write-Host "      Тип: При событии" -ForegroundColor Yellow
 Write-Host "      Лог: System, Источник: USER32, ID события: 1074" -ForegroundColor Yellow
 
 # 4. Создаем задачу для агента активности (если скрипт существует)
+Write-Host "`n🔍 Поиск скрипта агента активности..." -ForegroundColor Yellow
+
 # Проверяем стандартные пути к скрипту
+# Сначала проверяем в текущей рабочей директории (где пользователь запускает скрипт)
+$currentDir = Get-Location
 $possiblePaths = @(
+    (Join-Path $currentDir "pc_activity_agent.ps1"),
+    (Join-Path $PSScriptRoot "pc_activity_agent.ps1"),
     $activityScript,
     "C:\Users\$env:USERNAME\web\pc-worktime\pc_activity_agent.ps1",
     "$env:USERPROFILE\web\pc-worktime\pc_activity_agent.ps1",
     "C:\pc-worktime\pc_activity_agent.ps1"
 )
 
+Write-Host "   Проверяем пути:" -ForegroundColor Gray
 $actualScriptPath = $null
 foreach ($path in $possiblePaths) {
-    if (Test-Path $path) {
-        $actualScriptPath = (Resolve-Path $path).Path
-        Write-Host "   ✓ Найден скрипт агента: $actualScriptPath" -ForegroundColor Green
-        break
+    if ($path) {
+        $resolvedPath = try { (Resolve-Path $path -ErrorAction SilentlyContinue).Path } catch { $null }
+        if ($resolvedPath) {
+            Write-Host "      ✅ $resolvedPath" -ForegroundColor Green
+            $actualScriptPath = $resolvedPath
+            break
+        } else {
+            Write-Host "      ❌ $path" -ForegroundColor DarkGray
+        }
     }
 }
 
@@ -152,56 +164,63 @@ if ($actualScriptPath) {
         -MultipleInstances IgnoreNew `
         -DontStopOnIdleEnd
 
-    Register-ScheduledTask -TaskName $taskNameActivity `
-        -Action $actionActivity `
-        -Trigger $triggerActivity `
-        -Principal $principalActivity `
-        -Settings $settingsActivity `
-        -Description "Отслеживание активности пользователя на ПК. Запускается при входе в систему с задержкой 30 секунд." `
-        -Force | Out-Null
-
-    Write-Host "   ✓ Создана/обновлена задача: $taskNameActivity" -ForegroundColor Green
-    Write-Host "   📋 Параметры задачи:" -ForegroundColor Cyan
-    Write-Host "      - Путь к скрипту: $actualScriptPath" -ForegroundColor Gray
-    Write-Host "      - PowerShell: $psExecutable" -ForegroundColor Gray
-    Write-Host "      - Пользователь: $userParam" -ForegroundColor Gray
-    Write-Host "      - Запуск: При входе в систему (с задержкой 30 сек)" -ForegroundColor Gray
-    Write-Host "      - Перезапуск при сбое: до 5 раз каждые 2 минуты" -ForegroundColor Gray
-    
-    # Проверяем состояние задачи
-    Start-Sleep -Seconds 2  # Даем время задаче обновиться
-    $task = Get-ScheduledTask -TaskName $taskNameActivity -ErrorAction SilentlyContinue
-    if ($task) {
-        if ($task.State -eq "Ready") {
-            Write-Host "   ✅ Задача включена и готова к запуску" -ForegroundColor Green
-            
-            # Проверяем триггеры
-            $triggers = $task.Triggers
-            if ($triggers.Count -gt 0) {
-                Write-Host "   ✅ Настроено триггеров: $($triggers.Count)" -ForegroundColor Green
-                foreach ($trigger in $triggers) {
-                    if ($trigger.CimClass.CimClassName -eq "MSFT_TaskLogonTrigger") {
-                        Write-Host "      ✓ Триггер: При входе в систему (At log on)" -ForegroundColor Gray
-                        if ($trigger.Delay) {
-                            Write-Host "      ✓ Задержка: $($trigger.Delay)" -ForegroundColor Gray
+    try {
+        Register-ScheduledTask -TaskName $taskNameActivity `
+            -Action $actionActivity `
+            -Trigger $triggerActivity `
+            -Principal $principalActivity `
+            -Settings $settingsActivity `
+            -Description "Отслеживание активности пользователя на ПК. Запускается при входе в систему с задержкой 30 секунд." `
+            -Force -ErrorAction Stop
+        
+        Write-Host "   ✅ Создана/обновлена задача: $taskNameActivity" -ForegroundColor Green
+        
+        Write-Host "   📋 Параметры задачи:" -ForegroundColor Cyan
+        Write-Host "      - Путь к скрипту: $actualScriptPath" -ForegroundColor Gray
+        Write-Host "      - PowerShell: $psExecutable" -ForegroundColor Gray
+        Write-Host "      - Пользователь: $userParam" -ForegroundColor Gray
+        Write-Host "      - Запуск: При входе в систему (с задержкой 30 сек)" -ForegroundColor Gray
+        Write-Host "      - Перезапуск при сбое: до 5 раз каждые 2 минуты" -ForegroundColor Gray
+        
+        # Проверяем состояние задачи
+        Start-Sleep -Seconds 2  # Даем время задаче обновиться
+        $task = Get-ScheduledTask -TaskName $taskNameActivity -ErrorAction SilentlyContinue
+        if ($task) {
+            if ($task.State -eq "Ready") {
+                Write-Host "   ✅ Задача включена и готова к запуску" -ForegroundColor Green
+                
+                # Проверяем триггеры
+                $triggers = $task.Triggers
+                if ($triggers.Count -gt 0) {
+                    Write-Host "   ✅ Настроено триггеров: $($triggers.Count)" -ForegroundColor Green
+                    foreach ($trigger in $triggers) {
+                        if ($trigger.CimClass.CimClassName -eq "MSFT_TaskLogonTrigger") {
+                            Write-Host "      ✓ Триггер: При входе в систему (At log on)" -ForegroundColor Gray
+                            if ($trigger.Delay) {
+                                Write-Host "      ✓ Задержка: $($trigger.Delay)" -ForegroundColor Gray
+                            }
                         }
                     }
+                } else {
+                    Write-Host "   ⚠️  Триггеры не настроены!" -ForegroundColor Yellow
+                }
+                
+                # Проверяем следующее время запуска (может быть пустым до следующего входа)
+                $taskInfo = Get-ScheduledTaskInfo -TaskName $taskNameActivity
+                if ($taskInfo.NextRunTime) {
+                    Write-Host "   ✅ Следующий запуск: $($taskInfo.NextRunTime)" -ForegroundColor Green
+                } else {
+                    Write-Host "   ℹ️  Следующий запуск: При следующем входе в систему" -ForegroundColor Gray
                 }
             } else {
-                Write-Host "   ⚠️  Триггеры не настроены!" -ForegroundColor Yellow
+                Write-Host "   ⚠️  Задача существует, но состояние: $($task.State)" -ForegroundColor Yellow
+                Write-Host "      Включите задачу в планировщике задач Windows" -ForegroundColor Yellow
             }
-            
-            # Проверяем следующее время запуска (может быть пустым до следующего входа)
-            $taskInfo = Get-ScheduledTaskInfo -TaskName $taskNameActivity
-            if ($taskInfo.NextRunTime) {
-                Write-Host "   ✅ Следующий запуск: $($taskInfo.NextRunTime)" -ForegroundColor Green
-            } else {
-                Write-Host "   ℹ️  Следующий запуск: При следующем входе в систему" -ForegroundColor Gray
-            }
-        } else {
-            Write-Host "   ⚠️  Задача существует, но состояние: $($task.State)" -ForegroundColor Yellow
-            Write-Host "      Включите задачу в планировщике задач Windows" -ForegroundColor Yellow
         }
+    } catch {
+        Write-Host "   ❌ Ошибка при создании задачи: $($_.Exception.Message)" -ForegroundColor Red
+        Write-Host "      Детали: $($_.Exception | ConvertTo-Json -Compress)" -ForegroundColor Red
+        Write-Host "      Попробуйте создать задачу вручную в планировщике задач Windows" -ForegroundColor Yellow
     }
 } else {
     Write-Host "`n⚠️  Скрипт агента активности не найден по путям:" -ForegroundColor Yellow
