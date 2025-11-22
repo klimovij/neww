@@ -2,8 +2,9 @@ const express = require('express');
 const router = express.Router();
 const db = require('../database');
 
-// API ключ для аутентификации удаленных запросов (можно вынести в .env)
-const REMOTE_WORKTIME_API_KEY = process.env.REMOTE_WORKTIME_API_KEY || 'default-remote-api-key-change-in-production';
+// API ключ для аутентификации удаленных запросов
+// Hardcoded for consistency with client scripts
+const REMOTE_WORKTIME_API_KEY = 'BsKFpZmdp6ocPKUD6g6YxTgMSTZEaPZXkbddxsifERA=';
 
 // Middleware для проверки API ключа
 const authenticateRemoteRequest = (req, res, next) => {
