@@ -147,9 +147,15 @@ if ($actualScriptPath) {
     # Не указываем UserId явно в триггере - он будет использовать пользователя из Principal
     $triggerActivity = New-ScheduledTaskTrigger -AtLogOn
     $triggerActivity.Enabled = $true
-    # Задержка 30 секунд после входа (PT30S = 30 секунд)
-    # Используем TimeSpan вместо строки для совместимости
-    $triggerActivity.Delay = (New-TimeSpan -Seconds 30)
+    # Задержка 30 секунд после входа - используем ISO 8601 duration format (PT30S)
+    # Планировщик задач Windows требует строку в формате PT[n]S, PT[n]M, PT[n]H, PT[n]D
+    try {
+        $triggerActivity.Delay = "PT30S"  # 30 секунд в формате ISO 8601
+    } catch {
+        # Если прямое присваивание не работает, попробуем через XML
+        Write-Host "   ⚠️  Не удалось установить задержку через свойство Delay, создаем триггер без задержки" -ForegroundColor Yellow
+        Write-Host "      Задача запустится сразу при входе в систему" -ForegroundColor Yellow
+    }
 
     # Principal должен совпадать с пользователем, который входит в систему
     $principalActivity = New-ScheduledTaskPrincipal -UserId $env:USERNAME -LogonType Interactive -RunLevel Highest
