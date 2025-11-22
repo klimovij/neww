@@ -476,6 +476,12 @@ $startupInfo = @{
 } | ConvertTo-Json -Compress
 $startupInfo | Out-File -FilePath $StartupLogFile -Append -Encoding UTF8
 
+# Задержка 30 секунд после запуска (если скрипт запущен при входе в систему)
+# Это дает системе время полностью загрузиться перед началом мониторинга
+Write-Host "[$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')] Waiting 30 seconds before starting monitoring..."
+Start-Sleep -Seconds 30
+Write-Host "[$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')] Starting monitoring..."
+
 $lastSendTime = Get-Date
 $lastScreenshotTime = Get-Date
 $localEvents = @()

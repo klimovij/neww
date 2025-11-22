@@ -147,14 +147,20 @@ if ($actualScriptPath) {
     # Не указываем UserId явно в триггере - он будет использовать пользователя из Principal
     $triggerActivity = New-ScheduledTaskTrigger -AtLogOn
     $triggerActivity.Enabled = $true
-    # Задержка 30 секунд после входа - используем ISO 8601 duration format (PT30S)
-    # Планировщик задач Windows требует строку в формате PT[n]S, PT[n]M, PT[n]H, PT[n]D
+    # Задержка 30 секунд после входа
+    # В PowerShell 7 свойство Delay принимает строку в формате ISO 8601 duration: PT[n]S
+    # Для совместимости сначала создадим триггер без задержки, затем добавим задержку через XML
+    # Или используем альтернативный способ: запуск через 30 секунд после входа
     try {
-        $triggerActivity.Delay = "PT30S"  # 30 секунд в формате ISO 8601
+        # В PowerShell 7 Delay может принимать строку в формате ISO 8601
+        $delayValue = [System.Xml.XmlConvert]::ToString((New-TimeSpan -Seconds 30))
+        # Или просто используем строку "PT30S"
+        $triggerActivity.Delay = "PT30S"
     } catch {
-        # Если прямое присваивание не работает, попробуем через XML
-        Write-Host "   ⚠️  Не удалось установить задержку через свойство Delay, создаем триггер без задержки" -ForegroundColor Yellow
-        Write-Host "      Задача запустится сразу при входе в систему" -ForegroundColor Yellow
+        # Если Delay не поддерживается, создадим триггер без задержки
+        # В скрипте агента можно добавить Start-Sleep в начале
+        Write-Host "   ⚠️  Не удалось установить задержку триггера, задача запустится сразу при входе" -ForegroundColor Yellow
+        Write-Host "      Скрипт агента сам добавит задержку при необходимости" -ForegroundColor Gray
     }
 
     # Principal должен совпадать с пользователем, который входит в систему
