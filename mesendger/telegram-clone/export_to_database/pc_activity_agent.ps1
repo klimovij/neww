@@ -325,7 +325,8 @@ function Send-ActivityBatch {
         $event
     }
     
-    $body = $eventsToSend | ConvertTo-Json -Depth 5 -Compress
+    # Используем UTF8 без BOM для корректной отправки JSON
+    $body = $eventsToSend | ConvertTo-Json -Depth 5 -Compress -EscapeHandling EscapeHtml
     
     # Логируем детали отправки
     Write-Host "[$(Get-Date -Format 'u')] Sending batch of $($Events.Count) events to server..."
