@@ -658,6 +658,16 @@ class Database {
       console.log(`[DB] getUserByUsername called with username: "${username}" (length: ${username?.length}, type: ${typeof username})`);
       console.log(`[DB] getUserByUsername SQL: SELECT * FROM users WHERE username = ?`);
       console.log(`[DB] getUserByUsername params: [${JSON.stringify(username)}]`);
+      
+      // Сначала проверим, есть ли вообще пользователи в базе
+      this.db.all('SELECT username, fio FROM users LIMIT 5', [], (err, allUsers) => {
+        if (err) {
+          console.error(`[DB] Error checking users in database:`, err);
+        } else {
+          console.log(`[DB] Sample users in database (first 5):`, allUsers);
+        }
+      });
+      
       this.db.get(
         'SELECT * FROM users WHERE username = ?',
         [username],
@@ -666,7 +676,17 @@ class Database {
             console.error(`[DB] getUserByUsername ERROR for "${username}":`, err);
             reject(err);
           } else {
-            console.log(`[DB] getUserByUsername RESULT for "${username}":`, row ? `Found: ${JSON.stringify({id: row.id, username: row.username, fio: row.fio})}` : 'NOT FOUND (undefined/null)');
+            if (row) {
+              console.log(`[DB] getUserByUsername RESULT for "${username}": Found: ${JSON.stringify({id: row.id, username: row.username, fio: row.fio})}`);
+            } else {
+              console.log(`[DB] getUserByUsername RESULT for "${username}": NOT FOUND (undefined/null)`);
+              // Попробуем найти похожие username
+              this.db.all('SELECT username FROM users WHERE username LIKE ? LIMIT 5', [`%${username}%`], (err2, similar) => {
+                if (!err2 && similar && similar.length > 0) {
+                  console.log(`[DB] Similar usernames found:`, similar);
+                }
+              });
+            }
             resolve(row);
           }
         }
