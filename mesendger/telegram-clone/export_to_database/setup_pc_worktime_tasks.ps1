@@ -161,15 +161,41 @@ if ($actualScriptPath) {
     Write-Host "   ✓ Создана/обновлена задача: $taskNameActivity" -ForegroundColor Green
     Write-Host "   📋 Параметры задачи:" -ForegroundColor Cyan
     Write-Host "      - Путь к скрипту: $actualScriptPath" -ForegroundColor Gray
+    Write-Host "      - PowerShell: $psExecutable" -ForegroundColor Gray
     Write-Host "      - Пользователь: $userParam" -ForegroundColor Gray
     Write-Host "      - Запуск: При входе в систему (с задержкой 30 сек)" -ForegroundColor Gray
     Write-Host "      - Перезапуск при сбое: до 5 раз каждые 2 минуты" -ForegroundColor Gray
     
     # Проверяем состояние задачи
+    Start-Sleep -Seconds 2  # Даем время задаче обновиться
     $task = Get-ScheduledTask -TaskName $taskNameActivity -ErrorAction SilentlyContinue
     if ($task) {
         if ($task.State -eq "Ready") {
             Write-Host "   ✅ Задача включена и готова к запуску" -ForegroundColor Green
+            
+            # Проверяем триггеры
+            $triggers = $task.Triggers
+            if ($triggers.Count -gt 0) {
+                Write-Host "   ✅ Настроено триггеров: $($triggers.Count)" -ForegroundColor Green
+                foreach ($trigger in $triggers) {
+                    if ($trigger.CimClass.CimClassName -eq "MSFT_TaskLogonTrigger") {
+                        Write-Host "      ✓ Триггер: При входе в систему (At log on)" -ForegroundColor Gray
+                        if ($trigger.Delay) {
+                            Write-Host "      ✓ Задержка: $($trigger.Delay)" -ForegroundColor Gray
+                        }
+                    }
+                }
+            } else {
+                Write-Host "   ⚠️  Триггеры не настроены!" -ForegroundColor Yellow
+            }
+            
+            # Проверяем следующее время запуска (может быть пустым до следующего входа)
+            $taskInfo = Get-ScheduledTaskInfo -TaskName $taskNameActivity
+            if ($taskInfo.NextRunTime) {
+                Write-Host "   ✅ Следующий запуск: $($taskInfo.NextRunTime)" -ForegroundColor Green
+            } else {
+                Write-Host "   ℹ️  Следующий запуск: При следующем входе в систему" -ForegroundColor Gray
+            }
         } else {
             Write-Host "   ⚠️  Задача существует, но состояние: $($task.State)" -ForegroundColor Yellow
             Write-Host "      Включите задачу в планировщике задач Windows" -ForegroundColor Yellow
