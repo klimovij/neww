@@ -54,7 +54,12 @@ export default function UserWorkTimeDetailsMobile({
     onClose();
   };
 
-  if (!open) return null;
+  if (!open) {
+    console.log('[UserWorkTimeDetailsMobile] Модалка закрыта, open =', open);
+    return null;
+  }
+
+  console.log('[UserWorkTimeDetailsMobile] Модалка открывается! open =', open, 'logs:', logs, 'username:', username);
 
   // Сортируем логи по времени
   const sortedLogs = [...(logs || [])].sort((a, b) => {
@@ -72,7 +77,7 @@ export default function UserWorkTimeDetailsMobile({
         right: 0,
         bottom: 0,
         backgroundColor: 'rgba(0, 0, 0, 0.85)',
-        zIndex: 20000,
+        zIndex: 100003, // Должен быть выше WorkTimeMobile (100002)
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
