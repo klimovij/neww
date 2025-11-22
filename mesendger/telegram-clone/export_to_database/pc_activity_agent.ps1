@@ -470,10 +470,10 @@ $startupInfo = @{
     timestamp = (Get-Date).ToString("o")
     username = $UserUsername
     pid = $PID
-    scriptPath = $MyInvocation.MyCommand.Path
-    workingDirectory = Get-Location
+    scriptPath = if ($MyInvocation.MyCommand.Path) { $MyInvocation.MyCommand.Path.ToString() } else { "unknown" }
+    workingDirectory = (Get-Location).Path
     powershellVersion = $PSVersionTable.PSVersion.ToString()
-} | ConvertTo-Json -Compress
+} | ConvertTo-Json -Depth 3 -Compress
 $startupInfo | Out-File -FilePath $StartupLogFile -Append -Encoding UTF8
 
 # Задержка 30 секунд после запуска (если скрипт запущен при входе в систему)
@@ -578,7 +578,7 @@ try {
         $errorMsg = "[$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')] ERROR in main loop: $($_.Exception.Message)"
         Write-Host $errorMsg -ForegroundColor Red
         $errorMsg | Out-File -FilePath $StartupLogFile -Append -Encoding UTF8
-        $errorDetails = "[$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')] Error details: $($_.Exception | ConvertTo-Json -Compress)"
+        $errorDetails = "[$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')] Error details: Message=$($_.Exception.Message), Type=$($_.Exception.GetType().Name), StackTrace=$($_.Exception.StackTrace -replace '\r\n', ' | ')"
         $errorDetails | Out-File -FilePath $StartupLogFile -Append -Encoding UTF8
         Start-Sleep -Seconds 60
     }
@@ -588,7 +588,7 @@ try {
     $criticalError = "[$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')] CRITICAL ERROR - Agent will exit: $($_.Exception.Message)"
     Write-Host $criticalError -ForegroundColor Red
     $criticalError | Out-File -FilePath $StartupLogFile -Append -Encoding UTF8
-    $criticalDetails = "[$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')] Critical error details: $($_.Exception | ConvertTo-Json -Compress)"
+    $criticalDetails = "[$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')] Critical error details: Message=$($_.Exception.Message), Type=$($_.Exception.GetType().Name), StackTrace=$($_.Exception.StackTrace -replace '\r\n', ' | ')"
     $criticalDetails | Out-File -FilePath $StartupLogFile -Append -Encoding UTF8
     throw  # Пробрасываем ошибку дальше, чтобы планировщик задач мог перезапустить скрипт
 }
