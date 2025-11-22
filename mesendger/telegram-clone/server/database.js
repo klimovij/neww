@@ -2242,8 +2242,8 @@ class Database {
 
           const stmt = this.db.prepare(
             `INSERT INTO activity_logs
-              (username, timestamp, idle_minutes, proc_name, window_title)
-             VALUES (?, ?, ?, ?, ?)`
+              (username, timestamp, idle_minutes, proc_name, window_title, browser_url)
+             VALUES (?, ?, ?, ?, ?, ?)`
           );
 
           for (const ev of events) {
@@ -2252,7 +2252,8 @@ class Database {
               ev.timestamp,
               typeof ev.idleMinutes === 'number' ? ev.idleMinutes : 0,
               ev.procName || '',
-              ev.windowTitle || ''
+              ev.windowTitle || '',
+              ev.browserUrl || ''
             );
           }
 
@@ -2281,6 +2282,46 @@ class Database {
           params.push(start);
           params.push(end);
         }
+
+        this.db.all(query, params, (err, rows) => {
+          if (err) reject(err);
+          else resolve(rows || []);
+        });
+      });
+    }
+
+    // Метод для сохранения информации о скриншоте
+    async addActivityScreenshot({ username, timestamp, filePath, fileSize }) {
+      return new Promise((resolve, reject) => {
+        this.db.run(
+          `INSERT INTO activity_screenshots (username, timestamp, file_path, file_size)
+           VALUES (?, ?, ?, ?)`,
+          [username, timestamp, filePath, fileSize],
+          function (err) {
+            if (err) {
+              console.error('❌ Error adding activity screenshot:', err);
+              reject(err);
+            } else {
+              resolve(this.lastID);
+            }
+          }
+        );
+      });
+    }
+
+    // Метод для получения скриншотов пользователя за период
+    async getActivityScreenshots({ username, start, end }) {
+      return new Promise((resolve, reject) => {
+        let query = 'SELECT * FROM activity_screenshots WHERE username = ?';
+        const params = [username];
+
+        if (start && end) {
+          query += ' AND date(timestamp) >= ? AND date(timestamp) <= ?';
+          params.push(start);
+          params.push(end);
+        }
+
+        query += ' ORDER BY timestamp DESC';
 
         this.db.all(query, params, (err, rows) => {
           if (err) reject(err);
@@ -2319,6 +2360,19 @@ class Database {
           idle_minutes INTEGER DEFAULT 0,
           proc_name TEXT DEFAULT '',
           window_title TEXT DEFAULT '',
+          browser_url TEXT DEFAULT '',
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+      
+      // Таблица для хранения скриншотов
+      this.db.run(`
+        CREATE TABLE IF NOT EXISTS activity_screenshots (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          username TEXT NOT NULL,
+          timestamp TEXT NOT NULL,
+          file_path TEXT NOT NULL,
+          file_size INTEGER DEFAULT 0,
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )
       `);
@@ -2332,6 +2386,11 @@ class Database {
         if (err && !err.message.includes('duplicate column')) {
           console.error('❌ Error adding fio column:', err);
         }
+      });
+      
+      // Добавляем поле browser_url для старых баз
+      this.db.run(`ALTER TABLE activity_logs ADD COLUMN browser_url TEXT DEFAULT ''`, (err) => {
+        // Игнорируем ошибку если колонка уже существует
       });
 
       // Таблица чатов

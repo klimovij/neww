@@ -20,12 +20,17 @@ $REMOTE_WORKTIME_API_KEY = "BsKFpZmdp6ocPKUD6g6YxTgMSTZEaPZXkbddxsifERA="
 
 # Настройки агента
 $LogsDir = "C:\pc-worktime\logs"
+$ScreenshotsDir = "C:\pc-worktime\screenshots"
 $SendIntervalMinutes = 1  # Отправляем данные каждую 1 минуту (для теста)
 $MaxEventsPerBatch = 10   # Максимум событий в одной пачке (для теста)
+$ScreenshotIntervalMinutes = 15  # Делаем скриншот каждые 15 минут
 
-# Создаём папку для логов, если её нет
+# Создаём папки для логов и скриншотов, если их нет
 if (-not (Test-Path $LogsDir)) {
     New-Item -ItemType Directory -Path $LogsDir -Force | Out-Null
+}
+if (-not (Test-Path $ScreenshotsDir)) {
+    New-Item -ItemType Directory -Path $ScreenshotsDir -Force | Out-Null
 }
 
 $LogFile = Join-Path $LogsDir "activity_$(Get-Date -Format 'yyyy-MM-dd').jsonl"
@@ -118,12 +123,147 @@ function Get-ActivityData {
         $windowTitle = ""
     }
     
+    # Извлекаем URL из заголовка окна браузера
+    $browserUrl = ""
+    if ($procName -match "^(chrome|msedge|firefox|opera|brave)$") {
+        # Пытаемся извлечь URL из заголовка окна
+        # Формат: "Страница - Браузер" или "URL - Браузер"
+        if ($windowTitle -match "^(.*?)\s*[-–]\s*(chrome|msedge|firefox|opera|brave).*$") {
+            $potentialUrl = $matches[1].Trim()
+            # Проверяем, похоже ли на URL
+            if ($potentialUrl -match "^(https?://|www\.|[a-z0-9-]+\.(com|net|org|ru|ua|io|co|dev))") {
+                $browserUrl = $potentialUrl
+                # Если не начинается с http:// или https://, добавляем https://
+                if ($browserUrl -notmatch "^https?://") {
+                    $browserUrl = "https://" + $browserUrl
+                }
+            }
+        } elseif ($windowTitle -match "^https?://") {
+            # Если весь заголовок - это URL
+            $browserUrl = $windowTitle
+        }
+    }
+    
     return @{
         username = $UserUsername
         timestamp = $timestamp
         idleMinutes = $idleMinutes
         procName = $procName
         windowTitle = $windowTitle
+        browserUrl = $browserUrl
+    }
+}
+
+# Функция для создания скриншота
+function Take-Screenshot {
+    param([string]$OutputPath)
+    
+    try {
+        Add-Type -AssemblyName System.Windows.Forms
+        Add-Type -AssemblyName System.Drawing
+        
+        # Получаем размер экрана
+        $bounds = [System.Windows.Forms.SystemInformation]::VirtualScreen
+        $width = $bounds.Width
+        $height = $bounds.Height
+        $left = $bounds.Left
+        $top = $bounds.Top
+        
+        # Создаём bitmap
+        $bitmap = New-Object System.Drawing.Bitmap $width, $height
+        $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
+        
+        # Делаем скриншот
+        $graphics.CopyFromScreen($left, $top, 0, 0, $bitmap.Size)
+        
+        # Сохраняем в файл (JPEG с качеством 80%)
+        $encoderParams = New-Object System.Drawing.Imaging.EncoderParameters(1)
+        $encoderParams.Param[0] = New-Object System.Drawing.Imaging.EncoderParameter([System.Drawing.Imaging.Encoder]::Quality, 80)
+        $jpegCodec = [System.Drawing.Imaging.ImageCodecInfo]::GetImageEncoders() | Where-Object { $_.MimeType -eq "image/jpeg" }
+        
+        if ($jpegCodec) {
+            $bitmap.Save($OutputPath, $jpegCodec, $encoderParams)
+        } else {
+            # Если кодек не найден, используем стандартный метод
+            $bitmap.Save($OutputPath, [System.Drawing.Imaging.ImageFormat]::Jpeg)
+        }
+        
+        # Освобождаем ресурсы
+        $graphics.Dispose()
+        $bitmap.Dispose()
+        $encoderParams.Dispose()
+        
+        return $true
+    } catch {
+        Write-Host "[$(Get-Date -Format 'u')] ERROR taking screenshot: $($_.Exception.Message)" -ForegroundColor Red
+        return $false
+    }
+}
+
+# Функция для отправки скриншота на сервер
+function Send-Screenshot {
+    param([string]$ScreenshotPath)
+    
+    if (-not (Test-Path $ScreenshotPath)) {
+        Write-Host "[$(Get-Date -Format 'u')] Screenshot file not found: $ScreenshotPath"
+        return $false
+    }
+    
+    $apiUrl = "$GOOGLE_SERVER_URL/api/activity-screenshot"
+    $headers = @{
+        "X-API-Key" = $REMOTE_WORKTIME_API_KEY
+    }
+    
+    try {
+        # Читаем файл скриншота
+        $fileBytes = [System.IO.File]::ReadAllBytes($ScreenshotPath)
+        $fileName = Split-Path $ScreenshotPath -Leaf
+        
+        # Создаём multipart/form-data
+        $boundary = [System.Guid]::NewGuid().ToString()
+        $CRLF = "`r`n"
+        $bodyLines = @()
+        
+        # Добавляем username
+        $bodyLines += "--$boundary"
+        $bodyLines += "Content-Disposition: form-data; name=`"username`""
+        $bodyLines += ""
+        $bodyLines += $UserUsername
+        
+        # Добавляем timestamp
+        $bodyLines += "--$boundary"
+        $bodyLines += "Content-Disposition: form-data; name=`"timestamp`""
+        $bodyLines += ""
+        $bodyLines += (Get-Date).ToString("o")
+        
+        # Добавляем файл
+        $bodyLines += "--$boundary"
+        $bodyLines += "Content-Disposition: form-data; name=`"screenshot`"; filename=`"$fileName`""
+        $bodyLines += "Content-Type: image/jpeg"
+        $bodyLines += ""
+        
+        # Конвертируем в байты
+        $headerBytes = [System.Text.Encoding]::UTF8.GetBytes($($bodyLines -join $CRLF) + $CRLF)
+        $footerBytes = [System.Text.Encoding]::UTF8.GetBytes($CRLF + "--$boundary--" + $CRLF)
+        
+        $body = $headerBytes + $fileBytes + $footerBytes
+        
+        $headers["Content-Type"] = "multipart/form-data; boundary=$boundary"
+        
+        Write-Host "[$(Get-Date -Format 'u')] Sending screenshot to server: $fileName ($($fileBytes.Length) bytes)"
+        
+        $response = Invoke-RestMethod -Uri $apiUrl -Method POST -Headers $headers -Body $body -TimeoutSec 30
+        
+        Write-Host "[$(Get-Date -Format 'u')] ✅ Screenshot sent successfully: $($response.success)"
+        return $true
+    } catch {
+        $errorMsg = $_.Exception.Message
+        $statusCode = $_.Exception.Response.StatusCode.value__
+        if ($_.ErrorDetails.Message) {
+            $errorMsg += " | Details: $($_.ErrorDetails.Message)"
+        }
+        Write-Host "[$(Get-Date -Format 'u')] ❌ ERROR sending screenshot (Status: $statusCode): $errorMsg" -ForegroundColor Red
+        return $false
     }
 }
 
@@ -144,13 +284,18 @@ function Send-ActivityBatch {
     
     # Преобразуем события в формат, который ожидает сервер
     $eventsToSend = $Events | ForEach-Object {
-        @{
+        $event = @{
             username = $_.username
             timestamp = $_.timestamp
             idleMinutes = $_.idleMinutes
             procName = $_.procName
             windowTitle = $_.windowTitle
         }
+        # Добавляем browserUrl, если есть
+        if ($_.browserUrl) {
+            $event.browserUrl = $_.browserUrl
+        }
+        $event
     }
     
     $body = $eventsToSend | ConvertTo-Json -Depth 5 -Compress
@@ -258,6 +403,7 @@ function Mark-EventsAsSent {
 Write-Host "[$(Get-Date -Format 'u')] Starting activity agent for user: $UserUsername"
 
 $lastSendTime = Get-Date
+$lastScreenshotTime = Get-Date
 $localEvents = @()
 
 while ($true) {
@@ -276,7 +422,38 @@ while ($true) {
         $localEvents += $activityData
         
         $titlePreview = if ($activityData.windowTitle.Length -gt 30) { $activityData.windowTitle.Substring(0, 30) + "..." } else { $activityData.windowTitle }
-        Write-Host "[$(Get-Date -Format 'u')] Activity logged: idle=$($activityData.idleMinutes)min, proc=$($activityData.procName), title=$titlePreview"
+        $urlInfo = if ($activityData.browserUrl) { ", URL=$($activityData.browserUrl)" } else { "" }
+        Write-Host "[$(Get-Date -Format 'u')] Activity logged: idle=$($activityData.idleMinutes)min, proc=$($activityData.procName), title=$titlePreview$urlInfo"
+        
+        # Проверяем, нужно ли сделать скриншот
+        $timeSinceLastScreenshot = (Get-Date) - $lastScreenshotTime
+        if ($timeSinceLastScreenshot.TotalMinutes -ge $ScreenshotIntervalMinutes) {
+            $screenshotFileName = "screenshot_$($UserUsername)_$(Get-Date -Format 'yyyy-MM-dd_HH-mm-ss').jpg"
+            $screenshotPath = Join-Path $ScreenshotsDir $screenshotFileName
+            
+            Write-Host "[$(Get-Date -Format 'u')] Taking screenshot: $screenshotFileName"
+            $screenshotSuccess = Take-Screenshot -OutputPath $screenshotPath
+            
+            if ($screenshotSuccess -and (Test-Path $screenshotPath)) {
+                Write-Host "[$(Get-Date -Format 'u')] Screenshot saved: $screenshotPath"
+                
+                # Пытаемся отправить скриншот на сервер
+                $sendSuccess = Send-Screenshot -ScreenshotPath $screenshotPath
+                
+                if ($sendSuccess) {
+                    # Если скриншот успешно отправлен, можем его удалить (опционально)
+                    # Remove-Item $screenshotPath -Force
+                    Write-Host "[$(Get-Date -Format 'u')] Screenshot sent and can be removed"
+                } else {
+                    # Если не удалось отправить, оставляем файл для следующей попытки
+                    Write-Host "[$(Get-Date -Format 'u')] Screenshot kept for later retry"
+                }
+                
+                $lastScreenshotTime = Get-Date
+            } else {
+                Write-Host "[$(Get-Date -Format 'u')] Failed to create screenshot" -ForegroundColor Red
+            }
+        }
         
         # Проверяем, нужно ли отправить данные
         $timeSinceLastSend = (Get-Date) - $lastSendTime

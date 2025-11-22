@@ -66,7 +66,16 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
   });
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [detailsModal, setDetailsModal] = useState({ open: false, logs: [], username: '', activityStats: null });
+  const [detailsModal, setDetailsModal] = useState({ 
+    open: false, 
+    logs: [], 
+    username: '', 
+    activityStats: null,
+    urls: [],
+    screenshots: [],
+    startDate: '',
+    endDate: '',
+  });
   const [importing, setImporting] = useState(false);
   const [importOk, setImportOk] = useState(null);
   const [showAppUsage, setShowAppUsage] = useState(false);
@@ -659,9 +668,12 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
                         console.log('🔘 [WorkTimeMobile] Row username:', row.username);
                         console.log('🔘 [WorkTimeMobile] Row sessions:', row.sessions?.length || 0);
                         
-                        // Асинхронная загрузка активности и открытие модалки
+                        // Асинхронная загрузка активности, URL и скриншотов и открытие модалки
                         (async () => {
                           let userActivityStats = null;
+                          let urls = [];
+                          let screenshots = [];
+                          
                           try {
                             const params = new URLSearchParams({
                               start: startDate,
@@ -682,6 +694,27 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
                             console.error('❌ [WorkTimeMobile] Ошибка загрузки активности:', err);
                           }
                           
+                          // Загружаем URL и скриншоты
+                          try {
+                            const detailsParams = new URLSearchParams({
+                              username: row.username,
+                              start: startDate,
+                              end: endDate,
+                            });
+                            console.log('📡 [WorkTimeMobile] Загружаем activity-details для:', row.username);
+                            const detailsRes = await fetch(`/api/activity-details?${detailsParams.toString()}`);
+                            const detailsData = await detailsRes.json();
+                            if (detailsRes.ok && detailsData.success) {
+                              urls = detailsData.urls || [];
+                              screenshots = detailsData.screenshots || [];
+                              console.log('✅ [WorkTimeMobile] URLs и скриншоты загружены:', { urlsCount: urls.length, screenshotsCount: screenshots.length });
+                            } else {
+                              console.warn('⚠️ [WorkTimeMobile] Activity details не получены:', detailsData);
+                            }
+                          } catch (err) {
+                            console.error('❌ [WorkTimeMobile] Ошибка загрузки URL и скриншотов:', err);
+                          }
+                          
                           const logsToShow = Array.isArray(row.sessions) ? row.sessions : (Array.isArray(row.logs) ? row.logs : []);
                           console.log('📋 [WorkTimeMobile] Логи для модалки:', logsToShow.length, 'items');
                           
@@ -690,6 +723,10 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
                             logs: logsToShow,
                             username: displayName,
                             activityStats: userActivityStats,
+                            urls: urls,
+                            screenshots: screenshots,
+                            startDate: startDate,
+                            endDate: endDate,
                           };
                           
                           console.log('🚀 [WorkTimeMobile] Открываем модалку:', newModalState);
@@ -782,11 +819,24 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
             open={detailsModal.open}
             onClose={() => {
               console.log('🔴 [WorkTimeMobile] Закрываем модалку деталей');
-              setDetailsModal({ open: false, logs: [], username: '', activityStats: null });
+              setDetailsModal({ 
+                open: false, 
+                logs: [], 
+                username: '', 
+                activityStats: null,
+                urls: [],
+                screenshots: [],
+                startDate: '',
+                endDate: '',
+              });
             }}
             logs={detailsModal.logs}
             username={detailsModal.username}
             activityStats={detailsModal.activityStats}
+            urls={detailsModal.urls || []}
+            screenshots={detailsModal.screenshots || []}
+            startDate={detailsModal.startDate}
+            endDate={detailsModal.endDate}
             onOpenMobileSidebar={() => {
               // Не открываем сайдбар, так как мы уже внутри модалки
             }}
@@ -796,11 +846,24 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
             isOpen={detailsModal.open}
             onRequestClose={() => {
               console.log('🔴 [WorkTimeMobile] Закрываем модалку деталей (desktop)');
-              setDetailsModal({ open: false, logs: [], username: '', activityStats: null });
+              setDetailsModal({ 
+                open: false, 
+                logs: [], 
+                username: '', 
+                activityStats: null,
+                urls: [],
+                screenshots: [],
+                startDate: '',
+                endDate: '',
+              });
             }}
             logs={detailsModal.logs}
             username={detailsModal.username}
             activityStats={detailsModal.activityStats}
+            urls={detailsModal.urls || []}
+            screenshots={detailsModal.screenshots || []}
+            startDate={detailsModal.startDate}
+            endDate={detailsModal.endDate}
           />
         )}
         {isMobile ? (

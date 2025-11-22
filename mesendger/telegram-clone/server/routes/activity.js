@@ -1,6 +1,42 @@
 const express = require('express');
 const router = express.Router();
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 const db = require('../database');
+
+// Настройка multer для скриншотов
+const screenshotsDir = path.join(__dirname, '../uploads/screenshots');
+if (!fs.existsSync(screenshotsDir)) {
+  fs.mkdirSync(screenshotsDir, { recursive: true });
+  console.log('📁 Created screenshots directory:', screenshotsDir);
+}
+
+const screenshotUpload = multer({
+  storage: multer.diskStorage({
+    destination: function (req, file, cb) {
+      cb(null, screenshotsDir);
+    },
+    filename: function (req, file, cb) {
+      const username = req.body.username || 'unknown';
+      const timestamp = req.body.timestamp || Date.now();
+      const dateStr = new Date(timestamp).toISOString().split('T')[0];
+      const timeStr = new Date(timestamp).toISOString().replace(/[:.]/g, '-').split('T')[1].split('.')[0];
+      const filename = `screenshot_${username}_${dateStr}_${timeStr}.jpg`;
+      cb(null, filename);
+    }
+  }),
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 10MB
+  },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/jpg' || file.mimetype === 'image/png') {
+      cb(null, true);
+    } else {
+      cb(new Error('Only JPEG and PNG images are allowed'), false);
+    }
+  }
+});
 
 // Используем тот же API-ключ, что и для удалённого учёта времени
 // Захардкожен для совместимости с клиентскими скриптами
@@ -49,6 +85,7 @@ router.post('/activity-log-batch', authenticateActivityRequest, async (req, res)
             : 0,
         procName: (e.procName || e.process || '').toString().slice(0, 128),
         windowTitle: (e.windowTitle || e.title || '').toString().slice(0, 512),
+        browserUrl: (e.browserUrl || e.url || '').toString().slice(0, 512),
       }))
       .filter((e) => e.username && e.timestamp);
 
@@ -152,6 +189,121 @@ router.get('/activity-summary', async (req, res) => {
     res.json({ success: true, summary });
   } catch (error) {
     console.error('❌ Error in /activity-summary:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Приём скриншотов от агентов на ПК
+router.post('/activity-screenshot', authenticateActivityRequest, screenshotUpload.single('screenshot'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        error: 'Screenshot file is required',
+      });
+    }
+
+    const username = req.body.username?.trim();
+    const timestamp = req.body.timestamp || new Date().toISOString();
+
+    if (!username) {
+      // Удаляем загруженный файл, если нет username
+      fs.unlinkSync(req.file.path);
+      return res.status(400).json({
+        success: false,
+        error: 'Username is required',
+      });
+    }
+
+    // Сохраняем информацию о скриншоте в базу данных
+    const screenshotPath = req.file.path;
+    const fileSize = req.file.size;
+
+    await db.addActivityScreenshot({
+      username,
+      timestamp,
+      filePath: screenshotPath,
+      fileSize,
+    });
+
+    console.log(`📸 Screenshot saved: ${username} at ${timestamp} (${fileSize} bytes)`);
+
+    res.json({
+      success: true,
+      message: 'Screenshot saved successfully',
+      filePath: screenshotPath,
+      fileSize,
+    });
+  } catch (error) {
+    console.error('❌ Error in /activity-screenshot:', error);
+    
+    // Удаляем файл при ошибке
+    if (req.file && req.file.path) {
+      try {
+        fs.unlinkSync(req.file.path);
+      } catch (unlinkError) {
+        console.error('❌ Error deleting file:', unlinkError);
+      }
+    }
+
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Получить URL-адреса и скриншоты для конкретного пользователя за период
+router.get('/activity-details', async (req, res) => {
+  try {
+    const { username, start, end } = req.query;
+
+    if (!username || !start || !end) {
+      return res.status(400).json({
+        success: false,
+        error: 'Username, start date, and end date are required',
+      });
+    }
+
+    // Получаем URL-адреса из activity_logs
+    const activityLogs = await db.getActivityLogsBetween({ start, end });
+    const urls = activityLogs
+      .filter(log => log.username === username && log.browser_url && log.browser_url.trim() !== '')
+      .map(log => ({
+        url: log.browser_url,
+        timestamp: log.timestamp,
+        windowTitle: log.window_title || '',
+        procName: log.proc_name || '',
+      }))
+      .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+    // Получаем скриншоты
+    const screenshots = await db.getActivityScreenshots({ username, start, end });
+
+    // Формируем пути для доступа к файлам
+    const screenshotsWithUrl = screenshots.map(shot => {
+      // Извлекаем имя файла из полного пути
+      let fileName = path.basename(shot.file_path);
+      // Если путь уже содержит имя файла, используем его
+      // Иначе формируем имя из timestamp
+      if (!fileName || fileName === '') {
+        const ts = new Date(shot.timestamp);
+        fileName = `screenshot_${username}_${ts.toISOString().split('T')[0]}_${ts.toISOString().split('T')[1].replace(/[:.]/g, '-').split('.')[0]}.jpg`;
+      }
+      return {
+        id: shot.id,
+        timestamp: shot.timestamp,
+        filePath: shot.file_path,
+        fileSize: shot.file_size,
+        // URL для доступа к файлу (будет обслуживаться через статический сервер)
+        url: `/uploads/screenshots/${fileName}`,
+      };
+    });
+
+    res.json({
+      success: true,
+      urls: urls,
+      screenshots: screenshotsWithUrl,
+    });
+  } catch (error) {
+    console.error('❌ Error in /activity-details:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });

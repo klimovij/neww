@@ -1,7 +1,7 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { FaArrowLeft } from 'react-icons/fa';
-import { FiX, FiLogIn, FiLogOut, FiClock } from 'react-icons/fi';
+import { FiX, FiLogIn, FiLogOut, FiClock, FiGlobe, FiCamera, FiExternalLink } from 'react-icons/fi';
 
 function formatTime(dtStr) {
   if (!dtStr) return '';
@@ -15,11 +15,16 @@ export default function UserWorkTimeDetailsMobile({
   logs,
   username,
   activityStats,
+  urls = [],
+  screenshots = [],
+  startDate,
+  endDate,
   onOpenMobileSidebar,
 }) {
   const touchStartX = useRef(null);
   const touchEndX = useRef(null);
   const modalRef = useRef(null);
+  const [activeTab, setActiveTab] = useState('events'); // 'events', 'urls', 'screenshots'
 
   // Обработчики свайпа
   const handleTouchStart = (e) => {
@@ -186,8 +191,91 @@ export default function UserWorkTimeDetailsMobile({
           </button>
         </div>
 
+        {/* Табы */}
+        <div style={{
+          position: 'sticky',
+          top: '56px',
+          background: 'linear-gradient(135deg, #232931 0%, #181c22 100%)',
+          zIndex: 20000,
+          padding: '12px 16px 0',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+        }}>
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+            <button
+              onClick={() => setActiveTab('events')}
+              style={{
+                flex: 1,
+                padding: '10px 16px',
+                borderRadius: '8px',
+                border: 'none',
+                background: activeTab === 'events' 
+                  ? 'linear-gradient(135deg, #2193b0 0%, #43e97b 100%)' 
+                  : 'rgba(255, 255, 255, 0.1)',
+                color: '#fff',
+                fontWeight: 600,
+                fontSize: '13px',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+              }}
+            >
+              События
+            </button>
+            <button
+              onClick={() => setActiveTab('urls')}
+              style={{
+                flex: 1,
+                padding: '10px 16px',
+                borderRadius: '8px',
+                border: 'none',
+                background: activeTab === 'urls' 
+                  ? 'linear-gradient(135deg, #2193b0 0%, #43e97b 100%)' 
+                  : 'rgba(255, 255, 255, 0.1)',
+                color: '#fff',
+                fontWeight: 600,
+                fontSize: '13px',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+              }}
+            >
+              <FiGlobe size={14} />
+              Сайты ({urls?.length || 0})
+            </button>
+            <button
+              onClick={() => setActiveTab('screenshots')}
+              style={{
+                flex: 1,
+                padding: '10px 16px',
+                borderRadius: '8px',
+                border: 'none',
+                background: activeTab === 'screenshots' 
+                  ? 'linear-gradient(135deg, #2193b0 0%, #43e97b 100%)' 
+                  : 'rgba(255, 255, 255, 0.1)',
+                color: '#fff',
+                fontWeight: 600,
+                fontSize: '13px',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+              }}
+            >
+              <FiCamera size={14} />
+              Скриншоты ({screenshots?.length || 0})
+            </button>
+          </div>
+        </div>
+
         {/* Контент */}
         <div style={{ flex: 1, padding: '24px 16px', maxWidth: '600px', margin: '0 auto', width: '100%' }}>
+          {/* Таб: События */}
+          {activeTab === 'events' && (
+            <>
           {!sortedLogs || sortedLogs.length === 0 ? (
             <div style={{
               textAlign: 'center',
@@ -312,6 +400,207 @@ export default function UserWorkTimeDetailsMobile({
                   </>
                 )}
               </div>
+            </div>
+          )}
+            </>
+          )}
+
+          {/* Таб: Сайты */}
+          {activeTab === 'urls' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {/* Краткая статистика */}
+              {activityStats && (
+                <div style={{
+                  padding: '16px',
+                  borderRadius: '12px',
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(33, 147, 176, 0.3)',
+                  marginBottom: '12px',
+                }}>
+                  <div style={{
+                    color: '#2193b0',
+                    fontSize: '14px',
+                    fontWeight: 600,
+                    marginBottom: '8px',
+                  }}>
+                    Активность за период
+                  </div>
+                  <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.7)' }}>
+                    {activityStats.totalActiveMinutes} мин активно / {activityStats.totalIdleMinutes} мин простоя
+                  </div>
+                </div>
+              )}
+              {!urls || urls.length === 0 ? (
+                <div style={{
+                  textAlign: 'center',
+                  padding: '40px 20px',
+                  color: 'rgba(255, 255, 255, 0.5)',
+                  fontSize: '15px',
+                }}>
+                  Нет данных об открытых сайтах
+                </div>
+              ) : (
+                urls.map((item, idx) => (
+                  <div
+                    key={idx}
+                    style={{
+                      background: 'rgba(33, 147, 176, 0.1)',
+                      borderRadius: '12px',
+                      padding: '16px',
+                      border: '2px solid rgba(33, 147, 176, 0.3)',
+                    }}
+                  >
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      marginBottom: '8px',
+                    }}>
+                      <FiGlobe size={20} color="#2193b0" />
+                      <a
+                        href={item.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          color: '#43e97b',
+                          textDecoration: 'none',
+                          fontSize: '14px',
+                          fontWeight: 600,
+                          wordBreak: 'break-all',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                        }}
+                        onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
+                        onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
+                      >
+                        {item.url.length > 50 ? item.url.substring(0, 50) + '...' : item.url}
+                        <FiExternalLink size={14} />
+                      </a>
+                    </div>
+                    {item.windowTitle && (
+                      <div style={{
+                        color: 'rgba(255, 255, 255, 0.6)',
+                        fontSize: '13px',
+                        marginBottom: '8px',
+                      }}>
+                        {item.windowTitle}
+                      </div>
+                    )}
+                    <div style={{
+                      color: 'rgba(255, 255, 255, 0.5)',
+                      fontSize: '12px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                    }}>
+                      <FiClock size={12} />
+                      {formatTime(item.timestamp)}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+
+          {/* Таб: Скриншоты */}
+          {activeTab === 'screenshots' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {/* Краткая статистика */}
+              {activityStats && (
+                <div style={{
+                  padding: '16px',
+                  borderRadius: '12px',
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(255, 224, 130, 0.3)',
+                  marginBottom: '12px',
+                }}>
+                  <div style={{
+                    color: '#ffe082',
+                    fontSize: '14px',
+                    fontWeight: 600,
+                    marginBottom: '8px',
+                  }}>
+                    Активность за период
+                  </div>
+                  <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.7)' }}>
+                    {activityStats.totalActiveMinutes} мин активно / {activityStats.totalIdleMinutes} мин простоя
+                  </div>
+                </div>
+              )}
+              {!screenshots || screenshots.length === 0 ? (
+                <div style={{
+                  textAlign: 'center',
+                  padding: '40px 20px',
+                  color: 'rgba(255, 255, 255, 0.5)',
+                  fontSize: '15px',
+                }}>
+                  Нет скриншотов
+                </div>
+              ) : (
+                screenshots.map((shot, idx) => (
+                  <div
+                    key={idx}
+                    style={{
+                      background: 'rgba(255, 224, 130, 0.1)',
+                      borderRadius: '12px',
+                      padding: '16px',
+                      border: '2px solid rgba(255, 224, 130, 0.3)',
+                    }}
+                  >
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      marginBottom: '12px',
+                    }}>
+                      <FiCamera size={20} color="#ffe082" />
+                      <div style={{
+                        color: 'rgba(255, 255, 255, 0.5)',
+                        fontSize: '12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                      }}>
+                        <FiClock size={12} />
+                        {formatTime(shot.timestamp)}
+                      </div>
+                      <div style={{
+                        marginLeft: 'auto',
+                        color: 'rgba(255, 255, 255, 0.4)',
+                        fontSize: '11px',
+                      }}>
+                        {(shot.fileSize / 1024 / 1024).toFixed(2)} MB
+                      </div>
+                    </div>
+                    <div style={{
+                      borderRadius: '8px',
+                      overflow: 'hidden',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      background: 'rgba(0, 0, 0, 0.3)',
+                    }}>
+                      <img
+                        src={shot.url}
+                        alt={`Скриншот ${idx + 1}`}
+                        style={{
+                          width: '100%',
+                          height: 'auto',
+                          display: 'block',
+                          cursor: 'pointer',
+                        }}
+                        onClick={() => {
+                          // Открываем скриншот в новой вкладке в полном размере
+                          window.open(shot.url, '_blank');
+                        }}
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          e.target.parentElement.innerHTML = '<div style="padding: 40px; text-align: center; color: rgba(255,255,255,0.5);">Не удалось загрузить скриншот</div>';
+                        }}
+                      />
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           )}
         </div>
