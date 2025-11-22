@@ -56,17 +56,12 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
   const [usersList, setUsersList] = useState([]);
   const [userOptions, setUserOptions] = useState([]);
   const [showAutocomplete, setShowAutocomplete] = useState(false);
-  const [activitySummary, setActivitySummary] = useState([]);
-  const [activityLoading, setActivityLoading] = useState(false);
-  const [activityError, setActivityError] = useState('');
   const [startDate, setStartDate] = useState(() => {
     const d = new Date();
-    d.setDate(d.getDate() - 1);
     return d.toISOString().slice(0, 10);
   });
   const [endDate, setEndDate] = useState(() => {
     const d = new Date();
-    d.setDate(d.getDate() - 1);
     return d.toISOString().slice(0, 10);
   });
   const [logs, setLogs] = useState([]);
@@ -90,6 +85,31 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
         });
     }
   }, [open]);
+
+  // Автоматически загружаем данные при открытии модалки, если дата сегодняшняя
+  useEffect(() => {
+    if (open) {
+      const today = new Date().toISOString().slice(0, 10);
+      if (startDate === today && endDate === today) {
+        // Загружаем данные автоматически
+        (async () => {
+          setLoading(true);
+          try {
+            let url = `/api/quick-db-report?start=${startDate}&end=${endDate}`;
+            if (selectedUser) url += `&username=${encodeURIComponent(selectedUser)}`;
+            const res = await fetch(url);
+            const data = await res.json();
+            console.log('Данные из quick-db-report (автозагрузка):', data);
+            setLogs(Array.isArray(data.report) ? data.report : []);
+          } catch {
+            setLogs([]);
+          }
+          setLoading(false);
+        })();
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, startDate, endDate]);
 
   const handleSearchChange = (e) => {
     const value = e.target.value;
@@ -149,28 +169,6 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
     setImporting(false);
   };
 
-  const loadActivitySummary = async () => {
-    if (!startDate || !endDate) return;
-    setActivityLoading(true);
-    setActivityError('');
-    try {
-      const params = new URLSearchParams({
-        start: startDate,
-        end: endDate,
-      });
-      const res = await fetch(`/api/activity-summary?${params.toString()}`);
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || 'Ошибка загрузки отчёта активности');
-      }
-      setActivitySummary(Array.isArray(data.summary) ? data.summary : []);
-    } catch (e) {
-      console.error('Ошибка загрузки activity-summary', e);
-      setActivityError(e.message || 'Не удалось получить отчёт активности');
-      setActivitySummary([]);
-    }
-    setActivityLoading(false);
-  };
 
   // Фильтрация строк таблицы
   const displayedRows = React.useMemo(() => {
@@ -384,7 +382,15 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
                 <input
                   type="date"
                   value={startDate}
-                  onChange={e => setStartDate(e.target.value)}
+                  onChange={e => {
+                    const newStartDate = e.target.value;
+                    setStartDate(newStartDate);
+                    // Автоматически обновляем endDate, если выбрана сегодняшняя дата
+                    const today = new Date().toISOString().slice(0, 10);
+                    if (newStartDate === today) {
+                      setEndDate(today);
+                    }
+                  }}
                   style={{
                     width: '100%',
                     padding: '12px',
@@ -412,7 +418,15 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
                 <input
                   type="date"
                   value={endDate}
-                  onChange={e => setEndDate(e.target.value)}
+                  onChange={e => {
+                    const newEndDate = e.target.value;
+                    setEndDate(newEndDate);
+                    // Автоматически загружаем данные при изменении даты
+                    const today = new Date().toISOString().slice(0, 10);
+                    if (newEndDate === today && startDate === today) {
+                      setTimeout(() => fetchReport(), 100);
+                    }
+                  }}
                   style={{
                     width: '100%',
                     padding: '12px',
@@ -525,13 +539,13 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
               )}
             </div>
 
-            {/* Кнопки действий */}
+            {/* Кнопка действий */}
             <div style={{ display: 'flex', gap: '12px' }}>
               <button
                 onClick={fetchReport}
                 disabled={loading}
                 style={{
-                  flex: 1,
+                  width: '100%',
                   padding: '14px',
                   borderRadius: '12px',
                   border: '2px solid rgba(67, 233, 123, 0.3)',
@@ -565,95 +579,8 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
                   'Показать отчет'
                 )}
               </button>
-
-              <button
-                onClick={loadActivitySummary}
-                disabled={activityLoading}
-                style={{
-                  flex: 1,
-                  padding: '14px',
-                  borderRadius: '12px',
-                  border: '2px solid rgba(56, 217, 169, 0.3)',
-                  background: activityLoading
-                    ? 'rgba(56, 217, 169, 0.3)'
-                    : 'rgba(56, 217, 169, 0.15)',
-                  color: '#38d9a9',
-                  cursor: activityLoading ? 'not-allowed' : 'pointer',
-                  fontWeight: 600,
-                  fontSize: '15px',
-                  opacity: activityLoading ? 0.6 : 1,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  position: 'relative',
-                }}
-              >
-                {activityLoading ? (
-                  <>
-                    <span style={{
-                      width: '16px',
-                      height: '16px',
-                      border: '2px solid rgba(56, 217, 169, 0.3)',
-                      borderTopColor: '#38d9a9',
-                      borderRadius: '50%',
-                      animation: 'spin 0.6s linear infinite',
-                    }} />
-                    Отчёт активности...
-                  </>
-                ) : (
-                  'Отчёт активности'
-                )}
-              </button>
             </div>
           </div>
-
-          {/* Отчёт активности по всем сотрудникам */}
-          {activitySummary && activitySummary.length > 0 && (
-            <div style={{ marginBottom: '20px', marginTop: '10px' }}>
-              <h3 style={{ color: '#ffe082', fontSize: '15px', marginBottom: '8px' }}>
-                Отчёт активности (все сотрудники)
-              </h3>
-              {activityError && (
-                <div style={{ color: '#e74c3c', marginBottom: '8px', fontSize: '13px' }}>
-                  {activityError}
-                </div>
-              )}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {activitySummary.map((item, idx) => {
-                  const displayName =
-                    item.fio && !item.fio.includes('?') ? item.fio : item.username;
-                  return (
-                  <div
-                    key={idx}
-                    style={{
-                      background: 'rgba(255, 255, 255, 0.03)',
-                      borderRadius: '10px',
-                      padding: '10px 12px',
-                      border: '1px solid rgba(56, 217, 169, 0.25)',
-                    }}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                      <span style={{ color: '#ffe082', fontWeight: 600 }}>
-                        {displayName}
-                      </span>
-                      <span style={{ color: '#43e97b', fontWeight: 600 }}>
-                        {item.totalActiveMinutes} мин активно / {item.totalIdleMinutes} мин простоя
-                      </span>
-                    </div>
-                    {item.topApps && item.topApps.length > 0 && (
-                      <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.7)' }}>
-                        Топ приложений:{' '}
-                        {item.topApps
-                          .map(app => `${app.name || 'unknown'} (${app.minutes} мин)`)
-                          .join(', ')}
-                      </div>
-                    )}
-                  </div>
-                )})}
-              </div>
-            </div>
-          )}
 
           {/* Результаты */}
           {loading ? (
@@ -709,16 +636,30 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
                     </h3>
                     <button
                       type="button"
-                      onClick={(e) => {
+                      onClick={async (e) => {
                         e.stopPropagation();
-                        const statsForUser = activitySummary.find(
-                          (s) => s.username === row.username
-                        ) || null;
+                        // Загружаем отчет активности для конкретного пользователя
+                        let userActivityStats = null;
+                        try {
+                          const params = new URLSearchParams({
+                            start: startDate,
+                            end: endDate,
+                          });
+                          const res = await fetch(`/api/activity-summary?${params.toString()}`);
+                          const data = await res.json();
+                          if (res.ok && data.success && Array.isArray(data.summary)) {
+                            userActivityStats = data.summary.find(
+                              (s) => s.username === row.username
+                            ) || null;
+                          }
+                        } catch (err) {
+                          console.error('Ошибка загрузки активности для пользователя', err);
+                        }
                         setDetailsModal({
                           open: true,
                           logs: row.sessions || row.logs || [],
                           username: displayName,
-                          activityStats: statsForUser,
+                          activityStats: userActivityStats,
                         });
                       }}
                       style={{

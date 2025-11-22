@@ -154,7 +154,7 @@ export default function UserWorkTimeDetailsMobile({
             }}
           >
             <FiClock size={18} />
-            Детали: {username}
+            Подробности: {username}
           </h2>
 
           <button
