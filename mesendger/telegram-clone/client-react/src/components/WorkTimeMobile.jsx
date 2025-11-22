@@ -667,9 +667,11 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
                         console.log('🔘 [WorkTimeMobile] DisplayName:', displayName);
                         console.log('🔘 [WorkTimeMobile] Row username:', row.username);
                         console.log('🔘 [WorkTimeMobile] Row sessions:', row.sessions?.length || 0);
+                        console.log('🔘 [WorkTimeMobile] Start date:', startDate, 'End date:', endDate);
                         
                         // Асинхронная загрузка активности, URL и скриншотов и открытие модалки
                         (async () => {
+                          console.log('🔄 [WorkTimeMobile] Начинаем асинхронную загрузку данных...');
                           let userActivityStats = null;
                           let urls = [];
                           let screenshots = [];
@@ -695,24 +697,47 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
                           }
                           
                           // Загружаем URL и скриншоты
+                          console.log('📡 [WorkTimeMobile] Начинаем загрузку activity-details...');
+                          console.log('📡 [WorkTimeMobile] Параметры:', { username: row.username, start: startDate, end: endDate });
                           try {
+                            if (!row.username) {
+                              console.error('❌ [WorkTimeMobile] НЕТ username в row!', row);
+                            }
+                            if (!startDate || !endDate) {
+                              console.error('❌ [WorkTimeMobile] НЕТ дат!', { startDate, endDate });
+                            }
+                            
                             const detailsParams = new URLSearchParams({
-                              username: row.username,
-                              start: startDate,
-                              end: endDate,
+                              username: row.username || '',
+                              start: startDate || '',
+                              end: endDate || '',
                             });
+                            const apiUrl = `/api/activity-details?${detailsParams.toString()}`;
                             console.log('📡 [WorkTimeMobile] Загружаем activity-details для:', row.username);
-                            const detailsRes = await fetch(`/api/activity-details?${detailsParams.toString()}`);
+                            console.log('📡 [WorkTimeMobile] URL запроса:', apiUrl);
+                            
+                            const detailsRes = await fetch(apiUrl);
+                            console.log('📡 [WorkTimeMobile] Статус ответа:', detailsRes.status, detailsRes.statusText);
+                            
                             const detailsData = await detailsRes.json();
+                            console.log('📡 [WorkTimeMobile] Ответ от сервера:', detailsData);
+                            
                             if (detailsRes.ok && detailsData.success) {
                               urls = detailsData.urls || [];
                               screenshots = detailsData.screenshots || [];
-                              console.log('✅ [WorkTimeMobile] URLs и скриншоты загружены:', { urlsCount: urls.length, screenshotsCount: screenshots.length });
+                              console.log('✅ [WorkTimeMobile] URLs и скриншоты загружены:', { 
+                                urlsCount: urls.length, 
+                                screenshotsCount: screenshots.length,
+                                urls: urls.slice(0, 3),
+                                screenshots: screenshots.slice(0, 3)
+                              });
                             } else {
                               console.warn('⚠️ [WorkTimeMobile] Activity details не получены:', detailsData);
+                              console.warn('⚠️ [WorkTimeMobile] Status:', detailsRes.status, 'Success:', detailsData.success);
                             }
                           } catch (err) {
                             console.error('❌ [WorkTimeMobile] Ошибка загрузки URL и скриншотов:', err);
+                            console.error('❌ [WorkTimeMobile] Stack:', err.stack);
                           }
                           
                           const logsToShow = Array.isArray(row.sessions) ? row.sessions : (Array.isArray(row.logs) ? row.logs : []);
