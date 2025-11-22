@@ -253,33 +253,35 @@ function Send-Screenshot {
         
         Write-Host "[$(Get-Date -Format 'u')] Sending screenshot to server: $fileName ($($fileBytes.Length) bytes)"
         
-        # Используем WebRequest для отправки multipart/form-data
-        # PowerShell 5.1+ поддерживает -InFile, но лучше использовать правильный multipart формат
-        $boundary = [System.Guid]::NewGuid().ToString()
+        # Используем правильный формат multipart/form-data
+        # В PowerShell 7+ можно использовать -Form, но для совместимости используем ручное формирование
+        $boundary = "----WebKitFormBoundary" + [System.Guid]::NewGuid().ToString().Replace('-', '')
         $CRLF = "`r`n"
         
-        # Строим multipart/form-data тело
-        $bodyBuilder = [System.Text.StringBuilder]::new()
+        # Формируем части multipart/form-data
+        $parts = @()
         
         # Username поле
-        [void]$bodyBuilder.Append("--$boundary$CRLF")
-        [void]$bodyBuilder.Append("Content-Disposition: form-data; name=`"username`"$CRLF")
-        [void]$bodyBuilder.Append("$CRLF")
-        [void]$bodyBuilder.Append("$UserUsername$CRLF")
+        $parts += "--$boundary$CRLF"
+        $parts += "Content-Disposition: form-data; name=`"username`"$CRLF"
+        $parts += "$CRLF"
+        $parts += "$UserUsername$CRLF"
         
         # Timestamp поле
-        [void]$bodyBuilder.Append("--$boundary$CRLF")
-        [void]$bodyBuilder.Append("Content-Disposition: form-data; name=`"timestamp`"$CRLF")
-        [void]$bodyBuilder.Append("$CRLF")
-        [void]$bodyBuilder.Append("$timestamp$CRLF")
+        $parts += "--$boundary$CRLF"
+        $parts += "Content-Disposition: form-data; name=`"timestamp`"$CRLF"
+        $parts += "$CRLF"
+        $parts += "$timestamp$CRLF"
         
         # Файл
-        [void]$bodyBuilder.Append("--$boundary$CRLF")
-        [void]$bodyBuilder.Append("Content-Disposition: form-data; name=`"screenshot`"; filename=`"$fileName`"$CRLF")
-        [void]$bodyBuilder.Append("Content-Type: image/jpeg$CRLF")
-        [void]$bodyBuilder.Append("$CRLF")
+        $parts += "--$boundary$CRLF"
+        $parts += "Content-Disposition: form-data; name=`"screenshot`"; filename=`"$fileName`"$CRLF"
+        $parts += "Content-Type: image/jpeg$CRLF"
+        $parts += "$CRLF"
         
-        $headerBytes = [System.Text.Encoding]::UTF8.GetBytes($bodyBuilder.ToString())
+        # Объединяем все части
+        $headerText = $parts -join ''
+        $headerBytes = [System.Text.Encoding]::UTF8.GetBytes($headerText)
         $footerBytes = [System.Text.Encoding]::UTF8.GetBytes("$CRLF--$boundary--$CRLF")
         
         $body = $headerBytes + $fileBytes + $footerBytes
