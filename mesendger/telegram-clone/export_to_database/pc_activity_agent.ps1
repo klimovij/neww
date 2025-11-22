@@ -1,0 +1,321 @@
+param(
+    [string]$User = $env:USERNAME
+)
+
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+
+# ⚙️ НАСТРОЙКА ДЛЯ КОНКРЕТНОГО СОТРУДНИКА
+# --------------------------------------
+# ВАЖНО: здесь ИСПОЛЬЗУЕМ ТОЛЬКО ЛАТИНИЦУ (без русских букв),
+# а красивое ФИО берём из таблицы users на сервере.
+
+# Логин сотрудника (должен совпадать с полем users.username на сервере)
+$UserUsername = "Ksendzik_Oleg"     # ← здесь ты для каждого ставишь свой логин: ivan_ivanov, petrov_petr и т.п.
+
+# Адрес сервера и ключ (одинаковые для всех ПК)
+$GOOGLE_SERVER_URL       = "http://35.232.108.72"
+$REMOTE_WORKTIME_API_KEY = "BsKFpZmdp6ocPKUD6g6YxTgMSTZEaPZXkbddxsifERA="
+
+# --------------------------------------
+
+# Настройки агента
+$LogsDir = "C:\pc-worktime\logs"
+$SendIntervalMinutes = 1  # Отправляем данные каждую 1 минуту (для теста)
+$MaxEventsPerBatch = 10   # Максимум событий в одной пачке (для теста)
+
+# Создаём папку для логов, если её нет
+if (-not (Test-Path $LogsDir)) {
+    New-Item -ItemType Directory -Path $LogsDir -Force | Out-Null
+}
+
+$LogFile = Join-Path $LogsDir "activity_$(Get-Date -Format 'yyyy-MM-dd').jsonl"
+Write-Host "Writing activity log to: $LogFile"
+
+# Функция для получения активности
+function Get-ActivityData {
+    $timestamp = (Get-Date).ToString("o")
+    $idleMinutes = 0
+    $procName = "unknown"
+    $windowTitle = ""
+    
+    try {
+        # Получаем время простоя системы (idle time)
+        $lastInput = [System.Windows.Forms.Cursor]::Position
+        Add-Type -AssemblyName System.Windows.Forms
+        $idleTime = [System.Windows.Forms.SystemInformation]::IdleTime
+        $idleMinutes = [Math]::Floor($idleTime / 1000 / 60)  # Конвертируем миллисекунды в минуты
+    } catch {
+        # Если не удалось получить idle time, пробуем через Win32 API
+        try {
+            Add-Type -TypeDefinition @"
+                using System;
+                using System.Runtime.InteropServices;
+                public class IdleTime {
+                    [DllImport("user32.dll")]
+                    static extern bool GetLastInputInfo(ref LASTINPUTINFO plii);
+                    [StructLayout(LayoutKind.Sequential)]
+                    struct LASTINPUTINFO {
+                        public uint cbSize;
+                        public uint dwTime;
+                    }
+                    public static TimeSpan GetIdleTime() {
+                        LASTINPUTINFO lii = new LASTINPUTINFO();
+                        lii.cbSize = (uint)Marshal.SizeOf(typeof(LASTINPUTINFO));
+                        GetLastInputInfo(ref lii);
+                        return TimeSpan.FromMilliseconds(Environment.TickCount - lii.dwTime);
+                    }
+                }
+"@
+            $idleSpan = [IdleTime]::GetIdleTime()
+            $idleMinutes = [Math]::Floor($idleSpan.TotalMinutes)
+        } catch {
+            $idleMinutes = 0
+        }
+    }
+    
+    # Получаем активное окно и процесс
+    try {
+        Add-Type -TypeDefinition @"
+            using System;
+            using System.Runtime.InteropServices;
+            using System.Text;
+            public class WindowInfo {
+                [DllImport("user32.dll")]
+                static extern IntPtr GetForegroundWindow();
+                [DllImport("user32.dll")]
+                static extern int GetWindowText(IntPtr hWnd, StringBuilder text, int count);
+                [DllImport("user32.dll", SetLastError = true)]
+                static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);
+                public static string GetActiveWindowTitle() {
+                    IntPtr hWnd = GetForegroundWindow();
+                    StringBuilder title = new StringBuilder(256);
+                    GetWindowText(hWnd, title, title.Capacity);
+                    return title.ToString();
+                }
+                public static uint GetActiveProcessId() {
+                    IntPtr hWnd = GetForegroundWindow();
+                    uint processId = 0;
+                    GetWindowThreadProcessId(hWnd, out processId);
+                    return processId;
+                }
+            }
+"@
+        $windowTitle = [WindowInfo]::GetActiveWindowTitle()
+        $processId = [WindowInfo]::GetActiveProcessId()
+        
+        if ($processId -gt 0) {
+            try {
+                $proc = Get-Process -Id $processId -ErrorAction SilentlyContinue
+                if ($proc) {
+                    $procName = $proc.ProcessName
+                }
+            } catch {
+                $procName = "unknown"
+            }
+        }
+    } catch {
+        $procName = "unknown"
+        $windowTitle = ""
+    }
+    
+    return @{
+        username = $UserUsername
+        timestamp = $timestamp
+        idleMinutes = $idleMinutes
+        procName = $procName
+        windowTitle = $windowTitle
+    }
+}
+
+# Функция для отправки данных на сервер
+function Send-ActivityBatch {
+    param([array]$Events)
+    
+    if ($Events.Count -eq 0) {
+        Write-Host "[$(Get-Date -Format 'u')] No events to send"
+        return $false
+    }
+    
+    $apiUrl = "$GOOGLE_SERVER_URL/api/activity-log-batch"
+    $headers = @{
+        "X-API-Key" = $REMOTE_WORKTIME_API_KEY
+        "Content-Type" = "application/json; charset=utf-8"
+    }
+    
+    # Преобразуем события в формат, который ожидает сервер
+    $eventsToSend = $Events | ForEach-Object {
+        @{
+            username = $_.username
+            timestamp = $_.timestamp
+            idleMinutes = $_.idleMinutes
+            procName = $_.procName
+            windowTitle = $_.windowTitle
+        }
+    }
+    
+    $body = $eventsToSend | ConvertTo-Json -Depth 5 -Compress
+    
+    # Логируем детали отправки
+    Write-Host "[$(Get-Date -Format 'u')] Sending batch of $($Events.Count) events to server..."
+    Write-Host "[$(Get-Date -Format 'u')] URL: $apiUrl"
+    Write-Host "[$(Get-Date -Format 'u')] API Key (first 10 chars): $($REMOTE_WORKTIME_API_KEY.Substring(0, [Math]::Min(10, $REMOTE_WORKTIME_API_KEY.Length)))..."
+    Write-Host "[$(Get-Date -Format 'u')] Body preview: $($body.Substring(0, [Math]::Min(200, $body.Length)))..."
+    
+    try {
+        $response = Invoke-RestMethod -Uri $apiUrl -Method POST -Headers $headers -Body $body -TimeoutSec 15
+        Write-Host "[$(Get-Date -Format 'u')] ✅ Successfully sent batch: imported=$($response.imported), total=$($response.total)" -ForegroundColor Green
+        Write-Host "[$(Get-Date -Format 'u')] RESPONSE: $($response | ConvertTo-Json -Depth 5)"
+        return $true
+    } catch {
+        $errorMsg = $_.Exception.Message
+        $statusCode = $_.Exception.Response.StatusCode.value__
+        if ($_.ErrorDetails.Message) {
+            $errorMsg += " | Details: $($_.ErrorDetails.Message)"
+        }
+        Write-Host "[$(Get-Date -Format 'u')] ❌ ERROR sending batch (Status: $statusCode): $errorMsg" -ForegroundColor Red
+        if ($_.ErrorDetails.Message) {
+            Write-Host "[$(Get-Date -Format 'u')] Error response: $($_.ErrorDetails.Message)" -ForegroundColor Red
+        }
+        return $false
+    }
+}
+
+# Функция для чтения неотправленных событий из лог-файла
+function Read-UnsentEvents {
+    if (-not (Test-Path $LogFile)) {
+        return @()
+    }
+    
+    $events = @()
+    try {
+        $lines = Get-Content $LogFile -ErrorAction SilentlyContinue
+        foreach ($line in $lines) {
+            if ($line -match '"sent":\s*false') {
+                try {
+                    $event = $line | ConvertFrom-Json
+                    $events += $event
+                } catch {
+                    # Пропускаем некорректные строки
+                }
+            }
+        }
+    } catch {
+        Write-Host "Error reading log file: $($_.Exception.Message)"
+    }
+    
+    return $events
+}
+
+# Функция для пометки событий как отправленных
+function Mark-EventsAsSent {
+    param([array]$SentEvents)
+    
+    if (-not (Test-Path $LogFile) -or $SentEvents.Count -eq 0) {
+        return
+    }
+    
+    try {
+        $lines = Get-Content $LogFile -ErrorAction SilentlyContinue
+        $newLines = @()
+        
+        foreach ($line in $lines) {
+            try {
+                $event = $line | ConvertFrom-Json
+                $eventTimestamp = $event.timestamp
+                
+                # Проверяем, было ли это событие отправлено
+                $wasSent = $false
+                foreach ($sentEvent in $SentEvents) {
+                    if ($sentEvent.timestamp -eq $eventTimestamp) {
+                        $wasSent = $true
+                        break
+                    }
+                }
+                
+                if ($wasSent) {
+                    $event | Add-Member -NotePropertyName "sent" -NotePropertyValue $true -Force
+                } else {
+                    if (-not $event.sent) {
+                        $event | Add-Member -NotePropertyName "sent" -NotePropertyValue $false -Force
+                    }
+                }
+                
+                $newLines += ($event | ConvertTo-Json -Compress)
+            } catch {
+                # Сохраняем исходную строку, если не удалось распарсить
+                $newLines += $line
+            }
+        }
+        
+        # Перезаписываем файл
+        $newLines | Out-File -FilePath $LogFile -Encoding UTF8 -Force
+    } catch {
+        Write-Host "Error marking events as sent: $($_.Exception.Message)"
+    }
+}
+
+# Основной цикл агента
+Write-Host "[$(Get-Date -Format 'u')] Starting activity agent for user: $UserUsername"
+
+$lastSendTime = Get-Date
+$localEvents = @()
+
+while ($true) {
+    try {
+        # Собираем данные активности
+        $activityData = Get-ActivityData
+        
+        # Добавляем флаг отправки
+        $activityData | Add-Member -NotePropertyName "sent" -NotePropertyValue $false
+        
+        # Сохраняем в локальный файл
+        $jsonLine = $activityData | ConvertTo-Json -Compress
+        $jsonLine | Out-File -FilePath $LogFile -Append -Encoding UTF8
+        
+        # Добавляем в буфер для отправки
+        $localEvents += $activityData
+        
+        $titlePreview = if ($activityData.windowTitle.Length -gt 30) { $activityData.windowTitle.Substring(0, 30) + "..." } else { $activityData.windowTitle }
+        Write-Host "[$(Get-Date -Format 'u')] Activity logged: idle=$($activityData.idleMinutes)min, proc=$($activityData.procName), title=$titlePreview"
+        
+        # Проверяем, нужно ли отправить данные
+        $timeSinceLastSend = (Get-Date) - $lastSendTime
+        $shouldSend = $timeSinceLastSend.TotalMinutes -ge $SendIntervalMinutes -or $localEvents.Count -ge $MaxEventsPerBatch
+        
+        Write-Host "[$(Get-Date -Format 'u')] Check send: timeSinceLastSend=$([Math]::Round($timeSinceLastSend.TotalMinutes, 2))min, localEvents=$($localEvents.Count), shouldSend=$shouldSend"
+        
+        if ($shouldSend) {
+            # Объединяем локальные события с неотправленными из файла
+            $unsentEvents = Read-UnsentEvents
+            Write-Host "[$(Get-Date -Format 'u')] Found $($unsentEvents.Count) unsent events in log file"
+            
+            $allEventsToSend = $localEvents + $unsentEvents
+            
+            if ($allEventsToSend.Count -gt 0) {
+                Write-Host "[$(Get-Date -Format 'u')] Preparing to send $($allEventsToSend.Count) events..."
+                # Отправляем пачку
+                $success = Send-ActivityBatch -Events $allEventsToSend
+                
+                if ($success) {
+                    # Помечаем события как отправленные
+                    Mark-EventsAsSent -SentEvents $allEventsToSend
+                    $localEvents = @()
+                    $lastSendTime = Get-Date
+                    Write-Host "[$(Get-Date -Format 'u')] ✅ Events marked as sent"
+                } else {
+                    Write-Host "[$(Get-Date -Format 'u')] ❌ Failed to send events, will retry later"
+                }
+            } else {
+                Write-Host "[$(Get-Date -Format 'u')] No events to send"
+            }
+        }
+        
+        # Ждём 1 минуту перед следующим сбором данных
+        # Для теста можно уменьшить до 30 секунд
+        Start-Sleep -Seconds 60
+    } catch {
+        Write-Host "[$(Get-Date -Format 'u')] ERROR in main loop: $($_.Exception.Message)" -ForegroundColor Red
+        Start-Sleep -Seconds 60
+    }
+}
+

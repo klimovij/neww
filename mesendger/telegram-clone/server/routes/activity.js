@@ -3,8 +3,8 @@ const router = express.Router();
 const db = require('../database');
 
 // Используем тот же API-ключ, что и для удалённого учёта времени
-const REMOTE_WORKTIME_API_KEY =
-  process.env.REMOTE_WORKTIME_API_KEY || 'default-remote-api-key-change-in-production';
+// Захардкожен для совместимости с клиентскими скриптами
+const REMOTE_WORKTIME_API_KEY = 'BsKFpZmdp6ocPKUD6g6YxTgMSTZEaPZXkbddxsifERA=';
 
 function authenticateActivityRequest(req, res, next) {
   const apiKey = req.headers['x-api-key'] || req.query.apiKey;
