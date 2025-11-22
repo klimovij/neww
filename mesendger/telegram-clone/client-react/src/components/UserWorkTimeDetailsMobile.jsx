@@ -54,12 +54,15 @@ export default function UserWorkTimeDetailsMobile({
     onClose();
   };
 
+  console.log('[UserWorkTimeDetailsMobile] Компонент рендерится, open =', open, 'logs:', logs?.length || 0, 'username:', username);
+
   if (!open) {
-    console.log('[UserWorkTimeDetailsMobile] Модалка закрыта, open =', open);
+    console.log('[UserWorkTimeDetailsMobile] Модалка закрыта, возвращаем null');
     return null;
   }
 
-  console.log('[UserWorkTimeDetailsMobile] Модалка открывается! open =', open, 'logs:', logs, 'username:', username);
+  console.log('[UserWorkTimeDetailsMobile] ✅ Модалка открывается! open =', open, 'logs:', logs?.length || 0, 'username:', username);
+  console.log('[UserWorkTimeDetailsMobile] ActivityStats:', activityStats);
 
   // Сортируем логи по времени
   const sortedLogs = [...(logs || [])].sort((a, b) => {

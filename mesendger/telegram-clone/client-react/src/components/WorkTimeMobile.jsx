@@ -776,10 +776,14 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
         `}</style>
 
         {/* Модалки */}
+        {detailsModal.open && console.log('🔍 [WorkTimeMobile] Рендер модалки деталей:', { isMobile, open: detailsModal.open, logsCount: detailsModal.logs?.length, username: detailsModal.username })}
         {isMobile ? (
           <UserWorkTimeDetailsMobile
             open={detailsModal.open}
-            onClose={() => setDetailsModal({ open: false, logs: [], username: '', activityStats: null })}
+            onClose={() => {
+              console.log('🔴 [WorkTimeMobile] Закрываем модалку деталей');
+              setDetailsModal({ open: false, logs: [], username: '', activityStats: null });
+            }}
             logs={detailsModal.logs}
             username={detailsModal.username}
             activityStats={detailsModal.activityStats}
@@ -790,7 +794,10 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
         ) : (
           <UserWorkTimeDetailsModal
             isOpen={detailsModal.open}
-            onRequestClose={() => setDetailsModal({ open: false, logs: [], username: '', activityStats: null })}
+            onRequestClose={() => {
+              console.log('🔴 [WorkTimeMobile] Закрываем модалку деталей (desktop)');
+              setDetailsModal({ open: false, logs: [], username: '', activityStats: null });
+            }}
             logs={detailsModal.logs}
             username={detailsModal.username}
             activityStats={detailsModal.activityStats}
