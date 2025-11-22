@@ -132,12 +132,14 @@ if ($actualScriptPath) {
         -WorkingDirectory (Split-Path $actualScriptPath -Parent)
 
     # Запуск при входе пользователя с задержкой 30 секунд
+    # Не указываем UserId явно в триггере - он будет использовать пользователя из Principal
     $triggerActivity = New-ScheduledTaskTrigger -AtLogOn
-    $triggerActivity.UserId = $env:USERDOMAIN + "\" + $env:USERNAME
     $triggerActivity.Enabled = $true
     # Задержка 30 секунд после входа (PT30S = 30 секунд)
-    $triggerActivity.Delay = "PT30S"
+    # Используем TimeSpan вместо строки для совместимости
+    $triggerActivity.Delay = (New-TimeSpan -Seconds 30)
 
+    # Principal должен совпадать с пользователем, который входит в систему
     $principalActivity = New-ScheduledTaskPrincipal -UserId $env:USERNAME -LogonType Interactive -RunLevel Highest
 
     $settingsActivity = New-ScheduledTaskSettingsSet `
