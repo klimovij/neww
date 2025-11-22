@@ -358,7 +358,7 @@ function Send-ActivityBatch {
     } catch {
         # Если .NET сериализатор не доступен, используем PowerShell ConvertTo-Json
         Write-Host "[$(Get-Date -Format 'u')] Warning: Using PowerShell ConvertTo-Json fallback" -ForegroundColor Yellow
-        $body = $eventsToSend | ConvertTo-Json -Depth 10 -Compress -EscapeHandling EscapeHtml
+        $body = $eventsToSend | ConvertTo-Json -Depth 10 -Compress
     }
     
     # Проверяем валидность JSON перед отправкой
