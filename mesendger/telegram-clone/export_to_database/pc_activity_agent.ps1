@@ -325,8 +325,10 @@ function Send-ActivityBatch {
         $event
     }
     
-    # Используем UTF8 без BOM для корректной отправки JSON
-    $body = $eventsToSend | ConvertTo-Json -Depth 5 -Compress -EscapeHandling EscapeHtml
+    # Преобразуем в JSON с правильной кодировкой
+    $body = $eventsToSend | ConvertTo-Json -Depth 5 -Compress
+    # Исправляем проблемные символы в JSON
+    $body = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::UTF8.GetBytes($body))
     
     # Логируем детали отправки
     Write-Host "[$(Get-Date -Format 'u')] Sending batch of $($Events.Count) events to server..."
@@ -335,7 +337,9 @@ function Send-ActivityBatch {
     Write-Host "[$(Get-Date -Format 'u')] Body preview: $($body.Substring(0, [Math]::Min(200, $body.Length)))..."
     
     try {
-        $response = Invoke-RestMethod -Uri $apiUrl -Method POST -Headers $headers -Body $body -TimeoutSec 15
+        # Используем UTF8Encoding для правильной отправки JSON
+        $bodyBytes = [System.Text.Encoding]::UTF8.GetBytes($body)
+        $response = Invoke-RestMethod -Uri $apiUrl -Method POST -Headers $headers -Body $bodyBytes -ContentType "application/json; charset=utf-8" -TimeoutSec 15
         Write-Host "[$(Get-Date -Format 'u')] ✅ Successfully sent batch: imported=$($response.imported), total=$($response.total)" -ForegroundColor Green
         Write-Host "[$(Get-Date -Format 'u')] RESPONSE: $($response | ConvertTo-Json -Depth 5)"
         return $true
