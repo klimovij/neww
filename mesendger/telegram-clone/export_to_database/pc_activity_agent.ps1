@@ -127,10 +127,11 @@ function Get-ActivityData {
     $browserUrl = ""
     if ($procName -match "^(chrome|msedge|firefox|opera|brave)$") {
         # Пытаемся извлечь URL из заголовка окна
-        # Формат: "Страница - Браузер" или "URL - Браузер"
-        if ($windowTitle -match "^(.*?)\s+[-–-]\s+(chrome|msedge|firefox|opera|brave)") {
+        # Формат может быть разным: "Title - Browser" или "URL - Browser" или просто URL
+        # Используем простой паттерн без проблемных символов
+        if ($windowTitle -match "^(.+?)\s*[-\u2013\u2014]\s*(chrome|msedge|firefox|opera|brave)") {
             $potentialUrl = $matches[1].Trim()
-            # Проверяем, похоже ли на URL
+            # Проверяем, похоже ли на URL (начинается с http/https/www или содержит точку и доменное расширение)
             if ($potentialUrl -match "^(https?://|www\.|[a-zA-Z0-9\-]+\.[a-zA-Z]{2,})") {
                 $browserUrl = $potentialUrl
                 # Если не начинается с http:// или https://, добавляем https://
