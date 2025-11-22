@@ -460,13 +460,29 @@ function Mark-EventsAsSent {
 }
 
 # Основной цикл агента
-Write-Host "[$(Get-Date -Format 'u')] Starting activity agent for user: $UserUsername"
+$StartupLogFile = Join-Path $LogsDir "agent_startup.log"
+$startupMessage = "[$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')] Starting activity agent for user: $UserUsername (PID: $PID)"
+Write-Host $startupMessage
+$startupMessage | Out-File -FilePath $StartupLogFile -Append -Encoding UTF8
+
+# Логируем информацию о запуске
+$startupInfo = @{
+    timestamp = (Get-Date).ToString("o")
+    username = $UserUsername
+    pid = $PID
+    scriptPath = $MyInvocation.MyCommand.Path
+    workingDirectory = Get-Location
+    powershellVersion = $PSVersionTable.PSVersion.ToString()
+} | ConvertTo-Json -Compress
+$startupInfo | Out-File -FilePath $StartupLogFile -Append -Encoding UTF8
 
 $lastSendTime = Get-Date
 $lastScreenshotTime = Get-Date
 $localEvents = @()
 
-while ($true) {
+# Оборачиваем весь цикл в try-catch для перехвата критических ошибок
+try {
+    while ($true) {
     try {
         # Собираем данные активности
         $activityData = Get-ActivityData
@@ -553,8 +569,20 @@ while ($true) {
         # Для теста можно уменьшить до 30 секунд
         Start-Sleep -Seconds 60
     } catch {
-        Write-Host "[$(Get-Date -Format 'u')] ERROR in main loop: $($_.Exception.Message)" -ForegroundColor Red
+        $errorMsg = "[$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')] ERROR in main loop: $($_.Exception.Message)"
+        Write-Host $errorMsg -ForegroundColor Red
+        $errorMsg | Out-File -FilePath $StartupLogFile -Append -Encoding UTF8
+        $errorDetails = "[$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')] Error details: $($_.Exception | ConvertTo-Json -Compress)"
+        $errorDetails | Out-File -FilePath $StartupLogFile -Append -Encoding UTF8
         Start-Sleep -Seconds 60
     }
+} catch {
+    # Критическая ошибка, которая может завершить скрипт
+    $criticalError = "[$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')] CRITICAL ERROR - Agent will exit: $($_.Exception.Message)"
+    Write-Host $criticalError -ForegroundColor Red
+    $criticalError | Out-File -FilePath $StartupLogFile -Append -Encoding UTF8
+    $criticalDetails = "[$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')] Critical error details: $($_.Exception | ConvertTo-Json -Compress)"
+    $criticalDetails | Out-File -FilePath $StartupLogFile -Append -Encoding UTF8
+    throw  # Пробрасываем ошибку дальше, чтобы планировщик задач мог перезапустить скрипт
 }
 
