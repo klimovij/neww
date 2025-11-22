@@ -245,55 +245,55 @@ function Send-Screenshot {
     }
     
     $apiUrl = "$GOOGLE_SERVER_URL/api/activity-screenshot"
-    $headers = @{
-        "X-API-Key" = $REMOTE_WORKTIME_API_KEY
-    }
     
     try {
-        # Читаем файл скриншота
         $fileBytes = [System.IO.File]::ReadAllBytes($ScreenshotPath)
         $fileName = Split-Path $ScreenshotPath -Leaf
-        
-        # Создаём multipart/form-data
-        $boundary = [System.Guid]::NewGuid().ToString()
-        $CRLF = "`r`n"
-        $bodyLines = @()
-        
-        # Добавляем username
-        $bodyLines += "--$boundary"
-        $bodyLines += "Content-Disposition: form-data; name=`"username`""
-        $bodyLines += ""
-        $bodyLines += $UserUsername
-        
-        # Добавляем timestamp
-        $bodyLines += "--$boundary"
-        $bodyLines += "Content-Disposition: form-data; name=`"timestamp`""
-        $bodyLines += ""
-        $bodyLines += (Get-Date).ToString("o")
-        
-        # Добавляем файл
-        $bodyLines += "--$boundary"
-        $bodyLines += "Content-Disposition: form-data; name=`"screenshot`"; filename=`"$fileName`""
-        $bodyLines += "Content-Type: image/jpeg"
-        $bodyLines += ""
-        
-        # Конвертируем в байты
-        $headerBytes = [System.Text.Encoding]::UTF8.GetBytes($($bodyLines -join $CRLF) + $CRLF)
-        $footerBytes = [System.Text.Encoding]::UTF8.GetBytes($CRLF + "--$boundary--" + $CRLF)
-        
-        $body = $headerBytes + $fileBytes + $footerBytes
-        
-        $headers["Content-Type"] = "multipart/form-data; boundary=$boundary"
+        $timestamp = (Get-Date).ToString("o")
         
         Write-Host "[$(Get-Date -Format 'u')] Sending screenshot to server: $fileName ($($fileBytes.Length) bytes)"
         
-        $response = Invoke-RestMethod -Uri $apiUrl -Method POST -Headers $headers -Body $body -TimeoutSec 30
+        # Используем WebRequest для отправки multipart/form-data
+        # PowerShell 5.1+ поддерживает -InFile, но лучше использовать правильный multipart формат
+        $boundary = [System.Guid]::NewGuid().ToString()
+        $CRLF = "`r`n"
+        
+        # Строим multipart/form-data тело
+        $bodyBuilder = [System.Text.StringBuilder]::new()
+        
+        # Username поле
+        [void]$bodyBuilder.Append("--$boundary$CRLF")
+        [void]$bodyBuilder.Append("Content-Disposition: form-data; name=`"username`"$CRLF")
+        [void]$bodyBuilder.Append("$CRLF")
+        [void]$bodyBuilder.Append("$UserUsername$CRLF")
+        
+        # Timestamp поле
+        [void]$bodyBuilder.Append("--$boundary$CRLF")
+        [void]$bodyBuilder.Append("Content-Disposition: form-data; name=`"timestamp`"$CRLF")
+        [void]$bodyBuilder.Append("$CRLF")
+        [void]$bodyBuilder.Append("$timestamp$CRLF")
+        
+        # Файл
+        [void]$bodyBuilder.Append("--$boundary$CRLF")
+        [void]$bodyBuilder.Append("Content-Disposition: form-data; name=`"screenshot`"; filename=`"$fileName`"$CRLF")
+        [void]$bodyBuilder.Append("Content-Type: image/jpeg$CRLF")
+        [void]$bodyBuilder.Append("$CRLF")
+        
+        $headerBytes = [System.Text.Encoding]::UTF8.GetBytes($bodyBuilder.ToString())
+        $footerBytes = [System.Text.Encoding]::UTF8.GetBytes("$CRLF--$boundary--$CRLF")
+        
+        $body = $headerBytes + $fileBytes + $footerBytes
+        
+        $response = Invoke-RestMethod -Uri $apiUrl -Method POST -Body $body -Headers @{
+            "X-API-Key" = $REMOTE_WORKTIME_API_KEY
+            "Content-Type" = "multipart/form-data; boundary=$boundary"
+        } -TimeoutSec 30
         
         Write-Host "[$(Get-Date -Format 'u')] ✅ Screenshot sent successfully: $($response.success)"
         return $true
     } catch {
         $errorMsg = $_.Exception.Message
-        $statusCode = $_.Exception.Response.StatusCode.value__
+        $statusCode = if ($_.Exception.Response) { $_.Exception.Response.StatusCode.value__ } else { 'unknown' }
         if ($_.ErrorDetails.Message) {
             $errorMsg += " | Details: $($_.ErrorDetails.Message)"
         }
