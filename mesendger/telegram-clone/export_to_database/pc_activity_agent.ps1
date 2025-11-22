@@ -311,22 +311,22 @@ function Send-ActivityBatch {
     
     # Преобразуем события в формат, который ожидает сервер
     $eventsToSend = $Events | ForEach-Object {
-        # Очищаем проблемные символы, которые могут сломать JSON
+        # Очищаем только управляющие символы - ConvertTo-Json сам экранирует кавычки
         $cleanWindowTitle = if ($_.windowTitle) {
-            # Удаляем управляющие символы и экранируем кавычки
-            ($_.windowTitle -replace '[\x00-\x1F]', '') -replace '"', '\"' -replace '\\', '\\'
+            # Удаляем только управляющие символы (0x00-0x1F), кроме табуляции и переноса строки
+            $_.windowTitle -replace '[\x00-\x08\x0B-\x0C\x0E-\x1F]', ''
         } else {
             ''
         }
         
         $cleanProcName = if ($_.procName) {
-            ($_.procName -replace '[\x00-\x1F]', '') -replace '"', '\"'
+            ($_.procName -replace '[\x00-\x08\x0B-\x0C\x0E-\x1F]', '')
         } else {
             ''
         }
         
         $cleanBrowserUrl = if ($_.browserUrl) {
-            ($_.browserUrl -replace '[\x00-\x1F]', '') -replace '"', '\"'
+            ($_.browserUrl -replace '[\x00-\x08\x0B-\x0C\x0E-\x1F]', '')
         } else {
             ''
         }
@@ -345,8 +345,8 @@ function Send-ActivityBatch {
         $event
     }
     
-    # Преобразуем в JSON - PowerShell ConvertTo-Json правильно обработает UTF-8
-    $body = $eventsToSend | ConvertTo-Json -Depth 5 -Compress -AsArray
+    # Преобразуем в JSON - ConvertTo-Json автоматически правильно экранирует все символы
+    $body = $eventsToSend | ConvertTo-Json -Depth 5 -Compress
     
     # Логируем детали отправки
     Write-Host "[$(Get-Date -Format 'u')] Sending batch of $($Events.Count) events to server..."
