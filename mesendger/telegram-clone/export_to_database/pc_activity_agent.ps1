@@ -253,42 +253,15 @@ function Send-Screenshot {
         
         Write-Host "[$(Get-Date -Format 'u')] Sending screenshot to server: $fileName ($($fileBytes.Length) bytes)"
         
-        # Используем правильный формат multipart/form-data
-        # В PowerShell 7+ можно использовать -Form, но для совместимости используем ручное формирование
-        $boundary = "----WebKitFormBoundary" + [System.Guid]::NewGuid().ToString().Replace('-', '')
-        $CRLF = "`r`n"
+        # Используем встроенный параметр -Form в PowerShell 7+ для автоматического формирования multipart/form-data
+        $formData = @{
+            username = $UserUsername
+            timestamp = $timestamp
+            screenshot = Get-Item -Path $ScreenshotPath
+        }
         
-        # Формируем части multipart/form-data
-        $parts = @()
-        
-        # Username поле
-        $parts += "--$boundary$CRLF"
-        $parts += "Content-Disposition: form-data; name=`"username`"$CRLF"
-        $parts += "$CRLF"
-        $parts += "$UserUsername$CRLF"
-        
-        # Timestamp поле
-        $parts += "--$boundary$CRLF"
-        $parts += "Content-Disposition: form-data; name=`"timestamp`"$CRLF"
-        $parts += "$CRLF"
-        $parts += "$timestamp$CRLF"
-        
-        # Файл
-        $parts += "--$boundary$CRLF"
-        $parts += "Content-Disposition: form-data; name=`"screenshot`"; filename=`"$fileName`"$CRLF"
-        $parts += "Content-Type: image/jpeg$CRLF"
-        $parts += "$CRLF"
-        
-        # Объединяем все части
-        $headerText = $parts -join ''
-        $headerBytes = [System.Text.Encoding]::UTF8.GetBytes($headerText)
-        $footerBytes = [System.Text.Encoding]::UTF8.GetBytes("$CRLF--$boundary--$CRLF")
-        
-        $body = $headerBytes + $fileBytes + $footerBytes
-        
-        $response = Invoke-RestMethod -Uri $apiUrl -Method POST -Body $body -Headers @{
+        $response = Invoke-RestMethod -Uri $apiUrl -Method POST -Form $formData -Headers @{
             "X-API-Key" = $REMOTE_WORKTIME_API_KEY
-            "Content-Type" = "multipart/form-data; boundary=$boundary"
         } -TimeoutSec 30
         
         Write-Host "[$(Get-Date -Format 'u')] ✅ Screenshot sent successfully: $($response.success)"
