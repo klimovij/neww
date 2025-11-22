@@ -312,30 +312,29 @@ function Send-ActivityBatch {
     # Преобразуем события в формат, который ожидает сервер
     $eventsToSend = @()
     foreach ($event in $Events) {
-        # Очищаем проблемные символы
-        $cleanWindowTitle = if ($event.windowTitle) {
-            # Удаляем управляющие символы и заменяем на пробелы
-            ($event.windowTitle -replace '[\x00-\x1F]', ' ') -replace '\s+', ' ' -replace '^\s+|\s+$', ''
-        } else {
-            ''
+        # Функция для строгой очистки строк для JSON
+        function Clean-StringForJson {
+            param([string]$str)
+            if (-not $str) { return '' }
+            # Удаляем все управляющие символы (кроме разрешенных)
+            $cleaned = $str -replace '[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F]', ''
+            # Удаляем BOM и другие проблемные символы
+            $cleaned = $cleaned.Trim()
+            # Ограничиваем длину
+            if ($cleaned.Length -gt 512) {
+                $cleaned = $cleaned.Substring(0, 512)
+            }
+            return $cleaned
         }
         
-        $cleanProcName = if ($event.procName) {
-            ($event.procName -replace '[\x00-\x1F]', ' ') -replace '\s+', ' ' -replace '^\s+|\s+$', ''
-        } else {
-            ''
-        }
+        $cleanWindowTitle = Clean-StringForJson -str $event.windowTitle
+        $cleanProcName = Clean-StringForJson -str $event.procName
+        $cleanBrowserUrl = Clean-StringForJson -str $event.browserUrl
         
-        $cleanBrowserUrl = if ($event.browserUrl) {
-            ($event.browserUrl -replace '[\x00-\x1F]', ' ') -replace '\s+', ' ' -replace '^\s+|\s+$', ''
-        } else {
-            ''
-        }
-        
-        $cleanEvent = [ordered]@{
-            username = $event.username
-            timestamp = $event.timestamp
-            idleMinutes = $event.idleMinutes
+        $cleanEvent = @{
+            username = [string]$event.username
+            timestamp = [string]$event.timestamp
+            idleMinutes = [int]$event.idleMinutes
             procName = $cleanProcName
             windowTitle = $cleanWindowTitle
         }
@@ -349,23 +348,31 @@ function Send-ActivityBatch {
     }
     
     # Используем .NET System.Web.Script.Serialization для более надежной сериализации JSON
-    Add-Type -AssemblyName System.Web.Extensions
-    $serializer = New-Object System.Web.Script.Serialization.JavaScriptSerializer
-    $serializer.MaxJsonLength = [Int32]::MaxValue
+    $body = $null
     try {
+        Add-Type -AssemblyName System.Web.Extensions -ErrorAction Stop
+        $serializer = New-Object System.Web.Script.Serialization.JavaScriptSerializer
+        $serializer.MaxJsonLength = [Int32]::MaxValue
         $body = $serializer.Serialize($eventsToSend)
+        Write-Host "[$(Get-Date -Format 'u')] Using .NET JavaScriptSerializer for JSON encoding" -ForegroundColor Green
     } catch {
         # Если .NET сериализатор не доступен, используем PowerShell ConvertTo-Json
         Write-Host "[$(Get-Date -Format 'u')] Warning: Using PowerShell ConvertTo-Json fallback" -ForegroundColor Yellow
-        $body = $eventsToSend | ConvertTo-Json -Depth 10 -Compress
-        
-        # Проверяем валидность JSON
-        try {
-            $null = $body | ConvertFrom-Json
-        } catch {
-            Write-Host "[$(Get-Date -Format 'u')] Error: Generated JSON is invalid!" -ForegroundColor Red
+        $body = $eventsToSend | ConvertTo-Json -Depth 10 -Compress -EscapeHandling EscapeHtml
+    }
+    
+    # Проверяем валидность JSON перед отправкой
+    try {
+        $testParse = $body | ConvertFrom-Json -ErrorAction Stop
+        if (-not $testParse) {
+            Write-Host "[$(Get-Date -Format 'u')] Error: JSON parse returned null!" -ForegroundColor Red
             return $false
         }
+        Write-Host "[$(Get-Date -Format 'u')] JSON validation passed: $($testParse.Count) events" -ForegroundColor Green
+    } catch {
+        Write-Host "[$(Get-Date -Format 'u')] Error: Generated JSON is invalid! $($_.Exception.Message)" -ForegroundColor Red
+        Write-Host "[$(Get-Date -Format 'u')] JSON preview (first 500 chars): $($body.Substring(0, [Math]::Min(500, $body.Length)))" -ForegroundColor Yellow
+        return $false
     }
     
     # Логируем детали отправки
