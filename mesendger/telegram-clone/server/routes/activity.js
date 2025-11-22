@@ -30,10 +30,22 @@ const screenshotUpload = multer({
     fileSize: 10 * 1024 * 1024 // 10MB
   },
   fileFilter: (req, file, cb) => {
-    if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/jpg' || file.mimetype === 'image/png') {
+    console.log('📸 [screenshot-upload] File filter check:', {
+      originalname: file.originalname,
+      mimetype: file.mimetype,
+      fieldname: file.fieldname
+    });
+    
+    // Принимаем файлы с правильными расширениями или правильными mimetypes
+    const validMimeTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+    const validExtensions = ['.jpg', '.jpeg', '.png'];
+    const fileExtension = path.extname(file.originalname).toLowerCase();
+    
+    if (validMimeTypes.includes(file.mimetype) || validExtensions.includes(fileExtension)) {
       cb(null, true);
     } else {
-      cb(new Error('Only JPEG and PNG images are allowed'), false);
+      console.error('❌ [screenshot-upload] Invalid file type:', file.mimetype, fileExtension);
+      cb(new Error(`Only JPEG and PNG images are allowed. Received: ${file.mimetype}, extension: ${fileExtension}`), false);
     }
   }
 });
@@ -205,9 +217,29 @@ router.get('/activity-summary', async (req, res) => {
 });
 
 // Приём скриншотов от агентов на ПК
-router.post('/activity-screenshot', authenticateActivityRequest, screenshotUpload.single('screenshot'), async (req, res) => {
+router.post('/activity-screenshot', authenticateActivityRequest, (req, res, next) => {
+  console.log('📸 [activity-screenshot] Received request:', {
+    contentType: req.get('Content-Type'),
+    hasBody: !!req.body,
+    bodyKeys: req.body ? Object.keys(req.body) : [],
+    username: req.body?.username
+  });
+  next();
+}, screenshotUpload.single('screenshot'), async (req, res) => {
   try {
+    console.log('📸 [activity-screenshot] After multer:', {
+      hasFile: !!req.file,
+      fileInfo: req.file ? {
+        originalname: req.file.originalname,
+        mimetype: req.file.mimetype,
+        size: req.file.size,
+        path: req.file.path
+      } : null,
+      body: req.body
+    });
+    
     if (!req.file) {
+      console.error('❌ [activity-screenshot] No file received');
       return res.status(400).json({
         success: false,
         error: 'Screenshot file is required',
