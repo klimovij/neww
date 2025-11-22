@@ -273,8 +273,23 @@ router.get('/activity-details', async (req, res) => {
       });
     }
 
+    console.log(`📊 [activity-details] Запрос для username=${username}, start=${start}, end=${end}`);
+    
     // Получаем URL-адреса из activity_logs
     const activityLogs = await db.getActivityLogsBetween({ start, end });
+    console.log(`📊 [activity-details] Получено ${activityLogs.length} логов из базы`);
+    
+    // Логируем первые несколько логов для отладки
+    const userLogs = activityLogs.filter(log => log.username === username);
+    console.log(`📊 [activity-details] Логов для пользователя ${username}: ${userLogs.length}`);
+    if (userLogs.length > 0) {
+      const withUrls = userLogs.filter(log => log.browser_url && log.browser_url.trim() !== '');
+      console.log(`📊 [activity-details] Логов с URL: ${withUrls.length}`);
+      if (withUrls.length > 0) {
+        console.log(`📊 [activity-details] Пример URL:`, withUrls[0].browser_url);
+      }
+    }
+    
     const urls = activityLogs
       .filter(log => log.username === username && log.browser_url && log.browser_url.trim() !== '')
       .map(log => ({
@@ -287,6 +302,7 @@ router.get('/activity-details', async (req, res) => {
 
     // Получаем скриншоты
     const screenshots = await db.getActivityScreenshots({ username, start, end });
+    console.log(`📊 [activity-details] Получено ${screenshots.length} скриншотов для пользователя ${username}`);
 
     // Формируем пути для доступа к файлам
     const screenshotsWithUrl = screenshots.map(shot => {

@@ -60,6 +60,8 @@ export default function UserWorkTimeDetailsMobile({
   };
 
   console.log('[UserWorkTimeDetailsMobile] Компонент рендерится, open =', open, 'logs:', logs?.length || 0, 'username:', username);
+  console.log('[UserWorkTimeDetailsMobile] URLs:', urls?.length || 0, urls);
+  console.log('[UserWorkTimeDetailsMobile] Screenshots:', screenshots?.length || 0, screenshots);
 
   if (!open) {
     console.log('[UserWorkTimeDetailsMobile] Модалка закрыта, возвращаем null');
