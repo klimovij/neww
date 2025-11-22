@@ -124,17 +124,19 @@ if ($actualScriptPath) {
     # Получаем имя пользователя для параметра -User
     $userParam = $env:USERNAME
 
-    $actionActivity = New-ScheduledTaskAction -Execute "powershell.exe" `
+    # Используем pwsh.exe (PowerShell 7) если доступен, иначе powershell.exe (Windows PowerShell 5.1)
+    $psExecutable = if (Get-Command pwsh.exe -ErrorAction SilentlyContinue) { "pwsh.exe" } else { "powershell.exe" }
+    
+    $actionActivity = New-ScheduledTaskAction -Execute $psExecutable `
         -Argument "-ExecutionPolicy Bypass -WindowStyle Hidden -File `"$actualScriptPath`" -User $userParam" `
         -WorkingDirectory (Split-Path $actualScriptPath -Parent)
 
-    # Запуск при входе пользователя (главный триггер)
+    # Запуск при входе пользователя с задержкой 30 секунд
     $triggerActivity = New-ScheduledTaskTrigger -AtLogOn
-    $triggerActivity.Delay = "PT30S"  # Задержка 30 секунд после входа
-
-    # Также запуск через 1 минуту после входа (на случай, если первая попытка не сработала)
-    $triggerActivity2 = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1)
-    $triggerActivity2.Repetition = New-ScheduledTaskRepetition -RepetitionInterval (New-TimeSpan -Minutes 1) -Duration (New-TimeSpan -Hours 23) -StopAtDurationEnd
+    $triggerActivity.UserId = $env:USERDOMAIN + "\" + $env:USERNAME
+    $triggerActivity.Enabled = $true
+    # Задержка 30 секунд после входа (PT30S = 30 секунд)
+    $triggerActivity.Delay = "PT30S"
 
     $principalActivity = New-ScheduledTaskPrincipal -UserId $env:USERNAME -LogonType Interactive -RunLevel Highest
 
@@ -145,14 +147,15 @@ if ($actualScriptPath) {
         -RestartCount 5 `
         -RestartInterval (New-TimeSpan -Minutes 2) `
         -ExecutionTimeLimit (New-TimeSpan -Hours 0) `
-        -MultipleInstances IgnoreNew
+        -MultipleInstances IgnoreNew `
+        -DontStopOnIdleEnd
 
     Register-ScheduledTask -TaskName $taskNameActivity `
         -Action $actionActivity `
         -Trigger $triggerActivity `
         -Principal $principalActivity `
         -Settings $settingsActivity `
-        -Description "Отслеживание активности пользователя на ПК. Запускается при входе в систему." `
+        -Description "Отслеживание активности пользователя на ПК. Запускается при входе в систему с задержкой 30 секунд." `
         -Force | Out-Null
 
     Write-Host "   ✓ Создана/обновлена задача: $taskNameActivity" -ForegroundColor Green
