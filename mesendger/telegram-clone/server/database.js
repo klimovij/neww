@@ -117,7 +117,42 @@ class Database {
     });
   }
   constructor() {
-    this.db = new sqlite3.Database('./messenger.db');
+    // Используем абсолютный путь к базе данных
+    // На сервере: /var/www/mesendger/messenger.db (большая база с FIO)
+    // Если файл в server/database.js, то база на уровень выше: ../messenger.db
+    const path = require('path');
+    const fs = require('fs');
+    
+    // Определяем путь к базе данных
+    let dbPath;
+    if (process.env.DATABASE_PATH) {
+      dbPath = process.env.DATABASE_PATH;
+    } else {
+      // Пробуем путь относительно __dirname (на уровень выше)
+      const relativePath = path.join(__dirname, '..', 'messenger.db');
+      if (fs.existsSync(relativePath)) {
+        dbPath = relativePath;
+      } else {
+        // Если не найден, используем абсолютный путь (для сервера)
+        dbPath = '/var/www/mesendger/messenger.db';
+      }
+    }
+    
+    console.log('='.repeat(50));
+    console.log('[DB] Database constructor called');
+    console.log('[DB] __dirname:', __dirname);
+    console.log('[DB] Using database path:', dbPath);
+    console.log('[DB] Database exists:', fs.existsSync(dbPath));
+    console.log('[DB] DATABASE_PATH env:', process.env.DATABASE_PATH || 'not set');
+    console.log('='.repeat(50));
+    
+    this.db = new sqlite3.Database(dbPath, (err) => {
+      if (err) {
+        console.error('[DB] ❌ Error opening database:', err);
+      } else {
+        console.log('[DB] ✅ Database opened successfully at:', dbPath);
+      }
+    });
     this.db.configure('busyTimeout', 30000); // ожидание до 30 секунд
     this.init();
   }
@@ -620,12 +655,20 @@ class Database {
 
   async getUserByUsername(username) {
     return new Promise((resolve, reject) => {
+      console.log(`[DB] getUserByUsername called with username: "${username}" (length: ${username?.length}, type: ${typeof username})`);
+      console.log(`[DB] getUserByUsername SQL: SELECT * FROM users WHERE username = ?`);
+      console.log(`[DB] getUserByUsername params: [${JSON.stringify(username)}]`);
       this.db.get(
         'SELECT * FROM users WHERE username = ?',
         [username],
         (err, row) => {
-          if (err) reject(err);
-          else resolve(row);
+          if (err) {
+            console.error(`[DB] getUserByUsername ERROR for "${username}":`, err);
+            reject(err);
+          } else {
+            console.log(`[DB] getUserByUsername RESULT for "${username}":`, row ? `Found: ${JSON.stringify({id: row.id, username: row.username, fio: row.fio})}` : 'NOT FOUND (undefined/null)');
+            resolve(row);
+          }
         }
       );
     });
