@@ -64,14 +64,25 @@ function authenticateActivityRequest(req, res, next) {
 // Приём пачки записей активности от агентов на ПК
 router.post('/activity-log-batch', authenticateActivityRequest, async (req, res) => {
   try {
+    // Логируем что пришло для отладки
+    console.log('📥 Received activity-log-batch request');
+    console.log('📥 Content-Type:', req.get('Content-Type'));
+    console.log('📥 Body type:', typeof req.body);
+    console.log('📥 Body is array:', Array.isArray(req.body));
+    console.log('📥 Body keys:', req.body ? Object.keys(req.body).slice(0, 10) : 'null');
+    console.log('📥 Body preview:', JSON.stringify(req.body).substring(0, 500));
+    
     const events = Array.isArray(req.body) ? req.body : req.body?.events || [];
 
     if (!events || events.length === 0) {
+      console.log('❌ No events found in request');
       return res.status(400).json({
         success: false,
         error: 'No events provided. Send array of events or { events: [...] }',
       });
     }
+    
+    console.log(`✅ Found ${events.length} events in request`);
 
     const sanitized = events
       .map((e) => ({

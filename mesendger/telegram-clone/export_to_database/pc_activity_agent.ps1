@@ -382,8 +382,9 @@ function Send-ActivityBatch {
     Write-Host "[$(Get-Date -Format 'u')] Body preview: $($body.Substring(0, [Math]::Min(200, $body.Length)))..."
     
     try {
-        # Отправляем JSON как строку, PowerShell автоматически обработает кодировку
-        $response = Invoke-RestMethod -Uri $apiUrl -Method POST -Headers $headers -Body $body -TimeoutSec 15
+        # Отправляем JSON как UTF-8 байты для гарантированной совместимости
+        $bodyBytes = [System.Text.Encoding]::UTF8.GetBytes($body)
+        $response = Invoke-RestMethod -Uri $apiUrl -Method POST -Headers $headers -Body $bodyBytes -ContentType "application/json; charset=utf-8" -TimeoutSec 15
         Write-Host "[$(Get-Date -Format 'u')] ✅ Successfully sent batch: imported=$($response.imported), total=$($response.total)" -ForegroundColor Green
         Write-Host "[$(Get-Date -Format 'u')] RESPONSE: $($response | ConvertTo-Json -Depth 5)"
         return $true
