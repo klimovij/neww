@@ -152,10 +152,15 @@ function Get-ActivityData {
     # Извлекаем URL из заголовка окна браузера
     $browserUrl = ""
     if ($procName -match "^(chrome|msedge|firefox|opera|brave)$") {
-        # Пытаемся извлечь URL из заголовка окна
-        # Формат может быть разным: "Title - Browser" или "URL - Browser" или просто URL
-        # Используем простой паттерн без проблемных символов
-        if ($windowTitle -match "^(.+?)\s*[-\u2013\u2014]\s*(chrome|msedge|firefox|opera|brave)") {
+        # Chrome показывает название страницы в заголовке, а не URL
+        # Пытаемся извлечь URL разными способами
+        
+        # Способ 1: Если весь заголовок начинается с http/https
+        if ($windowTitle -match "^https?://") {
+            $browserUrl = $windowTitle
+        }
+        # Способ 2: Пытаемся найти URL в заголовке (формат "Title - Browser" или просто URL)
+        elseif ($windowTitle -match "^(.+?)\s*[-\u2013\u2014]\s*(chrome|msedge|firefox|opera|brave)") {
             $potentialUrl = $matches[1].Trim()
             # Проверяем, похоже ли на URL (начинается с http/https/www или содержит точку и доменное расширение)
             if ($potentialUrl -match "^(https?://|www\.|[a-zA-Z0-9\-]+\.[a-zA-Z]{2,})") {
@@ -165,9 +170,12 @@ function Get-ActivityData {
                     $browserUrl = "https://" + $browserUrl
                 }
             }
-        } elseif ($windowTitle -match "^https?://") {
-            # Если весь заголовок - это URL
-            $browserUrl = $windowTitle
+            # Если URL не найден, сохраняем заголовок окна (название страницы) для отображения
+            # Это поможет понять, какой сайт открыт, даже без URL
+            elseif ($potentialUrl.Length -gt 0 -and $potentialUrl.Length -lt 200) {
+                # Сохраняем название страницы, но без суффикса браузера
+                $browserUrl = $potentialUrl
+            }
         }
     }
     
@@ -504,7 +512,9 @@ while ($true) {
         
         # Проверяем, нужно ли сделать скриншот
         $timeSinceLastScreenshot = (Get-Date) - $lastScreenshotTime
-        if ($timeSinceLastScreenshot.TotalMinutes -ge $ScreenshotIntervalMinutes) {
+        $minutesSinceScreenshot = [Math]::Round($timeSinceLastScreenshot.TotalMinutes, 2)
+        Write-Host "[$(Get-Date -Format 'u')] Screenshot check: $minutesSinceScreenshot min since last screenshot (interval: $ScreenshotIntervalMinutes min)" -ForegroundColor Gray
+        if ($minutesSinceScreenshot -ge $ScreenshotIntervalMinutes) {
             $screenshotFileName = "screenshot_$($UserUsername)_$(Get-Date -Format 'yyyy-MM-dd_HH-mm-ss').jpg"
             $screenshotPath = Join-Path $ScreenshotsDir $screenshotFileName
             
