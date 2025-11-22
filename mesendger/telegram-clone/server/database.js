@@ -2253,6 +2253,12 @@ class Database {
       this.db.run(`ALTER TABLE users ADD COLUMN employee_id INTEGER`, (err) => {});
       this.db.run(`ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'user'`, (err) => {});
       this.db.run(`ALTER TABLE users ADD COLUMN department TEXT`, (err) => {});
+      this.db.run(`ALTER TABLE users ADD COLUMN fio TEXT`, (err) => {
+        // Игнорируем ошибку если колонка уже существует
+        if (err && !err.message.includes('duplicate column')) {
+          console.error('❌ Error adding fio column:', err);
+        }
+      });
 
       // Таблица чатов
       this.db.run(`
