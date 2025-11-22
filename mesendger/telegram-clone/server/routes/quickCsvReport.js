@@ -75,12 +75,13 @@ async function getDbShortReport({ start, end, username }) {
     report.push({
       // fio берём из users.fio, если есть, иначе используем username из логов
       fio: displayName,
+      username: user, // Добавляем username для поиска активности
       firstLogin: firstLogin ? firstLogin.event_time : '',
       lastLogout: lastLogout ? lastLogout.event_time : '',
       totalHours: firstLogin && lastLogout ? 
         Number(((new Date(lastLogout.event_time) - new Date(firstLogin.event_time)) / 3600000).toFixed(1)) : 0,
       totalTimeStr,
-      sessions
+      sessions: sessions || [] // Убеждаемся, что sessions всегда массив
     });
   }
   

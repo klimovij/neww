@@ -617,7 +617,7 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
                   {(() => {
                     // Prefer FIO, but if оно битое (вопросительные знаки) или пустое — показываем username
                     const displayName =
-                      row.fio && !row.fio.includes('?') ? row.fio : row.username;
+                      row.fio && !row.fio.includes('?') && row.fio.trim() ? row.fio : (row.username || 'Неизвестный');
 
                     return (
                   <div style={{
