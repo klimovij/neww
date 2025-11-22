@@ -310,43 +310,63 @@ function Send-ActivityBatch {
     }
     
     # Преобразуем события в формат, который ожидает сервер
-    $eventsToSend = $Events | ForEach-Object {
-        # Очищаем только управляющие символы - ConvertTo-Json сам экранирует кавычки
-        $cleanWindowTitle = if ($_.windowTitle) {
-            # Удаляем только управляющие символы (0x00-0x1F), кроме табуляции и переноса строки
-            $_.windowTitle -replace '[\x00-\x08\x0B-\x0C\x0E-\x1F]', ''
+    $eventsToSend = @()
+    foreach ($event in $Events) {
+        # Очищаем проблемные символы
+        $cleanWindowTitle = if ($event.windowTitle) {
+            # Удаляем управляющие символы и заменяем на пробелы
+            ($event.windowTitle -replace '[\x00-\x1F]', ' ') -replace '\s+', ' ' -replace '^\s+|\s+$', ''
         } else {
             ''
         }
         
-        $cleanProcName = if ($_.procName) {
-            ($_.procName -replace '[\x00-\x08\x0B-\x0C\x0E-\x1F]', '')
+        $cleanProcName = if ($event.procName) {
+            ($event.procName -replace '[\x00-\x1F]', ' ') -replace '\s+', ' ' -replace '^\s+|\s+$', ''
         } else {
             ''
         }
         
-        $cleanBrowserUrl = if ($_.browserUrl) {
-            ($_.browserUrl -replace '[\x00-\x08\x0B-\x0C\x0E-\x1F]', '')
+        $cleanBrowserUrl = if ($event.browserUrl) {
+            ($event.browserUrl -replace '[\x00-\x1F]', ' ') -replace '\s+', ' ' -replace '^\s+|\s+$', ''
         } else {
             ''
         }
         
-        $event = @{
-            username = $_.username
-            timestamp = $_.timestamp
-            idleMinutes = $_.idleMinutes
+        $cleanEvent = [ordered]@{
+            username = $event.username
+            timestamp = $event.timestamp
+            idleMinutes = $event.idleMinutes
             procName = $cleanProcName
             windowTitle = $cleanWindowTitle
         }
+        
         # Добавляем browserUrl, если есть
         if ($cleanBrowserUrl) {
-            $event.browserUrl = $cleanBrowserUrl
+            $cleanEvent.browserUrl = $cleanBrowserUrl
         }
-        $event
+        
+        $eventsToSend += $cleanEvent
     }
     
-    # Преобразуем в JSON - ConvertTo-Json автоматически правильно экранирует все символы
-    $body = $eventsToSend | ConvertTo-Json -Depth 5 -Compress
+    # Используем .NET System.Web.Script.Serialization для более надежной сериализации JSON
+    Add-Type -AssemblyName System.Web.Extensions
+    $serializer = New-Object System.Web.Script.Serialization.JavaScriptSerializer
+    $serializer.MaxJsonLength = [Int32]::MaxValue
+    try {
+        $body = $serializer.Serialize($eventsToSend)
+    } catch {
+        # Если .NET сериализатор не доступен, используем PowerShell ConvertTo-Json
+        Write-Host "[$(Get-Date -Format 'u')] Warning: Using PowerShell ConvertTo-Json fallback" -ForegroundColor Yellow
+        $body = $eventsToSend | ConvertTo-Json -Depth 10 -Compress
+        
+        # Проверяем валидность JSON
+        try {
+            $null = $body | ConvertFrom-Json
+        } catch {
+            Write-Host "[$(Get-Date -Format 'u')] Error: Generated JSON is invalid!" -ForegroundColor Red
+            return $false
+        }
+    }
     
     # Логируем детали отправки
     Write-Host "[$(Get-Date -Format 'u')] Sending batch of $($Events.Count) events to server..."
