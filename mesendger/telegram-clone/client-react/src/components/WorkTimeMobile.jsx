@@ -100,6 +100,10 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
             const res = await fetch(url);
             const data = await res.json();
             console.log('Данные из quick-db-report (автозагрузка):', data);
+            if (data.report && data.report.length > 0) {
+              console.log('Первый элемент отчёта:', data.report[0]);
+              console.log('FIO:', data.report[0].fio, 'Username:', data.report[0].username);
+            }
             setLogs(Array.isArray(data.report) ? data.report : []);
           } catch {
             setLogs([]);
@@ -144,6 +148,10 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
       const res = await fetch(url);
       const data = await res.json();
       console.log('Данные из quick-db-report:', data);
+      if (data.report && data.report.length > 0) {
+        console.log('Первый элемент отчёта:', data.report[0]);
+        console.log('FIO:', data.report[0].fio, 'Username:', data.report[0].username, 'Sessions:', data.report[0].sessions);
+      }
       setLogs(Array.isArray(data.report) ? data.report : []);
     } catch {
       setLogs([]);
