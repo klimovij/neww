@@ -47,8 +47,8 @@ $REMOTE_WORKTIME_API_KEY = "BsKFpZmdp6ocPKUD6g6YxTgMSTZEaPZXkbddxsifERA="
 # Настройки агента
 $LogsDir = "C:\pc-worktime\logs"
 $ScreenshotsDir = "C:\pc-worktime\screenshots"
-$SendIntervalMinutes = 1  # Отправляем данные каждую 1 минуту (для теста)
-$MaxEventsPerBatch = 10   # Максимум событий в одной пачке (для теста)
+$SendIntervalMinutes = 5  # Отправляем данные каждые 5 минут (для продакшена)
+$MaxEventsPerBatch = 50   # Максимум событий в одной пачке (для продакшена)
 $ScreenshotIntervalMinutes = 15  # Делаем скриншот каждые 15 минут
 
 # Создаём папки для логов и скриншотов, если их нет
