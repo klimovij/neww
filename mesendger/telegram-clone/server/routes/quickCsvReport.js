@@ -46,8 +46,26 @@ async function getDbShortReport({ start, end, username }) {
     // но в users.fio оно сохранено корректно.
     let displayName = user;
     try {
-      const userRow = await db.getUserByUsername(user);
-      console.log(`[quickCsvReport] getUserByUsername для "${user}":`, userRow);
+      // Сначала пробуем найти по username
+      let userRow = await db.getUserByUsername(user);
+      
+      // Если не найден, пробуем найти пользователей с пустым username
+      // и попытаемся сопоставить по другим признакам (например, через work_time_logs)
+      if (!userRow) {
+        // Пробуем найти пользователей с пустым username - возможно, там есть нужный fio
+        const allUsers = await db.getAllUsers();
+        // Ищем пользователя, у которого username пустой, но возможно fio связано
+        // Это временное решение - в идеале нужно заполнить username в таблице users
+        console.log(`[quickCsvReport] Пользователь "${user}" не найден по username. Всего пользователей: ${allUsers.length}`);
+        
+        // Если есть только один пользователь с пустым username - используем его (временное решение)
+        const usersWithEmptyUsername = allUsers.filter(u => !u.username || u.username === '');
+        if (usersWithEmptyUsername.length === 1 && usersWithEmptyUsername[0].fio) {
+          console.log(`[quickCsvReport] Найден пользователь с пустым username, используем его FIO: ${usersWithEmptyUsername[0].fio}`);
+          userRow = usersWithEmptyUsername[0];
+        }
+      }
+      
       if (userRow) {
         // Проверяем различные варианты поля для ФИО
         displayName = userRow.fio || userRow.full_name || userRow.name || userRow.username || user;

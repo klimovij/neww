@@ -656,18 +656,8 @@ class Database {
   async getUserByUsername(username) {
     return new Promise((resolve, reject) => {
       console.log(`[DB] getUserByUsername called with username: "${username}" (length: ${username?.length}, type: ${typeof username})`);
-      console.log(`[DB] getUserByUsername SQL: SELECT * FROM users WHERE username = ?`);
-      console.log(`[DB] getUserByUsername params: [${JSON.stringify(username)}]`);
       
-      // Сначала проверим, есть ли вообще пользователи в базе
-      this.db.all('SELECT username, fio FROM users LIMIT 5', [], (err, allUsers) => {
-        if (err) {
-          console.error(`[DB] Error checking users in database:`, err);
-        } else {
-          console.log(`[DB] Sample users in database (first 5):`, allUsers);
-        }
-      });
-      
+      // Сначала пытаемся найти по username
       this.db.get(
         'SELECT * FROM users WHERE username = ?',
         [username],
@@ -675,22 +665,43 @@ class Database {
           if (err) {
             console.error(`[DB] getUserByUsername ERROR for "${username}":`, err);
             reject(err);
-          } else {
-            if (row) {
-              console.log(`[DB] getUserByUsername RESULT for "${username}": Found: ${JSON.stringify({id: row.id, username: row.username, fio: row.fio})}`);
-            } else {
-              console.log(`[DB] getUserByUsername RESULT for "${username}": NOT FOUND (undefined/null)`);
-              // Попробуем найти похожие username
-              this.db.all('SELECT username FROM users WHERE username LIKE ? LIMIT 5', [`%${username}%`], (err2, similar) => {
-                if (!err2 && similar && similar.length > 0) {
-                  console.log(`[DB] Similar usernames found:`, similar);
-                }
-              });
-            }
+          } else if (row) {
+            console.log(`[DB] getUserByUsername RESULT for "${username}": Found by username: ${JSON.stringify({id: row.id, username: row.username, fio: row.fio})}`);
             resolve(row);
+          } else {
+            // Если не найден по username, пробуем найти по fio
+            // Но это сложно, т.к. username может быть "Ksendzik_Oleg", а fio - "Олег Ксендзик"
+            // Попробуем найти, если username пустой и fio содержит похожее имя
+            console.log(`[DB] getUserByUsername: username "${username}" not found, trying alternative search...`);
+            
+            // Попробуем найти пользователей с пустым username
+            this.db.all('SELECT * FROM users WHERE (username IS NULL OR username = "") AND fio IS NOT NULL LIMIT 10', [], (err2, usersWithEmptyUsername) => {
+              if (!err2 && usersWithEmptyUsername && usersWithEmptyUsername.length > 0) {
+                console.log(`[DB] Found ${usersWithEmptyUsername.length} users with empty username:`, usersWithEmptyUsername.map(u => ({id: u.id, fio: u.fio})));
+              }
+            });
+            
+            resolve(null);
           }
         }
       );
+    });
+  }
+  
+  // Метод для поиска пользователя по fio или username (для случаев, когда username не заполнен)
+  async getUserByUsernameOrFio(identifier) {
+    return new Promise((resolve, reject) => {
+      // Сначала пытаемся найти по username
+      this.db.get('SELECT * FROM users WHERE username = ?', [identifier], (err, row) => {
+        if (err) return reject(err);
+        if (row) return resolve(row);
+        
+        // Если не найден, пробуем найти по fio
+        this.db.get('SELECT * FROM users WHERE fio = ?', [identifier], (err2, row2) => {
+          if (err2) return reject(err2);
+          resolve(row2 || null);
+        });
+      });
     });
   }
 
