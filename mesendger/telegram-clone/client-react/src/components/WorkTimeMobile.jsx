@@ -651,58 +651,76 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
                     </h3>
                     <button
                       type="button"
-                      onClick={async (e) => {
+                      onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        console.log('🔘 [WorkTimeMobile] Кнопка "Подробнее" нажата!');
+                        console.log('🔘 [WorkTimeMobile] НОВАЯ кнопка "Детали" нажата!');
                         console.log('🔘 [WorkTimeMobile] DisplayName:', displayName);
-                        console.log('🔘 [WorkTimeMobile] Row:', JSON.stringify(row, null, 2));
-                        console.log('🔘 [WorkTimeMobile] Row sessions:', row.sessions?.length || 0, 'items');
-                        console.log('🔘 [WorkTimeMobile] Row logs:', row.logs?.length || 0, 'items');
                         console.log('🔘 [WorkTimeMobile] Row username:', row.username);
-                        // Загружаем отчет активности для конкретного пользователя
-                        let userActivityStats = null;
-                        try {
-                          const params = new URLSearchParams({
-                            start: startDate,
-                            end: endDate,
-                          });
-                          const res = await fetch(`/api/activity-summary?${params.toString()}`);
-                          const data = await res.json();
-                          if (res.ok && data.success && Array.isArray(data.summary)) {
-                            userActivityStats = data.summary.find(
-                              (s) => s.username === row.username
-                            ) || null;
-                            console.log('Activity stats для пользователя:', userActivityStats);
+                        console.log('🔘 [WorkTimeMobile] Row sessions:', row.sessions?.length || 0);
+                        
+                        // Асинхронная загрузка активности и открытие модалки
+                        (async () => {
+                          let userActivityStats = null;
+                          try {
+                            const params = new URLSearchParams({
+                              start: startDate,
+                              end: endDate,
+                            });
+                            console.log('📡 [WorkTimeMobile] Загружаем activity-summary для:', row.username);
+                            const res = await fetch(`/api/activity-summary?${params.toString()}`);
+                            const data = await res.json();
+                            if (res.ok && data.success && Array.isArray(data.summary)) {
+                              userActivityStats = data.summary.find(
+                                (s) => s.username === row.username
+                              ) || null;
+                              console.log('✅ [WorkTimeMobile] Activity stats загружены:', userActivityStats);
+                            } else {
+                              console.warn('⚠️ [WorkTimeMobile] Activity summary не получен:', data);
+                            }
+                          } catch (err) {
+                            console.error('❌ [WorkTimeMobile] Ошибка загрузки активности:', err);
                           }
-                        } catch (err) {
-                          console.error('Ошибка загрузки активности для пользователя', err);
-                        }
-                        const logsToShow = row.sessions || row.logs || [];
-                        console.log('🔘 [WorkTimeMobile] Открываем модалку с logs:', logsToShow.length, 'items, username:', displayName);
-                        console.log('🔘 [WorkTimeMobile] ActivityStats:', userActivityStats);
-                        const newModalState = {
-                          open: true,
-                          logs: logsToShow,
-                          username: displayName,
-                          activityStats: userActivityStats,
-                        };
-                        console.log('🔘 [WorkTimeMobile] Новое состояние модалки:', newModalState);
-                        setDetailsModal(newModalState);
-                        console.log('✅ [WorkTimeMobile] Модалка должна открыться. detailsModal установлен.');
+                          
+                          const logsToShow = Array.isArray(row.sessions) ? row.sessions : (Array.isArray(row.logs) ? row.logs : []);
+                          console.log('📋 [WorkTimeMobile] Логи для модалки:', logsToShow.length, 'items');
+                          
+                          const newModalState = {
+                            open: true,
+                            logs: logsToShow,
+                            username: displayName,
+                            activityStats: userActivityStats,
+                          };
+                          
+                          console.log('🚀 [WorkTimeMobile] Открываем модалку:', newModalState);
+                          setDetailsModal(newModalState);
+                          console.log('✅ [WorkTimeMobile] Модалка открыта!');
+                        })();
                       }}
                       style={{
-                        padding: '8px 14px',
-                        borderRadius: '8px',
-                        border: 'none',
-                        background: '#2193b0',
+                        padding: '8px 16px',
+                        borderRadius: '10px',
+                        border: '2px solid rgba(33, 147, 176, 0.5)',
+                        background: 'linear-gradient(135deg, #2193b0 0%, #43e97b 100%)',
                         color: '#fff',
-                        fontWeight: 600,
-                        fontSize: '13px',
+                        fontWeight: 700,
+                        fontSize: '14px',
                         cursor: 'pointer',
+                        boxShadow: '0 2px 8px rgba(33, 147, 176, 0.3)',
+                        transition: 'all 0.2s',
+                        zIndex: 10,
+                        position: 'relative',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.target.style.transform = 'scale(1.05)';
+                        e.target.style.boxShadow = '0 4px 12px rgba(33, 147, 176, 0.5)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.transform = 'scale(1)';
+                        e.target.style.boxShadow = '0 2px 8px rgba(33, 147, 176, 0.3)';
                       }}
                     >
-                      Подробнее
+                      Детали
                     </button>
                   </div>
                     );
