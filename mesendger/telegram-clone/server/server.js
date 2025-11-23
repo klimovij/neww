@@ -917,155 +917,13 @@ function runPowershell(command) {
 }
 
 // --- ADMIN: Windows Local Users Management ---
-// Middleware для проверки API ключа на удаленном ПК (используется вместо authenticateToken)
-// Это позволяет безопасно принимать запросы от проксирующего сервера
-function authenticateRemoteAdmin(req, res, next) {
-  // Получаем IP адрес клиента (с учетом прокси)
-  const clientIp = req.ip || 
-                   req.connection.remoteAddress || 
-                   req.socket.remoteAddress || 
-                   (req.headers['x-forwarded-for'] ? req.headers['x-forwarded-for'].split(',')[0].trim() : null) ||
-                   'unknown';
-  
-  // Проверяем, является ли это локальным запросом
-  const isLocal = clientIp === '::1' || 
-                  clientIp === '127.0.0.1' || 
-                  clientIp === '::ffff:127.0.0.1' ||
-                  clientIp.startsWith('127.') ||
-                  clientIp === 'localhost' ||
-                  clientIp === '::ffff:localhost';
-  
-  // Если это локальный запрос, проверяем JWT токен как обычно
-  if (isLocal) {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-    
-    if (token) {
-      try {
-        const decoded = jwt.verify(token, JWT_SECRET);
-        req.user = decoded;
-        // Если есть валидный JWT токен, проверяем роль
-        if (decoded.role === 'admin') {
-          return next();
-        }
-      } catch (err) {
-        // Если токен невалидный, продолжаем проверку API ключа
-      }
-    }
-  }
-  
-  // Для удаленных запросов (проксирование) требуем API ключ
-  const apiKey = req.headers['x-api-key'] || req.headers['X-API-Key'] || req.query.apiKey;
-  
-  // API ключ по умолчанию (можно настроить через переменную окружения)
-  const REMOTE_ADMIN_API_KEY = process.env.REMOTE_ADMIN_API_KEY || 'BsKFpZmdp6ocPKUD6g6YxTgMSTZEaPZXkbddxsifERA=';
-  
-  if (!apiKey) {
-    console.warn(`⚠️ [SECURITY] Unauthorized admin access attempt from ${clientIp} - no API key or valid token`);
-    return res.status(401).json({ 
-      success: false, 
-      error: 'Authentication required. Provide valid JWT token (for local) or X-API-Key header (for remote).' 
-    });
-  }
-  
-  if (apiKey !== REMOTE_ADMIN_API_KEY) {
-    console.warn(`⚠️ [SECURITY] Invalid API key attempt from ${clientIp}. Endpoint: ${req.method} ${req.path}`);
-    return res.status(403).json({ 
-      success: false, 
-      error: 'Invalid API key' 
-    });
-  }
-  
-  // Дополнительная проверка: если удаленный запрос, рекомендуется использовать HTTPS
-  // (но не блокируем, так как может быть локальная сеть)
-  if (!isLocal && req.protocol !== 'https' && !req.headers['x-forwarded-proto']?.includes('https')) {
-    console.warn(`⚠️ [SECURITY] Remote admin access over HTTP from ${clientIp}. Рекомендуется использовать HTTPS для безопасности.`);
-  }
-  
-  // Логируем успешный удаленный доступ
-  console.log(`✅ [SECURITY] Remote admin access authorized from ${clientIp} for ${req.method} ${req.path}`);
-  
-  // Создаем фиктивного пользователя для удаленного доступа
-  req.user = { role: 'admin', remote: true, ip: clientIp };
-  
-  next();
-}
-
-// Функция для проксирования запросов на удаленный ПК
-async function proxyToRemotePc(req, res, endpoint, method = 'GET', body = null) {
-  try {
-    const remoteUrl = await db.getRemotePcUrl();
-    if (!remoteUrl) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'URL удаленного ПК не настроен. Пожалуйста, настройте URL удаленного ПК в админ-панели.' 
-      });
-    }
-
-    const apiKey = await db.getRemotePcApiKey();
-    const url = `${remoteUrl.replace(/\/$/, '')}${endpoint}`;
-    
-    console.log(`🔄 Проксирование запроса на удаленный ПК: ${method} ${url}`);
-
-    const headers = {
-      'Content-Type': 'application/json',
-      'X-API-Key': apiKey || 'BsKFpZmdp6ocPKUD6g6YxTgMSTZEaPZXkbddxsifERA=',
-      // Добавляем заголовок для идентификации проксирующего сервера
-      'X-Proxy-From': 'google-cloud-server',
-      // Добавляем IP адрес проксирующего сервера для дополнительной безопасности
-      'X-Forwarded-For': req.ip || req.connection.remoteAddress || 'unknown'
-    };
-
-    // НЕ передаем JWT токен, так как на удаленном ПК будет использоваться API ключ
-    // Это важно для безопасности - удаленный ПК должен проверять только API ключ
-
-    const config = {
-      method: method,
-      url: url,
-      headers: headers,
-      timeout: 30000
-    };
-
-    if (body && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
-      config.data = body;
-    }
-
-    try {
-      const response = await axios(config);
-      res.status(response.status).json(response.data);
-    } catch (error) {
-      if (error.response) {
-        res.status(error.response.status).json(error.response.data);
-      } else if (error.request) {
-        res.status(503).json({ 
-          success: false, 
-          error: `Не удалось подключиться к удаленному ПК (${remoteUrl}). Проверьте, что приложение запущено на удаленном ПК и доступно по указанному адресу.` 
-        });
-      } else {
-        res.status(500).json({ 
-          success: false, 
-          error: error.message 
-        });
-      }
-    }
-  } catch (error) {
-    console.error('❌ Ошибка при проксировании запроса:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: error.message 
-    });
-  }
-}
-
 app.get('/api/admin/local-users', authenticateToken, async (req, res) => {
   try {
     if (req.user?.role !== 'admin') return res.status(403).json({ success: false, error: 'Forbidden' });
     
     // Проверяем, что мы на Windows системе
     if (process.platform !== 'win32') {
-      // На Linux/Unix системах проксируем запрос на удаленный ПК
-      console.log('⚠️ /api/admin/local-users: Server is running on ' + process.platform + ', proxying to remote PC');
-      return proxyToRemotePc(req, res, '/api/admin/local-users', 'GET');
+      return res.status(400).json({ success: false, error: 'This endpoint is only available on Windows systems' });
     }
     
     const ps = `
@@ -1186,21 +1044,9 @@ app.post('/api/admin/shutdown-1c', authenticateToken, async (req, res) => {
 });
 
 // Hostname for UI display
-app.get('/api/admin/host', authenticateRemoteAdmin, async (req, res) => {
+app.get('/api/admin/host', authenticateToken, async (req, res) => {
   try {
-    if (!req.user) return res.status(401).json({ success: false, error: 'Unauthorized' });
-    
-    // Если сервер на Linux и настроен удаленный ПК, получаем hostname с удаленного ПК
-    if (process.platform !== 'win32') {
-      const remoteUrl = await db.getRemotePcUrl();
-      if (remoteUrl) {
-        // Проксируем запрос на удаленный ПК
-        console.log('⚠️ GET /api/admin/host: Server is running on ' + process.platform + ', proxying to remote PC');
-        return proxyToRemotePc(req, res, '/api/admin/host', 'GET');
-      }
-      // Если удаленный ПК не настроен, возвращаем hostname текущего сервера
-      return res.json({ success: true, host: os.hostname() + ' (Linux - удаленный ПК не настроен)' });
-    }
+    if (req.user?.role !== 'admin') return res.status(403).json({ success: false, error: 'Forbidden' });
     
     return res.json({ success: true, host: os.hostname() });
   } catch (e) {
@@ -1208,15 +1054,13 @@ app.get('/api/admin/host', authenticateRemoteAdmin, async (req, res) => {
   }
 });
 
-app.post('/api/admin/local-users', authenticateRemoteAdmin, async (req, res) => {
+app.post('/api/admin/local-users', authenticateToken, async (req, res) => {
   try {
     if (req.user?.role !== 'admin') return res.status(403).json({ success: false, error: 'Forbidden' });
     
     // Проверяем, что мы на Windows системе
     if (process.platform !== 'win32') {
-      // На Linux/Unix системах проксируем запрос на удаленный ПК
-      console.log('⚠️ POST /api/admin/local-users: Server is running on ' + process.platform + ', proxying to remote PC');
-      return proxyToRemotePc(req, res, '/api/admin/local-users', 'POST', req.body);
+      return res.status(400).json({ success: false, error: 'This endpoint is only available on Windows systems' });
     }
     
     const { name, password, description = '', noExpire = true, addToRdp = true } = req.body || {};
@@ -1272,15 +1116,13 @@ app.post('/api/admin/local-users', authenticateRemoteAdmin, async (req, res) => 
   }
 });
 
-app.post('/api/admin/local-users/:name/password', authenticateRemoteAdmin, async (req, res) => {
+app.post('/api/admin/local-users/:name/password', authenticateToken, async (req, res) => {
   try {
     if (req.user?.role !== 'admin') return res.status(403).json({ success: false, error: 'Forbidden' });
     
     // Проверяем, что мы на Windows системе
     if (process.platform !== 'win32') {
-      // На Linux/Unix системах проксируем запрос на удаленный ПК
-      console.log('⚠️ POST /api/admin/local-users/:name/password: Server is running on ' + process.platform + ', proxying to remote PC');
-      return proxyToRemotePc(req, res, `/api/admin/local-users/${encodeURIComponent(req.params.name)}/password`, 'POST', req.body);
+      return res.status(400).json({ success: false, error: 'This endpoint is only available on Windows systems' });
     }
     
     const { name } = req.params;
@@ -1442,15 +1284,13 @@ app.post('/api/admin/local-users/:name/password', authenticateRemoteAdmin, async
   }
 });
 
-app.post('/api/admin/local-users/:name/enable', authenticateRemoteAdmin, async (req, res) => {
+app.post('/api/admin/local-users/:name/enable', authenticateToken, async (req, res) => {
   try {
     if (req.user?.role !== 'admin') return res.status(403).json({ success: false, error: 'Forbidden' });
     
     // Проверяем, что мы на Windows системе
     if (process.platform !== 'win32') {
-      // На Linux/Unix системах проксируем запрос на удаленный ПК
-      console.log('⚠️ POST /api/admin/local-users/:name/enable: Server is running on ' + process.platform + ', proxying to remote PC');
-      return proxyToRemotePc(req, res, `/api/admin/local-users/${encodeURIComponent(req.params.name)}/enable`, 'POST', req.body);
+      return res.status(400).json({ success: false, error: 'This endpoint is only available on Windows systems' });
     }
     
     const safeName = JSON.stringify(String(req.params.name));
@@ -1468,15 +1308,13 @@ app.post('/api/admin/local-users/:name/enable', authenticateRemoteAdmin, async (
   }
 });
 
-app.post('/api/admin/local-users/:name/disable', authenticateRemoteAdmin, async (req, res) => {
+app.post('/api/admin/local-users/:name/disable', authenticateToken, async (req, res) => {
   try {
     if (req.user?.role !== 'admin') return res.status(403).json({ success: false, error: 'Forbidden' });
     
     // Проверяем, что мы на Windows системе
     if (process.platform !== 'win32') {
-      // На Linux/Unix системах проксируем запрос на удаленный ПК
-      console.log('⚠️ POST /api/admin/local-users/:name/disable: Server is running on ' + process.platform + ', proxying to remote PC');
-      return proxyToRemotePc(req, res, `/api/admin/local-users/${encodeURIComponent(req.params.name)}/disable`, 'POST', req.body);
+      return res.status(400).json({ success: false, error: 'This endpoint is only available on Windows systems' });
     }
     
     const safeName = JSON.stringify(String(req.params.name));
@@ -1494,15 +1332,13 @@ app.post('/api/admin/local-users/:name/disable', authenticateRemoteAdmin, async 
   }
 });
 
-app.delete('/api/admin/local-users/:name', authenticateRemoteAdmin, async (req, res) => {
+app.delete('/api/admin/local-users/:name', authenticateToken, async (req, res) => {
   try {
     if (req.user?.role !== 'admin') return res.status(403).json({ success: false, error: 'Forbidden' });
     
     // Проверяем, что мы на Windows системе
     if (process.platform !== 'win32') {
-      // На Linux/Unix системах проксируем запрос на удаленный ПК
-      console.log('⚠️ DELETE /api/admin/local-users/:name: Server is running on ' + process.platform + ', proxying to remote PC');
-      return proxyToRemotePc(req, res, `/api/admin/local-users/${encodeURIComponent(req.params.name)}`, 'DELETE', req.body);
+      return res.status(400).json({ success: false, error: 'This endpoint is only available on Windows systems' });
     }
     
     const safeName = JSON.stringify(String(req.params.name));
@@ -1520,15 +1356,13 @@ app.delete('/api/admin/local-users/:name', authenticateRemoteAdmin, async (req, 
   }
 });
 
-app.post('/api/admin/local-users/:name/rdp', authenticateRemoteAdmin, async (req, res) => {
+app.post('/api/admin/local-users/:name/rdp', authenticateToken, async (req, res) => {
   try {
     if (req.user?.role !== 'admin') return res.status(403).json({ success: false, error: 'Forbidden' });
     
     // Проверяем, что мы на Windows системе
     if (process.platform !== 'win32') {
-      // На Linux/Unix системах проксируем запрос на удаленный ПК
-      console.log('⚠️ POST /api/admin/local-users/:name/rdp: Server is running on ' + process.platform + ', proxying to remote PC');
-      return proxyToRemotePc(req, res, `/api/admin/local-users/${encodeURIComponent(req.params.name)}/rdp`, 'POST', req.body);
+      return res.status(400).json({ success: false, error: 'This endpoint is only available on Windows systems' });
     }
     
     const { add } = req.body || {};
@@ -1577,15 +1411,13 @@ app.post('/api/admin/local-users/:name/rdp', authenticateRemoteAdmin, async (req
 });
 
 // --- ADMIN: update local user description ---
-app.post('/api/admin/local-users/:name/description', authenticateRemoteAdmin, async (req, res) => {
+app.post('/api/admin/local-users/:name/description', authenticateToken, async (req, res) => {
   try {
     if (req.user?.role !== 'admin') return res.status(403).json({ success: false, error: 'Forbidden' });
     
     // Проверяем, что мы на Windows системе
     if (process.platform !== 'win32') {
-      // На Linux/Unix системах проксируем запрос на удаленный ПК
-      console.log('⚠️ POST /api/admin/local-users/:name/description: Server is running on ' + process.platform + ', proxying to remote PC');
-      return proxyToRemotePc(req, res, `/api/admin/local-users/${encodeURIComponent(req.params.name)}/description`, 'POST', req.body);
+      return res.status(400).json({ success: false, error: 'This endpoint is only available on Windows systems' });
     }
     
     const safeName = JSON.stringify(String(req.params.name));
@@ -1606,15 +1438,13 @@ app.post('/api/admin/local-users/:name/description', authenticateRemoteAdmin, as
 });
 
 // --- ADMIN: set/unset Password Never Expires ---
-app.post('/api/admin/local-users/:name/no-expire', authenticateRemoteAdmin, async (req, res) => {
+app.post('/api/admin/local-users/:name/no-expire', authenticateToken, async (req, res) => {
   try {
     if (req.user?.role !== 'admin') return res.status(403).json({ success: false, error: 'Forbidden' });
     
     // Проверяем, что мы на Windows системе
     if (process.platform !== 'win32') {
-      // На Linux/Unix системах проксируем запрос на удаленный ПК
-      console.log('⚠️ POST /api/admin/local-users/:name/no-expire: Server is running on ' + process.platform + ', proxying to remote PC');
-      return proxyToRemotePc(req, res, `/api/admin/local-users/${encodeURIComponent(req.params.name)}/no-expire`, 'POST', req.body);
+      return res.status(400).json({ success: false, error: 'This endpoint is only available on Windows systems' });
     }
     
     const { noExpire } = req.body || {};
@@ -1644,15 +1474,13 @@ app.post('/api/admin/local-users/:name/no-expire', authenticateRemoteAdmin, asyn
 });
 
 // --- ADMIN: rename local user ---
-app.post('/api/admin/local-users/:name/rename', authenticateRemoteAdmin, async (req, res) => {
+app.post('/api/admin/local-users/:name/rename', authenticateToken, async (req, res) => {
   try {
     if (req.user?.role !== 'admin') return res.status(403).json({ success: false, error: 'Forbidden' });
     
     // Проверяем, что мы на Windows системе
     if (process.platform !== 'win32') {
-      // На Linux/Unix системах проксируем запрос на удаленный ПК
-      console.log('⚠️ POST /api/admin/local-users/:name/rename: Server is running on ' + process.platform + ', proxying to remote PC');
-      return proxyToRemotePc(req, res, `/api/admin/local-users/${encodeURIComponent(req.params.name)}/rename`, 'POST', req.body);
+      return res.status(400).json({ success: false, error: 'This endpoint is only available on Windows systems' });
     }
     
     const { newName } = req.body || {};
@@ -1681,44 +1509,6 @@ app.post('/api/admin/local-users/:name/rename', authenticateRemoteAdmin, async (
   }
 });
 
-// --- ADMIN: Remote PC Settings ---
-app.get('/api/admin/remote-pc-settings', authenticateToken, async (req, res) => {
-  try {
-    if (req.user?.role !== 'admin') return res.status(403).json({ success: false, error: 'Forbidden' });
-    
-    const url = await db.getRemotePcUrl();
-    const apiKey = await db.getRemotePcApiKey();
-    
-    return res.json({ 
-      success: true, 
-      url: url || '', 
-      apiKey: apiKey || '' 
-    });
-  } catch (e) {
-    console.error('❌ GET /api/admin/remote-pc-settings:', e);
-    res.status(500).json({ success: false, error: e.message });
-  }
-});
-
-app.post('/api/admin/remote-pc-settings', authenticateToken, async (req, res) => {
-  try {
-    if (req.user?.role !== 'admin') return res.status(403).json({ success: false, error: 'Forbidden' });
-    
-    const { url, apiKey } = req.body || {};
-    
-    if (url !== undefined) {
-      await db.setRemotePcUrl(url || '');
-    }
-    if (apiKey !== undefined) {
-      await db.setRemotePcApiKey(apiKey || '');
-    }
-    
-    return res.json({ success: true });
-  } catch (e) {
-    console.error('❌ POST /api/admin/remote-pc-settings:', e);
-    res.status(500).json({ success: false, error: e.message });
-  }
-});
 
 // --- РЕГИСТРАЦИЯ И АВТОРИЗАЦИЯ ---
 async function withSqliteRetry(operation, maxRetries = 6, initialDelayMs = 150) {

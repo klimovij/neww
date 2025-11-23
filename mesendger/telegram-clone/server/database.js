@@ -2835,14 +2835,6 @@ class Database {
       });
 
       // Таблица логов рабочего времени для удаленных ПК (отдельная от локальных)
-      // Таблица настроек удаленного ПК для управления пользователями Windows
-      this.db.run(`CREATE TABLE IF NOT EXISTS remote_pc_settings (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        key TEXT UNIQUE NOT NULL,
-        value TEXT,
-        updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-      )`);
-
       this.db.run(`CREATE TABLE IF NOT EXISTS remote_work_time_logs (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT NOT NULL,
@@ -4762,63 +4754,6 @@ class Database {
     });
   }
 
-  // ==================== НАСТРОЙКИ УДАЛЕННОГО ПК ====================
-  
-  // Получить настройку удаленного ПК
-  async getRemotePcSetting(key) {
-    return new Promise((resolve, reject) => {
-      this.db.get(
-        'SELECT value FROM remote_pc_settings WHERE key = ?',
-        [key],
-        (err, row) => {
-          if (err) {
-            console.error('Error getting remote PC setting:', err);
-            reject(err);
-          } else {
-            resolve(row ? row.value : null);
-          }
-        }
-      );
-    });
-  }
-
-  // Сохранить настройку удаленного ПК
-  async setRemotePcSetting(key, value) {
-    return new Promise((resolve, reject) => {
-      this.db.run(
-        'INSERT OR REPLACE INTO remote_pc_settings (key, value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP)',
-        [key, value],
-        function(err) {
-          if (err) {
-            console.error('Error saving remote PC setting:', err);
-            reject(err);
-          } else {
-            resolve(this.changes);
-          }
-        }
-      );
-    });
-  }
-
-  // Получить URL удаленного ПК
-  async getRemotePcUrl() {
-    return this.getRemotePcSetting('url');
-  }
-
-  // Сохранить URL удаленного ПК
-  async setRemotePcUrl(url) {
-    return this.setRemotePcSetting('url', url);
-  }
-
-  // Получить API ключ для удаленного ПК
-  async getRemotePcApiKey() {
-    return this.getRemotePcSetting('api_key');
-  }
-
-  // Сохранить API ключ для удаленного ПК
-  async setRemotePcApiKey(apiKey) {
-    return this.setRemotePcSetting('api_key', apiKey);
-  }
 }
 
 module.exports = new Database();

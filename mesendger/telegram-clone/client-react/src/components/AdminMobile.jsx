@@ -36,9 +36,6 @@ export default function AdminMobile({
   const [showTemplates, setShowTemplates] = useState(false);
   const [showAppTitleSettings, setShowAppTitleSettings] = useState(false);
   const [showUserRights, setShowUserRights] = useState(false);
-  const [remotePcUrl, setRemotePcUrl] = useState('');
-  const [remotePcApiKey, setRemotePcApiKey] = useState('');
-  const [showRemotePcSettings, setShowRemotePcSettings] = useState(false);
 
   // Load users when modal opens
   useEffect(() => {
@@ -49,18 +46,6 @@ export default function AdminMobile({
       setAdminLoading(true);
       setAdminError('');
       try {
-        // Загружаем настройки удаленного ПК
-        try {
-          const settingsRes = await fetch('/api/admin/remote-pc-settings', { headers: { Authorization: `Bearer ${token}` } });
-          if (settingsRes.ok) {
-            const settingsData = await settingsRes.json();
-            if (settingsData && settingsData.success) {
-              setRemotePcUrl(settingsData.url || '');
-              setRemotePcApiKey(settingsData.apiKey || '');
-            }
-          }
-        } catch {}
-        
         try {
           const rh = await fetch('/api/admin/host', { headers: { Authorization: `Bearer ${token}` } });
           if (rh.ok) {
@@ -531,26 +516,6 @@ export default function AdminMobile({
             )}
             {state.user?.role === 'admin' && (
               <>
-                <button
-                  onClick={() => setShowRemotePcSettings(true)}
-                  style={{
-                    padding:'14px 16px',
-                    borderRadius:12,
-                    border:'1px solid rgba(59,130,246,0.45)',
-                    background:'rgba(59,130,246,0.18)',
-                    color:'#93c5fd',
-                    cursor:'pointer',
-                    fontWeight:700,
-                    display:'flex',
-                    alignItems:'center',
-                    gap:10,
-                    fontSize: '15px',
-                    width: '100%',
-                    justifyContent: 'center'
-                  }}
-                >
-                  <FiSettings size={20} /> Настройки удаленного ПК
-                </button>
                 <button
                   onClick={adminShutdown1C}
                   style={{
@@ -1163,153 +1128,6 @@ export default function AdminMobile({
         document.body
       )}
 
-      {/* Remote PC Settings Modal */}
-      {showRemotePcSettings && ReactDOM.createPortal(
-        <div 
-          style={{
-            position:'fixed', 
-            inset:0, 
-            zIndex:200003, 
-            display:'flex', 
-            alignItems:'center', 
-            justifyContent:'center',
-            background: 'rgba(0, 0, 0, 0.9)',
-            padding: '16px'
-          }}
-          onClick={()=>setShowRemotePcSettings(false)}
-        >
-          <div 
-            style={{
-              position:'relative', 
-              width:'100%',
-              maxWidth: '500px',
-              background:'linear-gradient(135deg, #232931 0%, #181c22 100%)', 
-              borderRadius:20, 
-              padding:20, 
-              boxShadow:'0 10px 40px rgba(0,0,0,0.4)', 
-              color:'#fff',
-              maxHeight: '90vh',
-              overflowY: 'auto'
-            }} 
-            onClick={e=>e.stopPropagation()}
-          >
-            <button 
-              onClick={()=>setShowRemotePcSettings(false)} 
-              style={{
-                position:'absolute', 
-                top:10, 
-                right:10, 
-                background:'transparent', 
-                border:'none', 
-                color:'#fff', 
-                fontSize:24, 
-                cursor:'pointer',
-                padding: '8px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
-            >
-              ×
-            </button>
-            <h3 style={{marginTop:0, marginBottom:14, fontWeight:900, fontSize: '20px'}}>Настройки удаленного ПК</h3>
-            <div style={{display:'flex', flexDirection:'column', gap:12}}>
-              <div>
-                <label style={{display:'block', fontSize:12, color:'#9ca3af', marginBottom:6}}>URL удаленного ПК</label>
-                <input 
-                  value={remotePcUrl} 
-                  onChange={e=>setRemotePcUrl(e.target.value)} 
-                  placeholder="http://192.168.1.100:5000 или http://localhost:5000"
-                  style={{
-                    width:'100%', 
-                    padding:12, 
-                    borderRadius:10, 
-                    border:'1px solid #2f3440', 
-                    background:'#0e1420', 
-                    color:'#fff',
-                    fontSize: '16px',
-                    boxSizing: 'border-box'
-                  }} 
-                />
-              </div>
-              <div>
-                <label style={{display:'block', fontSize:12, color:'#9ca3af', marginBottom:6}}>API ключ (опционально)</label>
-                <input 
-                  type="password"
-                  value={remotePcApiKey} 
-                  onChange={e=>setRemotePcApiKey(e.target.value)} 
-                  placeholder="Оставьте пустым для использования значения по умолчанию"
-                  style={{
-                    width:'100%', 
-                    padding:12, 
-                    borderRadius:10, 
-                    border:'1px solid #2f3440', 
-                    background:'#0e1420', 
-                    color:'#fff',
-                    fontSize: '16px',
-                    boxSizing: 'border-box'
-                  }} 
-                />
-              </div>
-              <div style={{display:'flex', gap:10, flexDirection: 'column', marginTop:16}}>
-                <button 
-                  onClick={async () => {
-                    try {
-                      const token = localStorage.getItem('token');
-                      const response = await fetch('/api/admin/remote-pc-settings', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                        body: JSON.stringify({ url: remotePcUrl, apiKey: remotePcApiKey })
-                      });
-                      const data = await response.json();
-                      if (response.ok && data.success) {
-                        alert('Настройки сохранены успешно');
-                        setShowRemotePcSettings(false);
-                        // Обновляем список пользователей
-                        adminRefreshUsers();
-                      } else {
-                        alert('Ошибка: ' + (data.error || 'неизвестно'));
-                      }
-                    } catch (e) {
-                      alert('Ошибка сохранения: ' + e.message);
-                    }
-                  }}
-                  style={{
-                    padding:'12px 16px', 
-                    borderRadius:10, 
-                    border:'1px solid rgba(67,233,123,0.35)', 
-                    background:'rgba(67,233,123,0.15)', 
-                    color:'#b2ffb2', 
-                    cursor:'pointer', 
-                    fontWeight:700,
-                    fontSize: '15px',
-                    width: '100%'
-                  }}
-                >
-                  Сохранить
-                </button>
-                <button 
-                  onClick={()=>setShowRemotePcSettings(false)} 
-                  style={{
-                    padding:'12px 16px', 
-                    borderRadius:10, 
-                    border:'1px solid #374151', 
-                    background:'#111827', 
-                    color:'#e5e7eb', 
-                    cursor:'pointer',
-                    fontSize: '15px',
-                    width: '100%',
-                    fontWeight: 600
-                  }}
-                >
-                  Отмена
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
     </>
   );
 }
