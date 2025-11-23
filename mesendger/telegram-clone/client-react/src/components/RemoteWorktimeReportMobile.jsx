@@ -3,6 +3,44 @@ import ReactDOM from 'react-dom';
 import { FaArrowLeft } from 'react-icons/fa';
 import { FiX, FiClock, FiLogIn, FiLogOut, FiEye, FiCalendar } from 'react-icons/fi';
 
+// Добавляем глобальные стили для полноэкранной модалки
+if (typeof document !== 'undefined') {
+  const styleId = 'remote-worktime-fullscreen-styles';
+  if (!document.getElementById(styleId)) {
+    const style = document.createElement('style');
+    style.id = styleId;
+    style.textContent = `
+      .remote-worktime-fullscreen-outer {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        z-index: 100007 !important;
+        overflow: hidden !important;
+        display: flex !important;
+        align-items: stretch !important;
+        justify-content: stretch !important;
+      }
+      .remote-worktime-fullscreen-inner {
+        position: relative !important;
+        width: 100% !important;
+        height: 100% !important;
+        min-width: 100vw !important;
+        min-height: 100vh !important;
+        margin: 0 !important;
+        max-width: none !important;
+        max-height: none !important;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+}
+
 function RemoteWorktimeReportMobile({ open, onClose, onOpenMobileSidebar }) {
   const touchStartX = useRef(null);
   const touchEndX = useRef(null);
@@ -217,27 +255,17 @@ function RemoteWorktimeReportMobile({ open, onClose, onOpenMobileSidebar }) {
 
   return ReactDOM.createPortal(
     <div
+      className="remote-worktime-fullscreen-outer"
       style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
         backgroundColor: 'rgba(0, 0, 0, 0.85)',
-        zIndex: 100007, // Выше всех модалок (100002, 100003)
-        display: 'flex',
-        alignItems: 'stretch',
-        justifyContent: 'stretch',
         backdropFilter: 'blur(8px)',
       }}
       onClick={handleClose}
     >
       <div
         ref={modalRef}
+        className="remote-worktime-fullscreen-inner"
         style={{
-          position: 'relative',
-          width: '100%',
-          height: '100%',
           background: 'linear-gradient(135deg, #232931 0%, #181c22 100%)',
           display: 'flex',
           flexDirection: 'column',
