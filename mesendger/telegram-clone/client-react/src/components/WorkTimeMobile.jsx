@@ -7,6 +7,7 @@ import UserWorkTimeDetailsMobile from './UserWorkTimeDetailsMobile';
 import AppUsageModal from './Modals/AppUsageModal';
 import AppUsageMobile from './AppUsageMobile';
 import RemoteWorktimeReportModal from './Modals/RemoteWorktimeReportModal';
+import RemoteWorktimeReportMobile from './RemoteWorktimeReportMobile';
 
 // Вынесем парсер вне функции
 function parseDate(str) {
@@ -954,8 +955,18 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
           <AppUsageModal isOpen={showAppUsage} onRequestClose={() => setShowAppUsage(false)} />
         )}
         
-        {/* Модалка отчета удаленки - работает на всех устройствах */}
-        <RemoteWorktimeReportModal isOpen={showRemoteWorktime} onRequestClose={() => setShowRemoteWorktime(false)} />
+        {/* Модалка отчета удаленки */}
+        {isMobile ? (
+          <RemoteWorktimeReportMobile
+            open={showRemoteWorktime}
+            onClose={() => setShowRemoteWorktime(false)}
+            onOpenMobileSidebar={() => {
+              // Не открываем сайдбар, так как мы уже внутри модалки
+            }}
+          />
+        ) : (
+          <RemoteWorktimeReportModal isOpen={showRemoteWorktime} onRequestClose={() => setShowRemoteWorktime(false)} />
+        )}
       </div>
     </div>,
     document.body
