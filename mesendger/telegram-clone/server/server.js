@@ -507,6 +507,7 @@ try {
   app.use('/api', importWorktimeCsvRoutes);
   app.use('/api', quickCsvReportRouter);
   app.use('/api', remoteWorktimeRouter);
+  console.log('✅ [SERVER] RemoteWorktime router loaded and mounted at /api');
   app.use('/api', activityRouter);
   app.use('/api/congratulations', congratulationsRouter);
 } catch (e) {
