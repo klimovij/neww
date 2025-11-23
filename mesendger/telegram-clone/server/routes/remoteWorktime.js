@@ -364,21 +364,42 @@ router.get('/remote-worktime-report', async (req, res) => {
 
 // Endpoint для получения всех событий конкретного пользователя за период (без API ключа)
 router.get('/remote-worktime-user-events', async (req, res) => {
-  console.log('📊 [REMOTE-WORKTIME-USER-EVENTS] Request received:', req.query);
-  console.log('📊 [REMOTE-WORKTIME-USER-EVENTS] Raw query:', JSON.stringify(req.query));
+  console.log('📊 [REMOTE-WORKTIME-USER-EVENTS] Request received');
+  console.log('📊 [REMOTE-WORKTIME-USER-EVENTS] Full URL:', req.url);
+  console.log('📊 [REMOTE-WORKTIME-USER-EVENTS] Query object:', req.query);
+  console.log('📊 [REMOTE-WORKTIME-USER-EVENTS] Query keys:', Object.keys(req.query));
+  console.log('📊 [REMOTE-WORKTIME-USER-EVENTS] Query values:', Object.values(req.query));
+  
   try {
-    let { username, date, start, end } = req.query;
+    // Express автоматически декодирует query параметры, но проверим
+    let username = req.query.username || req.query.Username;
+    const date = req.query.date || req.query.Date;
+    const start = req.query.start || req.query.Start;
+    const end = req.query.end || req.query.End;
+    
+    console.log('📊 [REMOTE-WORKTIME-USER-EVENTS] Extracted params:', { 
+      username, 
+      usernameType: typeof username, 
+      usernameLength: username ? username.length : 0,
+      date, 
+      start, 
+      end 
+    });
     
     // Декодируем username из URL (может быть закодирован кириллицей)
     if (username) {
       try {
-        username = decodeURIComponent(username);
+        // Проверяем, нужно ли декодировать (если содержит %)
+        if (username.includes('%')) {
+          username = decodeURIComponent(username);
+          console.log('📊 [REMOTE-WORKTIME-USER-EVENTS] Username decoded:', username);
+        }
       } catch (e) {
         console.warn('⚠️ [REMOTE-WORKTIME-USER-EVENTS] Error decoding username:', e);
       }
     }
     
-    console.log('📊 [REMOTE-WORKTIME-USER-EVENTS] Decoded params:', { username, date, start, end });
+    console.log('📊 [REMOTE-WORKTIME-USER-EVENTS] Final params:', { username, date, start, end });
     
     // Поддерживаем старый формат (date) и новый (start/end)
     let startDate, endDate;
@@ -390,14 +411,17 @@ router.get('/remote-worktime-user-events', async (req, res) => {
       endDate = date;
     } else {
       console.error('❌ [REMOTE-WORKTIME-USER-EVENTS] Missing date parameters');
+      console.error('❌ [REMOTE-WORKTIME-USER-EVENTS] start:', start, 'end:', end, 'date:', date);
       return res.status(400).json({
         success: false,
         error: 'Необходимо указать либо date, либо start и end'
       });
     }
     
-    if (!username || username.trim() === '') {
+    if (!username || (typeof username === 'string' && username.trim() === '')) {
       console.error('❌ [REMOTE-WORKTIME-USER-EVENTS] Missing or empty username');
+      console.error('❌ [REMOTE-WORKTIME-USER-EVENTS] username value:', username);
+      console.error('❌ [REMOTE-WORKTIME-USER-EVENTS] username type:', typeof username);
       return res.status(400).json({
         success: false,
         error: 'Username is required'
