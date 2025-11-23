@@ -16,19 +16,6 @@ function RemoteWorktimeReportModal({ isOpen, onRequestClose }) {
     return window.innerWidth > 768 && !/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
   });
 
-  useEffect(() => {
-    const handleResize = () => {
-      setIsDesktopDevice(window.innerWidth > 768 && !/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
-    };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  // Показываем только на десктопе
-  if (!isDesktopDevice) {
-    return null;
-  }
-
   const [selectedDate, setSelectedDate] = useState(() => {
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
@@ -39,6 +26,19 @@ function RemoteWorktimeReportModal({ isOpen, onRequestClose }) {
   const [selectedUser, setSelectedUser] = useState(null);
   const [userEvents, setUserEvents] = useState([]);
   const [loadingEvents, setLoadingEvents] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsDesktopDevice(window.innerWidth > 768 && !/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Показываем только на десктопе - проверка ПОСЛЕ всех хуков
+  if (!isDesktopDevice) {
+    return null;
+  }
 
   // Загрузка отчета
   useEffect(() => {
