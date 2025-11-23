@@ -1029,34 +1029,111 @@ export default function AllLeavesCalendarMobile({ open, onClose, token, onOpenMo
                                   fontSize: '0.85em',
                                   overflow: 'hidden',
                                   textOverflow: 'ellipsis',
-                                  whiteSpace: 'nowrap'
+                                  whiteSpace: 'nowrap',
+                                  marginBottom: '4px'
                                 }}>
                                   {leave.reason}
                                 </div>
                               )}
+                              {/* Статус заявки */}
+                              <div style={{
+                                padding: '4px 8px',
+                                borderRadius: '6px',
+                                background: leave.status === 'approved' ? '#43e97b22' : 
+                                           leave.status === 'pending' ? '#f9ca2422' : 
+                                           leave.status === 'completed' ? '#6dd5ed22' : 
+                                           leave.status === 'rejected' ? '#e74c3c22' : '#88888822',
+                                color: leave.status === 'approved' ? '#43e97b' : 
+                                      leave.status === 'pending' ? '#f9ca24' : 
+                                      leave.status === 'completed' ? '#6dd5ed' : 
+                                      leave.status === 'rejected' ? '#e74c3c' : '#888888',
+                                fontSize: '0.75em',
+                                fontWeight: 600,
+                                display: 'inline-block',
+                                marginTop: '4px'
+                              }}>
+                                {leave.status === 'approved' ? '✓ Одобрено' : 
+                                 leave.status === 'pending' ? '⏳ Ожидает' : 
+                                 leave.status === 'completed' ? '✓ Отработано' : 
+                                 leave.status === 'rejected' ? '✗ Отклонено' : 'Неизвестно'}
+                              </div>
                             </div>
-                            {(isHr || leave.userId === currentUser?.id) && (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  if (window.confirm(`Удалить ${typeText.toLowerCase()}?`)) {
-                                    handleDeleteLeave(leave.id);
-                                  }
-                                }}
-                                style={{
-                                  background: '#e74c3c',
-                                  color: '#fff',
-                                  border: 'none',
-                                  borderRadius: '8px',
-                                  padding: '8px 12px',
-                                  fontSize: '0.85em',
-                                  cursor: 'pointer',
-                                  fontWeight: 600
-                                }}
-                              >
-                                🗑️
-                              </button>
-                            )}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'flex-end' }}>
+                              {/* Кнопки одобрения/отклонения для HR/админов */}
+                              {isHr && leave.status === 'pending' && (
+                                <>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleApproveLeave(leave.id);
+                                    }}
+                                    style={{
+                                      background: '#43e97b',
+                                      color: '#fff',
+                                      border: 'none',
+                                      borderRadius: '8px',
+                                      padding: '8px 12px',
+                                      fontSize: '0.85em',
+                                      cursor: 'pointer',
+                                      fontWeight: 600,
+                                      whiteSpace: 'nowrap',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: '4px'
+                                    }}
+                                  >
+                                    ✓ Одобрить
+                                  </button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      if (window.confirm('Вы уверены, что хотите отклонить эту заявку?')) {
+                                        handleRejectLeave(leave.id);
+                                      }
+                                    }}
+                                    style={{
+                                      background: '#e74c3c',
+                                      color: '#fff',
+                                      border: 'none',
+                                      borderRadius: '8px',
+                                      padding: '8px 12px',
+                                      fontSize: '0.85em',
+                                      cursor: 'pointer',
+                                      fontWeight: 600,
+                                      whiteSpace: 'nowrap',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: '4px'
+                                    }}
+                                  >
+                                    ✗ Отклонить
+                                  </button>
+                                </>
+                              )}
+                              {/* Кнопка удаления для HR или владельца */}
+                              {(isHr || leave.userId === currentUser?.id) && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (window.confirm(`Удалить ${typeText.toLowerCase()}?`)) {
+                                      handleDeleteLeave(leave.id);
+                                    }
+                                  }}
+                                  style={{
+                                    background: '#e74c3c',
+                                    color: '#fff',
+                                    border: 'none',
+                                    borderRadius: '8px',
+                                    padding: '8px 12px',
+                                    fontSize: '0.85em',
+                                    cursor: 'pointer',
+                                    fontWeight: 600
+                                  }}
+                                >
+                                  🗑️
+                                </button>
+                              )}
+                            </div>
                           </div>
                         );
                       })}
