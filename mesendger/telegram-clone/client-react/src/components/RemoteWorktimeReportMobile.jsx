@@ -173,8 +173,8 @@ function RemoteWorktimeReportMobile({ open, onClose, onOpenMobileSidebar }) {
         backgroundColor: 'rgba(0, 0, 0, 0.85)',
         zIndex: 100007, // Выше всех модалок (100002, 100003)
         display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
+        alignItems: 'stretch',
+        justifyContent: 'stretch',
         backdropFilter: 'blur(8px)',
       }}
       onClick={handleClose}
