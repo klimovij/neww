@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import Modal from 'react-modal';
+import React, { useRef, useState, useEffect } from 'react';
+import ReactDOM from 'react-dom';
+import { FaArrowLeft } from 'react-icons/fa';
 import { FiX, FiLogIn, FiLogOut, FiClock, FiCalendar, FiEye } from 'react-icons/fi';
-
-Modal.setAppElement('#root');
 
 function formatTime(dtStr) {
   if (!dtStr) return '—';
@@ -10,7 +9,14 @@ function formatTime(dtStr) {
   return `${d.toLocaleDateString('ru-RU')}, ${d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}`;
 }
 
-function RemoteWorktimeReportModal({ isOpen, onRequestClose }) {
+export default function RemoteWorktimeReportMobile({
+  open,
+  onClose,
+  onOpenMobileSidebar,
+}) {
+  const touchStartX = useRef(null);
+  const touchEndX = useRef(null);
+  const modalRef = useRef(null);
   const [selectedDate, setSelectedDate] = useState(() => {
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
@@ -22,12 +28,49 @@ function RemoteWorktimeReportModal({ isOpen, onRequestClose }) {
   const [userEvents, setUserEvents] = useState([]);
   const [loadingEvents, setLoadingEvents] = useState(false);
 
+  // Обработчики свайпа
+  const handleTouchStart = (e) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchMove = (e) => {
+    touchEndX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStartX.current || !touchEndX.current) return;
+    
+    const distance = touchStartX.current - touchEndX.current;
+    const minSwipeDistance = 50;
+
+    if (distance > minSwipeDistance) {
+      if (selectedUser) {
+        setSelectedUser(null);
+        setUserEvents([]);
+      } else {
+        handleClose();
+      }
+    }
+
+    touchStartX.current = null;
+    touchEndX.current = null;
+  };
+
+  const handleClose = () => {
+    if (onOpenMobileSidebar) {
+      onOpenMobileSidebar();
+    }
+    setSelectedUser(null);
+    setUserEvents([]);
+    onClose();
+  };
+
   // Загрузка отчета
   useEffect(() => {
-    if (isOpen && !selectedUser) {
+    if (open && !selectedUser) {
       loadReport();
     }
-  }, [isOpen, selectedDate, selectedUser]);
+  }, [open, selectedDate, selectedUser]);
 
   const loadReport = async () => {
     setLoading(true);
@@ -78,51 +121,113 @@ function RemoteWorktimeReportModal({ isOpen, onRequestClose }) {
     setUserEvents([]);
   };
 
-  const handleClose = () => {
-    setSelectedUser(null);
-    setUserEvents([]);
-    setReport([]);
-    onRequestClose();
-  };
+  // Применение полноэкранных стилей
+  useEffect(() => {
+    if (open && modalRef.current) {
+      const modalElement = modalRef.current;
+      const parentElement = modalElement.parentElement;
+      
+      if (parentElement) {
+        parentElement.style.setProperty('position', 'fixed', 'important');
+        parentElement.style.setProperty('top', '0', 'important');
+        parentElement.style.setProperty('left', '0', 'important');
+        parentElement.style.setProperty('right', '0', 'important');
+        parentElement.style.setProperty('bottom', '0', 'important');
+        parentElement.style.setProperty('width', '100vw', 'important');
+        parentElement.style.setProperty('height', '100vh', 'important');
+        parentElement.style.setProperty('margin', '0', 'important');
+        parentElement.style.setProperty('padding', '0', 'important');
+        parentElement.style.setProperty('display', 'flex', 'important');
+        parentElement.style.setProperty('align-items', 'stretch', 'important');
+        parentElement.style.setProperty('justify-content', 'stretch', 'important');
+        parentElement.style.setProperty('z-index', '100007', 'important');
+        parentElement.style.setProperty('overflow', 'hidden', 'important');
+      }
+      
+      modalElement.style.setProperty('width', '100%', 'important');
+      modalElement.style.setProperty('height', '100%', 'important');
+      modalElement.style.setProperty('min-width', '100vw', 'important');
+      modalElement.style.setProperty('min-height', '100vh', 'important');
+      modalElement.style.setProperty('margin', '0', 'important');
+      modalElement.style.setProperty('max-width', 'none', 'important');
+      modalElement.style.setProperty('max-height', 'none', 'important');
+    }
+  }, [open]);
 
-  return (
-    <Modal
-      isOpen={isOpen}
-      onRequestClose={handleClose}
-      className="worktime-modal"
-      overlayClassName="worktime-modal-overlay"
+  if (!open) {
+    return null;
+  }
+
+  // Глобальные стили для полноэкранного режима
+  if (typeof document !== 'undefined') {
+    const styleId = 'remote-worktime-fullscreen-styles';
+    if (!document.getElementById(styleId)) {
+      const style = document.createElement('style');
+      style.id = styleId;
+      style.textContent = `
+        .remote-worktime-fullscreen-outer {
+          position: fixed !important;
+          top: 0 !important;
+          left: 0 !important;
+          right: 0 !important;
+          bottom: 0 !important;
+          width: 100vw !important;
+          height: 100vh !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          z-index: 100007 !important;
+          overflow: hidden !important;
+          display: flex !important;
+          align-items: stretch !important;
+          justify-content: stretch !important;
+        }
+        .remote-worktime-fullscreen-inner {
+          position: relative !important;
+          width: 100% !important;
+          height: 100% !important;
+          min-width: 100vw !important;
+          min-height: 100vh !important;
+          margin: 0 !important;
+          max-width: none !important;
+          max-height: none !important;
+        }
+      `;
+      document.head.appendChild(style);
+    }
+  }
+
+  return ReactDOM.createPortal(
+    <div
+      ref={modalRef}
+      className="remote-worktime-fullscreen-inner"
       style={{
-        content: {
-          maxWidth: '900px',
-          width: '90%',
-          maxHeight: '90vh',
-          margin: 'auto',
-          borderRadius: '16px',
-          border: '2px solid rgba(67, 233, 123, 0.3)',
-          background: 'linear-gradient(135deg, rgba(20, 20, 20, 0.98) 0%, rgba(30, 30, 30, 0.98) 100%)',
-          padding: 0,
-          color: '#fff',
-          overflow: 'hidden',
-          display: 'flex',
-          flexDirection: 'column',
-        },
-        overlay: {
-          backgroundColor: 'rgba(0, 0, 0, 0.85)',
-          zIndex: 100006,
-        },
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.95)',
+        zIndex: 100007,
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
       }}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
     >
       {/* Заголовок */}
       <div style={{
-        padding: '20px 24px',
+        padding: '16px',
         borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         backgroundColor: 'rgba(20, 20, 20, 0.9)',
+        flexShrink: 0,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
-          {selectedUser && (
+          {selectedUser ? (
             <button
               onClick={handleBack}
               style={{
@@ -135,50 +240,52 @@ function RemoteWorktimeReportModal({ isOpen, onRequestClose }) {
                 alignItems: 'center',
               }}
             >
-              ← Назад
+              <FaArrowLeft size={20} />
+            </button>
+          ) : (
+            <button
+              onClick={handleClose}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#43e97b',
+                cursor: 'pointer',
+                padding: '8px',
+                display: 'flex',
+                alignItems: 'center',
+              }}
+            >
+              <FaArrowLeft size={20} />
             </button>
           )}
           <h2 style={{
             color: '#ffe082',
-            fontSize: '20px',
+            fontSize: '18px',
             fontWeight: 600,
             margin: 0,
           }}>
             {selectedUser ? `События: ${selectedUser.fio || selectedUser.username}` : 'Отчет Удаленка'}
           </h2>
         </div>
-        <button
-          onClick={handleClose}
-          style={{
-            background: 'none',
-            border: 'none',
-            color: '#999',
-            cursor: 'pointer',
-            padding: '8px',
-            display: 'flex',
-            alignItems: 'center',
-          }}
-        >
-          <FiX size={24} />
-        </button>
       </div>
 
       {/* Контент */}
       <div style={{
         flex: 1,
         overflowY: 'auto',
-        padding: '24px',
+        padding: '16px',
+        paddingBottom: '80px',
       }}>
         {!selectedUser ? (
           <>
             {/* Выбор даты */}
-            <div style={{ marginBottom: '24px' }}>
+            <div style={{ marginBottom: '20px' }}>
               <label style={{
                 display: 'block',
                 color: '#ffe082',
-                fontSize: '14px',
+                fontSize: '13px',
                 fontWeight: 600,
-                marginBottom: '10px',
+                marginBottom: '8px',
               }}>
                 Дата отчета:
               </label>
@@ -188,7 +295,6 @@ function RemoteWorktimeReportModal({ isOpen, onRequestClose }) {
                 onChange={(e) => setSelectedDate(e.target.value)}
                 style={{
                   width: '100%',
-                  maxWidth: '300px',
                   padding: '12px',
                   borderRadius: '8px',
                   border: '2px solid rgba(67, 233, 123, 0.3)',
@@ -203,7 +309,7 @@ function RemoteWorktimeReportModal({ isOpen, onRequestClose }) {
             {loading && (
               <div style={{
                 textAlign: 'center',
-                padding: '60px',
+                padding: '40px',
                 color: '#ffe082',
               }}>
                 Загрузка...
@@ -214,7 +320,7 @@ function RemoteWorktimeReportModal({ isOpen, onRequestClose }) {
             {!loading && report.length === 0 && (
               <div style={{
                 textAlign: 'center',
-                padding: '60px',
+                padding: '40px',
                 color: '#999',
               }}>
                 Нет данных за выбранную дату
@@ -222,16 +328,12 @@ function RemoteWorktimeReportModal({ isOpen, onRequestClose }) {
             )}
 
             {!loading && report.length > 0 && (
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))',
-                gap: '16px',
-              }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {report.map((user) => (
                   <div
                     key={user.username}
                     style={{
-                      padding: '20px',
+                      padding: '16px',
                       borderRadius: '12px',
                       border: '2px solid rgba(67, 233, 123, 0.2)',
                       background: 'rgba(67, 233, 123, 0.05)',
@@ -241,12 +343,12 @@ function RemoteWorktimeReportModal({ isOpen, onRequestClose }) {
                       display: 'flex',
                       justifyContent: 'space-between',
                       alignItems: 'flex-start',
-                      marginBottom: '16px',
+                      marginBottom: '12px',
                     }}>
                       <div style={{ flex: 1 }}>
                         <div style={{
                           color: '#43e97b',
-                          fontSize: '18px',
+                          fontSize: '16px',
                           fontWeight: 600,
                           marginBottom: '8px',
                         }}>
@@ -254,7 +356,7 @@ function RemoteWorktimeReportModal({ isOpen, onRequestClose }) {
                         </div>
                         <div style={{
                           color: '#999',
-                          fontSize: '14px',
+                          fontSize: '13px',
                         }}>
                           Событий: {user.totalEvents}
                         </div>
@@ -262,47 +364,38 @@ function RemoteWorktimeReportModal({ isOpen, onRequestClose }) {
                       <button
                         onClick={() => handleViewUser(user)}
                         style={{
-                          padding: '10px 16px',
+                          padding: '8px 16px',
                           borderRadius: '8px',
                           border: '2px solid rgba(67, 233, 123, 0.3)',
                           background: 'rgba(67, 233, 123, 0.15)',
                           color: '#43e97b',
                           cursor: 'pointer',
-                          fontSize: '14px',
+                          fontSize: '13px',
                           fontWeight: 600,
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '8px',
-                          transition: 'all 0.2s',
-                        }}
-                        onMouseEnter={(e) => {
-                          e.target.style.background = 'rgba(67, 233, 123, 0.25)';
-                          e.target.style.borderColor = '#43e97b';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.target.style.background = 'rgba(67, 233, 123, 0.15)';
-                          e.target.style.borderColor = 'rgba(67, 233, 123, 0.3)';
+                          gap: '6px',
                         }}
                       >
-                        <FiEye size={16} />
+                        <FiEye size={14} />
                         Просмотреть
                       </button>
                     </div>
                     <div style={{
                       display: 'flex',
                       flexDirection: 'column',
-                      gap: '10px',
-                      marginTop: '16px',
+                      gap: '8px',
+                      marginTop: '12px',
                     }}>
                       {user.firstLogin && (
                         <div style={{
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '10px',
+                          gap: '8px',
                           color: '#fff',
                           fontSize: '14px',
                         }}>
-                          <FiLogIn size={18} color="#43e97b" />
+                          <FiLogIn size={16} color="#43e97b" />
                           <span style={{ color: '#999' }}>Первый вход:</span>
                           <span>{formatTime(user.firstLogin)}</span>
                         </div>
@@ -311,11 +404,11 @@ function RemoteWorktimeReportModal({ isOpen, onRequestClose }) {
                         <div style={{
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '10px',
+                          gap: '8px',
                           color: '#fff',
                           fontSize: '14px',
                         }}>
-                          <FiLogOut size={18} color="#ff6b6b" />
+                          <FiLogOut size={16} color="#ff6b6b" />
                           <span style={{ color: '#999' }}>Последний выход:</span>
                           <span>{formatTime(user.lastLogout)}</span>
                         </div>
@@ -332,7 +425,7 @@ function RemoteWorktimeReportModal({ isOpen, onRequestClose }) {
             {loadingEvents && (
               <div style={{
                 textAlign: 'center',
-                padding: '60px',
+                padding: '40px',
                 color: '#ffe082',
               }}>
                 Загрузка событий...
@@ -342,7 +435,7 @@ function RemoteWorktimeReportModal({ isOpen, onRequestClose }) {
             {!loadingEvents && userEvents.length === 0 && (
               <div style={{
                 textAlign: 'center',
-                padding: '60px',
+                padding: '40px',
                 color: '#999',
               }}>
                 Нет событий за выбранную дату
@@ -350,16 +443,12 @@ function RemoteWorktimeReportModal({ isOpen, onRequestClose }) {
             )}
 
             {!loadingEvents && userEvents.length > 0 && (
-              <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '16px',
-              }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {userEvents.map((event, index) => (
                   <div
                     key={index}
                     style={{
-                      padding: '20px',
+                      padding: '16px',
                       borderRadius: '12px',
                       border: `2px solid ${event.event_type === 'login' ? 'rgba(67, 233, 123, 0.3)' : 'rgba(255, 107, 107, 0.3)'}`,
                       background: `${event.event_type === 'login' ? 'rgba(67, 233, 123, 0.05)' : 'rgba(255, 107, 107, 0.05)'}`,
@@ -368,30 +457,27 @@ function RemoteWorktimeReportModal({ isOpen, onRequestClose }) {
                     <div style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '16px',
+                      gap: '12px',
                     }}>
                       {event.event_type === 'login' ? (
-                        <FiLogIn size={24} color="#43e97b" />
+                        <FiLogIn size={20} color="#43e97b" />
                       ) : (
-                        <FiLogOut size={24} color="#ff6b6b" />
+                        <FiLogOut size={20} color="#ff6b6b" />
                       )}
                       <div style={{ flex: 1 }}>
                         <div style={{
                           color: event.event_type === 'login' ? '#43e97b' : '#ff6b6b',
-                          fontSize: '18px',
+                          fontSize: '16px',
                           fontWeight: 600,
-                          marginBottom: '6px',
+                          marginBottom: '4px',
                         }}>
                           {event.event_type === 'login' ? 'Вход' : 'Выход'}
                         </div>
                         <div style={{
                           color: '#999',
                           fontSize: '14px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '8px',
                         }}>
-                          <FiClock size={16} />
+                          <FiClock size={14} style={{ display: 'inline', marginRight: '6px' }} />
                           {formatTime(event.event_time)}
                         </div>
                       </div>
@@ -403,8 +489,8 @@ function RemoteWorktimeReportModal({ isOpen, onRequestClose }) {
           </>
         )}
       </div>
-    </Modal>
+    </div>,
+    document.body
   );
 }
 
-export default RemoteWorktimeReportModal;
