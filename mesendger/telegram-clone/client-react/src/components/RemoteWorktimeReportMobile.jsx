@@ -134,6 +134,39 @@ export default function RemoteWorktimeReportMobile({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Проверка после рендеринга - ДО условного return
+  useEffect(() => {
+    if (open && modalRef.current) {
+      console.log('[RemoteWorktimeReportMobile] 🔍 Модалка отрендерена в DOM, проверка стилей...');
+      const element = modalRef.current;
+      const styles = window.getComputedStyle(element);
+      console.log('[RemoteWorktimeReportMobile] Computed styles:', {
+        position: styles.position,
+        zIndex: styles.zIndex,
+        width: styles.width,
+        height: styles.height,
+        display: styles.display,
+        visibility: styles.visibility,
+        opacity: styles.opacity,
+      });
+      
+      // Принудительно устанавливаем стили
+      element.style.setProperty('position', 'fixed', 'important');
+      element.style.setProperty('top', '0', 'important');
+      element.style.setProperty('left', '0', 'important');
+      element.style.setProperty('right', '0', 'important');
+      element.style.setProperty('bottom', '0', 'important');
+      element.style.setProperty('width', '100vw', 'important');
+      element.style.setProperty('height', '100vh', 'important');
+      element.style.setProperty('z-index', '100009', 'important');
+      element.style.setProperty('display', 'flex', 'important');
+      element.style.setProperty('visibility', 'visible', 'important');
+      element.style.setProperty('opacity', '1', 'important');
+      
+      console.log('[RemoteWorktimeReportMobile] ✅ Стили применены принудительно');
+    }
+  }, [open]);
+
   console.log('[RemoteWorktimeReportMobile] Рендерится, open =', open, 'selectedUser =', selectedUser, 'isMobileDevice =', isMobileDevice);
   
   if (!open) {
@@ -167,6 +200,8 @@ export default function RemoteWorktimeReportMobile({
         overflow: 'hidden',
         margin: 0,
         padding: 0,
+        visibility: 'visible',
+        opacity: 1,
       }}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
