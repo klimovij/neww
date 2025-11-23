@@ -166,30 +166,40 @@ function RemoteWorktimeReportMobile({ open, onClose, onOpenMobileSidebar }) {
       const modalElement = modalRef.current;
       const parentElement = modalElement.parentElement;
       
+      console.log('🔍 [RemoteWorktimeReportMobile] Modal element:', modalElement);
+      console.log('🔍 [RemoteWorktimeReportMobile] Parent element:', parentElement);
+      console.log('🔍 [RemoteWorktimeReportMobile] Parent computed styles:', parentElement ? window.getComputedStyle(parentElement) : 'N/A');
+      console.log('🔍 [RemoteWorktimeReportMobile] Modal computed styles:', window.getComputedStyle(modalElement));
+      
       if (parentElement) {
         // Принудительно устанавливаем стили для родительского элемента
-        parentElement.style.position = 'fixed';
-        parentElement.style.top = '0';
-        parentElement.style.left = '0';
-        parentElement.style.right = '0';
-        parentElement.style.bottom = '0';
-        parentElement.style.width = '100vw';
-        parentElement.style.height = '100vh';
-        parentElement.style.margin = '0';
-        parentElement.style.padding = '0';
-        parentElement.style.display = 'flex';
-        parentElement.style.alignItems = 'stretch';
-        parentElement.style.justifyContent = 'stretch';
-        parentElement.style.zIndex = '100007';
+        parentElement.style.setProperty('position', 'fixed', 'important');
+        parentElement.style.setProperty('top', '0', 'important');
+        parentElement.style.setProperty('left', '0', 'important');
+        parentElement.style.setProperty('right', '0', 'important');
+        parentElement.style.setProperty('bottom', '0', 'important');
+        parentElement.style.setProperty('width', '100vw', 'important');
+        parentElement.style.setProperty('height', '100vh', 'important');
+        parentElement.style.setProperty('margin', '0', 'important');
+        parentElement.style.setProperty('padding', '0', 'important');
+        parentElement.style.setProperty('display', 'flex', 'important');
+        parentElement.style.setProperty('align-items', 'stretch', 'important');
+        parentElement.style.setProperty('justify-content', 'stretch', 'important');
+        parentElement.style.setProperty('z-index', '100007', 'important');
+        parentElement.style.setProperty('max-width', 'none', 'important');
+        parentElement.style.setProperty('max-height', 'none', 'important');
       }
       
       // Принудительно устанавливаем стили для самого модального контейнера
-      modalElement.style.width = '100%';
-      modalElement.style.height = '100%';
-      modalElement.style.minWidth = '100vw';
-      modalElement.style.minHeight = '100vh';
-      modalElement.style.margin = '0';
-      modalElement.style.padding = '0';
+      modalElement.style.setProperty('width', '100%', 'important');
+      modalElement.style.setProperty('height', '100%', 'important');
+      modalElement.style.setProperty('min-width', '100vw', 'important');
+      modalElement.style.setProperty('min-height', '100vh', 'important');
+      modalElement.style.setProperty('margin', '0', 'important');
+      modalElement.style.setProperty('max-width', 'none', 'important');
+      modalElement.style.setProperty('max-height', 'none', 'important');
+      
+      console.log('✅ [RemoteWorktimeReportMobile] Styles applied');
     }
   }, [open]);
 
