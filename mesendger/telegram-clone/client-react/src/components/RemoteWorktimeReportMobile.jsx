@@ -154,10 +154,29 @@ export default function RemoteWorktimeReportMobile({
     }
   }, [open]);
 
-  console.log('[RemoteWorktimeReportMobile] Рендерится, open =', open, 'selectedUser =', selectedUser);
+  // Проверяем, что мы на мобильном устройстве
+  const [isMobileDevice, setIsMobileDevice] = useState(() => {
+    return window.innerWidth <= 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  });
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobileDevice(window.innerWidth <= 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  console.log('[RemoteWorktimeReportMobile] Рендерится, open =', open, 'selectedUser =', selectedUser, 'isMobileDevice =', isMobileDevice);
   
   if (!open) {
     console.log('[RemoteWorktimeReportMobile] Модалка закрыта, возвращаем null');
+    return null;
+  }
+
+  // Показываем только на мобильных устройствах
+  if (!isMobileDevice) {
+    console.log('[RemoteWorktimeReportMobile] Не мобильное устройство, возвращаем null (будет показана десктоп версия)');
     return null;
   }
 
@@ -212,7 +231,7 @@ export default function RemoteWorktimeReportMobile({
         right: 0,
         bottom: 0,
         backgroundColor: 'rgba(0, 0, 0, 0.95)',
-        zIndex: 100007,
+        zIndex: 100009, // Выше всех других модалок
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden',

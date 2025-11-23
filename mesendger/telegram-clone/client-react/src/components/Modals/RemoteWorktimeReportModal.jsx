@@ -11,6 +11,24 @@ function formatTime(dtStr) {
 }
 
 function RemoteWorktimeReportModal({ isOpen, onRequestClose }) {
+  // Проверяем, что мы на десктопе
+  const [isDesktopDevice, setIsDesktopDevice] = useState(() => {
+    return window.innerWidth > 768 && !/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  });
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsDesktopDevice(window.innerWidth > 768 && !/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Показываем только на десктопе
+  if (!isDesktopDevice) {
+    return null;
+  }
+
   const [selectedDate, setSelectedDate] = useState(() => {
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
@@ -108,7 +126,7 @@ function RemoteWorktimeReportModal({ isOpen, onRequestClose }) {
         },
         overlay: {
           backgroundColor: 'rgba(0, 0, 0, 0.85)',
-          zIndex: 100006,
+          zIndex: 100009, // Выше всех других модалок
         },
       }}
     >
