@@ -160,6 +160,39 @@ function RemoteWorktimeReportMobile({ open, onClose, onOpenMobileSidebar }) {
     onClose();
   };
 
+  // Принудительно применяем полноэкранные стили после монтирования
+  useEffect(() => {
+    if (open && modalRef.current) {
+      const modalElement = modalRef.current;
+      const parentElement = modalElement.parentElement;
+      
+      if (parentElement) {
+        // Принудительно устанавливаем стили для родительского элемента
+        parentElement.style.position = 'fixed';
+        parentElement.style.top = '0';
+        parentElement.style.left = '0';
+        parentElement.style.right = '0';
+        parentElement.style.bottom = '0';
+        parentElement.style.width = '100vw';
+        parentElement.style.height = '100vh';
+        parentElement.style.margin = '0';
+        parentElement.style.padding = '0';
+        parentElement.style.display = 'flex';
+        parentElement.style.alignItems = 'stretch';
+        parentElement.style.justifyContent = 'stretch';
+        parentElement.style.zIndex = '100007';
+      }
+      
+      // Принудительно устанавливаем стили для самого модального контейнера
+      modalElement.style.width = '100%';
+      modalElement.style.height = '100%';
+      modalElement.style.minWidth = '100vw';
+      modalElement.style.minHeight = '100vh';
+      modalElement.style.margin = '0';
+      modalElement.style.padding = '0';
+    }
+  }, [open]);
+
   if (!open) return null;
 
   return ReactDOM.createPortal(
