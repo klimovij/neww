@@ -121,39 +121,6 @@ export default function RemoteWorktimeReportMobile({
     setUserEvents([]);
   };
 
-  // Применение полноэкранных стилей
-  useEffect(() => {
-    if (open && modalRef.current) {
-      const modalElement = modalRef.current;
-      const parentElement = modalElement.parentElement;
-      
-      if (parentElement) {
-        parentElement.style.setProperty('position', 'fixed', 'important');
-        parentElement.style.setProperty('top', '0', 'important');
-        parentElement.style.setProperty('left', '0', 'important');
-        parentElement.style.setProperty('right', '0', 'important');
-        parentElement.style.setProperty('bottom', '0', 'important');
-        parentElement.style.setProperty('width', '100vw', 'important');
-        parentElement.style.setProperty('height', '100vh', 'important');
-        parentElement.style.setProperty('margin', '0', 'important');
-        parentElement.style.setProperty('padding', '0', 'important');
-        parentElement.style.setProperty('display', 'flex', 'important');
-        parentElement.style.setProperty('align-items', 'stretch', 'important');
-        parentElement.style.setProperty('justify-content', 'stretch', 'important');
-        parentElement.style.setProperty('z-index', '100007', 'important');
-        parentElement.style.setProperty('overflow', 'hidden', 'important');
-      }
-      
-      modalElement.style.setProperty('width', '100%', 'important');
-      modalElement.style.setProperty('height', '100%', 'important');
-      modalElement.style.setProperty('min-width', '100vw', 'important');
-      modalElement.style.setProperty('min-height', '100vh', 'important');
-      modalElement.style.setProperty('margin', '0', 'important');
-      modalElement.style.setProperty('max-width', 'none', 'important');
-      modalElement.style.setProperty('max-height', 'none', 'important');
-    }
-  }, [open]);
-
   // Проверяем, что мы на мобильном устройстве
   const [isMobileDevice, setIsMobileDevice] = useState(() => {
     return window.innerWidth <= 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -182,59 +149,24 @@ export default function RemoteWorktimeReportMobile({
 
   console.log('[RemoteWorktimeReportMobile] ✅ Модалка открывается! open =', open);
 
-  // Глобальные стили для полноэкранного режима
-  if (typeof document !== 'undefined') {
-    const styleId = 'remote-worktime-fullscreen-styles';
-    if (!document.getElementById(styleId)) {
-      const style = document.createElement('style');
-      style.id = styleId;
-      style.textContent = `
-        .remote-worktime-fullscreen-outer {
-          position: fixed !important;
-          top: 0 !important;
-          left: 0 !important;
-          right: 0 !important;
-          bottom: 0 !important;
-          width: 100vw !important;
-          height: 100vh !important;
-          margin: 0 !important;
-          padding: 0 !important;
-          z-index: 100007 !important;
-          overflow: hidden !important;
-          display: flex !important;
-          align-items: stretch !important;
-          justify-content: stretch !important;
-        }
-        .remote-worktime-fullscreen-inner {
-          position: relative !important;
-          width: 100% !important;
-          height: 100% !important;
-          min-width: 100vw !important;
-          min-height: 100vh !important;
-          margin: 0 !important;
-          max-width: none !important;
-          max-height: none !important;
-        }
-      `;
-      document.head.appendChild(style);
-    }
-  }
-
   return ReactDOM.createPortal(
     <div
       ref={modalRef}
-      className="remote-worktime-fullscreen-inner"
       style={{
         position: 'fixed',
         top: 0,
         left: 0,
         right: 0,
         bottom: 0,
+        width: '100vw',
+        height: '100vh',
         backgroundColor: 'rgba(0, 0, 0, 0.95)',
-        zIndex: 100009, // Выше всех других модалок
+        zIndex: 100009, // Выше всех других модалок (WorkTimeMobile имеет 100002)
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden',
+        margin: 0,
+        padding: 0,
       }}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
@@ -249,6 +181,7 @@ export default function RemoteWorktimeReportMobile({
         justifyContent: 'space-between',
         backgroundColor: 'rgba(20, 20, 20, 0.9)',
         flexShrink: 0,
+        minHeight: '56px',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
           {selectedUser ? (
