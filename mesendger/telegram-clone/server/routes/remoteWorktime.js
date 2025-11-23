@@ -363,6 +363,7 @@ router.get('/remote-worktime-report', async (req, res) => {
 
 // Endpoint для получения всех событий конкретного пользователя за период (без API ключа)
 router.get('/remote-worktime-user-events', async (req, res) => {
+  console.log('📊 [REMOTE-WORKTIME-USER-EVENTS] Request received:', req.query);
   try {
     const { username, date, start, end } = req.query;
     
@@ -375,6 +376,7 @@ router.get('/remote-worktime-user-events', async (req, res) => {
       startDate = date;
       endDate = date;
     } else {
+      console.error('❌ [REMOTE-WORKTIME-USER-EVENTS] Missing date parameters');
       return res.status(400).json({
         success: false,
         error: 'Необходимо указать либо date, либо start и end'
@@ -382,11 +384,14 @@ router.get('/remote-worktime-user-events', async (req, res) => {
     }
     
     if (!username) {
+      console.error('❌ [REMOTE-WORKTIME-USER-EVENTS] Missing username');
       return res.status(400).json({
         success: false,
         error: 'Username is required'
       });
     }
+    
+    console.log('📊 [REMOTE-WORKTIME-USER-EVENTS] Query params:', { username, startDate, endDate });
     
     // Получаем все логи пользователя за указанный период из таблицы удаленных ПК
     const logs = await db.getRemoteWorkTimeLogs({
@@ -394,6 +399,11 @@ router.get('/remote-worktime-user-events', async (req, res) => {
       end: endDate,
       username
     });
+    
+    console.log('📊 [REMOTE-WORKTIME-USER-EVENTS] Logs found:', logs?.length || 0);
+    if (logs && logs.length > 0) {
+      console.log('📊 [REMOTE-WORKTIME-USER-EVENTS] Sample log:', logs[0]);
+    }
     
     // Сортируем по времени
     logs.sort((a, b) => {
@@ -410,12 +420,16 @@ router.get('/remote-worktime-user-events', async (req, res) => {
       });
     }).catch(() => null);
     
+    console.log('📊 [REMOTE-WORKTIME-USER-EVENTS] User info:', userInfo);
+    console.log('📊 [REMOTE-WORKTIME-USER-EVENTS] Returning events:', logs?.length || 0);
+    
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     res.json({
       success: true,
       username,
       fio: userInfo?.fio || username,
-      date,
+      startDate,
+      endDate,
       events: logs
     });
   } catch (error) {

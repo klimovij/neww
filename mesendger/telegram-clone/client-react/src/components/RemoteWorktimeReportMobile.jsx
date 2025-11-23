@@ -138,20 +138,37 @@ export default function RemoteWorktimeReportMobile({
 
   // Загрузка событий пользователя
   const loadUserEvents = async (username) => {
-    if (!startDate || !endDate) return;
+    if (!startDate || !endDate) {
+      console.error('[RemoteWorktimeReportMobile] loadUserEvents: отсутствуют даты', { startDate, endDate });
+      return;
+    }
     
+    if (!username) {
+      console.error('[RemoteWorktimeReportMobile] loadUserEvents: отсутствует username', { username });
+      return;
+    }
+    
+    console.log('[RemoteWorktimeReportMobile] Загрузка событий пользователя:', { username, startDate, endDate });
     setLoadingEvents(true);
     try {
-      const response = await fetch(`/api/remote-worktime-user-events?username=${encodeURIComponent(username)}&start=${startDate}&end=${endDate}`);
+      const url = `/api/remote-worktime-user-events?username=${encodeURIComponent(username)}&start=${startDate}&end=${endDate}`;
+      console.log('[RemoteWorktimeReportMobile] Запрос:', url);
+      
+      const response = await fetch(url);
       const data = await response.json();
+      
+      console.log('[RemoteWorktimeReportMobile] Ответ от API:', data);
+      
       if (data.success) {
-        setUserEvents(data.events || []);
+        const events = data.events || [];
+        console.log('[RemoteWorktimeReportMobile] Событий получено:', events.length, events);
+        setUserEvents(events);
       } else {
-        console.error('Ошибка загрузки событий:', data.error);
+        console.error('[RemoteWorktimeReportMobile] Ошибка загрузки событий:', data.error);
         setUserEvents([]);
       }
     } catch (error) {
-      console.error('Ошибка загрузки событий:', error);
+      console.error('[RemoteWorktimeReportMobile] Ошибка загрузки событий:', error);
       setUserEvents([]);
     } finally {
       setLoadingEvents(false);
@@ -159,8 +176,17 @@ export default function RemoteWorktimeReportMobile({
   };
 
   const handleViewUser = async (user) => {
+    console.log('[RemoteWorktimeReportMobile] handleViewUser вызван:', user);
     setSelectedUser(user);
-    await loadUserEvents(user.username);
+    
+    // Используем username из объекта пользователя
+    const username = user.username || user.fio;
+    if (!username) {
+      console.error('[RemoteWorktimeReportMobile] handleViewUser: нет username в объекте user', user);
+      return;
+    }
+    
+    await loadUserEvents(username);
   };
 
   const handleBack = () => {
