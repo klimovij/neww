@@ -152,8 +152,9 @@ if ($actualScriptPath) {
     # Задержка будет в самом скрипте агента (Start-Sleep в начале выполнения)
     Write-Host "   ℹ️  Задержка 30 секунд будет применена в самом скрипте агента" -ForegroundColor Gray
 
-    # Principal должен совпадать с пользователем, который входит в систему
-    $principalActivity = New-ScheduledTaskPrincipal -UserId $env:USERNAME -LogonType Interactive -RunLevel Highest
+    # Principal: используем текущего пользователя с правами обычного пользователя (не Highest)
+    # Это должно решить проблему с ошибкой 267009
+    $principalActivity = New-ScheduledTaskPrincipal -UserId $env:USERNAME -LogonType Interactive -RunLevel Limited
 
     $settingsActivity = New-ScheduledTaskSettingsSet `
         -AllowStartIfOnBatteries `
