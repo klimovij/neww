@@ -154,9 +154,14 @@ export default function RemoteWorktimeReportMobile({
     }
   }, [open]);
 
+  console.log('[RemoteWorktimeReportMobile] Рендерится, open =', open, 'selectedUser =', selectedUser);
+  
   if (!open) {
+    console.log('[RemoteWorktimeReportMobile] Модалка закрыта, возвращаем null');
     return null;
   }
+
+  console.log('[RemoteWorktimeReportMobile] ✅ Модалка открывается! open =', open);
 
   // Глобальные стили для полноэкранного режима
   if (typeof document !== 'undefined') {

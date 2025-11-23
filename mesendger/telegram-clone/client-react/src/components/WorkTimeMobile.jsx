@@ -960,16 +960,26 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
         ) : (
           <AppUsageModal isOpen={showAppUsage} onRequestClose={() => setShowAppUsage(false)} />
         )}
+        {console.log('🔍 [WorkTimeMobile] Рендер модалок RemoteWorktime, isMobile =', isMobile, 'showRemoteWorktime =', showRemoteWorktime)}
         {isMobile ? (
           <RemoteWorktimeReportMobile
             open={showRemoteWorktime}
-            onClose={() => setShowRemoteWorktime(false)}
+            onClose={() => {
+              console.log('🔴 [WorkTimeMobile] Закрываем RemoteWorktimeReportMobile');
+              setShowRemoteWorktime(false);
+            }}
             onOpenMobileSidebar={() => {
               // Не открываем сайдбар, так как мы уже внутри модалки
             }}
           />
         ) : (
-          <RemoteWorktimeReportModal isOpen={showRemoteWorktime} onRequestClose={() => setShowRemoteWorktime(false)} />
+          <RemoteWorktimeReportModal 
+            isOpen={showRemoteWorktime} 
+            onRequestClose={() => {
+              console.log('🔴 [WorkTimeMobile] Закрываем RemoteWorktimeReportModal (desktop)');
+              setShowRemoteWorktime(false);
+            }} 
+          />
         )}
       </div>
     </div>,
