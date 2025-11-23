@@ -177,11 +177,22 @@ export default function RemoteWorktimeReportMobile({
 
   const handleViewUser = async (user) => {
     console.log('[RemoteWorktimeReportMobile] handleViewUser вызван:', user);
+    console.log('[RemoteWorktimeReportMobile] Доступные поля:', Object.keys(user));
     setSelectedUser(user);
     
     // Используем технический username (из remote_work_time_logs), а не ФИО
     // technicalUsername - это оригинальный username из БД, username может быть заменен на ФИО
-    const username = user.technicalUsername || user.username;
+    // Если technicalUsername нет, значит отчет еще не обновлен - используем username
+    let username = user.technicalUsername || user.username;
+    
+    // Если username равен ФИО (кириллица), пробуем найти технический username
+    // Для этого нужно сделать запрос к серверу или использовать существующий username
+    if (!username || (username === user.fio && /[А-Яа-яЁё]/.test(username))) {
+      console.warn('[RemoteWorktimeReportMobile] Username равен ФИО, будет использован для поиска через API');
+      // API endpoint сам найдет правильный username по ФИО
+      username = user.fio || user.username;
+    }
+    
     if (!username) {
       console.error('[RemoteWorktimeReportMobile] handleViewUser: нет username в объекте user', user);
       return;

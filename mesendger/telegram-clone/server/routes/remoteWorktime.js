@@ -437,9 +437,9 @@ router.get('/remote-worktime-user-events', async (req, res) => {
       return timeA - timeB;
     });
     
-    // Получаем информацию о пользователе
+    // Получаем информацию о пользователе (используем decodedUsername для поиска)
     const userInfo = await new Promise((resolve, reject) => {
-      db.db.get('SELECT id, fio, username FROM users WHERE username = ?', [username], (err, row) => {
+      db.db.get('SELECT id, fio, username FROM users WHERE username = ? OR fio = ?', [decodedUsername, decodedUsername], (err, row) => {
         if (err) reject(err);
         else resolve(row);
       });
