@@ -96,44 +96,6 @@ function RemoteWorktimeReportModal({ isOpen, onRequestClose }) {
   if (!isDesktopDevice) {
     return null;
   }
-    setLoadingEvents(true);
-    try {
-      const response = await fetch(`/api/remote-worktime-user-events?username=${encodeURIComponent(username)}&date=${selectedDate}`);
-      const data = await response.json();
-      if (data.success) {
-        setUserEvents(data.events || []);
-      } else {
-        console.error('Ошибка загрузки событий:', data.error);
-        setUserEvents([]);
-      }
-    } catch (error) {
-      console.error('Ошибка загрузки событий:', error);
-      setUserEvents([]);
-    } finally {
-      setLoadingEvents(false);
-    }
-  };
-
-  // Все useEffect должны быть объявлены до условного return
-  useEffect(() => {
-    const handleResize = () => {
-      setIsDesktopDevice(window.innerWidth > 768 && !/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
-    };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  // Загрузка отчета
-  useEffect(() => {
-    if (isOpen && !selectedUser && isDesktopDevice) {
-      loadReport();
-    }
-  }, [isOpen, selectedDate, selectedUser, isDesktopDevice]);
-
-  // Показываем только на десктопе - проверка ПОСЛЕ всех хуков
-  if (!isDesktopDevice) {
-    return null;
-  }
 
   const handleViewUser = async (user) => {
     setSelectedUser(user);
