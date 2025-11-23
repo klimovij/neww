@@ -393,7 +393,11 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
           <div style={{ marginBottom: '20px' }}>
             <button
               type="button"
-              onClick={() => setShowRemoteWorktime(true)}
+              onClick={() => {
+                console.log('🔘 [WorkTimeMobile] Кнопка "Отчет Удаленка" нажата, открываем модалку');
+                setShowRemoteWorktime(true);
+                console.log('🔘 [WorkTimeMobile] showRemoteWorktime установлен в true');
+              }}
               style={{
                 width: '100%',
                 padding: '14px',
@@ -959,9 +963,13 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
       )}
       
       {/* Модалка отчета удаленки - рендерится отдельно вне портала WorkTimeMobile для полноэкранного режима */}
+      {console.log('🔍 [WorkTimeMobile] Рендерим RemoteWorktimeReportMobile, showRemoteWorktime =', showRemoteWorktime)}
       <RemoteWorktimeReportMobile
         open={showRemoteWorktime}
-        onClose={() => setShowRemoteWorktime(false)}
+        onClose={() => {
+          console.log('🔘 [WorkTimeMobile] Закрываем RemoteWorktimeReportMobile');
+          setShowRemoteWorktime(false);
+        }}
         onOpenMobileSidebar={() => {
           // Не открываем сайдбар, так как мы уже внутри модалки
         }}
