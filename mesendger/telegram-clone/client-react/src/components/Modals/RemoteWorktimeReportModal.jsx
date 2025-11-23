@@ -27,6 +27,7 @@ function RemoteWorktimeReportModal({ isOpen, onRequestClose }) {
   const [userEvents, setUserEvents] = useState([]);
   const [loadingEvents, setLoadingEvents] = useState(false);
 
+  // Все useEffect должны быть объявлены до условного return
   useEffect(() => {
     const handleResize = () => {
       setIsDesktopDevice(window.innerWidth > 768 && !/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
@@ -35,17 +36,38 @@ function RemoteWorktimeReportModal({ isOpen, onRequestClose }) {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Загрузка отчета
+  useEffect(() => {
+    if (isOpen && !selectedUser && isDesktopDevice) {
+      loadReport();
+    }
+  }, [isOpen, selectedDate, selectedUser, isDesktopDevice]);
+
+  // Загрузка событий пользователя
+  const loadUserEvents = async (username) => {
+    if (!isDesktopDevice) return;
+    setLoadingEvents(true);
+    try {
+      const response = await fetch(`/api/remote-worktime-user-events?username=${encodeURIComponent(username)}&date=${selectedDate}`);
+      const data = await response.json();
+      if (data.success) {
+        setUserEvents(data.events || []);
+      } else {
+        console.error('Ошибка загрузки событий:', data.error);
+        setUserEvents([]);
+      }
+    } catch (error) {
+      console.error('Ошибка загрузки событий:', error);
+      setUserEvents([]);
+    } finally {
+      setLoadingEvents(false);
+    }
+  };
+
   // Показываем только на десктопе - проверка ПОСЛЕ всех хуков
   if (!isDesktopDevice) {
     return null;
   }
-
-  // Загрузка отчета
-  useEffect(() => {
-    if (isOpen && !selectedUser) {
-      loadReport();
-    }
-  }, [isOpen, selectedDate, selectedUser]);
 
   const loadReport = async () => {
     setLoading(true);
@@ -85,6 +107,27 @@ function RemoteWorktimeReportModal({ isOpen, onRequestClose }) {
       setLoadingEvents(false);
     }
   };
+
+  // Все useEffect должны быть объявлены до условного return
+  useEffect(() => {
+    const handleResize = () => {
+      setIsDesktopDevice(window.innerWidth > 768 && !/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Загрузка отчета
+  useEffect(() => {
+    if (isOpen && !selectedUser && isDesktopDevice) {
+      loadReport();
+    }
+  }, [isOpen, selectedDate, selectedUser, isDesktopDevice]);
+
+  // Показываем только на десктопе - проверка ПОСЛЕ всех хуков
+  if (!isDesktopDevice) {
+    return null;
+  }
 
   const handleViewUser = async (user) => {
     setSelectedUser(user);
