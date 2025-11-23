@@ -236,8 +236,32 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
     onClose();
   };
 
+  // Рендерим модалки RemoteWorktime ВНЕ портала WorkTimeMobile, чтобы они всегда были доступны
+  const remoteWorktimeModals = (
+    <>
+      <RemoteWorktimeReportMobile
+        open={showRemoteWorktime}
+        onClose={() => {
+          console.log('🔴 [WorkTimeMobile] Закрываем RemoteWorktimeReportMobile');
+          setShowRemoteWorktime(false);
+        }}
+        onOpenMobileSidebar={() => {
+          // Не открываем сайдбар, так как мы уже внутри модалки
+        }}
+      />
+      <RemoteWorktimeReportModal 
+        isOpen={showRemoteWorktime} 
+        onRequestClose={() => {
+          console.log('🔴 [WorkTimeMobile] Закрываем RemoteWorktimeReportModal (desktop)');
+          setShowRemoteWorktime(false);
+        }} 
+      />
+    </>
+  );
+
   return (
     <>
+      {ReactDOM.createPortal(remoteWorktimeModals, document.body)}
       {open && ReactDOM.createPortal(
     <div
       style={{
