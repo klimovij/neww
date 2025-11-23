@@ -263,6 +263,7 @@ router.get('/remote-worktime-health', authenticateRemoteRequest, (req, res) => {
 
 // Endpoint для получения отчета удаленки за определенную дату (без API ключа, для веб-интерфейса)
 router.get('/remote-worktime-report', async (req, res) => {
+  console.log('📊 [REMOTE-WORKTIME-REPORT] Request received:', req.query);
   try {
     const { date } = req.query;
     
