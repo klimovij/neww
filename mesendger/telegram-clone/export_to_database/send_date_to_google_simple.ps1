@@ -127,9 +127,40 @@ db.all(query, [targetDate, ddmmyyyy, targetDate], (err, rows) => {
     console.log('Rows found:', rows ? rows.length : 0);
 
     if (!rows || rows.length === 0) {
-        fs.writeFileSync(outputFile, '[]', 'utf8');
-        db.close();
-        process.exit(0);
+        console.log('No rows found. Checking database structure...');
+        db.all("SELECT name FROM sqlite_master WHERE type='table' AND name LIKE '%work_time%'", [], (err, tables) => {
+            if (err) {
+                console.error('Error checking tables:', err.message);
+                fs.writeFileSync(outputFile, '[]', 'utf8');
+                db.close();
+                process.exit(0);
+                return;
+            }
+            
+            if (tables && tables.length > 0) {
+                console.log('Tables found:', tables.map(t => t.name).join(', '));
+                // Показываем примеры дат из таблицы
+                db.all("SELECT DISTINCT substr(event_time, 1, 10) as date_sample FROM work_time_logs ORDER BY date_sample DESC LIMIT 10", [], (err, samples) => {
+                    if (err) {
+                        console.error('Error getting samples:', err.message);
+                    } else if (samples && samples.length > 0) {
+                        console.log('Sample dates in database:');
+                        samples.forEach(s => console.log('  -', s.date_sample || '(null)'));
+                    } else {
+                        console.log('No data in work_time_logs table');
+                    }
+                    fs.writeFileSync(outputFile, '[]', 'utf8');
+                    db.close();
+                    process.exit(0);
+                });
+            } else {
+                console.log('No work_time_logs table found!');
+                fs.writeFileSync(outputFile, '[]', 'utf8');
+                db.close();
+                process.exit(0);
+            }
+        });
+        return;
     }
 
     const events = rows.map(row => {
