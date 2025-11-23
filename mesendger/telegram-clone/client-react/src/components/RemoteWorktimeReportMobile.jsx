@@ -1,45 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import { FaArrowLeft } from 'react-icons/fa';
-import { FiX, FiClock, FiLogIn, FiLogOut, FiEye, FiCalendar } from 'react-icons/fi';
-
-// Добавляем глобальные стили для полноэкранной модалки
-if (typeof document !== 'undefined') {
-  const styleId = 'remote-worktime-fullscreen-styles';
-  if (!document.getElementById(styleId)) {
-    const style = document.createElement('style');
-    style.id = styleId;
-    style.textContent = `
-      .remote-worktime-fullscreen-outer {
-        position: fixed !important;
-        top: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        bottom: 0 !important;
-        width: 100vw !important;
-        height: 100vh !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        z-index: 100007 !important;
-        overflow: hidden !important;
-        display: flex !important;
-        align-items: stretch !important;
-        justify-content: stretch !important;
-      }
-      .remote-worktime-fullscreen-inner {
-        position: relative !important;
-        width: 100% !important;
-        height: 100% !important;
-        min-width: 100vw !important;
-        min-height: 100vh !important;
-        margin: 0 !important;
-        max-width: none !important;
-        max-height: none !important;
-      }
-    `;
-    document.head.appendChild(style);
-  }
-}
+import { FiX, FiLogIn, FiLogOut, FiEye, FiCalendar } from 'react-icons/fi';
 
 function RemoteWorktimeReportMobile({ open, onClose, onOpenMobileSidebar }) {
   const touchStartX = useRef(null);
@@ -53,11 +15,8 @@ function RemoteWorktimeReportMobile({ open, onClose, onOpenMobileSidebar }) {
   const [userEvents, setUserEvents] = useState([]);
   const [loadingEvents, setLoadingEvents] = useState(false);
 
-  console.log('🔍 [RemoteWorktimeReportMobile] Component render, open =', open);
-
   // Инициализируем дату вчерашнего дня при открытии модалки
   useEffect(() => {
-    console.log('🔍 [RemoteWorktimeReportMobile] useEffect triggered, open =', open);
     if (open) {
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
@@ -201,71 +160,32 @@ function RemoteWorktimeReportMobile({ open, onClose, onOpenMobileSidebar }) {
     onClose();
   };
 
-  // Принудительно применяем полноэкранные стили после монтирования
-  useEffect(() => {
-    if (open && modalRef.current) {
-      const modalElement = modalRef.current;
-      const parentElement = modalElement.parentElement;
-      
-      console.log('🔍 [RemoteWorktimeReportMobile] Modal element:', modalElement);
-      console.log('🔍 [RemoteWorktimeReportMobile] Parent element:', parentElement);
-      console.log('🔍 [RemoteWorktimeReportMobile] Parent computed styles:', parentElement ? window.getComputedStyle(parentElement) : 'N/A');
-      console.log('🔍 [RemoteWorktimeReportMobile] Modal computed styles:', window.getComputedStyle(modalElement));
-      
-      if (parentElement) {
-        // Принудительно устанавливаем стили для родительского элемента
-        parentElement.style.setProperty('position', 'fixed', 'important');
-        parentElement.style.setProperty('top', '0', 'important');
-        parentElement.style.setProperty('left', '0', 'important');
-        parentElement.style.setProperty('right', '0', 'important');
-        parentElement.style.setProperty('bottom', '0', 'important');
-        parentElement.style.setProperty('width', '100vw', 'important');
-        parentElement.style.setProperty('height', '100vh', 'important');
-        parentElement.style.setProperty('margin', '0', 'important');
-        parentElement.style.setProperty('padding', '0', 'important');
-        parentElement.style.setProperty('display', 'flex', 'important');
-        parentElement.style.setProperty('align-items', 'stretch', 'important');
-        parentElement.style.setProperty('justify-content', 'stretch', 'important');
-        parentElement.style.setProperty('z-index', '100007', 'important');
-        parentElement.style.setProperty('max-width', 'none', 'important');
-        parentElement.style.setProperty('max-height', 'none', 'important');
-      }
-      
-      // Принудительно устанавливаем стили для самого модального контейнера
-      modalElement.style.setProperty('width', '100%', 'important');
-      modalElement.style.setProperty('height', '100%', 'important');
-      modalElement.style.setProperty('min-width', '100vw', 'important');
-      modalElement.style.setProperty('min-height', '100vh', 'important');
-      modalElement.style.setProperty('margin', '0', 'important');
-      modalElement.style.setProperty('max-width', 'none', 'important');
-      modalElement.style.setProperty('max-height', 'none', 'important');
-      
-      console.log('✅ [RemoteWorktimeReportMobile] Styles applied');
-    }
-  }, [open]);
+  if (!open) return null;
 
-  console.log('🔍 [RemoteWorktimeReportMobile] Before render check, open =', open);
-  
-  if (!open) {
-    console.log('🔍 [RemoteWorktimeReportMobile] Modal closed, returning null');
-    return null;
-  }
-
-  console.log('🔍 [RemoteWorktimeReportMobile] Rendering modal portal');
-
+  // ПОЛНОСТЬЮ копируем структуру из WorkTimeMobile для гарантированной работы
   return ReactDOM.createPortal(
     <div
-      className="remote-worktime-fullscreen-outer"
       style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
         backgroundColor: 'rgba(0, 0, 0, 0.85)',
+        zIndex: 100007, // Выше WorkTimeMobile (100002)
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
         backdropFilter: 'blur(8px)',
       }}
       onClick={handleClose}
     >
       <div
         ref={modalRef}
-        className="remote-worktime-fullscreen-inner"
         style={{
+          position: 'relative',
+          width: '100%',
+          height: '100%',
           background: 'linear-gradient(135deg, #232931 0%, #181c22 100%)',
           display: 'flex',
           flexDirection: 'column',
@@ -280,7 +200,7 @@ function RemoteWorktimeReportMobile({ open, onClose, onOpenMobileSidebar }) {
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
-        {/* Заголовок */}
+        {/* Заголовок - точно как в WorkTimeMobile */}
         <div
           style={{
             position: 'fixed',
@@ -366,7 +286,7 @@ function RemoteWorktimeReportMobile({ open, onClose, onOpenMobileSidebar }) {
           </div>
         </div>
 
-        {/* Контент */}
+        {/* Контент - точно как в WorkTimeMobile */}
         <div style={{ flex: 1, padding: '24px 16px', maxWidth: '600px', margin: '0 auto', width: '100%' }}>
           {loading && (
             <div style={{ textAlign: 'center', padding: '40px', color: '#888' }}>
@@ -512,4 +432,3 @@ function RemoteWorktimeReportMobile({ open, onClose, onOpenMobileSidebar }) {
 }
 
 export default RemoteWorktimeReportMobile;
-
