@@ -963,17 +963,19 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
       )}
       
       {/* Модалка отчета удаленки - рендерится отдельно вне портала WorkTimeMobile для полноэкранного режима */}
-      {console.log('🔍 [WorkTimeMobile] Рендерим RemoteWorktimeReportMobile, showRemoteWorktime =', showRemoteWorktime)}
-      <RemoteWorktimeReportMobile
-        open={showRemoteWorktime}
-        onClose={() => {
-          console.log('🔘 [WorkTimeMobile] Закрываем RemoteWorktimeReportMobile');
-          setShowRemoteWorktime(false);
-        }}
-        onOpenMobileSidebar={() => {
-          // Не открываем сайдбар, так как мы уже внутри модалки
-        }}
-      />
+      {console.log('🔍 [WorkTimeMobile] Рендерим RemoteWorktimeReportMobile, showRemoteWorktime =', showRemoteWorktime, 'Component:', RemoteWorktimeReportMobile)}
+      {showRemoteWorktime && (
+        <RemoteWorktimeReportMobile
+          open={showRemoteWorktime}
+          onClose={() => {
+            console.log('🔘 [WorkTimeMobile] Закрываем RemoteWorktimeReportMobile');
+            setShowRemoteWorktime(false);
+          }}
+          onOpenMobileSidebar={() => {
+            // Не открываем сайдбар, так как мы уже внутри модалки
+          }}
+        />
+      )}
     </>
   );
 }
