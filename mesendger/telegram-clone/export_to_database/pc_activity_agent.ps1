@@ -30,6 +30,24 @@ Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force -ErrorAction S
 
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
+# Скрываем окно консоли (если скрипт запущен через планировщик задач)
+try {
+    Add-Type -Name Window -Namespace Console -MemberDefinition @"
+[DllImport("Kernel32.dll")]
+public static extern IntPtr GetConsoleWindow();
+[DllImport("user32.dll")]
+public static extern bool ShowWindow(IntPtr hWnd, Int32 nCmdShow);
+"@
+    $consolePtr = [Console.Window]::GetConsoleWindow()
+    if ($consolePtr -ne [IntPtr]::Zero) {
+        # SW_HIDE = 0
+        [Console.Window]::ShowWindow($consolePtr, 0) | Out-Null
+    }
+} catch {
+    # Если не удалось скрыть окно, продолжаем работу
+    # Это нормально, если скрипт запущен вручную
+}
+
 # ⚙️ НАСТРОЙКА ДЛЯ КОНКРЕТНОГО СОТРУДНИКА
 # --------------------------------------
 # ВАЖНО: здесь ИСПОЛЬЗУЕМ ТОЛЬКО ЛАТИНИЦУ (без русских букв),
@@ -175,6 +193,19 @@ function Get-ActivityData {
             elseif ($potentialUrl.Length -gt 0 -and $potentialUrl.Length -lt 200) {
                 # Сохраняем название страницы, но без суффикса браузера
                 $browserUrl = $potentialUrl
+            }
+        }
+        # Способ 3: Если заголовок не пустой и не содержит суффикс браузера, сохраняем его как browserUrl
+        # Это для случаев, когда Chrome показывает только название страницы без суффикса " - Google Chrome"
+        elseif ($windowTitle -and $windowTitle.Trim().Length -gt 0 -and $windowTitle.Length -lt 200) {
+            # Проверяем, что это не просто суффикс браузера
+            if ($windowTitle -notmatch "^\s*-\s*(Google\s+)?Chrome\s*$" -and 
+                $windowTitle -notmatch "^\s*-\s*Microsoft\s+Edge\s*$" -and
+                $windowTitle -notmatch "^\s*-\s*Firefox\s*$" -and
+                $windowTitle -notmatch "^\s*-\s*Opera\s*$" -and
+                $windowTitle -notmatch "^\s*-\s*Brave\s*$") {
+                # Сохраняем заголовок как browserUrl (название страницы)
+                $browserUrl = $windowTitle.Trim()
             }
         }
     }
