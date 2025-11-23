@@ -365,8 +365,20 @@ router.get('/remote-worktime-report', async (req, res) => {
 // Endpoint для получения всех событий конкретного пользователя за период (без API ключа)
 router.get('/remote-worktime-user-events', async (req, res) => {
   console.log('📊 [REMOTE-WORKTIME-USER-EVENTS] Request received:', req.query);
+  console.log('📊 [REMOTE-WORKTIME-USER-EVENTS] Raw query:', JSON.stringify(req.query));
   try {
-    const { username, date, start, end } = req.query;
+    let { username, date, start, end } = req.query;
+    
+    // Декодируем username из URL (может быть закодирован кириллицей)
+    if (username) {
+      try {
+        username = decodeURIComponent(username);
+      } catch (e) {
+        console.warn('⚠️ [REMOTE-WORKTIME-USER-EVENTS] Error decoding username:', e);
+      }
+    }
+    
+    console.log('📊 [REMOTE-WORKTIME-USER-EVENTS] Decoded params:', { username, date, start, end });
     
     // Поддерживаем старый формат (date) и новый (start/end)
     let startDate, endDate;
@@ -384,8 +396,8 @@ router.get('/remote-worktime-user-events', async (req, res) => {
       });
     }
     
-    if (!username) {
-      console.error('❌ [REMOTE-WORKTIME-USER-EVENTS] Missing username');
+    if (!username || username.trim() === '') {
+      console.error('❌ [REMOTE-WORKTIME-USER-EVENTS] Missing or empty username');
       return res.status(400).json({
         success: false,
         error: 'Username is required'
@@ -399,14 +411,14 @@ router.get('/remote-worktime-user-events', async (req, res) => {
     let logs = await db.getRemoteWorkTimeLogs({
       start: startDate,
       end: endDate,
-      username: decodedUsername
+      username: username
     });
     
     // Если не найдено по username, пробуем найти по ФИО из таблицы users
     if (!logs || logs.length === 0) {
       console.log('📊 [REMOTE-WORKTIME-USER-EVENTS] Не найдено по username, пробуем найти по ФИО...');
       const userByFio = await new Promise((resolve, reject) => {
-        db.db.get('SELECT username FROM users WHERE fio = ?', [decodedUsername], (err, row) => {
+        db.db.get('SELECT username FROM users WHERE fio = ?', [username], (err, row) => {
           if (err) reject(err);
           else resolve(row);
         });
@@ -437,9 +449,9 @@ router.get('/remote-worktime-user-events', async (req, res) => {
       return timeA - timeB;
     });
     
-    // Получаем информацию о пользователе (используем decodedUsername для поиска)
+    // Получаем информацию о пользователе (используем username для поиска)
     const userInfo = await new Promise((resolve, reject) => {
-      db.db.get('SELECT id, fio, username FROM users WHERE username = ? OR fio = ?', [decodedUsername, decodedUsername], (err, row) => {
+      db.db.get('SELECT id, fio, username FROM users WHERE username = ? OR fio = ?', [username, username], (err, row) => {
         if (err) reject(err);
         else resolve(row);
       });
