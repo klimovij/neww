@@ -30,18 +30,27 @@ Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force -ErrorAction S
 
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
-# Скрываем окно консоли (если скрипт запущен через планировщик задач)
+# Скрываем окно консоли сразу же при запуске (если окно появилось)
+# Это дополнительная мера на случай, если окно всё же появилось
 try {
     Add-Type -Name Window -Namespace Console -MemberDefinition @"
 [DllImport("Kernel32.dll")]
 public static extern IntPtr GetConsoleWindow();
 [DllImport("user32.dll")]
 public static extern bool ShowWindow(IntPtr hWnd, Int32 nCmdShow);
+[DllImport("user32.dll")]
+public static extern bool IsWindowVisible(IntPtr hWnd);
 "@
     $consolePtr = [Console.Window]::GetConsoleWindow()
     if ($consolePtr -ne [IntPtr]::Zero) {
-        # SW_HIDE = 0
-        [Console.Window]::ShowWindow($consolePtr, 0) | Out-Null
+        # Проверяем, видно ли окно
+        $isVisible = [Console.Window]::IsWindowVisible($consolePtr)
+        if ($isVisible) {
+            # SW_HIDE = 0 - скрываем окно
+            [Console.Window]::ShowWindow($consolePtr, 0) | Out-Null
+            # Даем системе время скрыть окно
+            Start-Sleep -Milliseconds 50
+        }
     }
 } catch {
     # Если не удалось скрыть окно, продолжаем работу

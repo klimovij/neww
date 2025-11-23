@@ -136,12 +136,41 @@ if ($actualScriptPath) {
     # Получаем имя пользователя для параметра -User
     $userParam = $env:USERNAME
 
-    # Используем pwsh.exe (PowerShell 7) если доступен, иначе powershell.exe (Windows PowerShell 5.1)
-    $psExecutable = if (Get-Command pwsh.exe -ErrorAction SilentlyContinue) { "pwsh.exe" } else { "powershell.exe" }
+    # Ищем VBScript обертку для скрытого запуска
+    $vbsWrapperPath = Join-Path (Split-Path $actualScriptPath -Parent) "run_activity_agent_hidden.vbs"
     
-    $actionActivity = New-ScheduledTaskAction -Execute $psExecutable `
-        -Argument "-ExecutionPolicy Bypass -WindowStyle Hidden -File `"$actualScriptPath`" -User $userParam" `
-        -WorkingDirectory (Split-Path $actualScriptPath -Parent)
+    # Если VBScript обертка не найдена, пробуем альтернативные пути
+    if (-not (Test-Path $vbsWrapperPath)) {
+        $possibleVbsPaths = @(
+            $vbsWrapperPath,
+            (Join-Path $PSScriptRoot "run_activity_agent_hidden.vbs"),
+            "C:\Users\$env:USERNAME\web\pc-worktime\run_activity_agent_hidden.vbs",
+            "$env:USERPROFILE\web\pc-worktime\run_activity_agent_hidden.vbs",
+            "C:\pc-worktime\run_activity_agent_hidden.vbs"
+        )
+        
+        foreach ($path in $possibleVbsPaths) {
+            if (Test-Path $path) {
+                $vbsWrapperPath = $path
+                break
+            }
+        }
+    }
+    
+    # Если VBScript обертка найдена, используем её для полностью скрытого запуска
+    if (Test-Path $vbsWrapperPath) {
+        Write-Host "   ✅ Используется VBScript обертка для скрытого запуска: $vbsWrapperPath" -ForegroundColor Green
+        $actionActivity = New-ScheduledTaskAction -Execute "wscript.exe" `
+            -Argument "`"$vbsWrapperPath`"" `
+            -WorkingDirectory (Split-Path $vbsWrapperPath -Parent)
+    } else {
+        # Fallback: используем прямое выполнение PowerShell с -WindowStyle Hidden
+        Write-Host "   ⚠️  VBScript обертка не найдена, используется прямое выполнение PowerShell" -ForegroundColor Yellow
+        $psExecutable = if (Get-Command pwsh.exe -ErrorAction SilentlyContinue) { "pwsh.exe" } else { "powershell.exe" }
+        $actionActivity = New-ScheduledTaskAction -Execute $psExecutable `
+            -Argument "-ExecutionPolicy Bypass -WindowStyle Hidden -File `"$actualScriptPath`" -User $userParam" `
+            -WorkingDirectory (Split-Path $actualScriptPath -Parent)
+    }
 
     # Запуск при входе пользователя
     # Не указываем UserId явно в триггере - он будет использовать пользователя из Principal
@@ -179,7 +208,11 @@ if ($actualScriptPath) {
         
         Write-Host "   📋 Параметры задачи:" -ForegroundColor Cyan
         Write-Host "      - Путь к скрипту: $actualScriptPath" -ForegroundColor Gray
-        Write-Host "      - PowerShell: $psExecutable" -ForegroundColor Gray
+        if (Test-Path $vbsWrapperPath) {
+            Write-Host "      - Обертка: VBScript (скрытый запуск)" -ForegroundColor Gray
+        } else {
+            Write-Host "      - PowerShell: $psExecutable" -ForegroundColor Gray
+        }
         Write-Host "      - Пользователь: $userParam" -ForegroundColor Gray
         Write-Host "      - Запуск: При входе в систему (с задержкой 30 сек)" -ForegroundColor Gray
         Write-Host "      - Перезапуск при сбое: до 5 раз каждые 2 минуты" -ForegroundColor Gray
