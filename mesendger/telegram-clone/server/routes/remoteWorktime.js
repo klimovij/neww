@@ -384,14 +384,14 @@ router.get('/remote-worktime-user-events', async (req, res) => {
     if (!username) {
       return res.status(400).json({
         success: false,
-        error: 'Username and date are required'
+        error: 'Username is required'
       });
     }
     
-    // Получаем все логи пользователя за указанную дату из таблицы удаленных ПК
+    // Получаем все логи пользователя за указанный период из таблицы удаленных ПК
     const logs = await db.getRemoteWorkTimeLogs({
-      start: date,
-      end: date,
+      start: startDate,
+      end: endDate,
       username
     });
     
