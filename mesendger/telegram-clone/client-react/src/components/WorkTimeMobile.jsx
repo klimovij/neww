@@ -394,13 +394,16 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
           <div style={{ marginBottom: '20px' }}>
             <button
               type="button"
-              onClick={() => setShowRemoteWorktime(true)}
+              onClick={() => {
+                console.log('🔘 [WorkTimeMobile] Кнопка "Отчет Удаленка" нажата');
+                setShowRemoteWorktime(true);
+              }}
               style={{
                 width: '100%',
                 padding: '14px',
                 borderRadius: '12px',
-                border: '2px solid rgba(255, 224, 130, 0.3)',
-                background: 'rgba(255, 224, 130, 0.15)',
+                border: '2px solid rgba(255, 224, 130, 0.5)',
+                background: 'rgba(255, 224, 130, 0.2)',
                 color: '#ffe082',
                 cursor: 'pointer',
                 fontWeight: 600,
@@ -410,14 +413,17 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
                 justifyContent: 'center',
                 gap: '8px',
                 transition: 'all 0.2s',
+                boxShadow: '0 2px 8px rgba(255, 224, 130, 0.2)',
               }}
               onMouseEnter={(e) => {
-                e.target.style.background = 'rgba(255, 224, 130, 0.25)';
+                e.target.style.background = 'rgba(255, 224, 130, 0.3)';
                 e.target.style.borderColor = '#ffe082';
+                e.target.style.boxShadow = '0 4px 12px rgba(255, 224, 130, 0.3)';
               }}
               onMouseLeave={(e) => {
-                e.target.style.background = 'rgba(255, 224, 130, 0.15)';
-                e.target.style.borderColor = 'rgba(255, 224, 130, 0.3)';
+                e.target.style.background = 'rgba(255, 224, 130, 0.2)';
+                e.target.style.borderColor = 'rgba(255, 224, 130, 0.5)';
+                e.target.style.boxShadow = '0 2px 8px rgba(255, 224, 130, 0.2)';
               }}
             >
               <FiCalendar size={18} />
