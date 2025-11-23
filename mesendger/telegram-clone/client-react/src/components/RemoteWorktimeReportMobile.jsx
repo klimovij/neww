@@ -170,19 +170,26 @@ function RemoteWorktimeReportMobile({ open, onClose, onOpenMobileSidebar }) {
         left: 0,
         right: 0,
         bottom: 0,
+        width: '100%',
+        height: '100%',
         backgroundColor: 'rgba(0, 0, 0, 0.85)',
         zIndex: 100006, // Выше WorkTimeMobile (100002)
         display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
+        alignItems: 'stretch',
+        justifyContent: 'stretch',
         backdropFilter: 'blur(8px)',
+        overflow: 'hidden',
       }}
       onClick={handleClose}
     >
       <div
         ref={modalRef}
         style={{
-          position: 'relative',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
           width: '100%',
           height: '100%',
           background: 'linear-gradient(135deg, #232931 0%, #181c22 100%)',

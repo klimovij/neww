@@ -955,18 +955,14 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
           <AppUsageModal isOpen={showAppUsage} onRequestClose={() => setShowAppUsage(false)} />
         )}
         
-        {/* Модалка отчета удаленки */}
-        {isMobile ? (
-          <RemoteWorktimeReportMobile
-            open={showRemoteWorktime}
-            onClose={() => setShowRemoteWorktime(false)}
-            onOpenMobileSidebar={() => {
-              // Не открываем сайдбар, так как мы уже внутри модалки
-            }}
-          />
-        ) : (
-          <RemoteWorktimeReportModal isOpen={showRemoteWorktime} onRequestClose={() => setShowRemoteWorktime(false)} />
-        )}
+        {/* Модалка отчета удаленки - всегда используем мобильную версию для полноэкранного режима */}
+        <RemoteWorktimeReportMobile
+          open={showRemoteWorktime}
+          onClose={() => setShowRemoteWorktime(false)}
+          onOpenMobileSidebar={() => {
+            // Не открываем сайдбар, так как мы уже внутри модалки
+          }}
+        />
       </div>
     </div>,
     document.body
