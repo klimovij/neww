@@ -259,26 +259,34 @@ router.get('/remote-worktime-health', authenticateRemoteRequest, (req, res) => {
   });
 });
 
-// Endpoint для получения отчета удаленки за определенную дату (без API ключа, для веб-интерфейса)
+// Endpoint для получения отчета удаленки за определенный период (без API ключа, для веб-интерфейса)
 router.get('/remote-worktime-report', async (req, res) => {
   console.log('📊 [REMOTE-WORKTIME-REPORT] Request received:', req.query);
   try {
-    const { date } = req.query;
+    const { date, start, end } = req.query;
     
-    // Если дата не указана, используем вчерашний день
-    let targetDate;
-    if (date) {
-      targetDate = date; // Формат: YYYY-MM-DD
+    // Поддерживаем старый формат (date) и новый (start/end)
+    let startDate, endDate;
+    if (start && end) {
+      startDate = start; // Формат: YYYY-MM-DD
+      endDate = end; // Формат: YYYY-MM-DD
+    } else if (date) {
+      // Старый формат - одна дата
+      startDate = date;
+      endDate = date;
     } else {
+      // По умолчанию - вчерашний день
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
-      targetDate = yesterday.toISOString().split('T')[0]; // YYYY-MM-DD
+      const defaultDate = yesterday.toISOString().split('T')[0];
+      startDate = defaultDate;
+      endDate = defaultDate;
     }
     
-    // Получаем все логи за указанную дату из таблицы удаленных ПК
+    // Получаем все логи за указанный период из таблицы удаленных ПК
     const logs = await db.getRemoteWorkTimeLogs({ 
-      start: targetDate, 
-      end: targetDate 
+      start: startDate, 
+      end: endDate 
     });
     
     // Группируем по пользователям и находим первый вход и последний выход
@@ -340,7 +348,8 @@ router.get('/remote-worktime-report', async (req, res) => {
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     res.json({
       success: true,
-      date: targetDate,
+      startDate,
+      endDate,
       report
     });
   } catch (error) {
@@ -352,12 +361,27 @@ router.get('/remote-worktime-report', async (req, res) => {
   }
 });
 
-// Endpoint для получения всех событий конкретного пользователя за дату (без API ключа)
+// Endpoint для получения всех событий конкретного пользователя за период (без API ключа)
 router.get('/remote-worktime-user-events', async (req, res) => {
   try {
-    const { username, date } = req.query;
+    const { username, date, start, end } = req.query;
     
-    if (!username || !date) {
+    // Поддерживаем старый формат (date) и новый (start/end)
+    let startDate, endDate;
+    if (start && end) {
+      startDate = start;
+      endDate = end;
+    } else if (date) {
+      startDate = date;
+      endDate = date;
+    } else {
+      return res.status(400).json({
+        success: false,
+        error: 'Необходимо указать либо date, либо start и end'
+      });
+    }
+    
+    if (!username) {
       return res.status(400).json({
         success: false,
         error: 'Username and date are required'
