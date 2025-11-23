@@ -1,7 +1,16 @@
 param(
     [Parameter(Mandatory = $true)]
-    [string]$Date  # format: YYYY-MM-DD
+    [string]$Date  # format: YYYY-MM-DD or DD.MM.YYYY
 )
+
+# Нормализуем формат даты (DD.MM.YYYY -> YYYY-MM-DD)
+if ($Date -match '^(\d{1,2})\.(\d{1,2})\.(\d{4})$') {
+    $day = $matches[1].PadLeft(2, '0')
+    $month = $matches[2].PadLeft(2, '0')
+    $year = $matches[3]
+    $Date = "$year-$month-$day"
+    Write-Host "Converted date format to: $Date" -ForegroundColor Cyan
+}
 
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
@@ -85,6 +94,8 @@ const db = new sqlite3.Database(dbPath, sqlite3.OPEN_READONLY, (err) => {
     }
 });
 
+// Запрос для поиска записей за указанную дату в разных форматах
+// Поддерживаем форматы: YYYY-MM-DD, DD.MM.YYYY HH:MM:SS, и другие варианты
 const query =
 "SELECT username, event_type, event_time, event_id " +
 "FROM work_time_logs " +
@@ -94,13 +105,19 @@ const query =
 " OR " +
 " (length(event_time) >= 10 AND substr(event_time,3,1)='.' AND substr(event_time,6,1)='.' " +
 "  AND (substr(event_time,7,4)||'-'||substr(event_time,4,2)||'-'||substr(event_time,1,2)) = ?)" +
+" OR " +
+" (length(event_time) >= 10 AND date(event_time) = ?)" +
 ") " +
 "ORDER BY username, event_time";
 
 const parts = targetDate.split('-');
 const ddmmyyyy = parts[2] + '.' + parts[1] + '.' + parts[0];
 
-db.all(query, [targetDate, ddmmyyyy], (err, rows) => {
+console.log('Searching for date:', targetDate);
+console.log('Searching for date (DD.MM.YYYY format):', ddmmyyyy);
+console.log('Query:', query);
+
+db.all(query, [targetDate, ddmmyyyy, targetDate], (err, rows) => {
     if (err) {
         console.error('Query error:', err.message);
         db.close();
