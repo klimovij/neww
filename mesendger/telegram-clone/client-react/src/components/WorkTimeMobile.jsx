@@ -6,7 +6,6 @@ import UserWorkTimeDetailsModal from './Modals/UserWorkTimeDetailsModal';
 import UserWorkTimeDetailsMobile from './UserWorkTimeDetailsMobile';
 import AppUsageModal from './Modals/AppUsageModal';
 import AppUsageMobile from './AppUsageMobile';
-import RemoteWorktimeReportModal from './Modals/RemoteWorktimeReportModal';
 import RemoteWorktimeReportMobile from './RemoteWorktimeReportMobile';
 
 // Вынесем парсер вне функции
