@@ -230,8 +230,12 @@ export default function RemoteWorktimeReportMobile({
       <div style={{
         flex: 1,
         overflowY: 'auto',
+        overflowX: 'hidden',
         padding: '16px',
         paddingBottom: '80px',
+        width: '100%',
+        minHeight: 0,
+        boxSizing: 'border-box',
       }}>
         {!selectedUser ? (
           <>
