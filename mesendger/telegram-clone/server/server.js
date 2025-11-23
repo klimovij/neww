@@ -920,20 +920,37 @@ function runPowershell(command) {
 // Middleware для проверки API ключа на удаленном ПК (используется вместо authenticateToken)
 // Это позволяет безопасно принимать запросы от проксирующего сервера
 function authenticateRemoteAdmin(req, res, next) {
-  // Сначала проверяем JWT токен (для локальных запросов)
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
+  // Получаем IP адрес клиента (с учетом прокси)
+  const clientIp = req.ip || 
+                   req.connection.remoteAddress || 
+                   req.socket.remoteAddress || 
+                   (req.headers['x-forwarded-for'] ? req.headers['x-forwarded-for'].split(',')[0].trim() : null) ||
+                   'unknown';
   
-  if (token) {
-    try {
-      const decoded = jwt.verify(token, JWT_SECRET);
-      req.user = decoded;
-      // Если есть валидный JWT токен, проверяем роль
-      if (decoded.role === 'admin') {
-        return next();
+  // Проверяем, является ли это локальным запросом
+  const isLocal = clientIp === '::1' || 
+                  clientIp === '127.0.0.1' || 
+                  clientIp === '::ffff:127.0.0.1' ||
+                  clientIp.startsWith('127.') ||
+                  clientIp === 'localhost' ||
+                  clientIp === '::ffff:localhost';
+  
+  // Если это локальный запрос, проверяем JWT токен как обычно
+  if (isLocal) {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+    
+    if (token) {
+      try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        req.user = decoded;
+        // Если есть валидный JWT токен, проверяем роль
+        if (decoded.role === 'admin') {
+          return next();
+        }
+      } catch (err) {
+        // Если токен невалидный, продолжаем проверку API ключа
       }
-    } catch (err) {
-      // Если токен невалидный, продолжаем проверку API ключа
     }
   }
   
@@ -944,16 +961,14 @@ function authenticateRemoteAdmin(req, res, next) {
   const REMOTE_ADMIN_API_KEY = process.env.REMOTE_ADMIN_API_KEY || 'BsKFpZmdp6ocPKUD6g6YxTgMSTZEaPZXkbddxsifERA=';
   
   if (!apiKey) {
-    const clientIp = req.ip || req.connection.remoteAddress || req.socket.remoteAddress || 'unknown';
     console.warn(`⚠️ [SECURITY] Unauthorized admin access attempt from ${clientIp} - no API key or valid token`);
     return res.status(401).json({ 
       success: false, 
-      error: 'Authentication required. Provide valid JWT token or X-API-Key header.' 
+      error: 'Authentication required. Provide valid JWT token (for local) or X-API-Key header (for remote).' 
     });
   }
   
   if (apiKey !== REMOTE_ADMIN_API_KEY) {
-    const clientIp = req.ip || req.connection.remoteAddress || req.socket.remoteAddress || 'unknown';
     console.warn(`⚠️ [SECURITY] Invalid API key attempt from ${clientIp}. Endpoint: ${req.method} ${req.path}`);
     return res.status(403).json({ 
       success: false, 
@@ -961,8 +976,13 @@ function authenticateRemoteAdmin(req, res, next) {
     });
   }
   
+  // Дополнительная проверка: если удаленный запрос, рекомендуется использовать HTTPS
+  // (но не блокируем, так как может быть локальная сеть)
+  if (!isLocal && req.protocol !== 'https' && !req.headers['x-forwarded-proto']?.includes('https')) {
+    console.warn(`⚠️ [SECURITY] Remote admin access over HTTP from ${clientIp}. Рекомендуется использовать HTTPS для безопасности.`);
+  }
+  
   // Логируем успешный удаленный доступ
-  const clientIp = req.ip || req.connection.remoteAddress || req.socket.remoteAddress || 'unknown';
   console.log(`✅ [SECURITY] Remote admin access authorized from ${clientIp} for ${req.method} ${req.path}`);
   
   // Создаем фиктивного пользователя для удаленного доступа
@@ -991,7 +1011,9 @@ async function proxyToRemotePc(req, res, endpoint, method = 'GET', body = null) 
       'Content-Type': 'application/json',
       'X-API-Key': apiKey || 'BsKFpZmdp6ocPKUD6g6YxTgMSTZEaPZXkbddxsifERA=',
       // Добавляем заголовок для идентификации проксирующего сервера
-      'X-Proxy-From': 'google-cloud-server'
+      'X-Proxy-From': 'google-cloud-server',
+      // Добавляем IP адрес проксирующего сервера для дополнительной безопасности
+      'X-Forwarded-For': req.ip || req.connection.remoteAddress || 'unknown'
     };
 
     // НЕ передаем JWT токен, так как на удаленном ПК будет использоваться API ключ
