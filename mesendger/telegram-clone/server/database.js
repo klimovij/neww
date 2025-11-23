@@ -2231,6 +2231,61 @@ class Database {
       });
     }
 
+    // Добавление лога рабочего времени для удаленного ПК (в отдельную таблицу)
+    async addRemoteWorkTimeLog({ username, event_type, event_time, event_id }) {
+      return new Promise((resolve, reject) => {
+        this.db.run(
+          'INSERT OR IGNORE INTO remote_work_time_logs (username, event_type, event_time, event_id) VALUES (?, ?, ?, ?)',
+          [username, event_type, event_time, event_id],
+          (err) => {
+            if (err) {
+              reject(err);
+              return;
+            }
+            resolve(this.lastID);
+          }
+        );
+      });
+    }
+
+    // Получение логов рабочего времени для удаленного ПК (из отдельной таблицы)
+    async getRemoteWorkTimeLogs({ start, end, username }) {
+      return new Promise((resolve, reject) => {
+        let query = 'SELECT * FROM remote_work_time_logs WHERE 1=1';
+        let params = [];
+        if (start && end) {
+          // Сравниваем только даты (без времени) для обоих форматов
+          query += ` AND (
+            (length(event_time) >= 10 AND substr(event_time, 3, 1) = '.' AND substr(event_time, 6, 1) = '.'
+              AND (
+                substr(event_time, 7, 4) || '-' || substr(event_time, 4, 2) || '-' || substr(event_time, 1, 2)
+              ) >= ?
+              AND (
+                substr(event_time, 7, 4) || '-' || substr(event_time, 4, 2) || '-' || substr(event_time, 1, 2)
+              ) <= ?
+            )
+            OR
+            (length(event_time) >= 10 AND substr(event_time, 5, 1) = '-' AND substr(event_time, 8, 1) = '-' 
+              AND substr(event_time, 1, 10) >= ?
+              AND substr(event_time, 1, 10) <= ?
+            )
+          )`;
+          params.push(start);
+          params.push(end);
+          params.push(start);
+          params.push(end);
+        }
+        if (username) {
+          query += ' AND username = ?';
+          params.push(username);
+        }
+        this.db.all(query, params, (err, rows) => {
+          if (err) reject(err);
+          else resolve(rows || []);
+        });
+      });
+    }
+
     // ======== АКТИВНОСТЬ ПОЛЬЗОВАТЕЛЕЙ (activity_logs) ========
 
     async addActivityLogsBatch(events) {
@@ -2323,6 +2378,61 @@ class Database {
 
         query += ' ORDER BY timestamp DESC';
 
+        this.db.all(query, params, (err, rows) => {
+          if (err) reject(err);
+          else resolve(rows || []);
+        });
+      });
+    }
+
+    // Добавление лога рабочего времени для удаленного ПК (в отдельную таблицу)
+    async addRemoteWorkTimeLog({ username, event_type, event_time, event_id }) {
+      return new Promise((resolve, reject) => {
+        this.db.run(
+          'INSERT OR IGNORE INTO remote_work_time_logs (username, event_type, event_time, event_id) VALUES (?, ?, ?, ?)',
+          [username, event_type, event_time, event_id],
+          (err) => {
+            if (err) {
+              reject(err);
+              return;
+            }
+            resolve(this.lastID);
+          }
+        );
+      });
+    }
+
+    // Получение логов рабочего времени для удаленного ПК (из отдельной таблицы)
+    async getRemoteWorkTimeLogs({ start, end, username }) {
+      return new Promise((resolve, reject) => {
+        let query = 'SELECT * FROM remote_work_time_logs WHERE 1=1';
+        let params = [];
+        if (start && end) {
+          // Сравниваем только даты (без времени) для обоих форматов
+          query += ` AND (
+            (length(event_time) >= 10 AND substr(event_time, 3, 1) = '.' AND substr(event_time, 6, 1) = '.'
+              AND (
+                substr(event_time, 7, 4) || '-' || substr(event_time, 4, 2) || '-' || substr(event_time, 1, 2)
+              ) >= ?
+              AND (
+                substr(event_time, 7, 4) || '-' || substr(event_time, 4, 2) || '-' || substr(event_time, 1, 2)
+              ) <= ?
+            )
+            OR
+            (length(event_time) >= 10 AND substr(event_time, 5, 1) = '-' AND substr(event_time, 8, 1) = '-' 
+              AND substr(event_time, 1, 10) >= ?
+              AND substr(event_time, 1, 10) <= ?
+            )
+          )`;
+          params.push(start);
+          params.push(end);
+          params.push(start);
+          params.push(end);
+        }
+        if (username) {
+          query += ' AND username = ?';
+          params.push(username);
+        }
         this.db.all(query, params, (err, rows) => {
           if (err) reject(err);
           else resolve(rows || []);
