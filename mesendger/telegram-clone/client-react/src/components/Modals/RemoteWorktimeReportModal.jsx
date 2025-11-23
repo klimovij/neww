@@ -132,7 +132,7 @@ function RemoteWorktimeReportModal({ isOpen, onRequestClose }) {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          zIndex: 100004,
+          zIndex: 100005,
         },
         content: {
           position: 'relative',
