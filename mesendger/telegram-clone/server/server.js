@@ -917,6 +917,60 @@ function runPowershell(command) {
 }
 
 // --- ADMIN: Windows Local Users Management ---
+// Middleware для проверки API ключа на удаленном ПК (используется вместо authenticateToken)
+// Это позволяет безопасно принимать запросы от проксирующего сервера
+function authenticateRemoteAdmin(req, res, next) {
+  // Сначала проверяем JWT токен (для локальных запросов)
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+  
+  if (token) {
+    try {
+      const decoded = jwt.verify(token, JWT_SECRET);
+      req.user = decoded;
+      // Если есть валидный JWT токен, проверяем роль
+      if (decoded.role === 'admin') {
+        return next();
+      }
+    } catch (err) {
+      // Если токен невалидный, продолжаем проверку API ключа
+    }
+  }
+  
+  // Для удаленных запросов (проксирование) требуем API ключ
+  const apiKey = req.headers['x-api-key'] || req.headers['X-API-Key'] || req.query.apiKey;
+  
+  // API ключ по умолчанию (можно настроить через переменную окружения)
+  const REMOTE_ADMIN_API_KEY = process.env.REMOTE_ADMIN_API_KEY || 'BsKFpZmdp6ocPKUD6g6YxTgMSTZEaPZXkbddxsifERA=';
+  
+  if (!apiKey) {
+    const clientIp = req.ip || req.connection.remoteAddress || req.socket.remoteAddress || 'unknown';
+    console.warn(`⚠️ [SECURITY] Unauthorized admin access attempt from ${clientIp} - no API key or valid token`);
+    return res.status(401).json({ 
+      success: false, 
+      error: 'Authentication required. Provide valid JWT token or X-API-Key header.' 
+    });
+  }
+  
+  if (apiKey !== REMOTE_ADMIN_API_KEY) {
+    const clientIp = req.ip || req.connection.remoteAddress || req.socket.remoteAddress || 'unknown';
+    console.warn(`⚠️ [SECURITY] Invalid API key attempt from ${clientIp}. Endpoint: ${req.method} ${req.path}`);
+    return res.status(403).json({ 
+      success: false, 
+      error: 'Invalid API key' 
+    });
+  }
+  
+  // Логируем успешный удаленный доступ
+  const clientIp = req.ip || req.connection.remoteAddress || req.socket.remoteAddress || 'unknown';
+  console.log(`✅ [SECURITY] Remote admin access authorized from ${clientIp} for ${req.method} ${req.path}`);
+  
+  // Создаем фиктивного пользователя для удаленного доступа
+  req.user = { role: 'admin', remote: true, ip: clientIp };
+  
+  next();
+}
+
 // Функция для проксирования запросов на удаленный ПК
 async function proxyToRemotePc(req, res, endpoint, method = 'GET', body = null) {
   try {
@@ -935,14 +989,13 @@ async function proxyToRemotePc(req, res, endpoint, method = 'GET', body = null) 
 
     const headers = {
       'Content-Type': 'application/json',
-      'X-API-Key': apiKey || 'BsKFpZmdp6ocPKUD6g6YxTgMSTZEaPZXkbddxsifERA='
+      'X-API-Key': apiKey || 'BsKFpZmdp6ocPKUD6g6YxTgMSTZEaPZXkbddxsifERA=',
+      // Добавляем заголовок для идентификации проксирующего сервера
+      'X-Proxy-From': 'google-cloud-server'
     };
 
-    // Если есть токен аутентификации, передаем его
-    const authHeader = req.headers.authorization;
-    if (authHeader) {
-      headers['Authorization'] = authHeader;
-    }
+    // НЕ передаем JWT токен, так как на удаленном ПК будет использоваться API ключ
+    // Это важно для безопасности - удаленный ПК должен проверять только API ключ
 
     const config = {
       method: method,
@@ -1111,7 +1164,7 @@ app.post('/api/admin/shutdown-1c', authenticateToken, async (req, res) => {
 });
 
 // Hostname for UI display
-app.get('/api/admin/host', authenticateToken, async (req, res) => {
+app.get('/api/admin/host', authenticateRemoteAdmin, async (req, res) => {
   try {
     if (!req.user) return res.status(401).json({ success: false, error: 'Unauthorized' });
     
@@ -1133,7 +1186,7 @@ app.get('/api/admin/host', authenticateToken, async (req, res) => {
   }
 });
 
-app.post('/api/admin/local-users', authenticateToken, async (req, res) => {
+app.post('/api/admin/local-users', authenticateRemoteAdmin, async (req, res) => {
   try {
     if (req.user?.role !== 'admin') return res.status(403).json({ success: false, error: 'Forbidden' });
     
@@ -1197,7 +1250,7 @@ app.post('/api/admin/local-users', authenticateToken, async (req, res) => {
   }
 });
 
-app.post('/api/admin/local-users/:name/password', authenticateToken, async (req, res) => {
+app.post('/api/admin/local-users/:name/password', authenticateRemoteAdmin, async (req, res) => {
   try {
     if (req.user?.role !== 'admin') return res.status(403).json({ success: false, error: 'Forbidden' });
     
@@ -1367,7 +1420,7 @@ app.post('/api/admin/local-users/:name/password', authenticateToken, async (req,
   }
 });
 
-app.post('/api/admin/local-users/:name/enable', authenticateToken, async (req, res) => {
+app.post('/api/admin/local-users/:name/enable', authenticateRemoteAdmin, async (req, res) => {
   try {
     if (req.user?.role !== 'admin') return res.status(403).json({ success: false, error: 'Forbidden' });
     
@@ -1393,7 +1446,7 @@ app.post('/api/admin/local-users/:name/enable', authenticateToken, async (req, r
   }
 });
 
-app.post('/api/admin/local-users/:name/disable', authenticateToken, async (req, res) => {
+app.post('/api/admin/local-users/:name/disable', authenticateRemoteAdmin, async (req, res) => {
   try {
     if (req.user?.role !== 'admin') return res.status(403).json({ success: false, error: 'Forbidden' });
     
@@ -1419,7 +1472,7 @@ app.post('/api/admin/local-users/:name/disable', authenticateToken, async (req, 
   }
 });
 
-app.delete('/api/admin/local-users/:name', authenticateToken, async (req, res) => {
+app.delete('/api/admin/local-users/:name', authenticateRemoteAdmin, async (req, res) => {
   try {
     if (req.user?.role !== 'admin') return res.status(403).json({ success: false, error: 'Forbidden' });
     
@@ -1445,7 +1498,7 @@ app.delete('/api/admin/local-users/:name', authenticateToken, async (req, res) =
   }
 });
 
-app.post('/api/admin/local-users/:name/rdp', authenticateToken, async (req, res) => {
+app.post('/api/admin/local-users/:name/rdp', authenticateRemoteAdmin, async (req, res) => {
   try {
     if (req.user?.role !== 'admin') return res.status(403).json({ success: false, error: 'Forbidden' });
     
@@ -1502,7 +1555,7 @@ app.post('/api/admin/local-users/:name/rdp', authenticateToken, async (req, res)
 });
 
 // --- ADMIN: update local user description ---
-app.post('/api/admin/local-users/:name/description', authenticateToken, async (req, res) => {
+app.post('/api/admin/local-users/:name/description', authenticateRemoteAdmin, async (req, res) => {
   try {
     if (req.user?.role !== 'admin') return res.status(403).json({ success: false, error: 'Forbidden' });
     
@@ -1531,7 +1584,7 @@ app.post('/api/admin/local-users/:name/description', authenticateToken, async (r
 });
 
 // --- ADMIN: set/unset Password Never Expires ---
-app.post('/api/admin/local-users/:name/no-expire', authenticateToken, async (req, res) => {
+app.post('/api/admin/local-users/:name/no-expire', authenticateRemoteAdmin, async (req, res) => {
   try {
     if (req.user?.role !== 'admin') return res.status(403).json({ success: false, error: 'Forbidden' });
     
@@ -1569,7 +1622,7 @@ app.post('/api/admin/local-users/:name/no-expire', authenticateToken, async (req
 });
 
 // --- ADMIN: rename local user ---
-app.post('/api/admin/local-users/:name/rename', authenticateToken, async (req, res) => {
+app.post('/api/admin/local-users/:name/rename', authenticateRemoteAdmin, async (req, res) => {
   try {
     if (req.user?.role !== 'admin') return res.status(403).json({ success: false, error: 'Forbidden' });
     
