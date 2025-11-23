@@ -949,41 +949,42 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
             endDate={detailsModal.endDate}
           />
         )}
-        {isMobile ? (
-          <AppUsageMobile
-            open={showAppUsage}
-            onClose={() => setShowAppUsage(false)}
-            onOpenMobileSidebar={() => {
-              // Не открываем сайдбар, так как мы уже внутри модалки
-            }}
-          />
-        ) : (
-          <AppUsageModal isOpen={showAppUsage} onRequestClose={() => setShowAppUsage(false)} />
-        )}
-        {console.log('🔍 [WorkTimeMobile] Рендер модалок RemoteWorktime, isMobile =', isMobile, 'showRemoteWorktime =', showRemoteWorktime)}
-        {isMobile ? (
-          <RemoteWorktimeReportMobile
-            open={showRemoteWorktime}
-            onClose={() => {
-              console.log('🔴 [WorkTimeMobile] Закрываем RemoteWorktimeReportMobile');
-              setShowRemoteWorktime(false);
-            }}
-            onOpenMobileSidebar={() => {
-              // Не открываем сайдбар, так как мы уже внутри модалки
-            }}
-          />
-        ) : (
-          <RemoteWorktimeReportModal 
-            isOpen={showRemoteWorktime} 
-            onRequestClose={() => {
-              console.log('🔴 [WorkTimeMobile] Закрываем RemoteWorktimeReportModal (desktop)');
-              setShowRemoteWorktime(false);
-            }} 
-          />
-        )}
       </div>
     </div>,
     document.body
+      )}
+      {/* Модалки рендерятся вне портала WorkTimeMobile, чтобы они были поверх */}
+      {isMobile ? (
+        <AppUsageMobile
+          open={showAppUsage}
+          onClose={() => setShowAppUsage(false)}
+          onOpenMobileSidebar={() => {
+            // Не открываем сайдбар, так как мы уже внутри модалки
+          }}
+        />
+      ) : (
+        <AppUsageModal isOpen={showAppUsage} onRequestClose={() => setShowAppUsage(false)} />
+      )}
+      {console.log('🔍 [WorkTimeMobile] Рендер модалок RemoteWorktime, isMobile =', isMobile, 'showRemoteWorktime =', showRemoteWorktime)}
+      {isMobile ? (
+        <RemoteWorktimeReportMobile
+          open={showRemoteWorktime}
+          onClose={() => {
+            console.log('🔴 [WorkTimeMobile] Закрываем RemoteWorktimeReportMobile');
+            setShowRemoteWorktime(false);
+          }}
+          onOpenMobileSidebar={() => {
+            // Не открываем сайдбар, так как мы уже внутри модалки
+          }}
+        />
+      ) : (
+        <RemoteWorktimeReportModal 
+          isOpen={showRemoteWorktime} 
+          onRequestClose={() => {
+            console.log('🔴 [WorkTimeMobile] Закрываем RemoteWorktimeReportModal (desktop)');
+            setShowRemoteWorktime(false);
+          }} 
+        />
       )}
     </>
   );
