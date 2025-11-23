@@ -137,33 +137,61 @@ export default function RemoteWorktimeReportMobile({
   // Проверка после рендеринга - ДО условного return
   useEffect(() => {
     if (open && modalRef.current) {
-      console.log('[RemoteWorktimeReportMobile] 🔍 Модалка отрендерена в DOM, проверка стилей...');
-      const element = modalRef.current;
-      const styles = window.getComputedStyle(element);
-      console.log('[RemoteWorktimeReportMobile] Computed styles:', {
-        position: styles.position,
-        zIndex: styles.zIndex,
-        width: styles.width,
-        height: styles.height,
-        display: styles.display,
-        visibility: styles.visibility,
-        opacity: styles.opacity,
-      });
+      // Используем setTimeout, чтобы дать React время отрендерить портал
+      const checkAndFixStyles = () => {
+        const element = modalRef.current;
+        if (!element) {
+          console.warn('[RemoteWorktimeReportMobile] ⚠️ modalRef.current отсутствует');
+          return;
+        }
+        
+        console.log('[RemoteWorktimeReportMobile] 🔍 Модалка отрендерена в DOM, проверка стилей...');
+        console.log('[RemoteWorktimeReportMobile] Элемент:', element);
+        console.log('[RemoteWorktimeReportMobile] Parent:', element.parentElement);
+        console.log('[RemoteWorktimeReportMobile] В document.body:', document.body.contains(element));
+        
+        const styles = window.getComputedStyle(element);
+        console.log('[RemoteWorktimeReportMobile] Computed styles:', {
+          position: styles.position,
+          zIndex: styles.zIndex,
+          width: styles.width,
+          height: styles.height,
+          display: styles.display,
+          visibility: styles.visibility,
+          opacity: styles.opacity,
+          top: styles.top,
+          left: styles.left,
+        });
+        
+        // Принудительно устанавливаем стили
+        element.style.setProperty('position', 'fixed', 'important');
+        element.style.setProperty('top', '0', 'important');
+        element.style.setProperty('left', '0', 'important');
+        element.style.setProperty('right', '0', 'important');
+        element.style.setProperty('bottom', '0', 'important');
+        element.style.setProperty('width', '100vw', 'important');
+        element.style.setProperty('height', '100vh', 'important');
+        element.style.setProperty('z-index', '100009', 'important');
+        element.style.setProperty('display', 'flex', 'important');
+        element.style.setProperty('visibility', 'visible', 'important');
+        element.style.setProperty('opacity', '1', 'important');
+        element.style.setProperty('margin', '0', 'important');
+        element.style.setProperty('padding', '0', 'important');
+        
+        // Проверяем, что стили применились
+        const newStyles = window.getComputedStyle(element);
+        console.log('[RemoteWorktimeReportMobile] ✅ Стили применены принудительно. Новые стили:', {
+          position: newStyles.position,
+          zIndex: newStyles.zIndex,
+          width: newStyles.width,
+          height: newStyles.height,
+        });
+      };
       
-      // Принудительно устанавливаем стили
-      element.style.setProperty('position', 'fixed', 'important');
-      element.style.setProperty('top', '0', 'important');
-      element.style.setProperty('left', '0', 'important');
-      element.style.setProperty('right', '0', 'important');
-      element.style.setProperty('bottom', '0', 'important');
-      element.style.setProperty('width', '100vw', 'important');
-      element.style.setProperty('height', '100vh', 'important');
-      element.style.setProperty('z-index', '100009', 'important');
-      element.style.setProperty('display', 'flex', 'important');
-      element.style.setProperty('visibility', 'visible', 'important');
-      element.style.setProperty('opacity', '1', 'important');
-      
-      console.log('[RemoteWorktimeReportMobile] ✅ Стили применены принудительно');
+      // Проверяем сразу и через небольшую задержку
+      checkAndFixStyles();
+      setTimeout(checkAndFixStyles, 100);
+      setTimeout(checkAndFixStyles, 300);
     }
   }, [open]);
 
