@@ -6,7 +6,6 @@ import UserWorkTimeDetailsModal from './Modals/UserWorkTimeDetailsModal';
 import UserWorkTimeDetailsMobile from './UserWorkTimeDetailsMobile';
 import AppUsageModal from './Modals/AppUsageModal';
 import AppUsageMobile from './AppUsageMobile';
-import RemoteWorktimeReportMobile from './RemoteWorktimeReportMobile';
 
 // Вынесем парсер вне функции
 function parseDate(str) {
@@ -80,7 +79,6 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
   const [importing, setImporting] = useState(false);
   const [importOk, setImportOk] = useState(null);
   const [showAppUsage, setShowAppUsage] = useState(false);
-  const [showRemoteWorktime, setShowRemoteWorktime] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -960,21 +958,6 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
       </div>
     </div>,
     document.body
-      )}
-      
-      {/* Модалка отчета удаленки - рендерится отдельно вне портала WorkTimeMobile для полноэкранного режима */}
-      {console.log('🔍 [WorkTimeMobile] Рендерим RemoteWorktimeReportMobile, showRemoteWorktime =', showRemoteWorktime, 'Component:', RemoteWorktimeReportMobile)}
-      {showRemoteWorktime && (
-        <RemoteWorktimeReportMobile
-          open={showRemoteWorktime}
-          onClose={() => {
-            console.log('🔘 [WorkTimeMobile] Закрываем RemoteWorktimeReportMobile');
-            setShowRemoteWorktime(false);
-          }}
-          onOpenMobileSidebar={() => {
-            // Не открываем сайдбар, так как мы уже внутри модалки
-          }}
-        />
       )}
     </>
   );
