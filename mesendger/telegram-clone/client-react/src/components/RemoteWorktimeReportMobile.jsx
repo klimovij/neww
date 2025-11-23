@@ -3,6 +3,38 @@ import ReactDOM from 'react-dom';
 import { FaArrowLeft } from 'react-icons/fa';
 import { FiX, FiClock, FiLogIn, FiLogOut, FiEye, FiCalendar } from 'react-icons/fi';
 
+// Добавляем глобальный CSS для полноэкранной модалки
+if (typeof document !== 'undefined') {
+  const styleId = 'remote-worktime-report-mobile-styles';
+  if (!document.getElementById(styleId)) {
+    const style = document.createElement('style');
+    style.id = styleId;
+    style.textContent = `
+      .remote-worktime-report-fullscreen {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        z-index: 100006 !important;
+        overflow: hidden !important;
+      }
+      .remote-worktime-report-content {
+        width: 100% !important;
+        height: 100% !important;
+        min-width: 100vw !important;
+        min-height: 100vh !important;
+        margin: 0 !important;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+}
+
 function RemoteWorktimeReportMobile({ open, onClose, onOpenMobileSidebar }) {
   const touchStartX = useRef(null);
   const touchEndX = useRef(null);
@@ -164,34 +196,20 @@ function RemoteWorktimeReportMobile({ open, onClose, onOpenMobileSidebar }) {
 
   return ReactDOM.createPortal(
     <div
+      className="remote-worktime-report-fullscreen"
       style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        width: '100vw',
-        height: '100vh',
-        margin: 0,
-        padding: 0,
         backgroundColor: 'rgba(0, 0, 0, 0.85)',
-        zIndex: 100006, // Выше WorkTimeMobile (100002)
         display: 'flex',
         flexDirection: 'column',
         backdropFilter: 'blur(8px)',
-        overflow: 'hidden',
       }}
       onClick={handleClose}
     >
       <div
         ref={modalRef}
+        className="remote-worktime-report-content"
         style={{
           position: 'relative',
-          width: '100%',
-          height: '100%',
-          minWidth: '100vw',
-          minHeight: '100vh',
-          margin: 0,
           padding: 0,
           background: 'linear-gradient(135deg, #232931 0%, #181c22 100%)',
           display: 'flex',
