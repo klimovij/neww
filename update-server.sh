@@ -1,13 +1,16 @@
 #!/bin/bash
+# Скрипт для быстрого обновления кода на сервере
+
 set -e
 
+EXTERNAL_IP="35.232.108.72"
+APP_DIR="/var/www/mesendger"
 GIT_REPO="https://github.com/klimovij/neww.git"
-WORK_DIR="/var/www/mesendger"
 
-echo "🔄 Начинаем обновление приложения..."
+echo "🚀 Обновление кода на сервере..."
 
-# Клонирование обновленного репозитория
-echo "📥 Клонирование обновленного репозитория..."
+# Обновление кода из Git
+echo "📥 Обновление кода из Git..."
 cd /tmp
 if [ -d "mesendger-god" ]; then
     sudo rm -rf mesendger-god
@@ -16,29 +19,24 @@ sudo git clone "$GIT_REPO" mesendger-god
 
 # Копирование обновленных файлов
 echo "📦 Копирование обновленных файлов..."
-sudo rsync -av --exclude 'node_modules' \
-              --exclude '.git' \
-              --exclude 'build' \
-              --exclude '*.log' \
-              --exclude '*.db' \
-              --exclude '*.db-shm' \
-              --exclude '*.db-wal' \
-              --exclude '*.db.bak_*' \
-              mesendger-god/mesendger/telegram-clone/ "$WORK_DIR/"
+sudo rsync -av --exclude 'node_modules' --exclude '.git' --exclude 'build' --exclude '*.log' --exclude '*.db*' mesendger-god/mesendger/telegram-clone/ "$APP_DIR/"
 
 # Установка прав
-echo "🔐 Настройка прав доступа..."
-sudo chown -R appuser:appuser "$WORK_DIR"
+sudo chown -R appuser:appuser "$APP_DIR"
 
-# Пересборка React приложения
-echo "🏗️ Пересборка React приложения..."
-cd "$WORK_DIR/client-react"
+# Обновление зависимостей сервера (если нужно)
+echo "📦 Проверка зависимостей сервера..."
+cd "$APP_DIR/server"
+sudo -u appuser npm install --production
+
+# Сборка React приложения
+echo "🏗️ Сборка React приложения..."
+cd "$APP_DIR/client-react"
 sudo -u appuser npm install
 sudo -u appuser CI=false npm run build
 
-# Перезапуск приложения
+# Перезапуск приложения через PM2
 echo "🔄 Перезапуск приложения..."
-cd "$WORK_DIR"
 sudo -u appuser pm2 restart all
 
 echo ""
@@ -46,7 +44,3 @@ echo "✅ Обновление завершено!"
 echo ""
 echo "📊 Статус приложения:"
 sudo -u appuser pm2 status
-echo ""
-echo "📝 Логи: sudo -u appuser pm2 logs"
-echo "📝 Перезапуск: sudo -u appuser pm2 restart all"
-
