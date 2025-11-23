@@ -387,45 +387,6 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
             </button>
           </div>
 
-          {/* Кнопка отчета удаленки */}
-          <div style={{ marginBottom: '20px' }}>
-            <button
-              type="button"
-              onClick={() => {
-                console.log('🔘 [WorkTimeMobile] Кнопка "Отчет Удаленка" нажата, открываем модалку');
-                setShowRemoteWorktime(true);
-                console.log('🔘 [WorkTimeMobile] showRemoteWorktime установлен в true');
-              }}
-              style={{
-                width: '100%',
-                padding: '14px',
-                borderRadius: '12px',
-                border: '2px solid rgba(67, 233, 123, 0.3)',
-                background: 'rgba(67, 233, 123, 0.15)',
-                color: '#43e97b',
-                cursor: 'pointer',
-                fontWeight: 600,
-                fontSize: '15px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-                transition: 'all 0.2s',
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.background = 'rgba(67, 233, 123, 0.25)';
-                e.target.style.borderColor = '#43e97b';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.background = 'rgba(67, 233, 123, 0.15)';
-                e.target.style.borderColor = 'rgba(67, 233, 123, 0.3)';
-              }}
-            >
-              <FiCalendar size={18} />
-              Отчет Удаленка
-            </button>
-          </div>
-
           {/* Фильтры */}
           <div style={{ marginBottom: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
             {/* Даты */}
