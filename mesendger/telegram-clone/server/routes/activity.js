@@ -139,6 +139,7 @@ router.post('/activity-log-batch', authenticateActivityRequest, async (req, res)
 
     const inserted = await db.addActivityLogsBatch(sanitized);
 
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
     res.json({
       success: true,
       imported: inserted,
@@ -289,6 +290,7 @@ router.post('/activity-screenshot', authenticateActivityRequest, (req, res, next
 
     console.log(`📸 Screenshot saved: ${username} at ${timestamp} (${fileSize} bytes)`);
 
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
     res.json({
       success: true,
       message: 'Screenshot saved successfully',
@@ -374,6 +376,7 @@ router.get('/activity-details', async (req, res) => {
       };
     });
 
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
     res.json({
       success: true,
       urls: urls,
@@ -381,6 +384,7 @@ router.get('/activity-details', async (req, res) => {
     });
   } catch (error) {
     console.error('❌ Error in /activity-details:', error);
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
     res.status(500).json({ success: false, error: error.message });
   }
 });

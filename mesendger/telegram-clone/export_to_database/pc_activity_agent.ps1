@@ -198,16 +198,22 @@ function Get-ActivityData {
         # Способ 3: Если заголовок не пустой и не содержит суффикс браузера, сохраняем его как browserUrl
         # Это для случаев, когда Chrome показывает только название страницы без суффикса " - Google Chrome"
         elseif ($windowTitle -and $windowTitle.Trim().Length -gt 0 -and $windowTitle.Length -lt 200) {
-            # Проверяем, что это не просто суффикс браузера
-            if ($windowTitle -notmatch "^\s*-\s*(Google\s+)?Chrome\s*$" -and 
-                $windowTitle -notmatch "^\s*-\s*Microsoft\s+Edge\s*$" -and
-                $windowTitle -notmatch "^\s*-\s*Firefox\s*$" -and
-                $windowTitle -notmatch "^\s*-\s*Opera\s*$" -and
-                $windowTitle -notmatch "^\s*-\s*Brave\s*$") {
-                # Сохраняем заголовок как browserUrl (название страницы)
-                $browserUrl = $windowTitle.Trim()
+            # Очищаем заголовок от суффикса браузера
+            $cleanedTitle = $windowTitle -replace '\s*[-\u2013\u2014]\s*(Google\s+)?Chrome\s*$', '' -replace '\s*[-\u2013\u2014]\s*Microsoft\s+Edge\s*$', '' -replace '\s*[-\u2013\u2014]\s*Firefox\s*$', '' -replace '\s*[-\u2013\u2014]\s*Opera\s*$', '' -replace '\s*[-\u2013\u2014]\s*Brave\s*$', ''
+            $cleanedTitle = $cleanedTitle.Trim()
+            
+            # Проверяем, что после очистки остался непустой текст
+            if ($cleanedTitle.Length -gt 0) {
+                # Сохраняем очищенный заголовок как browserUrl (название страницы)
+                $browserUrl = $cleanedTitle
             }
         }
+    }
+    
+    # Дополнительная очистка browserUrl от суффиксов браузера (на случай если они остались)
+    if ($browserUrl -and $browserUrl.Length -gt 0) {
+        $browserUrl = $browserUrl -replace '\s*[-\u2013\u2014]\s*(Google\s+)?Chrome\s*$', '' -replace '\s*[-\u2013\u2014]\s*Microsoft\s+Edge\s*$', '' -replace '\s*[-\u2013\u2014]\s*Firefox\s*$', '' -replace '\s*[-\u2013\u2014]\s*Opera\s*$', '' -replace '\s*[-\u2013\u2014]\s*Brave\s*$', ''
+        $browserUrl = $browserUrl.Trim()
     }
     
     return @{
