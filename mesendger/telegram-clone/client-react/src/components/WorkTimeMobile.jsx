@@ -951,8 +951,10 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
             }}
           />
         ) : (
-          <AppUsageModal isOpen={showAppUsage} onRequestClose={() => setShowAppUsage(false)} />
-          <RemoteWorktimeReportModal isOpen={showRemoteWorktime} onRequestClose={() => setShowRemoteWorktime(false)} />
+          <>
+            <AppUsageModal isOpen={showAppUsage} onRequestClose={() => setShowAppUsage(false)} />
+            <RemoteWorktimeReportModal isOpen={showRemoteWorktime} onRequestClose={() => setShowRemoteWorktime(false)} />
+          </>
         )}
       </div>
     </div>,
