@@ -15,8 +15,11 @@ function RemoteWorktimeReportMobile({ open, onClose, onOpenMobileSidebar }) {
   const [userEvents, setUserEvents] = useState([]);
   const [loadingEvents, setLoadingEvents] = useState(false);
 
+  console.log('🔍 [RemoteWorktimeReportMobile] Component render, open =', open);
+
   // Инициализируем дату вчерашнего дня при открытии модалки
   useEffect(() => {
+    console.log('🔍 [RemoteWorktimeReportMobile] useEffect triggered, open =', open);
     if (open) {
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
@@ -203,7 +206,14 @@ function RemoteWorktimeReportMobile({ open, onClose, onOpenMobileSidebar }) {
     }
   }, [open]);
 
-  if (!open) return null;
+  console.log('🔍 [RemoteWorktimeReportMobile] Before render check, open =', open);
+  
+  if (!open) {
+    console.log('🔍 [RemoteWorktimeReportMobile] Modal closed, returning null');
+    return null;
+  }
+
+  console.log('🔍 [RemoteWorktimeReportMobile] Rendering modal portal');
 
   return ReactDOM.createPortal(
     <div
