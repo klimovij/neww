@@ -179,13 +179,15 @@ export default function RemoteWorktimeReportMobile({
     console.log('[RemoteWorktimeReportMobile] handleViewUser вызван:', user);
     setSelectedUser(user);
     
-    // Используем username из объекта пользователя
-    const username = user.username || user.fio;
+    // Используем технический username (из remote_work_time_logs), а не ФИО
+    // technicalUsername - это оригинальный username из БД, username может быть заменен на ФИО
+    const username = user.technicalUsername || user.username;
     if (!username) {
       console.error('[RemoteWorktimeReportMobile] handleViewUser: нет username в объекте user', user);
       return;
     }
     
+    console.log('[RemoteWorktimeReportMobile] Используем username для запроса:', username);
     await loadUserEvents(username);
   };
 

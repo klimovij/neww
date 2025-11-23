@@ -330,7 +330,8 @@ router.get('/remote-worktime-report', async (req, res) => {
       }).catch(() => null);
       
       report.push({
-        username,
+        username, // Технический username из remote_work_time_logs
+        technicalUsername: username, // Сохраняем технический username отдельно
         fio: userInfo?.fio || username,
         firstLogin: userData.firstLogin,
         lastLogout: userData.lastLogout,
@@ -394,11 +395,35 @@ router.get('/remote-worktime-user-events', async (req, res) => {
     console.log('📊 [REMOTE-WORKTIME-USER-EVENTS] Query params:', { username, startDate, endDate });
     
     // Получаем все логи пользователя за указанный период из таблицы удаленных ПК
+    // Пробуем искать по декодированному username (на случай, если передали ФИО)
     const logs = await db.getRemoteWorkTimeLogs({
       start: startDate,
       end: endDate,
-      username
+      username: decodedUsername
     });
+    
+    // Если не найдено по username, пробуем найти по ФИО из таблицы users
+    if (!logs || logs.length === 0) {
+      console.log('📊 [REMOTE-WORKTIME-USER-EVENTS] Не найдено по username, пробуем найти по ФИО...');
+      const userByFio = await new Promise((resolve, reject) => {
+        db.db.get('SELECT username FROM users WHERE fio = ?', [decodedUsername], (err, row) => {
+          if (err) reject(err);
+          else resolve(row);
+        });
+      }).catch(() => null);
+      
+      if (userByFio && userByFio.username) {
+        console.log('📊 [REMOTE-WORKTIME-USER-EVENTS] Найден пользователь по ФИО:', userByFio.username);
+        const logsByUsername = await db.getRemoteWorkTimeLogs({
+          start: startDate,
+          end: endDate,
+          username: userByFio.username
+        });
+        if (logsByUsername && logsByUsername.length > 0) {
+          logs.push(...logsByUsername);
+        }
+      }
+    }
     
     console.log('📊 [REMOTE-WORKTIME-USER-EVENTS] Logs found:', logs?.length || 0);
     if (logs && logs.length > 0) {
