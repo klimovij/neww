@@ -156,6 +156,82 @@ export default function AllLeavesCalendarMobile({ open, onClose, token, onOpenMo
     }
   };
 
+  // Функция для одобрения заявки
+  const handleApproveLeave = async (leaveId) => {
+    try {
+      const response = await fetch(`/api/leaves/${leaveId}/status`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ status: 'approved' })
+      });
+
+      if (response.ok) {
+        // Обновляем список заявок
+        fetch('/api/all-leaves', { headers: { Authorization: `Bearer ${token}` } })
+          .then(r => r.json())
+          .then(data => {
+            setLeaves(Array.isArray(data) ? data : []);
+            // Обновляем модалку, если она открыта
+            if (absentModal.open) {
+              const updatedList = absentModal.list.map(l => 
+                l.id === leaveId ? { ...l, status: 'approved' } : l
+              );
+              setAbsentModal({ ...absentModal, list: updatedList });
+            }
+          });
+        // Отправляем событие для обновления счетчика в SidebarNav
+        window.dispatchEvent(new Event('show-all-leaves'));
+        alert('Заявка одобрена');
+      } else {
+        throw new Error(`HTTP ${response.status}`);
+      }
+    } catch (error) {
+      console.error('Ошибка при одобрении заявки:', error);
+      alert(`Ошибка при одобрении заявки: ${error.message}`);
+    }
+  };
+
+  // Функция для отклонения заявки
+  const handleRejectLeave = async (leaveId) => {
+    try {
+      const response = await fetch(`/api/leaves/${leaveId}/status`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ status: 'rejected' })
+      });
+
+      if (response.ok) {
+        // Обновляем список заявок
+        fetch('/api/all-leaves', { headers: { Authorization: `Bearer ${token}` } })
+          .then(r => r.json())
+          .then(data => {
+            setLeaves(Array.isArray(data) ? data : []);
+            // Обновляем модалку, если она открыта
+            if (absentModal.open) {
+              const updatedList = absentModal.list.map(l => 
+                l.id === leaveId ? { ...l, status: 'rejected' } : l
+              );
+              setAbsentModal({ ...absentModal, list: updatedList });
+            }
+          });
+        // Отправляем событие для обновления счетчика в SidebarNav
+        window.dispatchEvent(new Event('show-all-leaves'));
+        alert('Заявка отклонена');
+      } else {
+        throw new Error(`HTTP ${response.status}`);
+      }
+    } catch (error) {
+      console.error('Ошибка при отклонении заявки:', error);
+      alert(`Ошибка при отклонении заявки: ${error.message}`);
+    }
+  };
+
   useEffect(() => {
     if (!open) return;
     
@@ -1111,10 +1187,86 @@ export default function AllLeavesCalendarMobile({ open, onClose, token, onOpenMo
                       {String(l.startDate).slice(0, 10)} — {String(l.endDate).slice(0, 10)}
                     </div>
                     {l.reason && (
-                      <div style={{ color: '#555', fontSize: '0.9em' }}>
+                      <div style={{ color: '#555', fontSize: '0.9em', marginBottom: '8px' }}>
                         {l.reason}
                       </div>
                     )}
+                    {/* Статус заявки */}
+                    <div style={{
+                      padding: '6px 10px',
+                      borderRadius: '8px',
+                      background: l.status === 'approved' ? '#43e97b22' : 
+                                 l.status === 'pending' ? '#f9ca2422' : 
+                                 l.status === 'completed' ? '#6dd5ed22' : 
+                                 l.status === 'rejected' ? '#e74c3c22' : '#88888822',
+                      color: l.status === 'approved' ? '#43e97b' : 
+                            l.status === 'pending' ? '#f9ca24' : 
+                            l.status === 'completed' ? '#6dd5ed' : 
+                            l.status === 'rejected' ? '#e74c3c' : '#888888',
+                      fontSize: '0.85em',
+                      fontWeight: 600,
+                      marginBottom: '8px',
+                      display: 'inline-block'
+                    }}>
+                      {l.status === 'approved' ? '✓ Одобрено' : 
+                       l.status === 'pending' ? '⏳ Ожидает' : 
+                       l.status === 'completed' ? '✓ Отработано' : 
+                       l.status === 'rejected' ? '✗ Отклонено' : 'Неизвестно'}
+                    </div>
+                    {/* Кнопки одобрения/отклонения для HR/админов */}
+                    {isHr && l.status === 'pending' && (
+                      <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleApproveLeave(l.id);
+                          }}
+                          style={{
+                            flex: 1,
+                            background: '#43e97b',
+                            color: '#fff',
+                            border: 'none',
+                            borderRadius: '8px',
+                            padding: '10px 16px',
+                            fontSize: '0.9em',
+                            cursor: 'pointer',
+                            fontWeight: 600,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '6px'
+                          }}
+                        >
+                          ✓ Одобрить
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (window.confirm('Вы уверены, что хотите отклонить эту заявку?')) {
+                              handleRejectLeave(l.id);
+                            }
+                          }}
+                          style={{
+                            flex: 1,
+                            background: '#e74c3c',
+                            color: '#fff',
+                            border: 'none',
+                            borderRadius: '8px',
+                            padding: '10px 16px',
+                            fontSize: '0.9em',
+                            cursor: 'pointer',
+                            fontWeight: 600,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '6px'
+                          }}
+                        >
+                          ✗ Отклонить
+                        </button>
+                      </div>
+                    )}
+                    {/* Кнопка удаления для HR или владельца */}
                     {(isHr || l.userId === currentUser?.id) && (
                       <button
                         onClick={(e) => {
