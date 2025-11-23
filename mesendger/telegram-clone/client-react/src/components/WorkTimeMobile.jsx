@@ -6,6 +6,7 @@ import UserWorkTimeDetailsModal from './Modals/UserWorkTimeDetailsModal';
 import UserWorkTimeDetailsMobile from './UserWorkTimeDetailsMobile';
 import AppUsageModal from './Modals/AppUsageModal';
 import AppUsageMobile from './AppUsageMobile';
+import RemoteWorktimeReportModal from './Modals/RemoteWorktimeReportModal';
 
 // Вынесем парсер вне функции
 function parseDate(str) {
@@ -79,6 +80,7 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
   const [importing, setImporting] = useState(false);
   const [importOk, setImportOk] = useState(null);
   const [showAppUsage, setShowAppUsage] = useState(false);
+  const [showRemoteWorktime, setShowRemoteWorktime] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -384,6 +386,41 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
             >
               <FiRefreshCw size={18} />
               Отчёт запусков приложения
+            </button>
+          </div>
+
+          {/* Кнопка отчета удаленки */}
+          <div style={{ marginBottom: '20px' }}>
+            <button
+              type="button"
+              onClick={() => setShowRemoteWorktime(true)}
+              style={{
+                width: '100%',
+                padding: '14px',
+                borderRadius: '12px',
+                border: '2px solid rgba(67, 233, 123, 0.3)',
+                background: 'rgba(67, 233, 123, 0.15)',
+                color: '#43e97b',
+                cursor: 'pointer',
+                fontWeight: 600,
+                fontSize: '15px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.background = 'rgba(67, 233, 123, 0.25)';
+                e.target.style.borderColor = '#43e97b';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = 'rgba(67, 233, 123, 0.15)';
+                e.target.style.borderColor = 'rgba(67, 233, 123, 0.3)';
+              }}
+            >
+              <FiCalendar size={18} />
+              Отчет Удаленка
             </button>
           </div>
 
@@ -915,6 +952,7 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
           />
         ) : (
           <AppUsageModal isOpen={showAppUsage} onRequestClose={() => setShowAppUsage(false)} />
+          <RemoteWorktimeReportModal isOpen={showRemoteWorktime} onRequestClose={() => setShowRemoteWorktime(false)} />
         )}
       </div>
     </div>,

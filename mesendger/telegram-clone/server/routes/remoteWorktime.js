@@ -261,5 +261,148 @@ router.get('/remote-worktime-health', authenticateRemoteRequest, (req, res) => {
   });
 });
 
+// Endpoint для получения отчета удаленки за определенную дату (без API ключа, для веб-интерфейса)
+router.get('/remote-worktime-report', async (req, res) => {
+  try {
+    const { date } = req.query;
+    
+    // Если дата не указана, используем вчерашний день
+    let targetDate;
+    if (date) {
+      targetDate = date; // Формат: YYYY-MM-DD
+    } else {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      targetDate = yesterday.toISOString().split('T')[0]; // YYYY-MM-DD
+    }
+    
+    // Получаем все логи за указанную дату
+    const logs = await db.getWorkTimeLogs({ 
+      start: targetDate, 
+      end: targetDate 
+    });
+    
+    // Группируем по пользователям и находим первый вход и последний выход
+    const userMap = new Map();
+    
+    for (const log of logs) {
+      const { username, event_type, event_time } = log;
+      
+      if (!userMap.has(username)) {
+        userMap.set(username, {
+          username,
+          firstLogin: null,
+          lastLogout: null,
+          events: []
+        });
+      }
+      
+      const userData = userMap.get(username);
+      userData.events.push({ event_type, event_time });
+      
+      if (event_type === 'login') {
+        if (!userData.firstLogin || new Date(event_time) < new Date(userData.firstLogin)) {
+          userData.firstLogin = event_time;
+        }
+      } else if (event_type === 'logout') {
+        if (!userData.lastLogout || new Date(event_time) > new Date(userData.lastLogout)) {
+          userData.lastLogout = event_time;
+        }
+      }
+    }
+    
+    // Получаем ФИО пользователей из таблицы users
+    const report = [];
+    for (const [username, userData] of userMap) {
+      // Получаем информацию о пользователе из таблицы users
+      const userInfo = await new Promise((resolve, reject) => {
+        db.db.get('SELECT id, fio, username FROM users WHERE username = ?', [username], (err, row) => {
+          if (err) reject(err);
+          else resolve(row);
+        });
+      }).catch(() => null);
+      
+      report.push({
+        username,
+        fio: userInfo?.fio || username,
+        firstLogin: userData.firstLogin,
+        lastLogout: userData.lastLogout,
+        totalEvents: userData.events.length
+      });
+    }
+    
+    // Сортируем по ФИО
+    report.sort((a, b) => {
+      const fioA = a.fio || a.username;
+      const fioB = b.fio || b.username;
+      return fioA.localeCompare(fioB, 'ru');
+    });
+    
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.json({
+      success: true,
+      date: targetDate,
+      report
+    });
+  } catch (error) {
+    console.error('❌ Error getting remote worktime report:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Endpoint для получения всех событий конкретного пользователя за дату (без API ключа)
+router.get('/remote-worktime-user-events', async (req, res) => {
+  try {
+    const { username, date } = req.query;
+    
+    if (!username || !date) {
+      return res.status(400).json({
+        success: false,
+        error: 'Username and date are required'
+      });
+    }
+    
+    // Получаем все логи пользователя за указанную дату
+    const logs = await db.getWorkTimeLogs({
+      start: date,
+      end: date,
+      username
+    });
+    
+    // Сортируем по времени
+    logs.sort((a, b) => {
+      const timeA = new Date(a.event_time).getTime();
+      const timeB = new Date(b.event_time).getTime();
+      return timeA - timeB;
+    });
+    
+    // Получаем информацию о пользователе
+    const userInfo = await new Promise((resolve, reject) => {
+      db.db.get('SELECT id, fio, username FROM users WHERE username = ?', [username], (err, row) => {
+        if (err) reject(err);
+        else resolve(row);
+      });
+    }).catch(() => null);
+    
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.json({
+      success: true,
+      username,
+      fio: userInfo?.fio || username,
+      date,
+      events: logs
+    });
+  } catch (error) {
+    console.error('❌ Error getting user events:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 module.exports = router;
 
