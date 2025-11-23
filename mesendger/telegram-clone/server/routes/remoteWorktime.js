@@ -396,7 +396,7 @@ router.get('/remote-worktime-user-events', async (req, res) => {
     
     // Получаем все логи пользователя за указанный период из таблицы удаленных ПК
     // Пробуем искать по декодированному username (на случай, если передали ФИО)
-    const logs = await db.getRemoteWorkTimeLogs({
+    let logs = await db.getRemoteWorkTimeLogs({
       start: startDate,
       end: endDate,
       username: decodedUsername
@@ -420,7 +420,7 @@ router.get('/remote-worktime-user-events', async (req, res) => {
           username: userByFio.username
         });
         if (logsByUsername && logsByUsername.length > 0) {
-          logs.push(...logsByUsername);
+          logs = logsByUsername;
         }
       }
     }
