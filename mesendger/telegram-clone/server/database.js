@@ -2724,6 +2724,26 @@ class Database {
         this.db.run('CREATE UNIQUE INDEX IF NOT EXISTS idx_wtl_unique ON work_time_logs (username, event_time, event_type)', () => {});
       });
 
+      // Таблица логов рабочего времени для удаленных ПК (отдельная от локальных)
+      this.db.run(`CREATE TABLE IF NOT EXISTS remote_work_time_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT NOT NULL,
+        event_type TEXT NOT NULL, -- login, logout
+        event_time TEXT NOT NULL, -- ISO8601
+        event_id INTEGER NOT NULL, -- 4624, 4634
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+      )`);
+      // Удаляем дубликаты перед созданием уникального индекса
+      this.db.run(`
+        DELETE FROM remote_work_time_logs
+        WHERE id NOT IN (
+          SELECT MIN(id) FROM remote_work_time_logs GROUP BY username, event_time, event_type
+        )
+      `, () => {
+        // Уникальный индекс для предотвращения дублей одной и той же записи
+        this.db.run('CREATE UNIQUE INDEX IF NOT EXISTS idx_rwtl_unique ON remote_work_time_logs (username, event_time, event_type)', () => {});
+      });
+
       // Добавляем новые колонки если они не существуют (для совместимости)
       this.db.run(`ALTER TABLE messages ADD COLUMN file_info TEXT`, () => {});
       this.db.run(`ALTER TABLE messages ADD COLUMN reply_to_id INTEGER`, () => {});

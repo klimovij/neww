@@ -128,16 +128,15 @@ router.post('/remote-worktime', authenticateRemoteRequest, async (req, res) => {
       finalEventId = event_type === 'logout' ? 4634 : 4624;
     }
     
-    // Добавляем в базу данных (skipGoogleSync = true, т.к. данные уже пришли с удаленного сервера)
-    await db.addWorkTimeLog({
-      username: normalizedUsername,
-      event_type: event_type.toLowerCase(),
-      event_time: convertedTime,
-      event_id: finalEventId,
-      skipGoogleSync: true
-    });
-    
-    console.log(`✅ Remote worktime log added: ${normalizedUsername} - ${event_type} - ${convertedTime}`);
+        // Добавляем в отдельную таблицу для удаленных ПК
+        await db.addRemoteWorkTimeLog({
+          username: normalizedUsername,
+          event_type: event_type.toLowerCase(),
+          event_time: convertedTime,
+          event_id: finalEventId
+        });
+        
+        console.log(`✅ Remote worktime log added: ${normalizedUsername} - ${event_type} - ${convertedTime}`);
     
     res.json({ 
       success: true, 
@@ -205,13 +204,12 @@ router.post('/remote-worktime-batch', authenticateRemoteRequest, async (req, res
           finalEventId = event_type === 'logout' ? 4634 : 4624;
         }
         
-        // Добавляем в базу данных (skipGoogleSync = true, т.к. данные уже пришли с удаленного сервера)
-        await db.addWorkTimeLog({
+        // Добавляем в отдельную таблицу для удаленных ПК
+        await db.addRemoteWorkTimeLog({
           username: normalizedUsername,
           event_type: event_type.toLowerCase(),
           event_time: convertedTime,
-          event_id: finalEventId,
-          skipGoogleSync: true
+          event_id: finalEventId
         });
         
         imported++;
@@ -277,8 +275,8 @@ router.get('/remote-worktime-report', async (req, res) => {
       targetDate = yesterday.toISOString().split('T')[0]; // YYYY-MM-DD
     }
     
-    // Получаем все логи за указанную дату
-    const logs = await db.getWorkTimeLogs({ 
+    // Получаем все логи за указанную дату из таблицы удаленных ПК
+    const logs = await db.getRemoteWorkTimeLogs({ 
       start: targetDate, 
       end: targetDate 
     });
@@ -366,8 +364,8 @@ router.get('/remote-worktime-user-events', async (req, res) => {
       });
     }
     
-    // Получаем все логи пользователя за указанную дату
-    const logs = await db.getWorkTimeLogs({
+    // Получаем все логи пользователя за указанную дату из таблицы удаленных ПК
+    const logs = await db.getRemoteWorkTimeLogs({
       start: date,
       end: date,
       username
