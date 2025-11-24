@@ -376,17 +376,31 @@ router.get('/activity-details', async (req, res) => {
       let fileName = path.basename(shot.file_path);
       // Если путь уже содержит имя файла, используем его
       // Иначе формируем имя из timestamp
-      if (!fileName || fileName === '') {
+      if (!fileName || fileName === '' || fileName === '/') {
         const ts = new Date(shot.timestamp);
         fileName = `screenshot_${username}_${ts.toISOString().split('T')[0]}_${ts.toISOString().split('T')[1].replace(/[:.]/g, '-').split('.')[0]}.jpg`;
       }
+      
+      // Убеждаемся, что путь правильный - удаляем все префиксы путей, оставляем только имя файла
+      fileName = fileName.replace(/^.*[\/\\]/, ''); // Убираем все пути перед именем файла
+      
+      // Формируем URL для доступа к файлу
+      const screenshotUrl = `/uploads/screenshots/${fileName}`;
+      
+      console.log(`📸 [activity-details] Screenshot mapping:`, {
+        id: shot.id,
+        file_path: shot.file_path,
+        fileName,
+        url: screenshotUrl
+      });
+      
       return {
         id: shot.id,
         timestamp: shot.timestamp,
         filePath: shot.file_path,
         fileSize: shot.file_size,
         // URL для доступа к файлу (будет обслуживаться через статический сервер)
-        url: `/uploads/screenshots/${fileName}`,
+        url: screenshotUrl,
       };
     });
 

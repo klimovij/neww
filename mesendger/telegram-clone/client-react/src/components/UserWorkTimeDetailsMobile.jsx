@@ -594,6 +594,16 @@ export default function UserWorkTimeDetailsMobile({
                       <img
                         src={shot.url}
                         alt={`Скриншот ${idx + 1}`}
+                        onError={(e) => {
+                          console.error('Failed to load screenshot:', shot.url, shot);
+                          e.target.style.display = 'none';
+                          e.target.parentElement.innerHTML = `
+                            <div style="padding: 40px 20px; text-align: center; color: rgba(255, 100, 100, 0.8);">
+                              Не удалось загрузить скриншот<br/>
+                              <small style="font-size: 11px; color: rgba(255, 255, 255, 0.4);">URL: ${shot.url}</small>
+                            </div>
+                          `;
+                        }}
                         style={{
                           width: '100%',
                           height: 'auto',
