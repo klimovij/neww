@@ -26,11 +26,16 @@ router.post('/import-worktime-json', async (req, res) => {
 
 // Генерация отчёта по базе: первый вход (login), последний выход (logout) за период
 async function getDbShortReport({ start, end, username }) {
-  // Получаем логи только за выбранный период для отображения и расчёта
+  // Получаем логи из обеих таблиц: work_time_logs (старые данные) и remote_work_time_logs (новые данные от агентов)
   const periodLogs = await db.getWorkTimeLogs({ start, end, username });
+  const remoteLogs = await db.getRemoteWorkTimeLogs({ start, end, username });
+  
+  // Объединяем логи из обеих таблиц
+  const allLogs = [...periodLogs, ...remoteLogs];
+  
   const userMap = {};
   
-  for (const log of periodLogs) {
+  for (const log of allLogs) {
     if (!log.username) continue;
     userMap[log.username] = userMap[log.username] || [];
     userMap[log.username].push(log);
@@ -138,7 +143,10 @@ router.get('/report/worktime', async (req, res) => {
   try {
     const { start, end, username } = req.query;
     const logs = await db.getWorkTimeLogs({ start, end, username });
-    res.json({ success: true, logs });
+    const remoteLogs = await db.getRemoteWorkTimeLogs({ start, end, username });
+    // Объединяем логи из обеих таблиц
+    const allLogs = [...logs, ...remoteLogs];
+    res.json({ success: true, logs: allLogs });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
