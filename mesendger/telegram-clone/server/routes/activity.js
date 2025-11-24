@@ -84,6 +84,13 @@ router.post('/activity-log-batch', authenticateActivityRequest, async (req, res)
     console.log('📥 Body keys:', req.body ? Object.keys(req.body).slice(0, 10) : 'null');
     console.log('📥 Body preview:', JSON.stringify(req.body).substring(0, 500));
     
+    // Логируем первые несколько событий для проверки кодировки
+    const events = Array.isArray(req.body) ? req.body : req.body?.events || [];
+    if (events.length > 0) {
+      console.log('📥 First event windowTitle:', events[0].windowTitle);
+      console.log('📥 First event windowTitle bytes:', Buffer.from(events[0].windowTitle || '', 'utf8').toString('hex').substring(0, 100));
+    }
+    
     const events = Array.isArray(req.body) ? req.body : req.body?.events || [];
 
     if (!events || events.length === 0) {
@@ -165,6 +172,13 @@ router.get('/activity-summary', async (req, res) => {
     }
 
     const logs = await db.getActivityLogsBetween({ start, end });
+    
+    // Логируем для отладки
+    console.log(`📊 [activity-summary] Запрос: start=${start}, end=${end}`);
+    console.log(`📊 [activity-summary] Найдено логов в базе: ${logs.length}`);
+    if (logs.length > 0) {
+      console.log(`📊 [activity-summary] Первый лог: username=${logs[0].username}, timestamp=${logs[0].timestamp}, windowTitle=${logs[0].window_title?.substring(0, 50)}`);
+    }
 
     const perUser = {};
     const IDLE_THRESHOLD = 5; // минут, как говорила HR

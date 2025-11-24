@@ -1,50 +1,70 @@
 #!/bin/bash
-# Скрипт для быстрого обновления кода на сервере
-# Использование: bash <(curl -s https://raw.githubusercontent.com/klimovij/neww/main/mesendger/telegram-clone/deploy/update-server.sh)
+# Скрипт для обновления сервера с GitHub
+# Использование: скопируйте и выполните на сервере через SSH
 
 set -e
 
-EXTERNAL_IP="35.232.108.72"
-APP_DIR="/var/www/mesendger"
-GIT_REPO="https://github.com/klimovij/neww.git"
+echo "🔄 Начинаем обновление сервера..."
+echo ""
 
-echo "🚀 Обновление кода на сервере..."
+# Переходим в директорию приложения
+cd /var/www/mesendger || {
+    echo "❌ Ошибка: директория /var/www/mesendger не найдена"
+    exit 1
+}
 
-# Обновление кода из Git
-echo "📥 Обновление кода из Git..."
-cd /tmp
-if [ -d "mesendger-god" ]; then
-    sudo rm -rf mesendger-god
-fi
-sudo git clone "$GIT_REPO" mesendger-god
-
-# Копирование обновленных файлов
-echo "📦 Копирование обновленных файлов..."
-sudo rsync -av --exclude 'node_modules' \
+# Обновляем код с GitHub
+echo "📥 Получаем последние изменения с GitHub..."
+sudo -u appuser git pull origin main || {
+    echo "⚠️ Предупреждение: git pull не удался (возможно, не используется git)"
+    echo "Попробуем обновить через клонирование..."
+    
+    # Альтернативный способ: клонирование заново
+    cd /tmp
+    rm -rf mesendger-god
+    git clone https://github.com/klimovij/neww.git mesendger-god
+    rsync -av --exclude 'node_modules' \
               --exclude '.git' \
               --exclude 'build' \
               --exclude '*.log' \
               --exclude '*.db*' \
-              mesendger-god/mesendger/telegram-clone/ "$APP_DIR/"
+              --exclude '*.db-shm' \
+              --exclude '*.db-wal' \
+              mesendger-god/mesendger/telegram-clone/ /var/www/mesendger/
+    chown -R appuser:appuser /var/www/mesendger
+    cd /var/www/mesendger
+}
 
-# Установка прав
-echo "🔐 Установка прав доступа..."
-sudo chown -R appuser:appuser "$APP_DIR"
+# Устанавливаем зависимости для сервера
+echo "📦 Устанавливаем зависимости для сервера..."
+cd server
+sudo -u appuser npm install --production || {
+    echo "⚠️ Предупреждение: npm install для server не удался"
+}
 
-# Обновление зависимостей сервера (если нужно)
-echo "📦 Проверка зависимостей сервера..."
-cd "$APP_DIR/server"
-sudo -u appuser npm install --production
+# Устанавливаем зависимости для клиента и собираем
+echo "📦 Устанавливаем зависимости для клиента..."
+cd ../client-react
+sudo -u appuser npm install || {
+    echo "⚠️ Предупреждение: npm install для client-react не удался"
+}
 
-# Сборка React приложения
-echo "🏗️ Сборка React приложения..."
-cd "$APP_DIR/client-react"
-sudo -u appuser npm install
-sudo -u appuser CI=false npm run build
+echo "🔨 Собираем React приложение..."
+sudo -u appuser CI=false npm run build || {
+    echo "⚠️ Предупреждение: npm run build не удался"
+}
 
-# Перезапуск приложения через PM2
-echo "🔄 Перезапуск приложения..."
-sudo -u appuser pm2 restart all
+# Перезапускаем PM2
+echo "🔄 Перезапускаем приложение через PM2..."
+cd /var/www/mesendger
+sudo -u appuser pm2 restart all || {
+    echo "⚠️ Предупреждение: pm2 restart не удался, пробуем stop и start..."
+    sudo -u appuser pm2 stop all || true
+    sudo -u appuser pm2 start deploy/ecosystem.config.js || {
+        echo "❌ Ошибка: не удалось перезапустить приложение"
+        exit 1
+    }
+}
 
 echo ""
 echo "✅ Обновление завершено!"
@@ -53,5 +73,9 @@ echo "📊 Статус приложения:"
 sudo -u appuser pm2 status
 
 echo ""
-echo "🌐 Проверьте приложение: http://$EXTERNAL_IP"
-
+echo "🔍 Проверка обновления..."
+if grep -q "getRemoteWorkTimeLogs" /var/www/mesendger/server/routes/quickCsvReport.js 2>/dev/null; then
+    echo "✅ Сервер успешно обновлён! Функция объединения данных активна."
+else
+    echo "⚠️ Предупреждение: файл quickCsvReport.js может быть не обновлён"
+fi

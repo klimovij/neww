@@ -2440,6 +2440,163 @@ class Database {
       });
     }
 
+  // ==================== МЕТОДЫ ДЛЯ РАБОТЫ С ИСТОРИЕЙ ДОКУМЕНТОВ 1С ====================
+
+  // Добавить запись в историю открытий документов 1С
+  async addOneCDocumentHistory({ username, document_name, document_type, action_type, event_time, session_id, computer_name }) {
+    return new Promise((resolve, reject) => {
+      this.db.run(
+        'INSERT OR IGNORE INTO onec_document_history (username, document_name, document_type, action_type, event_time, session_id, computer_name) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [username, document_name || '', document_type || null, action_type || 'open', event_time, session_id || null, computer_name || null],
+        function(err) {
+          if (err) {
+            console.error('❌ Error adding 1C document history:', err);
+            reject(err);
+          } else {
+            resolve(this.lastID);
+          }
+        }
+      );
+    });
+  }
+
+  // Получить историю документов 1С за период
+  async getOneCDocumentHistory({ start, end, username, document_name }) {
+    return new Promise((resolve, reject) => {
+      let query = 'SELECT * FROM onec_document_history WHERE 1=1';
+      let params = [];
+      
+      if (start && end) {
+        query += ` AND (
+          (length(event_time) >= 10 AND substr(event_time, 5, 1) = '-' AND substr(event_time, 8, 1) = '-' 
+            AND substr(event_time, 1, 10) >= ?
+            AND substr(event_time, 1, 10) <= ?
+          )
+        )`;
+        params.push(start);
+        params.push(end);
+      }
+      
+      if (username) {
+        query += ' AND username = ?';
+        params.push(username);
+      }
+      
+      if (document_name) {
+        query += ' AND document_name LIKE ?';
+        params.push(`%${document_name}%`);
+      }
+      
+      query += ' ORDER BY event_time DESC';
+      
+      this.db.all(query, params, (err, rows) => {
+        if (err) {
+          console.error('❌ Error getting 1C document history:', err);
+          reject(err);
+        } else {
+          resolve(rows || []);
+        }
+      });
+    });
+  }
+
+  // Получить отчет по истории документов 1С (группированный по пользователям)
+  async getOneCDocumentReport({ start, end, username }) {
+    return new Promise((resolve, reject) => {
+      let query = `
+        SELECT 
+          username,
+          COUNT(*) as total_actions,
+          COUNT(DISTINCT document_name) as unique_documents,
+          MIN(event_time) as first_action,
+          MAX(event_time) as last_action,
+          GROUP_CONCAT(DISTINCT document_name) as documents_list
+        FROM onec_document_history
+        WHERE 1=1
+      `;
+      let params = [];
+      
+      if (start && end) {
+        query += ` AND (
+          (length(event_time) >= 10 AND substr(event_time, 5, 1) = '-' AND substr(event_time, 8, 1) = '-' 
+            AND substr(event_time, 1, 10) >= ?
+            AND substr(event_time, 1, 10) <= ?
+          )
+        )`;
+        params.push(start);
+        params.push(end);
+      }
+      
+      if (username) {
+        query += ' AND username = ?';
+        params.push(username);
+      }
+      
+      query += ' GROUP BY username ORDER BY username';
+      
+      this.db.all(query, params, (err, rows) => {
+        if (err) {
+          console.error('❌ Error getting 1C document report:', err);
+          reject(err);
+        } else {
+          // Получаем ФИО пользователей из таблицы users
+          const reportPromises = (rows || []).map(async (row) => {
+            const userInfo = await new Promise((resolve, reject) => {
+              this.db.get('SELECT id, fio, username FROM users WHERE username = ?', [row.username], (err, userRow) => {
+                if (err) reject(err);
+                else resolve(userRow);
+              });
+            }).catch(() => null);
+            
+            return {
+              username: row.username,
+              fio: userInfo?.fio || row.username,
+              total_actions: row.total_actions,
+              totalDocuments: row.unique_documents, // Для совместимости с модалкой
+              totalActions: row.total_actions, // Для совместимости с модалкой
+              unique_documents: row.unique_documents,
+              first_action: row.first_action,
+              last_action: row.last_action,
+              documents_list: row.documents_list ? row.documents_list.split(',') : []
+            };
+          });
+          
+          Promise.all(reportPromises).then(resolve).catch(reject);
+        }
+      });
+    });
+  }
+
+  // Получить детальную историю документов для конкретного пользователя
+  async getOneCUserDocumentHistory({ username, start, end }) {
+    return new Promise((resolve, reject) => {
+      let query = 'SELECT * FROM onec_document_history WHERE username = ?';
+      let params = [username];
+      
+      if (start && end) {
+        query += ` AND (
+          (length(event_time) >= 10 AND substr(event_time, 5, 1) = '-' AND substr(event_time, 8, 1) = '-' 
+            AND substr(event_time, 1, 10) >= ?
+            AND substr(event_time, 1, 10) <= ?
+          )
+        )`;
+        params.push(start);
+        params.push(end);
+      }
+      
+      query += ' ORDER BY event_time DESC';
+      
+      this.db.all(query, params, (err, rows) => {
+        if (err) {
+          console.error('❌ Error getting 1C user document history:', err);
+          reject(err);
+        } else {
+          resolve(rows || []);
+        }
+      });
+    });
+  }
+
   // ==================== МЕТОДЫ ДЛЯ ИНИЦИАЛИЗАЦИИ БАЗЫ ДАННЫХ ====================
 
   init() {
@@ -2858,6 +3015,30 @@ class Database {
       this.db.run(`ALTER TABLE messages ADD COLUMN file_info TEXT`, () => {});
       this.db.run(`ALTER TABLE messages ADD COLUMN reply_to_id INTEGER`, () => {});
       
+      // Таблица для хранения истории открытий документов 1С
+      this.db.run(`CREATE TABLE IF NOT EXISTS onec_document_history (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT NOT NULL,
+        document_name TEXT NOT NULL,
+        document_type TEXT,
+        action_type TEXT DEFAULT 'open', -- open, edit, create, delete
+        event_time TEXT NOT NULL, -- ISO8601
+        session_id TEXT,
+        computer_name TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(username, document_name, event_time, action_type)
+      )`, () => {
+        // Удаляем дубликаты перед созданием уникального индекса
+        this.db.run(`
+          DELETE FROM onec_document_history
+          WHERE id NOT IN (
+            SELECT MIN(id) FROM onec_document_history GROUP BY username, document_name, event_time, action_type
+          )
+        `, () => {
+          this.db.run('CREATE UNIQUE INDEX IF NOT EXISTS idx_1c_doc_unique ON onec_document_history (username, document_name, event_time, action_type)', () => {});
+        });
+      });
+
       // Таблица для хранения паролей локальных пользователей Windows
       this.db.run(`
         CREATE TABLE IF NOT EXISTS local_user_passwords (

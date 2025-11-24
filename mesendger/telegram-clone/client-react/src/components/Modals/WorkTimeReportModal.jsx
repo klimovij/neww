@@ -381,12 +381,35 @@ function WorkTimeReportModal({ isOpen, onRequestClose }) {
                                 start: startDate,
                                 end: endDate,
                               });
+                              console.log('🔍 [WorkTimeReportModal] Загружаем activity-summary...');
+                              console.log('🔍 [WorkTimeReportModal] Row data:', { username: row.username, fio: row.fio });
+                              console.log('🔍 [WorkTimeReportModal] Date range:', { start: startDate, end: endDate });
+                              
                               const res = await fetch(`/api/activity-summary?${params.toString()}`);
                               const data = await res.json();
+                              
+                              console.log('🔍 [WorkTimeReportModal] Response status:', res.status);
+                              console.log('🔍 [WorkTimeReportModal] Response data:', data);
+                              
                               if (res.ok && data.success && Array.isArray(data.summary)) {
+                                // Сопоставляем по username (важно для activity-summary)
+                                const usernameForMatch = row.username || row.fio;
+                                console.log('🔍 [WorkTimeReportModal] Ищем activityStats для username:', usernameForMatch);
+                                console.log('🔍 [WorkTimeReportModal] Доступные usernames в summary:', data.summary.map(s => s.username));
+                                
                                 activityStats = data.summary.find(
-                                  (s) => s.username === row.username
+                                  (s) => s.username === usernameForMatch
                                 ) || null;
+                                
+                                if (activityStats) {
+                                  console.log('✅ [WorkTimeReportModal] Найденный activityStats:', activityStats);
+                                } else {
+                                  console.warn('⚠️ [WorkTimeReportModal] activityStats НЕ найден!');
+                                  console.warn('⚠️ [WorkTimeReportModal] Искали:', usernameForMatch);
+                                  console.warn('⚠️ [WorkTimeReportModal] Доступны:', data.summary.map(s => s.username));
+                                }
+                              } else {
+                                console.error('❌ [WorkTimeReportModal] Ошибка в ответе:', { ok: res.ok, success: data.success, isArray: Array.isArray(data.summary) });
                               }
                             } catch (err) {
                               console.error('Ошибка загрузки активности:', err);

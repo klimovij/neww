@@ -103,8 +103,8 @@ async function getDbShortReport({ start, end, username }) {
     
     report.push({
       // fio берём из users.fio, если есть, иначе используем username из логов
+      username: user,  // Важно: сохраняем исходный username для сопоставления с activity-summary
       fio: displayName,
-      username: user, // Добавляем username для поиска активности
       firstLogin: firstLogin ? firstLogin.event_time : '',
       lastLogout: lastLogout ? lastLogout.event_time : '',
       totalHours: firstLogin && lastLogout ? 
