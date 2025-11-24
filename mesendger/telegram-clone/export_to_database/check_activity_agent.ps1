@@ -133,13 +133,98 @@ if (Test-Path $screenshotsDir) {
 
 # 5. Проверка подключения к серверу
 Write-Host "`n🌐 Проверка подключения к серверу..." -ForegroundColor Yellow
-$serverUrl = "http://35.232.108.72"
-try {
-    $response = Invoke-WebRequest -Uri "$serverUrl/api/health" -Method GET -TimeoutSec 5 -ErrorAction Stop
-    Write-Host "   ✅ Сервер доступен: $serverUrl" -ForegroundColor Green
-} catch {
-    Write-Host "   ⚠️  Не удалось подключиться к серверу: $serverUrl" -ForegroundColor Yellow
-    Write-Host "      Ошибка: $($_.Exception.Message)" -ForegroundColor Gray
+
+# Получаем URL из скрипта агента
+$serverBaseUrl = "http://35.232.108.72"
+if ($scriptPath) {
+    $scriptContent = Get-Content -Path $scriptPath -Raw
+    if ($scriptContent -match '\$GOOGLE_SERVER_URL\s*=\s*"([^"]+)"') {
+        $serverBaseUrl = $matches[1]
+        Write-Host "   📍 Используется URL из скрипта агента: $serverBaseUrl" -ForegroundColor Gray
+    }
+}
+
+# Варианты URL для проверки (с разными портами)
+$testUrls = @(
+    @{ url = "$serverBaseUrl:5000/api/activity-log-batch"; name = "Порт 5000 (рекомендуется)" },
+    @{ url = "$serverBaseUrl/api/activity-log-batch"; name = "Без порта (HTTP 80)" },
+    @{ url = "$($serverBaseUrl.Replace('http://', 'https://'))/api/activity-log-batch"; name = "HTTPS (443)" }
+)
+
+$serverAvailable = $false
+$workingUrl = $null
+
+foreach ($testUrl in $testUrls) {
+    try {
+        $headers = @{
+            "X-API-Key" = "test-wrong-key"
+            "Content-Type" = "application/json"
+        }
+        Write-Host "   🔍 Проверяю: $($testUrl.name)..." -ForegroundColor Gray -NoNewline
+        $response = Invoke-WebRequest -Uri $testUrl.url -Method POST -Headers $headers -Body '[]' -TimeoutSec 5 -ErrorAction Stop
+        $statusCode = $response.StatusCode
+        $serverAvailable = $true
+        $workingUrl = $testUrl.url
+        Write-Host " ✅ (статус: $statusCode)" -ForegroundColor Green
+        break
+    } catch {
+        $statusCode = if ($_.Exception.Response) { $_.Exception.Response.StatusCode.value__ } else { 'unknown' }
+        
+        # 403 означает, что сервер работает, но API ключ неправильный (это нормально для проверки)
+        if ($statusCode -eq 403) {
+            $serverAvailable = $true
+            $workingUrl = $testUrl.url
+            Write-Host " ✅ (403 - сервер работает, ключ неверный)" -ForegroundColor Green
+            break
+        }
+        # 400 означает, что сервер работает, но данные неправильные (это тоже нормально)
+        elseif ($statusCode -eq 400) {
+            $serverAvailable = $true
+            $workingUrl = $testUrl.url
+            Write-Host " ✅ (400 - сервер работает)" -ForegroundColor Green
+            break
+        }
+        # 404 означает, что endpoint не найден
+        elseif ($statusCode -eq 404) {
+            Write-Host " ❌ (404)" -ForegroundColor Red
+        }
+        # Другие ошибки подключения
+        else {
+            $errorMsg = $_.Exception.Message
+            if ($errorMsg -match "Unable to connect|Не удалось установить соединение|Timeout") {
+                Write-Host " ❌ (недоступен)" -ForegroundColor Red
+            } else {
+                Write-Host " ❌ (статус: $statusCode)" -ForegroundColor Yellow
+            }
+        }
+    }
+}
+
+Write-Host ""
+
+if ($serverAvailable -and $workingUrl) {
+    Write-Host "   ✅ Сервер доступен по URL: $workingUrl" -ForegroundColor Green
+    Write-Host "   📝 Убедитесь, что в скрипте агента используется этот же URL" -ForegroundColor Yellow
+    
+    # Проверяем, совпадает ли URL в скрипте агента
+    if ($scriptPath -and $workingUrl -ne "$serverBaseUrl/api/activity-log-batch") {
+        Write-Host "   ⚠️  ВНИМАНИЕ: URL в скрипте агента отличается от рабочего URL!" -ForegroundColor Red
+        Write-Host "      В скрипте: $serverBaseUrl" -ForegroundColor Gray
+        Write-Host "      Рабочий URL: $workingUrl" -ForegroundColor Gray
+        Write-Host "      Обновите `$GOOGLE_SERVER_URL в скрипте агента!" -ForegroundColor Yellow
+    }
+} else {
+    Write-Host "   ❌ Сервер недоступен по всем проверенным URL" -ForegroundColor Red
+    Write-Host "   Возможные причины:" -ForegroundColor Yellow
+    Write-Host "   1. Сервер не запущен на удалённой машине" -ForegroundColor Gray
+    Write-Host "   2. Неправильный IP-адрес: $serverBaseUrl" -ForegroundColor Gray
+    Write-Host "   3. Порты заблокированы файрволом" -ForegroundColor Gray
+    Write-Host "   4. Сервер работает на другом порту (не 80, 443, 5000)" -ForegroundColor Gray
+    Write-Host ""
+    Write-Host "   Проверьте логи на сервере и убедитесь, что сервер запущен:" -ForegroundColor Yellow
+    Write-Host "   - Проверьте процесс Node.js на сервере" -ForegroundColor Gray
+    Write-Host "   - Проверьте логи сервера" -ForegroundColor Gray
+    Write-Host "   - Проверьте настройки файрвола и роутера" -ForegroundColor Gray
 }
 
 # 6. Проверка настроек в скрипте агента
