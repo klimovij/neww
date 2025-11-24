@@ -106,7 +106,7 @@ function WorkTimeReportModal({ isOpen, onRequestClose }) {
   });
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [detailsModal, setDetailsModal] = useState({ open: false, logs: [], username: '' });
+  const [detailsModal, setDetailsModal] = useState({ open: false, logs: [], username: '', activityStats: null });
   const [importing, setImporting] = useState(false);
   const [importOk, setImportOk] = useState(null); // null | true | false
   const [showAppUsage, setShowAppUsage] = useState(false);
@@ -372,7 +372,32 @@ function WorkTimeReportModal({ isOpen, onRequestClose }) {
                       <td style={{ padding: '12px 14px' }}>
                         <button
                           type="button"
-                          onClick={(e) => { e.stopPropagation(); setDetailsModal({ open: true, logs: row.sessions || row.logs || [], username: row.fio }); }}
+                          onClick={async (e) => { 
+                            e.stopPropagation();
+                            // Загружаем данные активности перед открытием модалки
+                            let activityStats = null;
+                            try {
+                              const params = new URLSearchParams({
+                                start: startDate,
+                                end: endDate,
+                              });
+                              const res = await fetch(`/api/activity-summary?${params.toString()}`);
+                              const data = await res.json();
+                              if (res.ok && data.success && Array.isArray(data.summary)) {
+                                activityStats = data.summary.find(
+                                  (s) => s.username === row.username
+                                ) || null;
+                              }
+                            } catch (err) {
+                              console.error('Ошибка загрузки активности:', err);
+                            }
+                            setDetailsModal({ 
+                              open: true, 
+                              logs: row.sessions || row.logs || [], 
+                              username: row.fio || row.username,
+                              activityStats 
+                            }); 
+                          }}
                           style={{
                             padding: '6px 12px',
                             borderRadius: 10,
@@ -403,9 +428,10 @@ function WorkTimeReportModal({ isOpen, onRequestClose }) {
 
           <UserWorkTimeDetailsModal
             isOpen={detailsModal.open}
-            onRequestClose={() => setDetailsModal({ open: false, logs: [], username: '' })}
+            onRequestClose={() => setDetailsModal({ open: false, logs: [], username: '', activityStats: null })}
             logs={detailsModal.logs}
             username={detailsModal.username}
+            activityStats={detailsModal.activityStats}
           />
           <AppUsageModal isOpen={showAppUsage} onRequestClose={() => setShowAppUsage(false)} />
         </div>
