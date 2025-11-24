@@ -1,5 +1,6 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
+import io from 'socket.io-client';
 import { FaArrowLeft } from 'react-icons/fa';
 import { FiX, FiLogIn, FiLogOut, FiClock, FiGlobe, FiCamera, FiExternalLink } from 'react-icons/fi';
 
@@ -25,6 +26,9 @@ export default function UserWorkTimeDetailsMobile({
   const touchEndX = useRef(null);
   const modalRef = useRef(null);
   const [activeTab, setActiveTab] = useState('events'); // 'events', 'urls', 'screenshots'
+  const [localUrls, setLocalUrls] = useState(urls);
+  const [localScreenshots, setLocalScreenshots] = useState(screenshots);
+  const [localActivityStats, setLocalActivityStats] = useState(activityStats);
 
   // Обработчики свайпа
   const handleTouchStart = (e) => {
@@ -59,15 +63,104 @@ export default function UserWorkTimeDetailsMobile({
     onClose();
   };
 
+  // Обновляем локальное состояние при изменении props
+  useEffect(() => {
+    setLocalUrls(urls);
+    setLocalScreenshots(screenshots);
+    setLocalActivityStats(activityStats);
+  }, [urls, screenshots, activityStats]);
+
+  // WebSocket для обновления данных в реальном времени
+  useEffect(() => {
+    if (!open || !username || !startDate || !endDate) return;
+
+    const socketUrl = typeof window !== 'undefined' && window.location ? window.location.origin : '';
+    const socket = io(socketUrl);
+
+    socket.on('connect', () => {
+      console.log('📡 [UserWorkTimeDetailsMobile] WebSocket connected for real-time updates');
+    });
+
+    // Слушаем обновления данных активности
+    socket.on('activity_data_updated', async (updateData) => {
+      console.log('🔄 [UserWorkTimeDetailsMobile] Received activity update:', updateData);
+      
+      // Проверяем, относится ли обновление к текущему пользователю и дате
+      const updateDate = updateData.date;
+      const matchesUser = updateData.username === username || updateData.username === username.split(' ')[0];
+      const matchesDate = updateDate >= startDate && updateDate <= endDate;
+      
+      if (matchesUser && matchesDate) {
+        console.log('✅ [UserWorkTimeDetailsMobile] Update matches, reloading data...');
+        
+        // Перезагружаем данные активности
+        try {
+          const params = new URLSearchParams({
+            username: username.split(' ')[0] || username,
+            start: startDate,
+            end: endDate,
+          });
+          const res = await fetch(`/api/activity-details?${params.toString()}`);
+          const data = await res.json();
+          
+          if (res.ok && data.success) {
+            if (data.urls) setLocalUrls(data.urls);
+            if (data.screenshots) setLocalScreenshots(data.screenshots);
+            console.log('✅ [UserWorkTimeDetailsMobile] Activity data reloaded');
+          }
+        } catch (err) {
+          console.error('❌ [UserWorkTimeDetailsMobile] Error reloading activity data:', err);
+        }
+      }
+    });
+
+    // Слушаем добавление новых скриншотов
+    socket.on('activity_screenshot_added', (screenshotData) => {
+      console.log('📸 [UserWorkTimeDetailsMobile] Received screenshot update:', screenshotData);
+      
+      // Проверяем, относится ли скриншот к текущему пользователю и дате
+      const screenshotDate = screenshotData.date;
+      const matchesUser = screenshotData.username === username || screenshotData.username === username.split(' ')[0];
+      const matchesDate = screenshotDate >= startDate && screenshotDate <= endDate;
+      
+      if (matchesUser && matchesDate) {
+        console.log('✅ [UserWorkTimeDetailsMobile] Screenshot matches, adding to list...');
+        
+        // Добавляем новый скриншот в список
+        setLocalScreenshots(prev => {
+          // Проверяем, нет ли уже такого скриншота
+          const exists = prev.some(s => s.fileName === screenshotData.fileName);
+          if (exists) return prev;
+          
+          return [...prev, {
+            file_path: screenshotData.filePath,
+            fileName: screenshotData.fileName,
+            url: screenshotData.url,
+            timestamp: screenshotData.timestamp,
+            file_size: screenshotData.fileSize
+          }].sort((a, b) => {
+            const timeA = new Date(a.timestamp || 0).getTime();
+            const timeB = new Date(b.timestamp || 0).getTime();
+            return timeB - timeA; // Сортируем по убыванию (новые сверху)
+          });
+        });
+      }
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [open, username, startDate, endDate]);
+
   console.log('[UserWorkTimeDetailsMobile] Компонент рендерится, open =', open, 'logs:', logs?.length || 0, 'username:', username);
-  console.log('[UserWorkTimeDetailsMobile] URLs:', urls?.length || 0, urls);
-  console.log('[UserWorkTimeDetailsMobile] Screenshots:', screenshots?.length || 0, screenshots);
+  console.log('[UserWorkTimeDetailsMobile] URLs:', localUrls?.length || 0, localUrls);
+  console.log('[UserWorkTimeDetailsMobile] Screenshots:', localScreenshots?.length || 0, localScreenshots);
   console.log('[UserWorkTimeDetailsMobile] Полные props:', {
     open,
     logsCount: logs?.length || 0,
     username,
-    urlsCount: urls?.length || 0,
-    screenshotsCount: screenshots?.length || 0,
+    urlsCount: localUrls?.length || 0,
+    screenshotsCount: localScreenshots?.length || 0,
     startDate,
     endDate,
     hasActivityStats: !!activityStats
@@ -254,7 +347,7 @@ export default function UserWorkTimeDetailsMobile({
               }}
             >
               <FiGlobe size={14} />
-              Сайты ({urls?.length || 0})
+              Сайты ({localUrls?.length || 0})
             </button>
             <button
               onClick={() => setActiveTab('screenshots')}
@@ -278,7 +371,7 @@ export default function UserWorkTimeDetailsMobile({
               }}
             >
               <FiCamera size={14} />
-              Скриншоты ({screenshots?.length || 0})
+              Скриншоты ({localScreenshots?.length || 0})
             </button>
           </div>
         </div>
@@ -442,7 +535,7 @@ export default function UserWorkTimeDetailsMobile({
                   </div>
                 </div>
               )}
-              {!urls || urls.length === 0 ? (
+              {!localUrls || localUrls.length === 0 ? (
                 <div style={{
                   textAlign: 'center',
                   padding: '40px 20px',
@@ -452,7 +545,7 @@ export default function UserWorkTimeDetailsMobile({
                   Нет данных об открытых сайтах
                 </div>
               ) : (
-                urls.map((item, idx) => (
+                localUrls.map((item, idx) => (
                   <div
                     key={idx}
                     style={{
@@ -540,7 +633,7 @@ export default function UserWorkTimeDetailsMobile({
                   </div>
                 </div>
               )}
-              {!screenshots || screenshots.length === 0 ? (
+              {!localScreenshots || localScreenshots.length === 0 ? (
                 <div style={{
                   textAlign: 'center',
                   padding: '40px 20px',
@@ -550,7 +643,7 @@ export default function UserWorkTimeDetailsMobile({
                   Нет скриншотов
                 </div>
               ) : (
-                screenshots.map((shot, idx) => (
+                localScreenshots.map((shot, idx) => (
                   <div
                     key={idx}
                     style={{

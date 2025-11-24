@@ -146,6 +146,34 @@ router.post('/activity-log-batch', authenticateActivityRequest, async (req, res)
 
     const inserted = await db.addActivityLogsBatch(sanitized);
 
+    // Отправляем обновление через WebSocket для обновления в реальном времени
+    if (global.io && sanitized.length > 0) {
+      // Группируем по username и дате для отправки обновлений
+      const updatesByUser = {};
+      sanitized.forEach(event => {
+        if (event.username && event.timestamp) {
+          const date = new Date(event.timestamp).toISOString().split('T')[0];
+          const key = `${event.username}_${date}`;
+          if (!updatesByUser[key]) {
+            updatesByUser[key] = {
+              username: event.username,
+              date: date
+            };
+          }
+        }
+      });
+      
+      // Отправляем обновления для каждого пользователя и даты
+      Object.values(updatesByUser).forEach(update => {
+        global.io.emit('activity_data_updated', {
+          username: update.username,
+          date: update.date,
+          count: inserted
+        });
+        console.log(`📡 [activity-log-batch] Emitted activity_data_updated for ${update.username} on ${update.date}`);
+      });
+    }
+
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     res.json({
       success: true,
@@ -303,6 +331,24 @@ router.post('/activity-screenshot', authenticateActivityRequest, (req, res, next
     });
 
     console.log(`📸 Screenshot saved: ${username} at ${timestamp} (${fileSize} bytes)`);
+
+    // Отправляем обновление через WebSocket для обновления в реальном времени
+    if (global.io) {
+      const date = new Date(timestamp).toISOString().split('T')[0];
+      const fileName = path.basename(screenshotPath);
+      const screenshotUrl = `/uploads/screenshots/${fileName}`;
+      
+      global.io.emit('activity_screenshot_added', {
+        username: username,
+        date: date,
+        timestamp: timestamp,
+        filePath: screenshotPath,
+        fileName: fileName,
+        url: screenshotUrl,
+        fileSize: fileSize
+      });
+      console.log(`📡 [activity-screenshot] Emitted activity_screenshot_added for ${username} on ${date}`);
+    }
 
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     res.json({
