@@ -33,7 +33,7 @@ export default function UserWorkTimeDetailsMobile({
     setActiveTab(tab);
   }, [activeTab]);
   const [localUrls, setLocalUrls] = useState(urls);
-  const [localApplications, setLocalApplications] = useState([]);
+  const [localApplications, setLocalApplications] = useState(applications || []);
   const [localScreenshots, setLocalScreenshots] = useState(screenshots);
   const [localActivityStats, setLocalActivityStats] = useState(activityStats);
 
