@@ -53,7 +53,21 @@ export default function UserWorkTimeDetailsMobile({
   const [localScreenshots, setLocalScreenshots] = useState(screenshots);
   const [localActivityStats, setLocalActivityStats] = useState(activityStats);
 
-  // Логирование для отладки
+  // Логирование для отладки - ВАЖНО: логируем сразу при рендере
+  console.log('🚨 [UserWorkTimeDetailsMobile] ====== НАЧАЛО КОМПОНЕНТА V3.0 ======');
+  console.log('🚨 [UserWorkTimeDetailsMobile] Все props:', {
+    open,
+    logsCount: logs?.length || 0,
+    username,
+    urlsCount: urls?.length || 0,
+    applicationsCount: applications?.length || 0,
+    applications: applications,
+    screenshotsCount: screenshots?.length || 0,
+    hasActivityStats: !!activityStats
+  });
+  console.log('🚨 [UserWorkTimeDetailsMobile] applications (полностью):', applications);
+  console.log('🚨 [UserWorkTimeDetailsMobile] ====================================');
+  
   useEffect(() => {
     console.log('🔍 [UserWorkTimeDetailsMobile] Props applications:', applications?.length || 0, applications);
     console.log('🔍 [UserWorkTimeDetailsMobile] localApplications:', localApplications?.length || 0, localApplications);
