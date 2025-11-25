@@ -141,8 +141,11 @@ router.get('/quick-db-report', async (req, res) => {
     // Расширяем диапазон дат для учёта часового пояса (Киев UTC+2/UTC+3)
     // Когда пользователь выбирает дату в киевском времени, нужно найти все данные,
     // которые попали в эту дату по киевскому времени (они могут быть под разными датами в UTC)
+    const originalStart = start;
+    const originalEnd = end;
+    
     if (start && end) {
-      // Расширяем диапазон на 1 день назад и вперёд
+      // Расширяем диапазон на 1 день назад и вперёд для учёта часового пояса (Киев UTC+2/UTC+3)
       const startDate = new Date(start + 'T00:00:00');
       startDate.setDate(startDate.getDate() - 1);
       start = startDate.toISOString().slice(0, 10);
@@ -151,7 +154,9 @@ router.get('/quick-db-report', async (req, res) => {
       endDate.setDate(endDate.getDate() + 1);
       end = endDate.toISOString().slice(0, 10);
       
-      console.log(`🌍 [quick-db-report] Расширение диапазона для учёта часового пояса: ${req.query.start}-${req.query.end} -> ${start}-${end}`);
+      console.log(`🌍 [quick-db-report] Расширение диапазона для учёта часового пояса:`);
+      console.log(`   Запрошено: ${originalStart} - ${originalEnd}`);
+      console.log(`   Запрашиваем: ${start} - ${end}`);
     }
     
     const report = await getDbShortReport({ start, end, username });
