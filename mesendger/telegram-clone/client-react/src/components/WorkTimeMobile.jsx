@@ -71,7 +71,8 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
   const [detailsModal, setDetailsModal] = useState({ 
     open: false, 
     logs: [], 
-    username: '', 
+    username: '',
+    realUsername: '', // Правильный username для API запросов
     activityStats: null,
     urls: [],
     applications: [],
@@ -963,7 +964,8 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
               setDetailsModal({ 
                 open: false, 
                 logs: [], 
-                username: '', 
+                username: '',
+                realUsername: '',
                 activityStats: null,
                 urls: [],
                 applications: [],
@@ -974,6 +976,7 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
             }}
             logs={detailsModal.logs}
             username={detailsModal.username}
+            realUsername={detailsModal.realUsername}
             activityStats={detailsModal.activityStats}
             urls={detailsModal.urls || []}
             applications={detailsModal.applications || []}
@@ -992,7 +995,8 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
               setDetailsModal({ 
                 open: false, 
                 logs: [], 
-                username: '', 
+                username: '',
+                realUsername: '',
                 activityStats: null,
                 urls: [],
                 applications: [],
