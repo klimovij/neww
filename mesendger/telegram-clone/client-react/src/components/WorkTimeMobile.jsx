@@ -783,32 +783,15 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
                               console.error('❌ [WorkTimeMobile] НЕТ дат!', { startDate, endDate });
                             }
                             
-                            // Конвертируем киевское время в UTC для запроса
-                            // Киевское время: UTC+2 (зима) или UTC+3 (лето)
-                            // Когда пользователь выбирает дату в киевском времени, 
-                            // нужно найти все данные, которые попали в эту дату по киевскому времени
-                            
+                            // Учитываем киевское время: данные в базе в UTC, но пользователь работает по киевскому времени
+                            // Когда пользователь выбирает дату в киевском времени, нужно найти все данные,
+                            // которые попали в эту дату по киевскому времени (они могут быть под разными датами в UTC)
+                            // Расширяем диапазон на 1 день назад и вперёд, чтобы захватить все данные
                             let apiStartDate = startDate || '';
                             let apiEndDate = endDate || '';
                             
                             if (startDate && endDate) {
-                              // Конвертируем выбранную дату (киевское время) в UTC
-                              // Начало дня в Киеве (00:00) = конец предыдущего дня в UTC
-                              // Конец дня в Киеве (23:59) = начало следующего дня в UTC
-                              
-                              // Создаём даты в киевском часовом поясе (Europe/Kiev)
-                              const startKiev = new Date(startDate + 'T00:00:00+02:00'); // Киевское время, начало дня
-                              const endKiev = new Date(endDate + 'T23:59:59+02:00'); // Киевское время, конец дня
-                              
-                              // Конвертируем в UTC для запроса к API
-                              apiStartDate = new Date(startKiev.getTime() - startKiev.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
-                              apiEndDate = new Date(endKiev.getTime() - endKiev.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
-                              
-                              // Если начало дня в Киеве попадает на предыдущий день в UTC, используем предыдущий день
-                              const startKievUTC = new Date(startKiev.toLocaleString('en-US', { timeZone: 'UTC' }));
-                              const actualStartUTC = new Date(startKiev.toLocaleString('en-US', { timeZone: 'Europe/Kiev' }));
-                              
-                              // Более простой подход: расширяем диапазон на 1 день назад и вперёд для безопасности
+                              // Расширяем диапазон для учёта разницы часовых поясов (Киев UTC+2/UTC+3)
                               const startDateObj = new Date(startDate + 'T00:00:00');
                               startDateObj.setDate(startDateObj.getDate() - 1);
                               apiStartDate = startDateObj.toISOString().slice(0, 10);
@@ -819,7 +802,7 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
                               
                               console.log('🌍 [WorkTimeMobile] Конвертация времени:');
                               console.log('   Выбрано (киевское время):', startDate, '-', endDate);
-                              console.log('   Запрашиваем (UTC):', apiStartDate, '-', apiEndDate);
+                              console.log('   Запрашиваем (UTC с запасом):', apiStartDate, '-', apiEndDate);
                             }
                             
                             const detailsParams = new URLSearchParams({

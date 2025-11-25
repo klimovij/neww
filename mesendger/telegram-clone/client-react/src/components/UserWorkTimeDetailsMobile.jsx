@@ -150,14 +150,14 @@ export default function UserWorkTimeDetailsMobile({
     console.log('🔄 [UserWorkTimeDetailsMobile] reloadActivityData вызывается с username:', apiUsername, 'realUsername:', realUsername);
     
     try {
-      // Конвертируем киевское время в UTC для запроса
+      // Учитываем киевское время: данные в базе в UTC, но пользователь работает по киевскому времени
       // Расширяем диапазон на 1 день назад и вперёд, чтобы захватить все данные
       // которые попали в выбранный день по киевскому времени
       let apiStartDate = startDate;
       let apiEndDate = endDate;
       
       if (startDate && endDate) {
-        // Расширяем диапазон для учёта разницы часовых поясов
+        // Расширяем диапазон для учёта разницы часовых поясов (Киев UTC+2/UTC+3)
         const startDateObj = new Date(startDate + 'T00:00:00');
         startDateObj.setDate(startDateObj.getDate() - 1);
         apiStartDate = startDateObj.toISOString().slice(0, 10);
@@ -168,7 +168,7 @@ export default function UserWorkTimeDetailsMobile({
         
         console.log('🌍 [UserWorkTimeDetailsMobile] Конвертация времени:');
         console.log('   Выбрано (киевское время):', startDate, '-', endDate);
-        console.log('   Запрашиваем (UTC):', apiStartDate, '-', apiEndDate);
+        console.log('   Запрашиваем (UTC с запасом):', apiStartDate, '-', apiEndDate);
       }
       
       const params = new URLSearchParams({
