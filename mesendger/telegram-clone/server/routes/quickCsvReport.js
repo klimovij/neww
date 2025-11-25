@@ -144,6 +144,7 @@ async function getDbShortReport({ start, end, username }) {
 // API: /api/quick-db-report?start=YYYY-MM-DD&end=YYYY-MM-DD&username=...
 router.get('/quick-db-report', async (req, res) => {
   try {
+    console.log(`🚀 [quick-db-report] ПОЛУЧЕН ЗАПРОС:`, req.query);
     let { start, end, username } = req.query;
     
     // Расширяем диапазон дат для учёта часового пояса (Киев UTC+2/UTC+3)
@@ -165,9 +166,12 @@ router.get('/quick-db-report', async (req, res) => {
       console.log(`🌍 [quick-db-report] Расширение диапазона для учёта часового пояса:`);
       console.log(`   Запрошено: ${originalStart} - ${originalEnd}`);
       console.log(`   Запрашиваем: ${start} - ${end}`);
+    } else {
+      console.log(`⚠️ [quick-db-report] start или end не указаны: start=${start}, end=${end}`);
     }
     
     const report = await getDbShortReport({ start, end, username });
+    console.log(`✅ [quick-db-report] Возвращаем отчёт: ${report.length} пользователей`);
     res.json({ success: true, report });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
