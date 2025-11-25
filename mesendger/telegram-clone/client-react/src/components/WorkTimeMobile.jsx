@@ -784,13 +784,19 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
                               end: endDate || '',
                             });
                             const apiUrl = `/api/activity-details?${detailsParams.toString()}`;
+                            console.log('📡 [WorkTimeMobile] ====== НАЧАЛО ЗАПРОСА К API ======');
                             console.log('📡 [WorkTimeMobile] Загружаем activity-details для:', row.username);
                             console.log('📡 [WorkTimeMobile] URL запроса:', apiUrl);
+                            console.log('📡 [WorkTimeMobile] Параметры запроса:', detailsParams.toString());
                             
                             const detailsRes = await fetch(apiUrl);
                             console.log('📡 [WorkTimeMobile] Статус ответа:', detailsRes.status, detailsRes.statusText);
                             
                             const detailsData = await detailsRes.json();
+                            console.log('📡 [WorkTimeMobile] СЫРОЙ ОТВЕТ ОТ API (полностью):', detailsData);
+                            console.log('📡 [WorkTimeMobile] detailsData.applications существует?', !!detailsData.applications);
+                            console.log('📡 [WorkTimeMobile] detailsData.applications это массив?', Array.isArray(detailsData.applications));
+                            console.log('📡 [WorkTimeMobile] detailsData.applications.length:', detailsData.applications?.length || 0);
                             console.log('📡 [WorkTimeMobile] ====== ОТВЕТ ОТ API ======');
                             console.log('📡 [WorkTimeMobile] Полный ответ:', detailsData);
                             console.log('📡 [WorkTimeMobile] applications в ответе:', detailsData.applications);
