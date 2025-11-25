@@ -118,7 +118,25 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
         (async () => {
           setLoading(true);
           try {
-            let url = `/api/quick-db-report?start=${startDate}&end=${endDate}`;
+            // Расширяем диапазон дат для учёта часового пояса (Киев UTC+2/UTC+3)
+            let apiStartDate = startDate;
+            let apiEndDate = endDate;
+            
+            if (startDate && endDate) {
+              const startDateObj = new Date(startDate + 'T00:00:00');
+              startDateObj.setDate(startDateObj.getDate() - 1);
+              apiStartDate = startDateObj.toISOString().slice(0, 10);
+              
+              const endDateObj = new Date(endDate + 'T23:59:59');
+              endDateObj.setDate(endDateObj.getDate() + 1);
+              apiEndDate = endDateObj.toISOString().slice(0, 10);
+              
+              console.log('🌍 [WorkTimeMobile] Расширение диапазона для quick-db-report (автозагрузка):');
+              console.log(`   Выбрано (киевское время): ${startDate} - ${endDate}`);
+              console.log(`   Запрашиваем (UTC с запасом): ${apiStartDate} - ${apiEndDate}`);
+            }
+            
+            let url = `/api/quick-db-report?start=${apiStartDate}&end=${apiEndDate}`;
             if (selectedUser) url += `&username=${encodeURIComponent(selectedUser)}`;
             const res = await fetch(url);
             const data = await res.json();
