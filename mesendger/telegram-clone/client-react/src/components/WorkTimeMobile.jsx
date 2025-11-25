@@ -798,9 +798,17 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
                             console.log('📡 [WorkTimeMobile] ===========================');
                             
                             if (detailsRes.ok && detailsData.success) {
+                              // КРИТИЧЕСКАЯ ПРОВЕРКА: что пришло от API
+                              console.log('🔍 [WorkTimeMobile] ПРОВЕРКА ОТВЕТА ОТ API:');
+                              console.log('  - detailsData.applications существует?', !!detailsData.applications);
+                              console.log('  - detailsData.applications это массив?', Array.isArray(detailsData.applications));
+                              console.log('  - detailsData.applications.length:', detailsData.applications?.length || 0);
+                              console.log('  - detailsData.applications (первые 5):', detailsData.applications?.slice(0, 5));
+                              
                               urls = detailsData.urls || [];
                               applications = detailsData.applications || [];
                               screenshots = detailsData.screenshots || [];
+                              
                               console.log('✅ [WorkTimeMobile] URLs, приложения и скриншоты загружены:', { 
                                 urlsCount: urls.length, 
                                 applicationsCount: applications.length,
@@ -815,6 +823,7 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
                               if (applications.length === 0) {
                                 console.warn('⚠️ [WorkTimeMobile] ВНИМАНИЕ: applications пустой массив!');
                                 console.warn('⚠️ [WorkTimeMobile] Проверьте API ответ выше');
+                                console.warn('⚠️ [WorkTimeMobile] Полный ответ API:', JSON.stringify(detailsData, null, 2));
                               } else {
                                 console.log('✅ [WorkTimeMobile] Applications загружены успешно:', applications.length, 'шт.');
                               }
