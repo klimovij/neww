@@ -555,13 +555,26 @@ router.get('/activity-details', async (req, res) => {
       };
     });
 
+    // ФИНАЛЬНОЕ ЛОГИРОВАНИЕ ПЕРЕД ОТПРАВКОЙ ОТВЕТА
+    console.log(`🚀 [activity-details] ОТПРАВЛЯЕМ ОТВЕТ для ${username}:`);
+    console.log(`  - URLs: ${urls?.length || 0}`);
+    console.log(`  - Applications: ${applications?.length || 0}`);
+    console.log(`  - Screenshots: ${screenshotsWithUrl?.length || 0}`);
+    if (applications && applications.length > 0) {
+      console.log(`  - Первые 5 приложений в ответе:`, applications.slice(0, 5).map(a => ({ procName: a.procName, windowTitle: a.windowTitle?.substring(0, 30) || '' })));
+    } else {
+      console.warn(`  ⚠️ [activity-details] ПУСТОЙ МАССИВ ПРИЛОЖЕНИЙ В ОТВЕТЕ!`);
+    }
+    
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
-    res.json({
+    const responseData = {
       success: true,
       urls: urls,
       applications: applications,  // Добавляем список всех приложений
       screenshots: screenshotsWithUrl,
-    });
+    };
+    console.log(`📤 [activity-details] Размер ответа (приблизительно):`, JSON.stringify(responseData).length, 'байт');
+    res.json(responseData);
   } catch (error) {
     console.error('❌ Error in /activity-details:', error);
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
