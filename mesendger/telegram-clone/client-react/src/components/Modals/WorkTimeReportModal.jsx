@@ -96,14 +96,12 @@ function WorkTimeReportModal({ isOpen, onRequestClose }) {
   const [userOptions, setUserOptions] = useState([]);
   const [showAutocomplete, setShowAutocomplete] = useState(false);
   const [startDate, setStartDate] = useState(() => {
-    const d = new Date();
-    d.setDate(d.getDate() - 1);
-    return d.toISOString().slice(0, 10);
+    // По умолчанию показываем сегодняшнюю дату
+    return new Date().toISOString().slice(0, 10);
   });
   const [endDate, setEndDate] = useState(() => {
-    const d = new Date();
-    d.setDate(d.getDate() - 1);
-    return d.toISOString().slice(0, 10);
+    // По умолчанию показываем сегодняшнюю дату
+    return new Date().toISOString().slice(0, 10);
   });
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -126,6 +124,29 @@ function WorkTimeReportModal({ isOpen, onRequestClose }) {
         });
     }
   }, [isOpen]);
+
+  // Автоматическая загрузка данных при изменении дат или открытии модалки
+  useEffect(() => {
+    if (isOpen && startDate && endDate) {
+      console.log('📊 [WorkTimeReportModal] Автоматическая загрузка данных...', { startDate, endDate });
+      const loadData = async () => {
+        setLoading(true);
+        try {
+          let url = `/api/quick-db-report?start=${startDate}&end=${endDate}`;
+          if (selectedUser) url += `&username=${encodeURIComponent(selectedUser)}`;
+          const res = await fetch(url);
+          const data = await res.json();
+          console.log('📊 [WorkTimeReportModal] Данные из quick-db-report:', data);
+          setLogs(Array.isArray(data.report) ? data.report : []);
+        } catch (err) {
+          console.error('❌ [WorkTimeReportModal] Ошибка загрузки данных:', err);
+          setLogs([]);
+        }
+        setLoading(false);
+      };
+      loadData();
+    }
+  }, [isOpen, startDate, endDate, selectedUser]); // Автозагрузка при изменении дат
 
   // WebSocket для обновления данных в реальном времени
   useEffect(() => {
