@@ -30,6 +30,15 @@ async function getDbShortReport({ start, end, username }) {
   const periodLogs = await db.getWorkTimeLogs({ start, end, username });
   const remoteLogs = await db.getRemoteWorkTimeLogs({ start, end, username });
   
+  // Также получаем пользователей из activity_logs, у которых есть активность, даже если нет login/logout
+  const activityLogs = await db.getActivityLogsBetween({ start, end });
+  const activityUsers = {};
+  for (const log of activityLogs) {
+    if (!log.username) continue;
+    if (username && log.username !== username) continue;
+    activityUsers[log.username] = true;
+  }
+  
   // Объединяем логи из обеих таблиц
   const allLogs = [...periodLogs, ...remoteLogs];
   
@@ -41,10 +50,17 @@ async function getDbShortReport({ start, end, username }) {
     userMap[log.username].push(log);
   }
   
+  // Добавляем пользователей из activity_logs, у которых нет login/logout, но есть активность
+  for (const activityUser of Object.keys(activityUsers)) {
+    if (!userMap[activityUser]) {
+      userMap[activityUser] = []; // Создаём пустой массив sessions, чтобы пользователь попал в отчёт
+    }
+  }
+  
   const report = [];
   
   for (const [user, sessions] of Object.entries(userMap)) {
-    if (!user || !sessions.length) continue;
+    if (!user || (!sessions.length && !activityUsers[user])) continue;
     
     // Пытаемся обогатить данные ФИО из таблицы users
     // Это позволяет исправить ситуации, когда в work_time_logs имя хранится битым (????),
