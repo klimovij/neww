@@ -24,8 +24,9 @@ export default function UserWorkTimeDetailsMobile({
   onOpenMobileSidebar,
 }) {
   // КРИТИЧЕСКОЕ ЛОГИРОВАНИЕ В НАЧАЛЕ - сразу при получении props
-  // ВЕРСИЯ 4.0 - ДОБАВЛЕН realUsername
-  console.log('🚨 [UserWorkTimeDetailsMobile] ====== НАЧАЛО КОМПОНЕНТА V4.0 ======');
+  // ВЕРСИЯ 5.0 - ДОБАВЛЕН realUsername, УЛУЧШЕНА ОБРАБОТКА applications
+  console.log('🚨🚨🚨 [UserWorkTimeDetailsMobile] ====== НАЧАЛО КОМПОНЕНТА V5.0 - BUILD 2025-01-20 ======');
+  console.log('🚨🚨🚨 [UserWorkTimeDetailsMobile] ЕСЛИ ВЫ ВИДИТЕ ЭТОТ ЛОГ - НОВЫЙ КОД ЗАГРУЖЕН! 🚨🚨🚨');
   console.log('🚨 [UserWorkTimeDetailsMobile] Все props:', {
     open,
     username, // displayName для отображения
