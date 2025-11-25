@@ -416,6 +416,21 @@ router.get('/activity-details', async (req, res) => {
     // Получаем приложения (программы) - только НЕ-браузеры без browser_url
     // Исключаем браузеры и записи с browser_url (они уже в разделе "Сайты")
     const browserProcessNames = ['chrome', 'msedge', 'firefox', 'opera', 'brave', 'safari', 'yandex'];
+    
+    // ДЕТАЛЬНОЕ ЛОГИРОВАНИЕ ДЛЯ ОТЛАДКИ
+    const userLogs = activityLogs.filter(log => log.username === username);
+    console.log(`🔍 [activity-details] Всего логов для ${username}: ${userLogs.length}`);
+    console.log(`🔍 [activity-details] Логов с proc_name: ${userLogs.filter(l => l.proc_name && l.proc_name.trim() !== '').length}`);
+    console.log(`🔍 [activity-details] Логов с browser_url: ${userLogs.filter(l => l.browser_url && l.browser_url.trim() !== '').length}`);
+    console.log(`🔍 [activity-details] Логов без browser_url: ${userLogs.filter(l => !l.browser_url || l.browser_url.trim() === '').length}`);
+    
+    // Показываем примеры proc_name
+    const uniqueProcNames = [...new Set(userLogs.map(l => l.proc_name).filter(p => p && p.trim() !== ''))];
+    console.log(`🔍 [activity-details] Уникальных proc_name: ${uniqueProcNames.length}`);
+    if (uniqueProcNames.length > 0) {
+      console.log(`🔍 [activity-details] Примеры proc_name (первые 10):`, uniqueProcNames.slice(0, 10));
+    }
+    
     const applications = activityLogs
       .filter(log => {
         if (log.username !== username) return false;
@@ -424,7 +439,8 @@ router.get('/activity-details', async (req, res) => {
         if (log.browser_url && log.browser_url.trim() !== '') return false;
         // Исключаем браузеры даже без URL
         const procNameLower = log.proc_name.toLowerCase();
-        if (browserProcessNames.some(browser => procNameLower.includes(browser))) return false;
+        const isBrowser = browserProcessNames.some(browser => procNameLower.includes(browser));
+        if (isBrowser) return false;
         return true;
       })
       .map(log => ({
@@ -436,7 +452,21 @@ router.get('/activity-details', async (req, res) => {
     
     console.log(`📊 [activity-details] Приложений для пользователя ${username}: ${applications.length}`);
     if (applications.length > 0) {
-      console.log(`📊 [activity-details] Примеры приложений:`, applications.slice(0, 3).map(a => a.procName));
+      console.log(`📊 [activity-details] Примеры приложений:`, applications.slice(0, 5).map(a => a.procName));
+    } else {
+      console.warn(`⚠️ [activity-details] НЕТ ПРИЛОЖЕНИЙ! Проверьте фильтрацию выше.`);
+      // Показываем, что было отфильтровано
+      const filteredOut = userLogs.filter(log => {
+        if (!log.proc_name || log.proc_name.trim() === '') return true;
+        if (log.browser_url && log.browser_url.trim() !== '') return true;
+        const procNameLower = log.proc_name.toLowerCase();
+        return browserProcessNames.some(browser => procNameLower.includes(browser));
+      });
+      console.log(`⚠️ [activity-details] Отфильтровано записей: ${filteredOut.length}`);
+      if (filteredOut.length > 0) {
+        const uniqueFiltered = [...new Set(filteredOut.map(l => l.proc_name).filter(p => p))];
+        console.log(`⚠️ [activity-details] Отфильтрованные proc_name (примеры):`, uniqueFiltered.slice(0, 10));
+      }
     }
 
     // Получаем скриншоты
