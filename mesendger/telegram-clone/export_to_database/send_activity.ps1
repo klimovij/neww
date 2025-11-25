@@ -1,4 +1,4 @@
-# Скрипт отправки данных активности пользователя
+﻿# Скрипт отправки данных активности пользователя
 # Совместим с PowerShell 5.1 и ниже
 # Использование: .\send_activity.ps1 [username] [loop] [interval_minutes]
 # Если username не указан, будет прочитан из конфига или запрошен
@@ -91,19 +91,27 @@ function Get-Config {
         }
     }
     
+    # Проверяем, запущен ли скрипт в автоматическом режиме (через планировщик задач с параметром "loop")
+    $isLoopMode = $runLoop -or ($ScriptArgs -contains "loop")
+    
     # Получаем username
     if (-not $username) {
         if ($config.username) {
             $username = $config.username.Trim()
         } else {
-            # Запрашиваем у пользователя
-            Write-Host ""
-            Write-Host "Введите username сотрудника (например: Ksendzik_Oleg):" -ForegroundColor Yellow
-            $username = Read-Host
-            
-            if ([string]::IsNullOrWhiteSpace($username)) {
-                Write-Host "Username не указан, используем имя текущего пользователя: $env:USERNAME" -ForegroundColor Yellow
+            # Если автоматический режим - используем имя пользователя по умолчанию без запросов
+            if ($isLoopMode) {
                 $username = $env:USERNAME
+            } else {
+                # Запрашиваем у пользователя только в интерактивном режиме
+                Write-Host ""
+                Write-Host "Введите username сотрудника (например: Ksendzik_Oleg):" -ForegroundColor Yellow
+                $username = Read-Host
+                
+                if ([string]::IsNullOrWhiteSpace($username)) {
+                    Write-Host "Username не указан, используем имя текущего пользователя: $env:USERNAME" -ForegroundColor Yellow
+                    $username = $env:USERNAME
+                }
             }
         }
     }
@@ -113,46 +121,57 @@ function Get-Config {
         if ($config.intervalMinutes -and $config.intervalMinutes -gt 0) {
             $intervalMinutes = [int]$config.intervalMinutes
         } else {
-            # Используем значение по умолчанию или запрашиваем
-            Write-Host ""
-            Write-Host "Введите интервал отправки данных активности в минутах (по умолчанию $DEFAULT_INTERVAL_MINUTES):" -ForegroundColor Yellow
-            $inputMinutes = Read-Host
-            
-            if ([string]::IsNullOrWhiteSpace($inputMinutes)) {
+            # В автоматическом режиме используем значения по умолчанию без запросов
+            if ($isLoopMode) {
                 $intervalMinutes = $DEFAULT_INTERVAL_MINUTES
             } else {
-                try {
-                    $intervalMinutes = [int][Math]::Round([double]$inputMinutes)
-                    if ($intervalMinutes -le 0) {
+                # Используем значение по умолчанию или запрашиваем
+                Write-Host ""
+                Write-Host "Введите интервал отправки данных активности в минутах (по умолчанию $DEFAULT_INTERVAL_MINUTES):" -ForegroundColor Yellow
+                $inputMinutes = Read-Host
+                
+                if ([string]::IsNullOrWhiteSpace($inputMinutes)) {
+                    $intervalMinutes = $DEFAULT_INTERVAL_MINUTES
+                } else {
+                    try {
+                        $intervalMinutes = [int][Math]::Round([double]$inputMinutes)
+                        if ($intervalMinutes -le 0) {
+                            $intervalMinutes = $DEFAULT_INTERVAL_MINUTES
+                        }
+                    } catch {
                         $intervalMinutes = $DEFAULT_INTERVAL_MINUTES
                     }
-                } catch {
-                    $intervalMinutes = $DEFAULT_INTERVAL_MINUTES
                 }
             }
         }
     }
     
     # Получаем интервал отправки скриншотов
+    $screenshotIntervalMinutes = $null
     if (-not $screenshotIntervalMinutes -or $screenshotIntervalMinutes -le 0) {
         if ($config.screenshotIntervalMinutes -and $config.screenshotIntervalMinutes -gt 0) {
             $screenshotIntervalMinutes = [int]$config.screenshotIntervalMinutes
         } else {
-            # Используем значение по умолчанию или запрашиваем
-            Write-Host ""
-            Write-Host "Введите интервал отправки скриншотов в минутах (по умолчанию $DEFAULT_SCREENSHOT_INTERVAL_MINUTES):" -ForegroundColor Yellow
-            $inputScreenshotMinutes = Read-Host
-            
-            if ([string]::IsNullOrWhiteSpace($inputScreenshotMinutes)) {
+            # В автоматическом режиме используем значения по умолчанию без запросов
+            if ($isLoopMode) {
                 $screenshotIntervalMinutes = $DEFAULT_SCREENSHOT_INTERVAL_MINUTES
             } else {
-                try {
-                    $screenshotIntervalMinutes = [int][Math]::Round([double]$inputScreenshotMinutes)
-                    if ($screenshotIntervalMinutes -le 0) {
+                # Используем значение по умолчанию или запрашиваем
+                Write-Host ""
+                Write-Host "Введите интервал отправки скриншотов в минутах (по умолчанию $DEFAULT_SCREENSHOT_INTERVAL_MINUTES):" -ForegroundColor Yellow
+                $inputScreenshotMinutes = Read-Host
+                
+                if ([string]::IsNullOrWhiteSpace($inputScreenshotMinutes)) {
+                    $screenshotIntervalMinutes = $DEFAULT_SCREENSHOT_INTERVAL_MINUTES
+                } else {
+                    try {
+                        $screenshotIntervalMinutes = [int][Math]::Round([double]$inputScreenshotMinutes)
+                        if ($screenshotIntervalMinutes -le 0) {
+                            $screenshotIntervalMinutes = $DEFAULT_SCREENSHOT_INTERVAL_MINUTES
+                        }
+                    } catch {
                         $screenshotIntervalMinutes = $DEFAULT_SCREENSHOT_INTERVAL_MINUTES
                     }
-                } catch {
-                    $screenshotIntervalMinutes = $DEFAULT_SCREENSHOT_INTERVAL_MINUTES
                 }
             }
         }
@@ -256,7 +275,7 @@ function Collect-Activity {
         }
         
         $activityData = @{
-            username = $username
+            username = $Username
             timestamp = $timestamp
             idleMinutes = 0
             procName = $processName
