@@ -23,8 +23,9 @@ export default function UserWorkTimeDetailsMobile({
   onOpenMobileSidebar,
 }) {
   // КРИТИЧЕСКОЕ ЛОГИРОВАНИЕ В НАЧАЛЕ - сразу при получении props
-  console.log('🚨 [UserWorkTimeDetailsMobile] ====== НАЧАЛО КОМПОНЕНТА ======');
-  console.log('🚨 [UserWorkTimeDetailsMobile] Все props:', {
+  // ВЕРСИЯ 2.0 - ОБЯЗАТЕЛЬНО ДОЛЖНА ОТОБРАЗИТЬСЯ!
+  console.log('🚨🚨🚨 [UserWorkTimeDetailsMobile] ====== НАЧАЛО КОМПОНЕНТА V2.0 ======');
+  console.log('🚨🚨🚨 [UserWorkTimeDetailsMobile] Все props:', {
     open,
     username,
     urlsCount: urls?.length || 0,
@@ -34,8 +35,8 @@ export default function UserWorkTimeDetailsMobile({
     hasActivityStats: !!activityStats,
     logsCount: logs?.length || 0,
   });
-  console.log('🚨 [UserWorkTimeDetailsMobile] applications (полностью):', applications);
-  console.log('🚨 [UserWorkTimeDetailsMobile] ================================');
+  console.log('🚨🚨🚨 [UserWorkTimeDetailsMobile] applications (полностью):', applications);
+  console.log('🚨🚨🚨 [UserWorkTimeDetailsMobile] ================================');
 
   const touchStartX = useRef(null);
   const touchEndX = useRef(null);
