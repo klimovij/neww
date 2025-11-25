@@ -150,10 +150,22 @@ export default function UserWorkTimeDetailsMobile({
     console.log('🔄 [UserWorkTimeDetailsMobile] reloadActivityData вызывается с username:', apiUsername, 'realUsername:', realUsername);
     
     try {
+      // Учитываем часовой пояс: если выбрана одна дата, расширяем диапазон на 1 день назад
+      let apiStartDate = startDate;
+      let apiEndDate = endDate;
+      
+      if (startDate && endDate && startDate === endDate) {
+        const startDateObj = new Date(startDate + 'T00:00:00');
+        startDateObj.setDate(startDateObj.getDate() - 1);
+        const prevDate = startDateObj.toISOString().slice(0, 10);
+        apiStartDate = prevDate;
+        console.log('🌍 [UserWorkTimeDetailsMobile] Расширяем диапазон для учёта часового пояса:', prevDate, '-', endDate);
+      }
+      
       const params = new URLSearchParams({
         username: apiUsername, // Используем правильный username без split
-        start: startDate,
-        end: endDate,
+        start: apiStartDate,
+        end: apiEndDate,
       });
       const apiUrl = `/api/activity-details?${params.toString()}`;
       console.log('📡 [UserWorkTimeDetailsMobile] Запрос к API:', apiUrl);
