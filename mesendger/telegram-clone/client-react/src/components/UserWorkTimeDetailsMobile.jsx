@@ -239,11 +239,8 @@ export default function UserWorkTimeDetailsMobile({
     };
   }, [open, username, startDate, endDate, reloadActivityData]);
 
-  if (!open) {
-    return null;
-  }
-
   // Сортируем логи по времени (мемоизация для оптимизации)
+  // ВАЖНО: хуки должны вызываться ДО условного возврата
   const sortedLogs = useMemo(() => {
     if (!logs || logs.length === 0) return [];
     return [...logs].sort((a, b) => {
@@ -252,6 +249,10 @@ export default function UserWorkTimeDetailsMobile({
       return timeA - timeB;
     });
   }, [logs]);
+
+  if (!open) {
+    return null;
+  }
 
   return ReactDOM.createPortal(
     <div
