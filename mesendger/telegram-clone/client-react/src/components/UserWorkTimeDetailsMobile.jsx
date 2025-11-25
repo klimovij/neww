@@ -115,16 +115,22 @@ export default function UserWorkTimeDetailsMobile({
       applicationsCount: applications?.length || 0,
       applications: applications,
       screenshotsCount: screenshots?.length || 0,
-      hasActivityStats: !!activityStats
+      hasActivityStats: !!activityStats,
+      currentLocalApplicationsCount: localApplications?.length || 0
     });
     setLocalUrls(urls);
-    // ИСПРАВЛЕНИЕ: Если applications переданы в props, используем их, а НЕ topApps
-    if (applications && applications.length > 0) {
+    // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Всегда используем applications из props, если они переданы
+    // Если applications передан (даже пустой массив), значит данные были загружены - используем его
+    if (applications !== undefined && applications !== null) {
+      // applications явно передан в props (даже если пустой массив)
       console.log('✅ [UserWorkTimeDetailsMobile] Используем applications из props:', applications.length);
+      if (applications.length > 0) {
+        console.log('✅ [UserWorkTimeDetailsMobile] Первые 3 приложения:', applications.slice(0, 3).map(a => a.procName || a.name));
+      }
       setLocalApplications(applications);
     } else if (activityStats && activityStats.topApps && activityStats.topApps.length > 0) {
-      // Только если applications НЕ переданы, используем topApps для обратной совместимости
-      console.log('⚠️ [UserWorkTimeDetailsMobile] applications из props нет, используем topApps для обратной совместимости');
+      // Только если applications НЕ передан вообще (undefined), используем topApps для обратной совместимости
+      console.log('⚠️ [UserWorkTimeDetailsMobile] applications не передан в props, используем topApps для обратной совместимости:', activityStats.topApps.length);
       const apps = activityStats.topApps.map(app => ({
         procName: app.name,
         windowTitle: app.name,
@@ -133,7 +139,8 @@ export default function UserWorkTimeDetailsMobile({
       }));
       setLocalApplications(apps);
     } else {
-      setLocalApplications([]);
+      console.log('ℹ️ [UserWorkTimeDetailsMobile] Нет данных для applications, оставляем текущее состояние');
+      // НЕ перезаписываем, если данных нет
     }
     setLocalScreenshots(screenshots);
     setLocalActivityStats(activityStats);
