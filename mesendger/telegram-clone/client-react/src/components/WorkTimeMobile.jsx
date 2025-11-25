@@ -790,7 +790,11 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
                             console.log('📡 [WorkTimeMobile] Статус ответа:', detailsRes.status, detailsRes.statusText);
                             
                             const detailsData = await detailsRes.json();
-                            console.log('📡 [WorkTimeMobile] Ответ от сервера:', detailsData);
+                            console.log('📡 [WorkTimeMobile] ====== ОТВЕТ ОТ API ======');
+                            console.log('📡 [WorkTimeMobile] Полный ответ:', detailsData);
+                            console.log('📡 [WorkTimeMobile] applications в ответе:', detailsData.applications);
+                            console.log('📡 [WorkTimeMobile] applications count:', detailsData.applications?.length || 0);
+                            console.log('📡 [WorkTimeMobile] ===========================');
                             
                             if (detailsRes.ok && detailsData.success) {
                               urls = detailsData.urls || [];
@@ -799,11 +803,20 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
                               console.log('✅ [WorkTimeMobile] URLs, приложения и скриншоты загружены:', { 
                                 urlsCount: urls.length, 
                                 applicationsCount: applications.length,
+                                applications: applications,  // ПОЛНЫЙ МАССИВ
                                 screenshotsCount: screenshots.length,
                                 urls: urls.slice(0, 3),
-                                applications: applications.slice(0, 3),
+                                applicationsPreview: applications.slice(0, 3),
                                 screenshots: screenshots.slice(0, 3)
                               });
+                              
+                              // КРИТИЧЕСКАЯ ПРОВЕРКА
+                              if (applications.length === 0) {
+                                console.warn('⚠️ [WorkTimeMobile] ВНИМАНИЕ: applications пустой массив!');
+                                console.warn('⚠️ [WorkTimeMobile] Проверьте API ответ выше');
+                              } else {
+                                console.log('✅ [WorkTimeMobile] Applications загружены успешно:', applications.length, 'шт.');
+                              }
                             } else {
                               console.warn('⚠️ [WorkTimeMobile] Activity details не получены:', detailsData);
                               console.warn('⚠️ [WorkTimeMobile] Status:', detailsRes.status, 'Success:', detailsData.success);
