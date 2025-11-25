@@ -413,18 +413,31 @@ router.get('/activity-details', async (req, res) => {
       }))
       .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
     
-    // Получаем все приложения (программы) - все записи с proc_name, включая браузеры
+    // Получаем приложения (программы) - только НЕ-браузеры без browser_url
+    // Исключаем браузеры и записи с browser_url (они уже в разделе "Сайты")
+    const browserProcessNames = ['chrome', 'msedge', 'firefox', 'opera', 'brave', 'safari', 'yandex'];
     const applications = activityLogs
-      .filter(log => log.username === username && log.proc_name && log.proc_name.trim() !== '')
+      .filter(log => {
+        if (log.username !== username) return false;
+        if (!log.proc_name || log.proc_name.trim() === '') return false;
+        // Исключаем записи с browser_url (они в разделе "Сайты")
+        if (log.browser_url && log.browser_url.trim() !== '') return false;
+        // Исключаем браузеры даже без URL
+        const procNameLower = log.proc_name.toLowerCase();
+        if (browserProcessNames.some(browser => procNameLower.includes(browser))) return false;
+        return true;
+      })
       .map(log => ({
         procName: log.proc_name,
         windowTitle: log.window_title || '',
         timestamp: log.timestamp,
-        browserUrl: log.browser_url || '',
       }))
       .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
     
     console.log(`📊 [activity-details] Приложений для пользователя ${username}: ${applications.length}`);
+    if (applications.length > 0) {
+      console.log(`📊 [activity-details] Примеры приложений:`, applications.slice(0, 3).map(a => a.procName));
+    }
 
     // Получаем скриншоты
     const screenshots = await db.getActivityScreenshots({ username, start, end });
