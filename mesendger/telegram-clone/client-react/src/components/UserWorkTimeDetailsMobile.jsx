@@ -56,8 +56,7 @@ export default function UserWorkTimeDetailsMobile({
   const [localScreenshots, setLocalScreenshots] = useState(screenshots);
   const [localActivityStats, setLocalActivityStats] = useState(activityStats);
 
-  // Логирование для отладки - ВАЖНО: логируем сразу при рендере
-  // realUsername уже логируется выше
+  // УДАЛЕН ДУБЛИКАТ ЛОГИРОВАНИЯ V3.0 - используем только V4.0 выше
   
   useEffect(() => {
     console.log('🔍 [UserWorkTimeDetailsMobile] Props applications:', applications?.length || 0, applications);
