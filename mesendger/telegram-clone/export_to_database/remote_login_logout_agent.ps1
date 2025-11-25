@@ -1,5 +1,9 @@
-# Скрытый агент для отправки данных о входе/выходе
+﻿# Скрытый агент для отправки данных о входе/выходе
 # Запускается скрыто через Task Scheduler
+#
+# ⚠️ ВАЖНО: Укажите username сотрудника перед установкой (в редакторе):
+# Замените "USERNAME_HERE" на реальный username, например: "Ksendzik_Oleg"
+$script:USERNAME = "USERNAME_HERE"  # ⬅️ УКАЖИТЕ USERNAME ЗДЕСЬ (в редакторе)
 
 # Конфигурация
 $GOOGLE_SERVER_URL = "http://35.232.108.72"
@@ -22,7 +26,12 @@ function Send-LoginLogout {
     param([string]$EventType)
     
     try {
-        $username = $env:USERNAME
+        # Используем указанный username, если он задан (не USERNAME_HERE), иначе используем $env:USERNAME
+        if ($script:USERNAME -and $script:USERNAME -ne "USERNAME_HERE" -and -not [string]::IsNullOrWhiteSpace($script:USERNAME)) {
+            $username = $script:USERNAME
+        } else {
+            $username = $env:USERNAME
+        }
         $now = Get-Date
         $eventTime = $now.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss.fffZ")
         
