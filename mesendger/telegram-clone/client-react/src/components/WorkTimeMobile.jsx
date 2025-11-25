@@ -47,6 +47,7 @@ function formatWorkTime(mins) {
 
 export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
   // ВЕРСИЯ 5.0 - ДОБАВЛЕН realUsername, УЛУЧШЕНО ЛОГИРОВАНИЕ API
+  console.log('%c🚨🚨🚨 КОМПОНЕНТ WorkTimeMobile V5.0 - BUILD 2025-01-20 🚨🚨🚨', 'background: #ff0000; color: #ffffff; font-size: 18px; font-weight: bold; padding: 8px;');
   console.log('🚨🚨🚨 [WorkTimeMobile] ====== КОМПОНЕНТ V5.0 - BUILD 2025-01-20 ======');
   console.log('🚨🚨🚨 [WorkTimeMobile] ЕСЛИ ВЫ ВИДИТЕ ЭТОТ ЛОГ - НОВЫЙ КОД ЗАГРУЖЕН! 🚨🚨🚨');
   

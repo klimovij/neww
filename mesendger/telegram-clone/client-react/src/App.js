@@ -76,6 +76,13 @@ class ErrorBoundary extends React.Component {
 function AppContent() {
   const { state } = useApp();
 
+  // ВЕРСИЯ 5.0 - ЯВНЫЙ МАРКЕР В ЗАГОЛОВКЕ СТРАНИЦЫ
+  useEffect(() => {
+    document.title = 'Mesendger [V5.0 - 2025-01-20]';
+    console.log('%c🚨🚨🚨 ВЕРСИЯ ПРИЛОЖЕНИЯ V5.0 - BUILD 2025-01-20 🚨🚨🚨', 'background: #ff0000; color: #ffffff; font-size: 20px; font-weight: bold; padding: 10px;');
+    console.log('%cЕсли вы видите этот лог - новый код загружен!', 'background: #00ff00; color: #000000; font-size: 16px; padding: 5px;');
+  }, []);
+
   useEffect(() => {
     // Тестовый вызов звука при монтировании компонента
     playNotificationSound();
