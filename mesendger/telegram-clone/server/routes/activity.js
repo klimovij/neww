@@ -427,6 +427,36 @@ router.get('/activity-details', async (req, res) => {
     // Получаем приложения (программы) - только НЕ-браузеры без browser_url
     // Исключаем браузеры и записи с browser_url (они уже в разделе "Сайты")
     const browserProcessNames = ['chrome', 'msedge', 'firefox', 'opera', 'brave', 'safari', 'yandex'];
+    
+    // ДЕТАЛЬНАЯ ДИАГНОСТИКА: показываем, что фильтруется
+    const userLogsWithProcName = userLogs.filter(log => log.proc_name && log.proc_name.trim() !== '');
+    const logsWithBrowserUrl = userLogsWithProcName.filter(log => log.browser_url && log.browser_url.trim() !== '');
+    const logsWithoutBrowserUrl = userLogsWithProcName.filter(log => !log.browser_url || log.browser_url.trim() === '');
+    const logsIdentifiedAsBrowsers = logsWithoutBrowserUrl.filter(log => {
+      const procNameLower = log.proc_name.toLowerCase();
+      return browserProcessNames.some(browser => procNameLower.includes(browser));
+    });
+    
+    console.log(`🔍 [activity-details] ДИАГНОСТИКА ФИЛЬТРАЦИИ для ${username}:`);
+    console.log(`  - Всего логов: ${userLogs.length}`);
+    console.log(`  - Логов с proc_name: ${userLogsWithProcName.length}`);
+    console.log(`  - Логов с browser_url (пойдут в "Сайты"): ${logsWithBrowserUrl.length}`);
+    console.log(`  - Логов БЕЗ browser_url: ${logsWithoutBrowserUrl.length}`);
+    console.log(`  - Из них идентифицированы как браузеры: ${logsIdentifiedAsBrowsers.length}`);
+    
+    if (logsWithoutBrowserUrl.length > 0) {
+      const nonBrowserLogs = logsWithoutBrowserUrl.filter(log => {
+        const procNameLower = log.proc_name.toLowerCase();
+        return !browserProcessNames.some(browser => procNameLower.includes(browser));
+      });
+      console.log(`  - НЕ-браузеров (должны быть в "Приложения"): ${nonBrowserLogs.length}`);
+      if (nonBrowserLogs.length > 0) {
+        const uniqueNonBrowsers = [...new Set(nonBrowserLogs.map(l => l.proc_name))];
+        console.log(`  - Уникальных НЕ-браузеров: ${uniqueNonBrowsers.length}`);
+        console.log(`  - Примеры НЕ-браузеров (первые 20):`, uniqueNonBrowsers.slice(0, 20));
+      }
+    }
+    
     const allApplications = activityLogs
       .filter(log => {
         if (log.username !== username) return false;
