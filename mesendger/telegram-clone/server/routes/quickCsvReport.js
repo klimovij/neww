@@ -41,33 +41,10 @@ async function getDbShortReport({ start, end, username }) {
     userMap[log.username].push(log);
   }
   
-  // ДОБАВЛЯЕМ: Получаем уникальных пользователей из activity_logs, даже если у них нет логов входа/выхода
-  try {
-    const activityLogs = await db.getActivityLogsBetween({ start, end });
-    const activityUsers = new Set();
-    
-    for (const log of activityLogs) {
-      if (log.username && (!username || log.username === username)) {
-        activityUsers.add(log.username);
-        // Если пользователя еще нет в userMap, создаем для него пустой массив
-        if (!userMap[log.username]) {
-          userMap[log.username] = [];
-        }
-      }
-    }
-    
-    if (activityUsers.size > 0) {
-      console.log(`[quickCsvReport] Найдено ${activityUsers.size} пользователей с активностью:`, Array.from(activityUsers));
-    }
-  } catch (err) {
-    console.error('[quickCsvReport] Ошибка при получении данных активности:', err);
-  }
-  
   const report = [];
   
   for (const [user, sessions] of Object.entries(userMap)) {
-    if (!user) continue;
-    // Включаем пользователя в отчет, даже если у него нет логов входа/выхода, но есть активность
+    if (!user || !sessions.length) continue;
     
     // Пытаемся обогатить данные ФИО из таблицы users
     // Это позволяет исправить ситуации, когда в work_time_logs имя хранится битым (????),
@@ -107,14 +84,11 @@ async function getDbShortReport({ start, end, username }) {
       displayName = user;
     }
     
-    // Сортируем сессии только если они есть
-    if (sessions && sessions.length > 0) {
-      sessions.sort((a, b) => new Date(a.event_time) - new Date(b.event_time));
-    }
+    sessions.sort((a, b) => new Date(a.event_time) - new Date(b.event_time));
     
-    // Только события в пределах дня (если есть сессии)
-    const firstLogin = sessions && sessions.length > 0 ? sessions.find(e => e.event_type === 'login') : null;
-    const lastLogout = sessions && sessions.length > 0 ? [...sessions].reverse().find(e => e.event_type === 'logout') : null;
+    // Только события в пределах дня
+    const firstLogin = sessions.find(e => e.event_type === 'login');
+    const lastLogout = [...sessions].reverse().find(e => e.event_type === 'logout');
     
     let totalHours = 0;
     let totalMinutes = 0;
@@ -135,7 +109,7 @@ async function getDbShortReport({ start, end, username }) {
       lastLogout: lastLogout ? lastLogout.event_time : '',
       totalHours: firstLogin && lastLogout ? 
         Number(((new Date(lastLogout.event_time) - new Date(firstLogin.event_time)) / 3600000).toFixed(1)) : 0,
-      totalTimeStr: totalTimeStr || (sessions && sessions.length === 0 ? 'Активность без входа/выхода' : ''),
+      totalTimeStr,
       sessions: sessions || [] // Убеждаемся, что sessions всегда массив
     });
   }

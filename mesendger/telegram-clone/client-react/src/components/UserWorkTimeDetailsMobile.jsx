@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useMemo, useCallback } from 'react';
 import ReactDOM from 'react-dom';
 import io from 'socket.io-client';
 import { FaArrowLeft } from 'react-icons/fa';
@@ -26,6 +26,12 @@ export default function UserWorkTimeDetailsMobile({
   const touchEndX = useRef(null);
   const modalRef = useRef(null);
   const [activeTab, setActiveTab] = useState('events'); // 'events', 'urls', 'screenshots'
+  
+  // Оптимизированное переключение вкладок
+  const handleTabChange = useCallback((tab) => {
+    if (tab === activeTab) return;
+    setActiveTab(tab);
+  }, [activeTab]);
   const [localUrls, setLocalUrls] = useState(urls);
   const [localScreenshots, setLocalScreenshots] = useState(screenshots);
   const [localActivityStats, setLocalActivityStats] = useState(activityStats);
@@ -70,66 +76,82 @@ export default function UserWorkTimeDetailsMobile({
     setLocalActivityStats(activityStats);
   }, [urls, screenshots, activityStats]);
 
-  // WebSocket для обновления данных в реальном времени
+  // Функция для перезагрузки данных активности (мемоизация)
+  const reloadActivityData = useCallback(async () => {
+    if (!username || !startDate || !endDate) return;
+    
+    try {
+      const params = new URLSearchParams({
+        username: username.split(' ')[0] || username,
+        start: startDate,
+        end: endDate,
+      });
+      const res = await fetch(`/api/activity-details?${params.toString()}`);
+      const data = await res.json();
+      
+      if (res.ok && data.success) {
+        if (data.urls) setLocalUrls(data.urls);
+        if (data.screenshots) setLocalScreenshots(data.screenshots);
+        if (data.activityStats) setLocalActivityStats(data.activityStats);
+      }
+    } catch (err) {
+      console.error('❌ [UserWorkTimeDetailsMobile] Error reloading activity data:', err);
+    }
+  }, [username, startDate, endDate]);
+
+  // WebSocket для обновления данных в реальном времени (оптимизировано)
   useEffect(() => {
     if (!open || !username || !startDate || !endDate) return;
 
     const socketUrl = typeof window !== 'undefined' && window.location ? window.location.origin : '';
-    const socket = io(socketUrl);
+    const socket = io(socketUrl, {
+      transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionAttempts: 5,
+    });
+
+    let isConnected = false;
 
     socket.on('connect', () => {
-      console.log('📡 [UserWorkTimeDetailsMobile] WebSocket connected for real-time updates');
+      isConnected = true;
+    });
+
+    socket.on('disconnect', () => {
+      isConnected = false;
     });
 
     // Слушаем обновления данных активности
-    socket.on('activity_data_updated', async (updateData) => {
-      console.log('🔄 [UserWorkTimeDetailsMobile] Received activity update:', updateData);
+    const handleActivityUpdate = async (updateData) => {
+      if (!isConnected) return;
       
       // Проверяем, относится ли обновление к текущему пользователю и дате
-      const updateDate = updateData.date;
-      const matchesUser = updateData.username === username || updateData.username === username.split(' ')[0];
-      const matchesDate = updateDate >= startDate && updateDate <= endDate;
+      const updateDate = updateData.date || (updateData.timestamp ? new Date(updateData.timestamp).toISOString().split('T')[0] : null);
+      const usernameForMatch = username.split(' ')[0] || username;
+      const matchesUser = updateData.username === username || updateData.username === usernameForMatch;
+      const matchesDate = updateDate && updateDate >= startDate && updateDate <= endDate;
       
       if (matchesUser && matchesDate) {
-        console.log('✅ [UserWorkTimeDetailsMobile] Update matches, reloading data...');
-        
         // Перезагружаем данные активности
-        try {
-          const params = new URLSearchParams({
-            username: username.split(' ')[0] || username,
-            start: startDate,
-            end: endDate,
-          });
-          const res = await fetch(`/api/activity-details?${params.toString()}`);
-          const data = await res.json();
-          
-          if (res.ok && data.success) {
-            if (data.urls) setLocalUrls(data.urls);
-            if (data.screenshots) setLocalScreenshots(data.screenshots);
-            console.log('✅ [UserWorkTimeDetailsMobile] Activity data reloaded');
-          }
-        } catch (err) {
-          console.error('❌ [UserWorkTimeDetailsMobile] Error reloading activity data:', err);
-        }
+        reloadActivityData();
       }
-    });
+    };
 
     // Слушаем добавление новых скриншотов
-    socket.on('activity_screenshot_added', (screenshotData) => {
-      console.log('📸 [UserWorkTimeDetailsMobile] Received screenshot update:', screenshotData);
+    const handleScreenshotAdded = (screenshotData) => {
+      if (!isConnected) return;
       
       // Проверяем, относится ли скриншот к текущему пользователю и дате
-      const screenshotDate = screenshotData.date;
-      const matchesUser = screenshotData.username === username || screenshotData.username === username.split(' ')[0];
-      const matchesDate = screenshotDate >= startDate && screenshotDate <= endDate;
+      const screenshotDate = screenshotData.date || (screenshotData.timestamp ? new Date(screenshotData.timestamp).toISOString().split('T')[0] : null);
+      const usernameForMatch = username.split(' ')[0] || username;
+      const matchesUser = screenshotData.username === username || screenshotData.username === usernameForMatch;
+      const matchesDate = screenshotDate && screenshotDate >= startDate && screenshotDate <= endDate;
       
       if (matchesUser && matchesDate) {
-        console.log('✅ [UserWorkTimeDetailsMobile] Screenshot matches, adding to list...');
-        
         // Добавляем новый скриншот в список
         setLocalScreenshots(prev => {
           // Проверяем, нет ли уже такого скриншота
-          const exists = prev.some(s => s.fileName === screenshotData.fileName);
+          const exists = prev.some(s => s.fileName === screenshotData.fileName || s.url === screenshotData.url);
           if (exists) return prev;
           
           return [...prev, {
@@ -145,41 +167,31 @@ export default function UserWorkTimeDetailsMobile({
           });
         });
       }
-    });
+    };
+
+    socket.on('activity_data_updated', handleActivityUpdate);
+    socket.on('activity_screenshot_added', handleScreenshotAdded);
 
     return () => {
+      socket.off('activity_data_updated', handleActivityUpdate);
+      socket.off('activity_screenshot_added', handleScreenshotAdded);
       socket.disconnect();
     };
-  }, [open, username, startDate, endDate]);
-
-  console.log('[UserWorkTimeDetailsMobile] Компонент рендерится, open =', open, 'logs:', logs?.length || 0, 'username:', username);
-  console.log('[UserWorkTimeDetailsMobile] URLs:', localUrls?.length || 0, localUrls);
-  console.log('[UserWorkTimeDetailsMobile] Screenshots:', localScreenshots?.length || 0, localScreenshots);
-  console.log('[UserWorkTimeDetailsMobile] Полные props:', {
-    open,
-    logsCount: logs?.length || 0,
-    username,
-    urlsCount: localUrls?.length || 0,
-    screenshotsCount: localScreenshots?.length || 0,
-    startDate,
-    endDate,
-    hasActivityStats: !!activityStats
-  });
+  }, [open, username, startDate, endDate, reloadActivityData]);
 
   if (!open) {
-    console.log('[UserWorkTimeDetailsMobile] Модалка закрыта, возвращаем null');
     return null;
   }
 
-  console.log('[UserWorkTimeDetailsMobile] ✅ Модалка открывается! open =', open, 'logs:', logs?.length || 0, 'username:', username);
-  console.log('[UserWorkTimeDetailsMobile] ActivityStats:', activityStats);
-
-  // Сортируем логи по времени
-  const sortedLogs = [...(logs || [])].sort((a, b) => {
-    const timeA = new Date(a.event_time || 0);
-    const timeB = new Date(b.event_time || 0);
-    return timeA - timeB;
-  });
+  // Сортируем логи по времени (мемоизация для оптимизации)
+  const sortedLogs = useMemo(() => {
+    if (!logs || logs.length === 0) return [];
+    return [...logs].sort((a, b) => {
+      const timeA = new Date(a.event_time || 0).getTime();
+      const timeB = new Date(b.event_time || 0).getTime();
+      return timeA - timeB;
+    });
+  }, [logs]);
 
   return ReactDOM.createPortal(
     <div
@@ -307,7 +319,7 @@ export default function UserWorkTimeDetailsMobile({
         }}>
           <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
             <button
-              onClick={() => setActiveTab('events')}
+              onClick={() => handleTabChange('events')}
               style={{
                 flex: 1,
                 padding: '10px 16px',
@@ -326,7 +338,7 @@ export default function UserWorkTimeDetailsMobile({
               События
             </button>
             <button
-              onClick={() => setActiveTab('urls')}
+              onClick={() => handleTabChange('urls')}
               style={{
                 flex: 1,
                 padding: '10px 16px',
@@ -350,7 +362,7 @@ export default function UserWorkTimeDetailsMobile({
               Сайты ({localUrls?.length || 0})
             </button>
             <button
-              onClick={() => setActiveTab('screenshots')}
+              onClick={() => handleTabChange('screenshots')}
               style={{
                 flex: 1,
                 padding: '10px 16px',
@@ -512,9 +524,13 @@ export default function UserWorkTimeDetailsMobile({
 
           {/* Таб: Сайты */}
           {activeTab === 'urls' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ 
+              display: 'flex', 
+              flexDirection: 'column', 
+              gap: '12px',
+            }}>
               {/* Краткая статистика */}
-              {activityStats && (
+              {localActivityStats && (
                 <div style={{
                   padding: '16px',
                   borderRadius: '12px',
@@ -531,7 +547,7 @@ export default function UserWorkTimeDetailsMobile({
                     Активность за период
                   </div>
                   <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.7)' }}>
-                    {activityStats.totalActiveMinutes} мин активно / {activityStats.totalIdleMinutes} мин простоя
+                    {localActivityStats.totalActiveMinutes} мин активно / {localActivityStats.totalIdleMinutes} мин простоя
                   </div>
                 </div>
               )}
@@ -545,16 +561,22 @@ export default function UserWorkTimeDetailsMobile({
                   Нет данных об открытых сайтах
                 </div>
               ) : (
-                localUrls.map((item, idx) => (
-                  <div
-                    key={idx}
-                    style={{
-                      background: 'rgba(33, 147, 176, 0.1)',
-                      borderRadius: '12px',
-                      padding: '16px',
-                      border: '2px solid rgba(33, 147, 176, 0.3)',
-                    }}
-                  >
+                <div style={{ 
+                  maxHeight: 'calc(100vh - 300px)', 
+                  overflowY: 'auto',
+                  paddingRight: '4px',
+                }}>
+                  {localUrls.map((item, idx) => (
+                    <div
+                      key={`url-${item.timestamp || idx}-${item.url?.substring(0, 20) || idx}`}
+                      style={{
+                        background: 'rgba(33, 147, 176, 0.1)',
+                        borderRadius: '12px',
+                        padding: '16px',
+                        border: '2px solid rgba(33, 147, 176, 0.3)',
+                        marginBottom: idx < localUrls.length - 1 ? '12px' : 0,
+                      }}
+                    >
                     <div style={{
                       display: 'flex',
                       alignItems: 'center',
@@ -602,8 +624,9 @@ export default function UserWorkTimeDetailsMobile({
                       <FiClock size={12} />
                       {formatTime(item.timestamp)}
                     </div>
-                  </div>
-                ))
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
           )}
