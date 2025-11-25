@@ -903,10 +903,6 @@ export default function UserWorkTimeDetailsMobile({
                           // Открываем скриншот в новой вкладке в полном размере
                           window.open(shot.url, '_blank');
                         }}
-                        onError={(e) => {
-                          e.target.style.display = 'none';
-                          e.target.parentElement.innerHTML = '<div style="padding: 40px; text-align: center; color: rgba(255,255,255,0.5);">Не удалось загрузить скриншот</div>';
-                        }}
                       />
                     </div>
                   </div>
