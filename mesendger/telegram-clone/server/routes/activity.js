@@ -391,9 +391,20 @@ router.get('/activity-details', async (req, res) => {
     const activityLogs = await db.getActivityLogsBetween({ start, end });
     console.log(`📊 [activity-details] Получено ${activityLogs.length} логов из базы`);
     
-    // Логируем первые несколько логов для отладки
+    // ДЕТАЛЬНОЕ ЛОГИРОВАНИЕ ДЛЯ ОТЛАДКИ
     const userLogs = activityLogs.filter(log => log.username === username);
-    console.log(`📊 [activity-details] Логов для пользователя ${username}: ${userLogs.length}`);
+    console.log(`🔍 [activity-details] Всего логов для ${username}: ${userLogs.length}`);
+    console.log(`🔍 [activity-details] Логов с proc_name: ${userLogs.filter(l => l.proc_name && l.proc_name.trim() !== '').length}`);
+    console.log(`🔍 [activity-details] Логов с browser_url: ${userLogs.filter(l => l.browser_url && l.browser_url.trim() !== '').length}`);
+    console.log(`🔍 [activity-details] Логов без browser_url: ${userLogs.filter(l => !l.browser_url || l.browser_url.trim() === '').length}`);
+    
+    // Показываем примеры proc_name
+    const uniqueProcNames = [...new Set(userLogs.map(l => l.proc_name).filter(p => p && p.trim() !== ''))];
+    console.log(`🔍 [activity-details] Уникальных proc_name: ${uniqueProcNames.length}`);
+    if (uniqueProcNames.length > 0) {
+      console.log(`🔍 [activity-details] Примеры proc_name (первые 10):`, uniqueProcNames.slice(0, 10));
+    }
+    
     if (userLogs.length > 0) {
       const withUrls = userLogs.filter(log => log.browser_url && log.browser_url.trim() !== '');
       console.log(`📊 [activity-details] Логов с URL: ${withUrls.length}`);
@@ -416,21 +427,6 @@ router.get('/activity-details', async (req, res) => {
     // Получаем приложения (программы) - только НЕ-браузеры без browser_url
     // Исключаем браузеры и записи с browser_url (они уже в разделе "Сайты")
     const browserProcessNames = ['chrome', 'msedge', 'firefox', 'opera', 'brave', 'safari', 'yandex'];
-    
-    // ДЕТАЛЬНОЕ ЛОГИРОВАНИЕ ДЛЯ ОТЛАДКИ
-    const userLogs = activityLogs.filter(log => log.username === username);
-    console.log(`🔍 [activity-details] Всего логов для ${username}: ${userLogs.length}`);
-    console.log(`🔍 [activity-details] Логов с proc_name: ${userLogs.filter(l => l.proc_name && l.proc_name.trim() !== '').length}`);
-    console.log(`🔍 [activity-details] Логов с browser_url: ${userLogs.filter(l => l.browser_url && l.browser_url.trim() !== '').length}`);
-    console.log(`🔍 [activity-details] Логов без browser_url: ${userLogs.filter(l => !l.browser_url || l.browser_url.trim() === '').length}`);
-    
-    // Показываем примеры proc_name
-    const uniqueProcNames = [...new Set(userLogs.map(l => l.proc_name).filter(p => p && p.trim() !== ''))];
-    console.log(`🔍 [activity-details] Уникальных proc_name: ${uniqueProcNames.length}`);
-    if (uniqueProcNames.length > 0) {
-      console.log(`🔍 [activity-details] Примеры proc_name (первые 10):`, uniqueProcNames.slice(0, 10));
-    }
-    
     const applications = activityLogs
       .filter(log => {
         if (log.username !== username) return false;
