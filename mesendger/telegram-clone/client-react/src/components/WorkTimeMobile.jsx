@@ -834,12 +834,16 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
                             username: displayName,
                             activityStats: userActivityStats ? 'present' : 'null',
                             urlsCount: urls?.length || 0,
+                            applicationsCount: applications?.length || 0,
+                            applications: applications,
                             screenshotsCount: screenshots?.length || 0,
                             startDate,
                             endDate,
                             urlsPreview: urls?.slice(0, 2),
+                            applicationsPreview: applications?.slice(0, 3),
                             screenshotsPreview: screenshots?.slice(0, 2),
                             fullUrls: urls,
+                            fullApplications: applications,
                             fullScreenshots: screenshots
                           });
                           setDetailsModal(newModalState);

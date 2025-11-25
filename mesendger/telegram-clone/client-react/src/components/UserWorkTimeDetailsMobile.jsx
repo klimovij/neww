@@ -37,6 +37,14 @@ export default function UserWorkTimeDetailsMobile({
   const [localScreenshots, setLocalScreenshots] = useState(screenshots);
   const [localActivityStats, setLocalActivityStats] = useState(activityStats);
 
+  // Логирование для отладки
+  useEffect(() => {
+    console.log('🔍 [UserWorkTimeDetailsMobile] Props applications:', applications?.length || 0, applications);
+    console.log('🔍 [UserWorkTimeDetailsMobile] localApplications:', localApplications?.length || 0, localApplications);
+    console.log('🔍 [UserWorkTimeDetailsMobile] localUrls:', localUrls?.length || 0);
+    console.log('🔍 [UserWorkTimeDetailsMobile] localScreenshots:', localScreenshots?.length || 0);
+  }, [applications, localApplications, localUrls, localScreenshots]);
+
   // Обработчики свайпа
   const handleTouchStart = (e) => {
     touchStartX.current = e.touches[0].clientX;
@@ -72,8 +80,15 @@ export default function UserWorkTimeDetailsMobile({
 
   // Обновляем локальное состояние при изменении props
   useEffect(() => {
+    console.log('🔄 [UserWorkTimeDetailsMobile] Обновление локального состояния:', {
+      urlsCount: urls?.length || 0,
+      applicationsCount: applications?.length || 0,
+      applications: applications,
+      screenshotsCount: screenshots?.length || 0,
+      hasActivityStats: !!activityStats
+    });
     setLocalUrls(urls);
-    setLocalApplications(applications);
+    setLocalApplications(applications || []);
     setLocalScreenshots(screenshots);
     setLocalActivityStats(activityStats);
   }, [urls, applications, screenshots, activityStats]);
@@ -106,10 +121,23 @@ export default function UserWorkTimeDetailsMobile({
       const data = await res.json();
       
       if (res.ok && data.success) {
+        console.log('✅ [UserWorkTimeDetailsMobile] Данные получены от API:', {
+          urlsCount: data.urls?.length || 0,
+          applicationsCount: data.applications?.length || 0,
+          applications: data.applications,
+          screenshotsCount: data.screenshots?.length || 0
+        });
         if (data.urls) setLocalUrls(data.urls);
-        if (data.applications) setLocalApplications(data.applications);
+        if (data.applications) {
+          console.log('✅ [UserWorkTimeDetailsMobile] Устанавливаем applications:', data.applications.length, data.applications.slice(0, 3));
+          setLocalApplications(data.applications);
+        } else {
+          console.warn('⚠️ [UserWorkTimeDetailsMobile] applications отсутствуют в ответе API');
+        }
         if (data.screenshots) setLocalScreenshots(data.screenshots);
         if (data.activityStats) setLocalActivityStats(data.activityStats);
+      } else {
+        console.error('❌ [UserWorkTimeDetailsMobile] Ошибка ответа API:', data);
       }
     } catch (err) {
       console.error('❌ [UserWorkTimeDetailsMobile] Error reloading activity data:', err);
@@ -309,6 +337,9 @@ export default function UserWorkTimeDetailsMobile({
         </div>
 
         {/* Табы */}
+        {(() => {
+          console.log('📑 [UserWorkTimeDetailsMobile] Рендер секции табов, activeTab:', activeTab, 'localApplications count:', localApplications?.length || 0, 'localApplications:', localApplications);
+          return (
         <div style={{
           position: 'sticky',
           top: '56px',
@@ -362,7 +393,10 @@ export default function UserWorkTimeDetailsMobile({
               Сайты ({localUrls?.length || 0})
             </button>
             <button
-              onClick={() => handleTabChange('applications')}
+              onClick={() => {
+                console.log('🖱️ [UserWorkTimeDetailsMobile] Клик по вкладке Приложения, localApplications:', localApplications?.length || 0, localApplications);
+                handleTabChange('applications');
+              }}
               style={{
                 flex: 1,
                 padding: '10px 16px',
@@ -380,6 +414,8 @@ export default function UserWorkTimeDetailsMobile({
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '6px',
+                zIndex: 10,
+                position: 'relative',
               }}
             >
               <FiMonitor size={14} />
@@ -411,6 +447,8 @@ export default function UserWorkTimeDetailsMobile({
             </button>
           </div>
         </div>
+          );
+        })()}
 
         {/* Контент */}
         <div style={{ flex: 1, padding: '24px 16px', maxWidth: '600px', margin: '0 auto', width: '100%' }}>
@@ -656,11 +694,15 @@ export default function UserWorkTimeDetailsMobile({
           )}
 
           {/* Таб: Приложения */}
-          {activeTab === 'applications' && (
+          {activeTab === 'applications' && (() => {
+            console.log('📱 [UserWorkTimeDetailsMobile] Рендер вкладки Приложения, activeTab:', activeTab, 'localApplications:', localApplications?.length || 0);
+            return (
             <div style={{ 
               display: 'flex', 
               flexDirection: 'column', 
               gap: '12px',
+              position: 'relative',
+              zIndex: 5,
             }}>
               {!localApplications || localApplications.length === 0 ? (
                 <div style={{
@@ -726,7 +768,8 @@ export default function UserWorkTimeDetailsMobile({
                 </div>
               )}
             </div>
-          )}
+            );
+          })()}
 
           {/* Таб: Скриншоты */}
           {activeTab === 'screenshots' && (
