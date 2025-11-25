@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import Modal from 'react-modal';
-import io from 'socket.io-client';
 import '../../styles/WorkTimeReportModal.css';
 import UserWorkTimeDetailsModal from './UserWorkTimeDetailsModal';
 import AppUsageModal from './AppUsageModal';
@@ -127,25 +126,19 @@ function WorkTimeReportModal({ isOpen, onRequestClose }) {
     }
   }, [isOpen]);
 
-  // WebSocket для обновления данных в реальном времени
+  // WebSocket для обновления данных в реальном времени (используем общий socket)
   useEffect(() => {
     if (!isOpen) return;
 
-    const socketUrl = typeof window !== 'undefined' && window.location ? window.location.origin : '';
-    const socket = io(socketUrl);
-
-    socket.on('connect', () => {
-      console.log('📡 [WorkTimeReportModal] WebSocket connected for real-time updates');
-    });
+    // Используем общий socket из SocketProvider вместо создания нового
+    const socket = window.socket;
+    if (!socket || !socket.connected) return;
 
     // Слушаем обновления данных активности
     const handleActivityUpdate = (updateData) => {
-      console.log('🔄 [WorkTimeReportModal] Received activity update:', updateData);
-      
       // Проверяем, попадает ли дата обновления в выбранный диапазон
       const updateDate = updateData.date;
       if (updateDate >= startDate && updateDate <= endDate) {
-        console.log('✅ [WorkTimeReportModal] Date matches, refreshing report...');
         // Обновляем данные, если они попадают в выбранный диапазон дат
         fetchReport();
       }
@@ -154,10 +147,11 @@ function WorkTimeReportModal({ isOpen, onRequestClose }) {
     socket.on('activity_data_updated', handleActivityUpdate);
 
     return () => {
-      socket.off('activity_data_updated', handleActivityUpdate);
-      socket.disconnect();
+      if (socket) {
+        socket.off('activity_data_updated', handleActivityUpdate);
+      }
     };
-  }, [isOpen, startDate, endDate]); // fetchReport не включаем в зависимости, чтобы избежать лишних переподключений
+  }, [isOpen, startDate, endDate, fetchReport]);
 
   const handleSearchChange = (e) => {
     const value = e.target.value;

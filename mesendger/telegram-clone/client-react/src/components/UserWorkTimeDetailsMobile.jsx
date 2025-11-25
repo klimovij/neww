@@ -1,6 +1,5 @@
 import React, { useRef, useState, useEffect, useMemo, useCallback } from 'react';
 import ReactDOM from 'react-dom';
-import io from 'socket.io-client';
 import { FaArrowLeft } from 'react-icons/fa';
 import { FiX, FiLogIn, FiLogOut, FiClock, FiGlobe, FiCamera, FiExternalLink } from 'react-icons/fi';
 
@@ -99,32 +98,16 @@ export default function UserWorkTimeDetailsMobile({
     }
   }, [username, startDate, endDate]);
 
-  // WebSocket для обновления данных в реальном времени (оптимизировано)
+  // WebSocket для обновления данных в реальном времени (используем общий socket)
   useEffect(() => {
     if (!open || !username || !startDate || !endDate) return;
 
-    const socketUrl = typeof window !== 'undefined' && window.location ? window.location.origin : '';
-    const socket = io(socketUrl, {
-      transports: ['websocket', 'polling'],
-      reconnection: true,
-      reconnectionDelay: 1000,
-      reconnectionAttempts: 5,
-    });
-
-    let isConnected = false;
-
-    socket.on('connect', () => {
-      isConnected = true;
-    });
-
-    socket.on('disconnect', () => {
-      isConnected = false;
-    });
+    // Используем общий socket из SocketProvider вместо создания нового
+    const socket = window.socket;
+    if (!socket || !socket.connected) return;
 
     // Слушаем обновления данных активности
     const handleActivityUpdate = async (updateData) => {
-      if (!isConnected) return;
-      
       // Проверяем, относится ли обновление к текущему пользователю и дате
       const updateDate = updateData.date || (updateData.timestamp ? new Date(updateData.timestamp).toISOString().split('T')[0] : null);
       const usernameForMatch = username.split(' ')[0] || username;
@@ -139,8 +122,6 @@ export default function UserWorkTimeDetailsMobile({
 
     // Слушаем добавление новых скриншотов
     const handleScreenshotAdded = (screenshotData) => {
-      if (!isConnected) return;
-      
       // Проверяем, относится ли скриншот к текущему пользователю и дате
       const screenshotDate = screenshotData.date || (screenshotData.timestamp ? new Date(screenshotData.timestamp).toISOString().split('T')[0] : null);
       const usernameForMatch = username.split(' ')[0] || username;
@@ -173,9 +154,10 @@ export default function UserWorkTimeDetailsMobile({
     socket.on('activity_screenshot_added', handleScreenshotAdded);
 
     return () => {
-      socket.off('activity_data_updated', handleActivityUpdate);
-      socket.off('activity_screenshot_added', handleScreenshotAdded);
-      socket.disconnect();
+      if (socket) {
+        socket.off('activity_data_updated', handleActivityUpdate);
+        socket.off('activity_screenshot_added', handleScreenshotAdded);
+      }
     };
   }, [open, username, startDate, endDate, reloadActivityData]);
 

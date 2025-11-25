@@ -172,21 +172,13 @@ export default function SocketProvider({ children }) {
 
     const socket = socketRef.current;
 
-    // Глобальный обработчик всех событий сокета для отладки
-    if (socket && typeof socket.onAny === 'function') {
-      socket.onAny((event, ...args) => {
-        console.log('[SOCKET][onAny] event:', event, args);
-        fetch('/api/client-log', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            tag: 'SOCKET_onAny',
-            event,
-            args
-          })
-        });
-      });
-    }
+    // Глобальный обработчик всех событий сокета для отладки (отключено для производительности)
+    // Раскомментируйте только для отладки, так как это замедляет приложение
+    // if (socket && typeof socket.onAny === 'function') {
+    //   socket.onAny((event, ...args) => {
+    //     console.log('[SOCKET][onAny] event:', event, args);
+    //   });
+    // }
 
     // === ОБРАБОТЧИКИ ПОДКЛЮЧЕНИЯ ===
     socket.on('connect', () => {

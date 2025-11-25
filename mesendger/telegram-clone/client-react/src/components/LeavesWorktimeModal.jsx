@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Modal from 'react-modal';
-import io from 'socket.io-client';
 
 // Стили для уведомления (анимация)
 const notificationStyles = `
@@ -1582,14 +1581,12 @@ const resetWorktime = async () => {
   useEffect(() => {
     if (!isOpen) return;
 
-    // Инициализируем WebSocket соединение
-    const socketUrl = typeof window !== 'undefined' && window.location ? window.location.origin : '';
-    const socketConnection = io(socketUrl);
-    
-    socketConnection.on('connect', () => {
-      console.log('📡 WebSocket connected for worktime updates');
-      socketConnection.emit('authenticate', getToken());
-    });
+    // Используем общий socket из SocketProvider вместо создания нового
+    const socketConnection = window.socket;
+    if (!socketConnection || !socketConnection.connected) {
+      console.warn('⚠️ Socket not available or not connected');
+      return;
+    }
 
     // Обработчики WebSocket событий для всех ролей
     // Обновление данных отработки в реальном времени
@@ -1787,8 +1784,15 @@ const resetWorktime = async () => {
     setSocket(socketConnection);
 
     return () => {
+      // Не отключаем общий socket, только снимаем обработчики
       if (socketConnection) {
-        socketConnection.disconnect();
+        socketConnection.off('worktime_data_updated');
+        socketConnection.off('worktime_timer_updated');
+        socketConnection.off('worktime_completion_notification');
+        socketConnection.off('worktime_verified');
+        socketConnection.off('new_timer_started');
+        socketConnection.off('new_timer_stopped');
+        socketConnection.off('new_timer_progress');
       }
     };
   }, [isOpen, userRole, selectedDate]);

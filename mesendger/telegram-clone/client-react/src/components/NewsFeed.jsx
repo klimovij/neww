@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import styled from 'styled-components';
 import CustomEmojiPicker from './Common/EmojiPicker';
-import { io } from 'socket.io-client';
 import { FaUserCircle, FaSort } from 'react-icons/fa';
 import DOMPurify from 'dompurify';
 import { getCustomEmojiSizeForArea, subscribeEmojiSettings } from '../utils/emojiSettings';
@@ -500,23 +499,34 @@ export default function NewsFeed({ token, modal = false }) {
     });
   };
 
-  // Effect: Setup socket listener (only once)
+  // Effect: Setup socket listener (используем общий socket)
   useEffect(() => {
-    const socket = io(typeof window !== 'undefined' && window.location ? window.location.origin : '');
-    socket.on('new_congratulation', (congrat) => {
+    // Используем общий socket из SocketProvider вместо создания нового
+    const socket = window.socket;
+    if (!socket || !socket.connected) return;
+
+    const handleNewCongratulation = (congrat) => {
       setCongratulations(prev => [congrat, ...prev]);
-    });
-    socket.on('congratulation-deleted', ({ id }) => {
+    };
+    
+    const handleCongratulationDeleted = ({ id }) => {
       setCongratulations(prev => prev.filter(c => c.id !== id));
-    });
-    // --- Новое: слушаем удаление новости ---
-    socket.on('news-deleted', ({ id }) => {
+    };
+    
+    const handleNewsDeleted = ({ id }) => {
       setNews(prev => prev.filter(n => n.id !== id));
-    });
+    };
+
+    socket.on('new_congratulation', handleNewCongratulation);
+    socket.on('congratulation-deleted', handleCongratulationDeleted);
+    socket.on('news-deleted', handleNewsDeleted);
+
     return () => {
-      socket.off('new_congratulation');
-      socket.off('congratulation-deleted');
-      socket.off('news-deleted');
+      if (socket) {
+        socket.off('new_congratulation', handleNewCongratulation);
+        socket.off('congratulation-deleted', handleCongratulationDeleted);
+        socket.off('news-deleted', handleNewsDeleted);
+      }
     };
   }, []);
 
