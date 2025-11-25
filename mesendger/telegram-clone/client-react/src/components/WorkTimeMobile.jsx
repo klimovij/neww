@@ -829,10 +829,20 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
                           const logsToShow = Array.isArray(row.sessions) ? row.sessions : (Array.isArray(row.logs) ? row.logs : []);
                           console.log('📋 [WorkTimeMobile] Логи для модалки:', logsToShow.length, 'items');
                           
+                          // КРИТИЧЕСКОЕ ЛОГИРОВАНИЕ ПЕРЕД ПЕРЕДАЧЕЙ В МОДАЛКУ
+                          console.log('🚨 [WorkTimeMobile] ====== ПЕРЕДАЧА В МОДАЛКУ ======');
+                          console.log('🚨 [WorkTimeMobile] applications ДО передачи:', applications);
+                          console.log('🚨 [WorkTimeMobile] applications.length:', applications?.length || 0);
+                          console.log('🚨 [WorkTimeMobile] applications является массивом:', Array.isArray(applications));
+                          console.log('🚨 [WorkTimeMobile] row.username:', row.username);
+                          console.log('🚨 [WorkTimeMobile] displayName:', displayName);
+                          console.log('🚨 [WorkTimeMobile] ===============================');
+                          
                           const newModalState = {
                             open: true,
                             logs: logsToShow,
-                            username: displayName,
+                            username: displayName, // Для отображения
+                            realUsername: row.username, // Для API запросов
                             activityStats: userActivityStats,
                             urls: urls,
                             applications: applications,
@@ -845,6 +855,7 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
                             open: true,
                             logsCount: logsToShow.length,
                             username: displayName,
+                            realUsername: row.username,
                             activityStats: userActivityStats ? 'present' : 'null',
                             urlsCount: urls?.length || 0,
                             applicationsCount: applications?.length || 0,

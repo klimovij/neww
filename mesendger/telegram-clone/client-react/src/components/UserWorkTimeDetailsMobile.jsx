@@ -14,6 +14,7 @@ export default function UserWorkTimeDetailsMobile({
   onClose,
   logs,
   username,
+  realUsername, // Правильный username для API запросов (например, "Ksendzik_Oleg")
   activityStats,
   urls = [],
   applications = [],
@@ -23,11 +24,12 @@ export default function UserWorkTimeDetailsMobile({
   onOpenMobileSidebar,
 }) {
   // КРИТИЧЕСКОЕ ЛОГИРОВАНИЕ В НАЧАЛЕ - сразу при получении props
-  // ВЕРСИЯ 2.0 - ОБЯЗАТЕЛЬНО ДОЛЖНА ОТОБРАЗИТЬСЯ!
-  console.log('🚨🚨🚨 [UserWorkTimeDetailsMobile] ====== НАЧАЛО КОМПОНЕНТА V2.0 ======');
-  console.log('🚨🚨🚨 [UserWorkTimeDetailsMobile] Все props:', {
+  // ВЕРСИЯ 4.0 - ДОБАВЛЕН realUsername
+  console.log('🚨 [UserWorkTimeDetailsMobile] ====== НАЧАЛО КОМПОНЕНТА V4.0 ======');
+  console.log('🚨 [UserWorkTimeDetailsMobile] Все props:', {
     open,
-    username,
+    username, // displayName для отображения
+    realUsername, // правильный username для API (например, "Ksendzik_Oleg")
     urlsCount: urls?.length || 0,
     applicationsCount: applications?.length || 0,
     applications: applications,
@@ -35,8 +37,9 @@ export default function UserWorkTimeDetailsMobile({
     hasActivityStats: !!activityStats,
     logsCount: logs?.length || 0,
   });
-  console.log('🚨🚨🚨 [UserWorkTimeDetailsMobile] applications (полностью):', applications);
-  console.log('🚨🚨🚨 [UserWorkTimeDetailsMobile] ================================');
+  console.log('🚨 [UserWorkTimeDetailsMobile] applications (полностью):', applications);
+  console.log('🚨 [UserWorkTimeDetailsMobile] realUsername для API:', realUsername);
+  console.log('🚨 [UserWorkTimeDetailsMobile] ====================================');
 
   const touchStartX = useRef(null);
   const touchEndX = useRef(null);
@@ -54,19 +57,7 @@ export default function UserWorkTimeDetailsMobile({
   const [localActivityStats, setLocalActivityStats] = useState(activityStats);
 
   // Логирование для отладки - ВАЖНО: логируем сразу при рендере
-  console.log('🚨 [UserWorkTimeDetailsMobile] ====== НАЧАЛО КОМПОНЕНТА V3.0 ======');
-  console.log('🚨 [UserWorkTimeDetailsMobile] Все props:', {
-    open,
-    logsCount: logs?.length || 0,
-    username,
-    urlsCount: urls?.length || 0,
-    applicationsCount: applications?.length || 0,
-    applications: applications,
-    screenshotsCount: screenshots?.length || 0,
-    hasActivityStats: !!activityStats
-  });
-  console.log('🚨 [UserWorkTimeDetailsMobile] applications (полностью):', applications);
-  console.log('🚨 [UserWorkTimeDetailsMobile] ====================================');
+  // realUsername уже логируется выше
   
   useEffect(() => {
     console.log('🔍 [UserWorkTimeDetailsMobile] Props applications:', applications?.length || 0, applications);
@@ -148,11 +139,15 @@ export default function UserWorkTimeDetailsMobile({
 
   // Функция для перезагрузки данных активности (мемоизация)
   const reloadActivityData = useCallback(async () => {
-    if (!username || !startDate || !endDate) return;
+    // Используем realUsername для API запросов, если доступен, иначе username
+    const apiUsername = realUsername || username;
+    if (!apiUsername || !startDate || !endDate) return;
+    
+    console.log('🔄 [UserWorkTimeDetailsMobile] reloadActivityData вызывается с username:', apiUsername);
     
     try {
       const params = new URLSearchParams({
-        username: username.split(' ')[0] || username,
+        username: apiUsername, // Используем правильный username без split
         start: startDate,
         end: endDate,
       });
