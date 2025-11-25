@@ -26,18 +26,26 @@ router.post('/import-worktime-json', async (req, res) => {
 
 // Генерация отчёта по базе: первый вход (login), последний выход (logout) за период
 async function getDbShortReport({ start, end, username }) {
+  console.log(`📊 [getDbShortReport] Запрос данных: start=${start}, end=${end}, username=${username || 'all'}`);
+  
   // Получаем логи из обеих таблиц: work_time_logs (старые данные) и remote_work_time_logs (новые данные от агентов)
   const periodLogs = await db.getWorkTimeLogs({ start, end, username });
+  console.log(`📊 [getDbShortReport] work_time_logs: ${periodLogs?.length || 0} записей`);
+  
   const remoteLogs = await db.getRemoteWorkTimeLogs({ start, end, username });
+  console.log(`📊 [getDbShortReport] remote_work_time_logs: ${remoteLogs?.length || 0} записей`);
   
   // Также получаем пользователей из activity_logs, у которых есть активность, даже если нет login/logout
   const activityLogs = await db.getActivityLogsBetween({ start, end });
+  console.log(`📊 [getDbShortReport] activity_logs: ${activityLogs?.length || 0} записей`);
+  
   const activityUsers = {};
   for (const log of activityLogs) {
     if (!log.username) continue;
     if (username && log.username !== username) continue;
     activityUsers[log.username] = true;
   }
+  console.log(`📊 [getDbShortReport] Уникальных пользователей в activity_logs: ${Object.keys(activityUsers).length}`);
   
   // Объединяем логи из обеих таблиц
   const allLogs = [...periodLogs, ...remoteLogs];
