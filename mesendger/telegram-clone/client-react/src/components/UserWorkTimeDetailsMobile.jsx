@@ -142,9 +142,12 @@ export default function UserWorkTimeDetailsMobile({
   const reloadActivityData = useCallback(async () => {
     // Используем realUsername для API запросов, если доступен, иначе username
     const apiUsername = realUsername || username;
-    if (!apiUsername || !startDate || !endDate) return;
+    if (!apiUsername || !startDate || !endDate) {
+      console.warn('⚠️ [UserWorkTimeDetailsMobile] reloadActivityData: недостаточно параметров', { apiUsername, startDate, endDate, realUsername, username });
+      return;
+    }
     
-    console.log('🔄 [UserWorkTimeDetailsMobile] reloadActivityData вызывается с username:', apiUsername);
+    console.log('🔄 [UserWorkTimeDetailsMobile] reloadActivityData вызывается с username:', apiUsername, 'realUsername:', realUsername);
     
     try {
       const params = new URLSearchParams({
@@ -152,8 +155,19 @@ export default function UserWorkTimeDetailsMobile({
         start: startDate,
         end: endDate,
       });
-      const res = await fetch(`/api/activity-details?${params.toString()}`);
+      const apiUrl = `/api/activity-details?${params.toString()}`;
+      console.log('📡 [UserWorkTimeDetailsMobile] Запрос к API:', apiUrl);
+      const res = await fetch(apiUrl);
       const data = await res.json();
+      
+      console.log('📡 [UserWorkTimeDetailsMobile] Ответ от API:', {
+        status: res.status,
+        success: data.success,
+        urlsCount: data.urls?.length || 0,
+        applicationsCount: data.applications?.length || 0,
+        screenshotsCount: data.screenshots?.length || 0,
+        applications: data.applications?.slice(0, 5)
+      });
       
       if (res.ok && data.success) {
         console.log('✅ [UserWorkTimeDetailsMobile] Данные получены от API:', {
@@ -168,6 +182,7 @@ export default function UserWorkTimeDetailsMobile({
           setLocalApplications(data.applications);
         } else {
           console.warn('⚠️ [UserWorkTimeDetailsMobile] applications отсутствуют в ответе API');
+          setLocalApplications([]);
         }
         if (data.screenshots) setLocalScreenshots(data.screenshots);
         if (data.activityStats) setLocalActivityStats(data.activityStats);
@@ -177,7 +192,7 @@ export default function UserWorkTimeDetailsMobile({
     } catch (err) {
       console.error('❌ [UserWorkTimeDetailsMobile] Error reloading activity data:', err);
     }
-  }, [username, startDate, endDate]);
+  }, [realUsername, username, startDate, endDate]);
 
   // WebSocket для обновления данных в реальном времени (используем общий socket)
   useEffect(() => {
