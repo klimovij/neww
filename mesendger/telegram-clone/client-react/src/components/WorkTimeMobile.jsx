@@ -783,10 +783,25 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
                               console.error('❌ [WorkTimeMobile] НЕТ дат!', { startDate, endDate });
                             }
                             
+                            // Учитываем часовой пояс: если пользователь выбирает дату в своём часовом поясе,
+                            // данные могут быть сохранены под предыдущей датой в UTC.
+                            // Расширяем диапазон на 1 день назад для безопасности
+                            let apiStartDate = startDate || '';
+                            let apiEndDate = endDate || '';
+                            
+                            // Если выбрана одна дата (start === end), расширяем диапазон на 1 день назад
+                            if (startDate && endDate && startDate === endDate) {
+                              const startDateObj = new Date(startDate + 'T00:00:00');
+                              startDateObj.setDate(startDateObj.getDate() - 1);
+                              const prevDate = startDateObj.toISOString().slice(0, 10);
+                              apiStartDate = prevDate;
+                              console.log('🌍 [WorkTimeMobile] Расширяем диапазон для учёта часового пояса:', prevDate, '-', endDate);
+                            }
+                            
                             const detailsParams = new URLSearchParams({
                               username: row.username || '',
-                              start: startDate || '',
-                              end: endDate || '',
+                              start: apiStartDate,
+                              end: apiEndDate,
                             });
                             const apiUrl = `/api/activity-details?${detailsParams.toString()}`;
                             console.log('📡 [WorkTimeMobile] ====== НАЧАЛО ЗАПРОСА К API ======');
