@@ -427,7 +427,7 @@ router.get('/activity-details', async (req, res) => {
     // Получаем приложения (программы) - только НЕ-браузеры без browser_url
     // Исключаем браузеры и записи с browser_url (они уже в разделе "Сайты")
     const browserProcessNames = ['chrome', 'msedge', 'firefox', 'opera', 'brave', 'safari', 'yandex'];
-    const applications = activityLogs
+    const allApplications = activityLogs
       .filter(log => {
         if (log.username !== username) return false;
         if (!log.proc_name || log.proc_name.trim() === '') return false;
@@ -443,12 +443,29 @@ router.get('/activity-details', async (req, res) => {
         procName: log.proc_name,
         windowTitle: log.window_title || '',
         timestamp: log.timestamp,
-      }))
-      .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+      }));
     
-    console.log(`📊 [activity-details] Приложений для пользователя ${username}: ${applications.length}`);
+    console.log(`📊 [activity-details] Всего записей приложений для ${username}: ${allApplications.length}`);
+    
+    // Дедуплицируем приложения по procName, оставляя первую запись для каждого приложения
+    const uniqueApplicationsMap = new Map();
+    allApplications.forEach(app => {
+      const key = app.procName.toLowerCase();
+      if (!uniqueApplicationsMap.has(key)) {
+        uniqueApplicationsMap.set(key, app);
+      }
+    });
+    
+    const applications = Array.from(uniqueApplicationsMap.values())
+      .sort((a, b) => {
+        // Сортируем по имени приложения для предсказуемого порядка
+        return a.procName.localeCompare(b.procName);
+      });
+    
+    console.log(`📊 [activity-details] Уникальных приложений для пользователя ${username}: ${applications.length}`);
     if (applications.length > 0) {
-      console.log(`📊 [activity-details] Примеры приложений:`, applications.slice(0, 5).map(a => a.procName));
+      console.log(`📊 [activity-details] Примеры приложений (первые 10):`, applications.slice(0, 10).map(a => a.procName));
+      console.log(`📊 [activity-details] Все приложения (первые 20):`, applications.slice(0, 20).map(a => ({ procName: a.procName, windowTitle: a.windowTitle?.substring(0, 30) || '' })));
     } else {
       console.warn(`⚠️ [activity-details] НЕТ ПРИЛОЖЕНИЙ! Проверьте фильтрацию выше.`);
       // Показываем, что было отфильтровано
