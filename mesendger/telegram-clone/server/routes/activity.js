@@ -385,15 +385,20 @@ router.get('/activity-details', async (req, res) => {
       });
     }
 
-    console.log(`📊 [activity-details] Запрос для username=${username}, start=${start}, end=${end}`);
+    console.log(`📊 [activity-details] Запрос для username="${username}", start=${start}, end=${end}`);
     
     // Получаем URL-адреса из activity_logs
     const activityLogs = await db.getActivityLogsBetween({ start, end });
     console.log(`📊 [activity-details] Получено ${activityLogs.length} логов из базы`);
     
+    // Проверяем уникальные username в логах для диагностики
+    const uniqueUsernames = [...new Set(activityLogs.map(log => log.username).filter(u => u))];
+    console.log(`🔍 [activity-details] Уникальные username в логах (первые 10):`, uniqueUsernames.slice(0, 10));
+    console.log(`🔍 [activity-details] Ищем совпадение для username="${username}" (точное совпадение)`);
+    
     // ДЕТАЛЬНОЕ ЛОГИРОВАНИЕ ДЛЯ ОТЛАДКИ
     const userLogs = activityLogs.filter(log => log.username === username);
-    console.log(`🔍 [activity-details] Всего логов для ${username}: ${userLogs.length}`);
+    console.log(`🔍 [activity-details] Всего логов для "${username}": ${userLogs.length}`);
     console.log(`🔍 [activity-details] Логов с proc_name: ${userLogs.filter(l => l.proc_name && l.proc_name.trim() !== '').length}`);
     console.log(`🔍 [activity-details] Логов с browser_url: ${userLogs.filter(l => l.browser_url && l.browser_url.trim() !== '').length}`);
     console.log(`🔍 [activity-details] Логов без browser_url: ${userLogs.filter(l => !l.browser_url || l.browser_url.trim() === '').length}`);
