@@ -45,6 +45,15 @@ function formatWorkTime(mins) {
   return `${h > 0 ? h + 'ч ' : ''}${m}м`;
 }
 
+// Функция для получения сегодняшней даты в локальном времени (киевское)
+function getTodayLocalDate() {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
   // ВЕРСИЯ 5.0 - ДОБАВЛЕН realUsername, УЛУЧШЕНО ЛОГИРОВАНИЕ API
   console.log('%c🚨🚨🚨 КОМПОНЕНТ WorkTimeMobile V5.0 - BUILD 2025-01-20 🚨🚨🚨', 'background: #ff0000; color: #ffffff; font-size: 18px; font-weight: bold; padding: 8px;');
@@ -63,14 +72,9 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
   const [usersList, setUsersList] = useState([]);
   const [userOptions, setUserOptions] = useState([]);
   const [showAutocomplete, setShowAutocomplete] = useState(false);
-  const [startDate, setStartDate] = useState(() => {
-    const d = new Date();
-    return d.toISOString().slice(0, 10);
-  });
-  const [endDate, setEndDate] = useState(() => {
-    const d = new Date();
-    return d.toISOString().slice(0, 10);
-  });
+  // Используем локальное время (киевское), а не UTC
+  const [startDate, setStartDate] = useState(() => getTodayLocalDate());
+  const [endDate, setEndDate] = useState(() => getTodayLocalDate());
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(false);
   const [detailsModal, setDetailsModal] = useState({ 
@@ -108,7 +112,7 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
   // Автоматически загружаем данные при открытии модалки, если дата сегодняшняя
   useEffect(() => {
     if (open) {
-      const today = new Date().toISOString().slice(0, 10);
+      const today = getTodayLocalDate();
       if (startDate === today && endDate === today) {
         // Загружаем данные автоматически
         (async () => {
@@ -483,7 +487,7 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
                     const newStartDate = e.target.value;
                     setStartDate(newStartDate);
                     // Автоматически обновляем endDate, если выбрана сегодняшняя дата
-                    const today = new Date().toISOString().slice(0, 10);
+                    const today = getTodayLocalDate();
                     if (newStartDate === today) {
                       setEndDate(today);
                     }
@@ -519,7 +523,7 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
                     const newEndDate = e.target.value;
                     setEndDate(newEndDate);
                     // Автоматически загружаем данные при изменении даты
-                    const today = new Date().toISOString().slice(0, 10);
+                    const today = getTodayLocalDate();
                     if (newEndDate === today && startDate === today) {
                       setTimeout(() => fetchReport(), 100);
                     }
