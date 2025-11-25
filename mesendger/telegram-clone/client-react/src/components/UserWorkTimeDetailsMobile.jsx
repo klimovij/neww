@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect, useMemo, useCallback } from 'react';
 import ReactDOM from 'react-dom';
 import { FaArrowLeft } from 'react-icons/fa';
-import { FiX, FiLogIn, FiLogOut, FiClock, FiGlobe, FiCamera, FiExternalLink } from 'react-icons/fi';
+import { FiX, FiLogIn, FiLogOut, FiClock, FiGlobe, FiCamera, FiExternalLink, FiMonitor } from 'react-icons/fi';
 
 function formatTime(dtStr) {
   if (!dtStr) return '';
@@ -16,6 +16,7 @@ export default function UserWorkTimeDetailsMobile({
   username,
   activityStats,
   urls = [],
+  applications = [],
   screenshots = [],
   startDate,
   endDate,
@@ -24,7 +25,7 @@ export default function UserWorkTimeDetailsMobile({
   const touchStartX = useRef(null);
   const touchEndX = useRef(null);
   const modalRef = useRef(null);
-  const [activeTab, setActiveTab] = useState('events'); // 'events', 'urls', 'screenshots'
+  const [activeTab, setActiveTab] = useState('events'); // 'events', 'urls', 'applications', 'screenshots'
   
   // Оптимизированное переключение вкладок
   const handleTabChange = useCallback((tab) => {
@@ -32,6 +33,7 @@ export default function UserWorkTimeDetailsMobile({
     setActiveTab(tab);
   }, [activeTab]);
   const [localUrls, setLocalUrls] = useState(urls);
+  const [localApplications, setLocalApplications] = useState([]);
   const [localScreenshots, setLocalScreenshots] = useState(screenshots);
   const [localActivityStats, setLocalActivityStats] = useState(activityStats);
 
@@ -71,9 +73,24 @@ export default function UserWorkTimeDetailsMobile({
   // Обновляем локальное состояние при изменении props
   useEffect(() => {
     setLocalUrls(urls);
+    setLocalApplications(applications);
     setLocalScreenshots(screenshots);
     setLocalActivityStats(activityStats);
-  }, [urls, screenshots, activityStats]);
+  }, [urls, applications, screenshots, activityStats]);
+  
+  // Инициализируем приложения если они переданы в props (для обратной совместимости)
+  useEffect(() => {
+    if (activityStats && activityStats.topApps) {
+      // Конвертируем topApps в формат приложений
+      const apps = activityStats.topApps.map(app => ({
+        procName: app.name,
+        windowTitle: app.name,
+        timestamp: null,
+        browserUrl: '',
+      }));
+      setLocalApplications(apps);
+    }
+  }, [activityStats]);
 
   // Функция для перезагрузки данных активности (мемоизация)
   const reloadActivityData = useCallback(async () => {
@@ -90,6 +107,7 @@ export default function UserWorkTimeDetailsMobile({
       
       if (res.ok && data.success) {
         if (data.urls) setLocalUrls(data.urls);
+        if (data.applications) setLocalApplications(data.applications);
         if (data.screenshots) setLocalScreenshots(data.screenshots);
         if (data.activityStats) setLocalActivityStats(data.activityStats);
       }
@@ -342,6 +360,30 @@ export default function UserWorkTimeDetailsMobile({
             >
               <FiGlobe size={14} />
               Сайты ({localUrls?.length || 0})
+            </button>
+            <button
+              onClick={() => handleTabChange('applications')}
+              style={{
+                flex: 1,
+                padding: '10px 16px',
+                borderRadius: '8px',
+                border: 'none',
+                background: activeTab === 'applications' 
+                  ? 'linear-gradient(135deg, #2193b0 0%, #43e97b 100%)' 
+                  : 'rgba(255, 255, 255, 0.1)',
+                color: '#fff',
+                fontWeight: 600,
+                fontSize: '13px',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+              }}
+            >
+              <FiMonitor size={14} />
+              Приложения ({localApplications?.length || 0})
             </button>
             <button
               onClick={() => handleTabChange('screenshots')}
@@ -606,6 +648,79 @@ export default function UserWorkTimeDetailsMobile({
                       <FiClock size={12} />
                       {formatTime(item.timestamp)}
                     </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Таб: Приложения */}
+          {activeTab === 'applications' && (
+            <div style={{ 
+              display: 'flex', 
+              flexDirection: 'column', 
+              gap: '12px',
+            }}>
+              {!localApplications || localApplications.length === 0 ? (
+                <div style={{
+                  textAlign: 'center',
+                  padding: '40px 20px',
+                  color: 'rgba(255, 255, 255, 0.5)',
+                  fontSize: '15px',
+                }}>
+                  Нет данных об открытых приложениях
+                </div>
+              ) : (
+                <div style={{ 
+                  maxHeight: 'calc(100vh - 300px)', 
+                  overflowY: 'auto',
+                  paddingRight: '4px',
+                }}>
+                  {localApplications.map((app, idx) => (
+                    <div
+                      key={`app-${app.timestamp || idx}-${app.procName || idx}`}
+                      style={{
+                        background: 'rgba(255, 255, 255, 0.05)',
+                        borderRadius: '12px',
+                        padding: '16px',
+                        border: '2px solid rgba(67, 233, 123, 0.3)',
+                        marginBottom: '12px',
+                      }}
+                    >
+                      <div style={{
+                        color: '#43e97b',
+                        fontSize: '16px',
+                        fontWeight: 700,
+                        marginBottom: '8px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                      }}>
+                        <FiMonitor size={18} />
+                        {app.procName || 'Unknown'}
+                      </div>
+                      {app.windowTitle && app.windowTitle !== app.procName && (
+                        <div style={{
+                          color: 'rgba(255, 255, 255, 0.7)',
+                          fontSize: '14px',
+                          marginBottom: '8px',
+                        }}>
+                          {app.windowTitle}
+                        </div>
+                      )}
+                      {app.timestamp && (
+                        <div style={{
+                          color: 'rgba(255, 255, 255, 0.5)',
+                          fontSize: '12px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                        }}>
+                          <FiClock size={12} />
+                          {formatTime(app.timestamp)}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

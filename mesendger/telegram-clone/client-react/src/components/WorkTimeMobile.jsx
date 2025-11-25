@@ -74,6 +74,7 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
     username: '', 
     activityStats: null,
     urls: [],
+    applications: [],
     screenshots: [],
     startDate: '',
     endDate: '',
@@ -742,6 +743,7 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
                           console.log('🔄 [WorkTimeMobile] Начинаем асинхронную загрузку данных...');
                           let userActivityStats = null;
                           let urls = [];
+                          let applications = [];
                           let screenshots = [];
                           
                           try {
@@ -792,11 +794,14 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
                             
                             if (detailsRes.ok && detailsData.success) {
                               urls = detailsData.urls || [];
+                              applications = detailsData.applications || [];
                               screenshots = detailsData.screenshots || [];
-                              console.log('✅ [WorkTimeMobile] URLs и скриншоты загружены:', { 
+                              console.log('✅ [WorkTimeMobile] URLs, приложения и скриншоты загружены:', { 
                                 urlsCount: urls.length, 
+                                applicationsCount: applications.length,
                                 screenshotsCount: screenshots.length,
                                 urls: urls.slice(0, 3),
+                                applications: applications.slice(0, 3),
                                 screenshots: screenshots.slice(0, 3)
                               });
                             } else {
@@ -817,6 +822,7 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
                             username: displayName,
                             activityStats: userActivityStats,
                             urls: urls,
+                            applications: applications,
                             screenshots: screenshots,
                             startDate: startDate,
                             endDate: endDate,
@@ -932,6 +938,7 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
                 username: '', 
                 activityStats: null,
                 urls: [],
+                applications: [],
                 screenshots: [],
                 startDate: '',
                 endDate: '',
@@ -941,6 +948,7 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
             username={detailsModal.username}
             activityStats={detailsModal.activityStats}
             urls={detailsModal.urls || []}
+            applications={detailsModal.applications || []}
             screenshots={detailsModal.screenshots || []}
             startDate={detailsModal.startDate}
             endDate={detailsModal.endDate}
@@ -959,6 +967,7 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
                 username: '', 
                 activityStats: null,
                 urls: [],
+                applications: [],
                 screenshots: [],
                 startDate: '',
                 endDate: '',
@@ -968,6 +977,7 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
             username={detailsModal.username}
             activityStats={detailsModal.activityStats}
             urls={detailsModal.urls || []}
+            applications={detailsModal.applications || []}
             screenshots={detailsModal.screenshots || []}
             startDate={detailsModal.startDate}
             endDate={detailsModal.endDate}

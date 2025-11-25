@@ -84,14 +84,14 @@ router.post('/activity-log-batch', authenticateActivityRequest, async (req, res)
     console.log('📥 Body keys:', req.body ? Object.keys(req.body).slice(0, 10) : 'null');
     console.log('📥 Body preview:', JSON.stringify(req.body).substring(0, 500));
     
-    // Логируем первые несколько событий для проверки кодировки
+    // Получаем события из запроса
     const events = Array.isArray(req.body) ? req.body : req.body?.events || [];
+    
+    // Логируем первые несколько событий для проверки кодировки
     if (events.length > 0) {
       console.log('📥 First event windowTitle:', events[0].windowTitle);
       console.log('📥 First event windowTitle bytes:', Buffer.from(events[0].windowTitle || '', 'utf8').toString('hex').substring(0, 100));
     }
-    
-    const events = Array.isArray(req.body) ? req.body : req.body?.events || [];
 
     if (!events || events.length === 0) {
       console.log('❌ No events found in request');
@@ -402,6 +402,7 @@ router.get('/activity-details', async (req, res) => {
       }
     }
     
+    // Получаем URL-адреса (только с browserUrl)
     const urls = activityLogs
       .filter(log => log.username === username && log.browser_url && log.browser_url.trim() !== '')
       .map(log => ({
@@ -411,6 +412,19 @@ router.get('/activity-details', async (req, res) => {
         procName: log.proc_name || '',
       }))
       .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+    
+    // Получаем все приложения (программы) - все записи с proc_name, включая браузеры
+    const applications = activityLogs
+      .filter(log => log.username === username && log.proc_name && log.proc_name.trim() !== '')
+      .map(log => ({
+        procName: log.proc_name,
+        windowTitle: log.window_title || '',
+        timestamp: log.timestamp,
+        browserUrl: log.browser_url || '',
+      }))
+      .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+    
+    console.log(`📊 [activity-details] Приложений для пользователя ${username}: ${applications.length}`);
 
     // Получаем скриншоты
     const screenshots = await db.getActivityScreenshots({ username, start, end });
@@ -454,6 +468,7 @@ router.get('/activity-details', async (req, res) => {
     res.json({
       success: true,
       urls: urls,
+      applications: applications,  // Добавляем список всех приложений
       screenshots: screenshotsWithUrl,
     });
   } catch (error) {
