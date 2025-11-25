@@ -118,15 +118,13 @@ export default function UserWorkTimeDetailsMobile({
       hasActivityStats: !!activityStats
     });
     setLocalUrls(urls);
-    setLocalApplications(applications || []);
-    setLocalScreenshots(screenshots);
-    setLocalActivityStats(activityStats);
-  }, [urls, applications, screenshots, activityStats]);
-  
-  // Инициализируем приложения если они переданы в props (для обратной совместимости)
-  useEffect(() => {
-    if (activityStats && activityStats.topApps) {
-      // Конвертируем topApps в формат приложений
+    // ИСПРАВЛЕНИЕ: Если applications переданы в props, используем их, а НЕ topApps
+    if (applications && applications.length > 0) {
+      console.log('✅ [UserWorkTimeDetailsMobile] Используем applications из props:', applications.length);
+      setLocalApplications(applications);
+    } else if (activityStats && activityStats.topApps && activityStats.topApps.length > 0) {
+      // Только если applications НЕ переданы, используем topApps для обратной совместимости
+      console.log('⚠️ [UserWorkTimeDetailsMobile] applications из props нет, используем topApps для обратной совместимости');
       const apps = activityStats.topApps.map(app => ({
         procName: app.name,
         windowTitle: app.name,
@@ -134,8 +132,12 @@ export default function UserWorkTimeDetailsMobile({
         browserUrl: '',
       }));
       setLocalApplications(apps);
+    } else {
+      setLocalApplications([]);
     }
-  }, [activityStats]);
+    setLocalScreenshots(screenshots);
+    setLocalActivityStats(activityStats);
+  }, [urls, applications, screenshots, activityStats]);
 
   // Функция для перезагрузки данных активности (мемоизация)
   const reloadActivityData = useCallback(async () => {
