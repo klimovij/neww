@@ -22,6 +22,21 @@ export default function UserWorkTimeDetailsMobile({
   endDate,
   onOpenMobileSidebar,
 }) {
+  // КРИТИЧЕСКОЕ ЛОГИРОВАНИЕ В НАЧАЛЕ - сразу при получении props
+  console.log('🚨 [UserWorkTimeDetailsMobile] ====== НАЧАЛО КОМПОНЕНТА ======');
+  console.log('🚨 [UserWorkTimeDetailsMobile] Все props:', {
+    open,
+    username,
+    urlsCount: urls?.length || 0,
+    applicationsCount: applications?.length || 0,
+    applications: applications,
+    screenshotsCount: screenshots?.length || 0,
+    hasActivityStats: !!activityStats,
+    logsCount: logs?.length || 0,
+  });
+  console.log('🚨 [UserWorkTimeDetailsMobile] applications (полностью):', applications);
+  console.log('🚨 [UserWorkTimeDetailsMobile] ================================');
+
   const touchStartX = useRef(null);
   const touchEndX = useRef(null);
   const modalRef = useRef(null);
