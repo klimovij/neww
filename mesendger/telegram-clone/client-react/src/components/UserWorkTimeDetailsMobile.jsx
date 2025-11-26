@@ -396,44 +396,136 @@ export default function UserWorkTimeDetailsMobile({
 
   // Функция для печати отдельного скриншота
   const handlePrintScreenshot = useCallback((screenshotUrl, timestamp) => {
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) {
-      alert('Пожалуйста, разрешите всплывающие окна для печати');
-      return;
-    }
-    
     const dateStr = timestamp ? formatTime(timestamp) : 'Неизвестная дата';
     const fullUrl = screenshotUrl.startsWith('http') ? screenshotUrl : `${window.location.origin}${screenshotUrl}`;
     
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>Скриншот - ${dateStr}</title>
-          <style>
-            @media print {
-              body { margin: 0; padding: 20px; }
-              .header { margin-bottom: 20px; text-align: center; }
-              .screenshot { max-width: 100%; height: auto; page-break-inside: avoid; }
-            }
-            body { font-family: Arial, sans-serif; padding: 20px; }
-            .header { margin-bottom: 20px; text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; }
-            .screenshot { max-width: 100%; height: auto; border: 1px solid #ddd; }
-            .timestamp { text-align: center; margin-top: 10px; color: #666; }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <h1>Скриншот активности</h1>
-            <p>Пользователь: ${username}</p>
-            <p>Дата и время: ${dateStr}</p>
-          </div>
-          <img src="${fullUrl}" alt="Скриншот" class="screenshot" onload="window.print(); window.close();" />
-          <div class="timestamp">${dateStr}</div>
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
+    // Определяем, мобильное ли устройство
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    if (isMobile) {
+      // Для мобильных устройств: открываем изображение напрямую, чтобы пользователь мог сохранить его
+      // Создаем временную страницу с изображением для сохранения/печати
+      const printWindow = window.open('', '_blank');
+      if (!printWindow) {
+        // Если всплывающие окна заблокированы, открываем изображение напрямую
+        window.open(fullUrl, '_blank');
+        return;
+      }
+      
+      // Создаем HTML с изображением, которое загрузится перед печатью
+      printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>Скриншот - ${dateStr}</title>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <style>
+              @media print {
+                body { margin: 0; padding: 10px; }
+                .header { margin-bottom: 15px; text-align: center; }
+                .screenshot { max-width: 100%; height: auto; page-break-inside: avoid; }
+                .no-print { display: none; }
+              }
+              body { 
+                font-family: Arial, sans-serif; 
+                padding: 20px; 
+                margin: 0;
+                background: #fff;
+              }
+              .header { 
+                margin-bottom: 20px; 
+                text-align: center; 
+                border-bottom: 2px solid #333; 
+                padding-bottom: 10px; 
+              }
+              .screenshot { 
+                max-width: 100%; 
+                height: auto; 
+                border: 1px solid #ddd; 
+                display: block;
+                margin: 0 auto;
+              }
+              .timestamp { 
+                text-align: center; 
+                margin-top: 10px; 
+                color: #666; 
+                font-size: 12px;
+              }
+              .loading {
+                text-align: center;
+                padding: 40px;
+                color: #666;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="header">
+              <h1 style="margin: 0; font-size: 18px;">Скриншот активности</h1>
+              <p style="margin: 5px 0; font-size: 14px;">Пользователь: ${username}</p>
+              <p style="margin: 5px 0; font-size: 12px;">Дата и время: ${dateStr}</p>
+            </div>
+            <div class="loading" id="loading">Загрузка изображения...</div>
+            <img 
+              src="${fullUrl}" 
+              alt="Скриншот" 
+              class="screenshot" 
+              style="display: none;"
+              onload="
+                document.getElementById('loading').style.display = 'none';
+                this.style.display = 'block';
+                // Даем время на рендеринг перед печатью
+                setTimeout(function() {
+                  window.print();
+                }, 500);
+              "
+              onerror="
+                document.getElementById('loading').innerHTML = 'Ошибка загрузки изображения.<br/>Попробуйте открыть изображение напрямую.';
+                document.getElementById('loading').style.color = '#e74c3c';
+              "
+            />
+            <div class="timestamp">${dateStr}</div>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+    } else {
+      // Для десктопа: используем стандартный подход
+      const printWindow = window.open('', '_blank');
+      if (!printWindow) {
+        alert('Пожалуйста, разрешите всплывающие окна для печати');
+        return;
+      }
+      
+      printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>Скриншот - ${dateStr}</title>
+            <style>
+              @media print {
+                body { margin: 0; padding: 20px; }
+                .header { margin-bottom: 20px; text-align: center; }
+                .screenshot { max-width: 100%; height: auto; page-break-inside: avoid; }
+              }
+              body { font-family: Arial, sans-serif; padding: 20px; }
+              .header { margin-bottom: 20px; text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; }
+              .screenshot { max-width: 100%; height: auto; border: 1px solid #ddd; }
+              .timestamp { text-align: center; margin-top: 10px; color: #666; }
+            </style>
+          </head>
+          <body>
+            <div class="header">
+              <h1>Скриншот активности</h1>
+              <p>Пользователь: ${username}</p>
+              <p>Дата и время: ${dateStr}</p>
+            </div>
+            <img src="${fullUrl}" alt="Скриншот" class="screenshot" onload="window.print(); window.close();" />
+            <div class="timestamp">${dateStr}</div>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+    }
   }, [username]);
 
   // Функция для печати полного отчета
