@@ -494,6 +494,24 @@ function WorkTimeReportModal({ isOpen, onRequestClose }) {
 
           {loading ? (
             <div style={{ textAlign: 'center', padding: 20 }}>Загрузка...</div>
+          ) : displayedRows.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: 40, color: 'rgba(255,255,255,0.6)' }}>
+              {logs.length === 0 ? (
+                <div>
+                  <p style={{ fontSize: '16px', marginBottom: '10px' }}>Нет данных за выбранный период</p>
+                  <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.4)' }}>
+                    Проверьте даты и убедитесь, что есть данные активности для локальных ПК
+                  </p>
+                </div>
+              ) : (
+                <div>
+                  <p style={{ fontSize: '16px', marginBottom: '10px' }}>Нет данных, соответствующих фильтрам</p>
+                  <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.4)' }}>
+                    Всего записей: {logs.length}, но они не соответствуют выбранным фильтрам
+                  </p>
+                </div>
+              )}
+            </div>
           ) : (
             <div style={{ maxHeight: 400, overflowY: 'auto', borderRadius: 12 }}>
               <table style={{ width: '100%', borderCollapse: 'separate', color: '#e6f7ef' }}>
