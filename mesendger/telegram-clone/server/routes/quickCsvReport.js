@@ -182,6 +182,14 @@ async function getDbShortReport({ start, end, username }) {
 
 // API: /api/quick-db-report?start=YYYY-MM-DD&end=YYYY-MM-DD&username=...
 router.get('/quick-db-report', async (req, res) => {
+  // СРАЗУ пишем в файл, чтобы убедиться, что обработчик вызывается
+  const fs = require('fs');
+  const path = require('path');
+  const debugFile = path.join(__dirname, '../../QUICK_DB_REPORT_DEBUG.txt');
+  try {
+    fs.appendFileSync(debugFile, `[${new Date().toISOString()}] HANDLER CALLED: ${JSON.stringify(req.query)}\n`);
+  } catch (e) {}
+  
   // Логируем ВСЁ, что происходит - принудительно выводим в stderr
   process.stderr.write(`🚀 [quick-db-report] ПОЛУЧЕН ЗАПРОС: ${JSON.stringify(req.query)}\n`);
   console.error(`🚀 [quick-db-report] ПОЛУЧЕН ЗАПРОС (stderr):`, req.query);
@@ -214,7 +222,21 @@ router.get('/quick-db-report', async (req, res) => {
       console.error(`⚠️ [quick-db-report] start или end не указаны: start=${start}, end=${end}`);
     }
     
+    // Записываем в файл перед вызовом функции
+    try {
+      fs.appendFileSync(debugFile, `[${new Date().toISOString()}] BEFORE getDbShortReport: start=${start}, end=${end}\n`);
+    } catch (e) {}
+    
     const report = await getDbShortReport({ start, end, username });
+    
+    // Записываем результат в файл
+    try {
+      fs.appendFileSync(debugFile, `[${new Date().toISOString()}] AFTER getDbShortReport: report.length=${report.length}\n`);
+      if (report.length > 0) {
+        fs.appendFileSync(debugFile, `[${new Date().toISOString()}] First user: ${report[0].username}\n`);
+      }
+    } catch (e) {}
+    
     process.stderr.write(`✅ [quick-db-report] Возвращаем отчёт: ${report.length} пользователей\n`);
     console.error(`✅ [quick-db-report] Возвращаем отчёт: ${report.length} пользователей`);
     res.json({ success: true, report });
