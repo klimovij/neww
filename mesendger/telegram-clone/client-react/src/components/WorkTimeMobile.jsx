@@ -110,6 +110,7 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
   const [showAppUsage, setShowAppUsage] = useState(false);
   const [showRemoteWorktime, setShowRemoteWorktime] = useState(false);
   const [showLocalReport, setShowLocalReport] = useState(false);
+  const [showOneCHistoryModal, setShowOneCHistoryModal] = useState(false);
   
   // Состояния для модалки локального отчета
   // По умолчанию устанавливаем сегодняшнюю дату
