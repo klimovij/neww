@@ -39,7 +39,6 @@ import TodoModal from '../Modals/TodoModal';
 import EmployeeRatingModal from '../Rating/EmployeeRatingModal';
 import AppTitleSettingsModal from '../Modals/AppTitleSettingsModal';
 import AppTitleSettingsMobile from '../AppTitleSettingsMobile';
-import OneCDocumentHistoryMobile from '../OneCDocumentHistoryMobile';
 
 const navs = [
   { key: 'all-leaves', label: 'Общий календарь', icon: <FaUserCircle />, color: '#b2bec3', event: 'show-all-leaves', tip: 'Календарь всех сотрудников' },
@@ -1427,16 +1426,6 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar, 
             <EmployeeRatingModal key={`rating-${portalKey}`} open={showRatingModal} onClose={() => setShowRatingModal(false)} />
           ),
           showRatingModal
-        )}
-        
-        {createSafePortal(
-          <OneCDocumentHistoryMobile
-            key={`onec-history-mobile-${portalKey}`}
-            open={showOneCHistoryModal}
-            onClose={() => setShowOneCHistoryModal(false)}
-            onOpenMobileSidebar={onOpenMobileSidebar}
-          />,
-          showOneCHistoryModal
         )}
       </>
     );
