@@ -377,6 +377,16 @@ export default function UserWorkTimeDetailsMobile({
     });
   }, [logs]);
 
+  // Сортируем скриншоты по времени (от новых к старым, как приложения и сайты)
+  const sortedScreenshots = useMemo(() => {
+    if (!localScreenshots || localScreenshots.length === 0) return [];
+    return [...localScreenshots].sort((a, b) => {
+      const timeA = new Date(a.timestamp || 0).getTime();
+      const timeB = new Date(b.timestamp || 0).getTime();
+      return timeB - timeA; // От новых к старым
+    });
+  }, [localScreenshots]);
+
   if (!open) {
     return null;
   }
@@ -603,7 +613,7 @@ export default function UserWorkTimeDetailsMobile({
               }}
             >
               <FiCamera size={14} />
-              Скриншоты ({localScreenshots?.length || 0})
+              Скрины ({localScreenshots?.length || 0})
             </button>
           </div>
         </div>
@@ -1069,7 +1079,7 @@ export default function UserWorkTimeDetailsMobile({
                   Нет скриншотов
                 </div>
               ) : (
-                localScreenshots.map((shot, idx) => {
+                sortedScreenshots.map((shot, idx) => {
                   // Формируем правильный URL - убеждаемся, что он начинается с /
                   const screenshotUrl = shot.url && shot.url.startsWith('/') 
                     ? shot.url 
