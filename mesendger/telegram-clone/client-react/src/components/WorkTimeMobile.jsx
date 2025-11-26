@@ -1131,26 +1131,6 @@ function LocalWorktimeReportModalMobile({
           </div>
         </div>,
         document.body
-      )}
-
-      {/* Модалка деталей пользователя */}
-      {localReportDetailsModal.open && (
-        <UserWorkTimeDetailsMobile
-          open={localReportDetailsModal.open}
-          onClose={() => setLocalReportDetailsModal({ ...localReportDetailsModal, open: false })}
-          logs={localReportDetailsModal.logs}
-          username={localReportDetailsModal.username}
-          realUsername={localReportDetailsModal.realUsername}
-          activityStats={localReportDetailsModal.activityStats}
-          urls={localReportDetailsModal.urls}
-          applications={localReportDetailsModal.applications}
-          screenshots={localReportDetailsModal.screenshots}
-          startDate={localReportDetailsModal.startDate}
-          endDate={localReportDetailsModal.endDate}
-          onOpenMobileSidebar={() => {}}
-        />
-      )}
-    </>
-  );
+      );
 }
 
