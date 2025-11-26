@@ -123,8 +123,10 @@ export async function syncEmojisToServer(force = false) {
         const names = [];
 
         // Конвертируем data URL в файлы
-        // Также загружаем эмодзи, у которых путь /uploads/, но файла нет на сервере
         for (const emoji of batch) {
+          // Загружаем только эмодзи с data URL (base64)
+          // Эмодзи с путями /uploads/ но без файлов на сервере не могут быть загружены,
+          // так как у нас нет исходных файлов
           if (emoji.src && emoji.src.startsWith('data:')) {
             try {
               const [header, data] = emoji.src.split(',');
@@ -144,28 +146,9 @@ export async function syncEmojisToServer(force = false) {
               console.error(`❌ Ошибка конвертации эмодзи ${emoji.name}:`, err);
               failed++;
             }
-          } else if (emoji.src && emoji.src.startsWith('/uploads/emojis/')) {
-            // Если у эмодзи уже есть путь /uploads/, но файла нет на сервере - нужно загрузить
-            // Но у нас нет исходного файла, только путь. Нужно попытаться загрузить через fetch
-            try {
-              console.log(`🔄 Попытка загрузить эмодзи "${emoji.name}" с пути ${emoji.src}`);
-              // Пробуем загрузить файл по пути
-              const response = await fetch(emoji.src);
-              if (response.ok) {
-                const blob = await response.blob();
-                const file = new File([blob], `${emoji.name}.${blob.type.split('/')[1] || 'png'}`, { type: blob.type });
-                formData.append('emojis', file);
-                names.push(emoji.name);
-                console.log(`📤 Добавлен файл для эмодзи "${emoji.name}" (с сервера, размер: ${blob.size} байт)`);
-              } else {
-                console.warn(`⚠️ Не удалось загрузить файл для эмодзи "${emoji.name}" с пути ${emoji.src}: ${response.status}`);
-                // Если файл не найден, пропускаем - возможно, нужно будет загрузить вручную
-                failed++;
-              }
-            } catch (err) {
-              console.error(`❌ Ошибка загрузки файла для эмодзи ${emoji.name}:`, err);
-              failed++;
-            }
+          } else {
+            console.warn(`⚠️ Эмодзи "${emoji.name}" пропущено - нет data URL (src: ${emoji.src?.substring(0, 50) || 'нет'}...)`);
+            // Не увеличиваем failed, так как это не ошибка, а просто нет исходного файла
           }
         }
 
