@@ -4,7 +4,7 @@ import styled from 'styled-components';
 import { FiX, FiSettings, FiSave, FiRotateCcw, FiTrash2, FiCheckSquare, FiSquare, FiRefreshCw } from 'react-icons/fi';
 import { Modal, ModalContent, CloseButton } from '../../styles/GlobalStyles';
 import axios from 'axios';
-import { syncEmojisToServer } from '../../utils/emojiSync';
+import { syncEmojisToServer } from '../../utils/emojiSync.js';
 
 const ModalTitle = styled.h3`
   margin: 0 0 1.5rem 0;
