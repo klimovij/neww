@@ -4,7 +4,22 @@ import Modal from 'react-modal';
 function UserWorkTimeDetailsModal({ isOpen, onRequestClose, logs, username, activityStats }) {
   function formatTime(dtStr) {
     if (!dtStr) return '';
+    // Парсим время как локальное (формат YYYY-MM-DD HH:mm:ss без часового пояса)
+    // Явно создаем Date объект с локальным временем, чтобы избежать проблем с UTC
+    const match = dtStr.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2}):(\d{2})/);
+    if (match) {
+      const [_, year, month, day, hour, minute, second] = match;
+      // Создаем Date объект с локальным временем (месяцы в JS с 0, поэтому -1)
+      const d = new Date(Number(year), Number(month) - 1, Number(day), Number(hour), Number(minute), Number(second));
+      if (!isNaN(d.getTime())) {
+        return `${d.toLocaleDateString('ru-RU')}, ${d.toLocaleTimeString('ru-RU')}`;
+      }
+    }
+    // Fallback на стандартный парсинг
     const d = new Date(dtStr);
+    if (isNaN(d.getTime())) {
+      return dtStr; // Возвращаем оригинальную строку, если не удалось распарсить
+    }
     return `${d.toLocaleDateString('ru-RU')}, ${d.toLocaleTimeString('ru-RU')}`;
   }
   return (

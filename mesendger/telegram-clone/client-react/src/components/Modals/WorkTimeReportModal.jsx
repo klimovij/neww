@@ -10,8 +10,17 @@ Modal.setAppElement('#root');
 // Вынесем парсер вне функции
 function parseDate(str) {
   if (!str) return null;
-  // Если ISO-формат
-  if (/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(str)) return new Date(str);
+  // Если YYYY-MM-DD HH:mm:ss или YYYY-MM-DDTHH:mm:ss (локальное время без часового пояса)
+  const matchYmd = str.match(/(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2}):(\d{2})/);
+  if (matchYmd) {
+    const [_, yyyy, mm, dd, hh, min, ss] = matchYmd;
+    // В JS месяцы с 0, поэтому -1, создаем как локальное время
+    return new Date(Number(yyyy), Number(mm) - 1, Number(dd), Number(hh), Number(min), Number(ss));
+  }
+  // Если ISO-формат с Z (UTC)
+  if (/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}.*Z/.test(str)) {
+    return new Date(str);
+  }
   // Если DD.MM.YYYY HH:mm:ss
   const match = str.match(/(\d{2})\.(\d{2})\.(\d{4})[ T](\d{2}):(\d{2}):(\d{2})/);
   if (match) {
@@ -304,8 +313,28 @@ function WorkTimeReportModal({ isOpen, onRequestClose }) {
 
   function formatTime(dtStr) {
     if (!dtStr) return '';
+    // Парсим время как локальное (формат YYYY-MM-DD HH:mm:ss без часового пояса)
+    // Явно создаем Date объект с локальным временем, чтобы избежать проблем с UTC
+    const match = dtStr.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2}):(\d{2})/);
+    if (match) {
+      const [_, year, month, day, hour, minute, second] = match;
+      // Создаем Date объект с локальным временем (месяцы в JS с 0, поэтому -1)
+      const d = new Date(Number(year), Number(month) - 1, Number(day), Number(hour), Number(minute), Number(second));
+      if (!isNaN(d.getTime())) {
+        const formatted = `${d.toLocaleDateString('ru-RU')}, ${d.toLocaleTimeString('ru-RU')}`;
+        console.log(`[formatTime] Input: "${dtStr}" -> Parsed as local: ${d.toISOString()} -> Formatted: "${formatted}"`);
+        return formatted;
+      }
+    }
+    // Fallback на стандартный парсинг
     const d = new Date(dtStr);
-    return `${d.toLocaleDateString('ru-RU')}, ${d.toLocaleTimeString('ru-RU')}`;
+    if (isNaN(d.getTime())) {
+      console.warn(`[formatTime] Failed to parse: "${dtStr}"`);
+      return dtStr; // Возвращаем оригинальную строку, если не удалось распарсить
+    }
+    const formatted = `${d.toLocaleDateString('ru-RU')}, ${d.toLocaleTimeString('ru-RU')}`;
+    console.log(`[formatTime] Fallback: "${dtStr}" -> ${d.toISOString()} -> "${formatted}"`);
+    return formatted;
   }
   function formatWorkTime(mins) {
     if (mins === 0) return '0м';

@@ -28,46 +28,74 @@ function Write-Log {
 function Get-Username {
     param([array]$ScriptArgs)
     
-    # Проверяем аргументы командной строки
+    # 1. Проверяем аргументы командной строки (высший приоритет)
     if ($ScriptArgs -and $ScriptArgs.Count -gt 0 -and $ScriptArgs[0]) {
         $username = $ScriptArgs[0].Trim()
         if ($username) {
+            Write-Log "Username получен из аргументов командной строки: $username"
+            # Сохраняем в конфиг для будущих запусков
+            try {
+                $config = @{ username = $username } | ConvertTo-Json
+                $config | Out-File -FilePath $CONFIG_FILE -Encoding UTF8 -Force
+                Write-Log "Username сохранён в конфигурационный файл: $username"
+            } catch {
+                Write-Log "Error saving config file: $($_.Exception.Message)"
+            }
             return $username
         }
     }
     
-    # Проверяем конфигурационный файл
+    # 2. Проверяем конфигурационный файл (для автоматического запуска)
     if (Test-Path $CONFIG_FILE) {
         try {
             $config = Get-Content $CONFIG_FILE -Raw | ConvertFrom-Json
-            if ($config.username) {
-                return $config.username.Trim()
+            if ($config.username -and $config.username.Trim()) {
+                $username = $config.username.Trim()
+                Write-Log "Username получен из конфигурационного файла: $username"
+                return $username
             }
         } catch {
             Write-Log "Error reading config file: $($_.Exception.Message)"
         }
     }
     
-    # Запрашиваем у пользователя
-    Write-Host ""
-    Write-Host "Введите username сотрудника (например: Ksendzik_Oleg):" -ForegroundColor Yellow
-    $username = Read-Host
+    # 3. Запрашиваем у пользователя (только при интерактивном запуске)
+    # Проверяем, запущен ли скрипт интерактивно (не через планировщик задач)
+    $isInteractive = [Environment]::UserInteractive -and $Host.Name -eq "ConsoleHost"
     
-    if ([string]::IsNullOrWhiteSpace($username)) {
-        Write-Log "Username не указан, используем имя текущего пользователя: $env:USERNAME"
-        $username = $env:USERNAME
+    if ($isInteractive) {
+        Write-Host ""
+        Write-Host "⚠️ Username не найден в конфигурации!" -ForegroundColor Yellow
+        Write-Host "Введите username сотрудника (например: Ksendzik_Oleg):" -ForegroundColor Yellow
+        Write-Host "Этот username должен соответствовать username в базе данных Mesendger" -ForegroundColor Gray
+        Write-Host "После ввода username будет сохранён для автоматических запусков" -ForegroundColor Gray
+        $username = Read-Host
+        
+        if ([string]::IsNullOrWhiteSpace($username)) {
+            Write-Log "Username не указан, используем имя текущего пользователя Windows: $env:USERNAME"
+            Write-Host "⚠️ Используется имя текущего пользователя Windows: $env:USERNAME" -ForegroundColor Yellow
+            Write-Host "   Убедитесь, что этот username существует в базе данных Mesendger!" -ForegroundColor Yellow
+            $username = $env:USERNAME
+        }
+        
+        # Сохраняем в конфигурационный файл
+        try {
+            $config = @{ username = $username.Trim() } | ConvertTo-Json
+            $config | Out-File -FilePath $CONFIG_FILE -Encoding UTF8 -Force
+            Write-Log "Username сохранён в конфигурационный файл: $username"
+            Write-Host "✅ Username сохранён для будущих автоматических запусков" -ForegroundColor Green
+        } catch {
+            Write-Log "Error saving config file: $($_.Exception.Message)"
+        }
+        
+        return $username.Trim()
+    } else {
+        # Автоматический запуск (через планировщик задач) - используем имя пользователя Windows
+        Write-Log "Автоматический запуск: username не найден в конфиге, используем имя текущего пользователя Windows: $env:USERNAME"
+        Write-Log "⚠️ ВНИМАНИЕ: Убедитесь, что username '$env:USERNAME' существует в базе данных Mesendger!"
+        Write-Log "   Для правильной идентификации запустите скрипт вручную один раз и введите правильный username"
+        return $env:USERNAME
     }
-    
-    # Сохраняем в конфигурационный файл
-    try {
-        $config = @{ username = $username.Trim() } | ConvertTo-Json
-        $config | Out-File -FilePath $CONFIG_FILE -Encoding UTF8 -Force
-        Write-Log "Username сохранён в конфигурационный файл: $username"
-    } catch {
-        Write-Log "Error saving config file: $($_.Exception.Message)"
-    }
-    
-    return $username.Trim()
 }
 
 try {
@@ -78,12 +106,12 @@ try {
     $username = Get-Username $args
     Write-Log "Username: $username (будет отображаться ФИО из базы на сервере)"
     
-    # Получаем текущее время в UTC и конвертируем в формат YYYY-MM-DD HH:mm:ss
+    # Получаем текущее локальное время и конвертируем в формат YYYY-MM-DD HH:mm:ss
+    # Используем локальное время, чтобы оно правильно отображалось в модалке
     $now = Get-Date
-    $utcTime = $now.ToUniversalTime()
-    # Формат для локальных ПК: YYYY-MM-DD HH:mm:ss
-    $eventTime = $utcTime.ToString("yyyy-MM-dd HH:mm:ss")
-    Write-Log "Event time: $eventTime"
+    # Формат для локальных ПК: YYYY-MM-DD HH:mm:ss (локальное время)
+    $eventTime = $now.ToString("yyyy-MM-dd HH:mm:ss")
+    Write-Log "Event time (local): $eventTime"
     
     # Формируем данные для отправки на локальный endpoint
     # event_id: 4624 = login (вход), 4634 = logout (выход)
