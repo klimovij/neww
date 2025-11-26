@@ -50,10 +50,7 @@ async function getDbShortReport({ start, end, username }) {
         // Игнорируем ошибки
       }
     }
-    // Также выводим в консоль
-    console.error(`📊 [getDbShortReport] ${msg}`);
-    process.stderr.write(`📊 [getDbShortReport] ${msg}\n`);
-    // И в stdout
+    // Выводим в консоль (используем console.log для PM2)
     console.log(`📊 [getDbShortReport] ${msg}`);
   };
   
@@ -219,31 +216,19 @@ router.get('/quick-db-report', async (req, res) => {
       endDate.setDate(endDate.getDate() + 1);
       end = endDate.toISOString().slice(0, 10);
       
-      process.stderr.write(`🌍 [quick-db-report] Расширение: ${originalStart}-${originalEnd} -> ${start}-${end}\n`);
-      console.error(`🌍 [quick-db-report] Расширение диапазона для учёта часового пояса:`);
-      console.error(`   Запрошено: ${originalStart} - ${originalEnd}`);
-      console.error(`   Запрашиваем: ${start} - ${end}`);
+      console.log(`🌍 [quick-db-report] Расширение: ${originalStart}-${originalEnd} -> ${start}-${end}`);
     } else {
-      console.error(`⚠️ [quick-db-report] start или end не указаны: start=${start}, end=${end}`);
+      console.log(`⚠️ [quick-db-report] start или end не указаны: start=${start}, end=${end}`);
     }
     
-    // Записываем в файл перед вызовом функции
-    try {
-      fs.appendFileSync(debugFile, `[${new Date().toISOString()}] BEFORE getDbShortReport: start=${start}, end=${end}\n`);
-    } catch (e) {}
-    
+    console.log(`📊 [quick-db-report] Вызываем getDbShortReport с параметрами: start=${start}, end=${end}, username=${username || 'all'}`);
     const report = await getDbShortReport({ start, end, username });
+    console.log(`✅ [quick-db-report] getDbShortReport вернул ${report.length} пользователей`);
     
-    // Записываем результат в файл
-    try {
-      fs.appendFileSync(debugFile, `[${new Date().toISOString()}] AFTER getDbShortReport: report.length=${report.length}\n`);
-      if (report.length > 0) {
-        fs.appendFileSync(debugFile, `[${new Date().toISOString()}] First user: ${report[0].username}\n`);
-      }
-    } catch (e) {}
+    if (report.length > 0) {
+      console.log(`👤 [quick-db-report] Первый пользователь: ${report[0].username}, fio: ${report[0].fio}`);
+    }
     
-    process.stderr.write(`✅ [quick-db-report] Возвращаем отчёт: ${report.length} пользователей\n`);
-    console.error(`✅ [quick-db-report] Возвращаем отчёт: ${report.length} пользователей`);
     res.json({ success: true, report });
   } catch (err) {
     process.stderr.write(`❌ [quick-db-report] Ошибка: ${err.message}\n`);
