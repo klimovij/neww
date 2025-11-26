@@ -681,7 +681,7 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
                     Загрузка...
                   </>
                 ) : (
-                  'Показать отчет'
+                  'Отчет активности локальных ПК'
                 )}
               </button>
             </div>

@@ -399,7 +399,7 @@ function WorkTimeReportModal({ isOpen, onRequestClose }) {
             <button onClick={fetchReport} style={{
               padding: '6px 12px', borderRadius: 8, border: '1px solid #43e97b', background: 'rgba(67,233,123,0.1)', color: '#43e97b', cursor: 'pointer', fontWeight: 600
             }}>
-              Показать отчет
+              Отчет активности локальных ПК
             </button>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
