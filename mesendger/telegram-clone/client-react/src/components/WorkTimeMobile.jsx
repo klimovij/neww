@@ -789,33 +789,15 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
                               console.error('❌ [WorkTimeMobile] НЕТ дат!', { startDate, endDate });
                             }
                             
-                            // Учитываем киевское время: данные в базе в UTC, но пользователь работает по киевскому времени
-                            // Когда пользователь выбирает дату в киевском времени, нужно найти все данные,
-                            // которые попали в эту дату по киевскому времени (они могут быть под разными датами в UTC)
-                            // Расширяем диапазон на 1 день назад и вперёд, чтобы захватить все данные
-                            let apiStartDate = startDate || '';
-                            let apiEndDate = endDate || '';
-                            
-                            if (startDate && endDate) {
-                              // Расширяем диапазон для учёта разницы часовых поясов (Киев UTC+2/UTC+3)
-                              const startDateObj = new Date(startDate + 'T00:00:00');
-                              startDateObj.setDate(startDateObj.getDate() - 1);
-                              apiStartDate = startDateObj.toISOString().slice(0, 10);
-                              
-                              const endDateObj = new Date(endDate + 'T23:59:59');
-                              endDateObj.setDate(endDateObj.getDate() + 1);
-                              apiEndDate = endDateObj.toISOString().slice(0, 10);
-                              
-                              console.log('🌍 [WorkTimeMobile] Конвертация времени:');
-                              console.log('   Выбрано (киевское время):', startDate, '-', endDate);
-                              console.log('   Запрашиваем (UTC с запасом):', apiStartDate, '-', apiEndDate);
-                            }
-                            
+                            // Бэкенд сам расширяет диапазон дат для учёта часового пояса (Киев UTC+2/UTC+3)
+                            // Отправляем выбранные даты как есть, без расширения
                             const detailsParams = new URLSearchParams({
                               username: row.username || '',
-                              start: apiStartDate,
-                              end: apiEndDate,
+                              start: startDate || '',
+                              end: endDate || '',
                             });
+                            console.log('🌍 [WorkTimeMobile] Отправляем даты (киевское время):', startDate, '-', endDate);
+                            console.log('🌍 [WorkTimeMobile] Бэкенд сам расширит диапазон для учёта часового пояса');
                             const apiUrl = `/api/activity-details?${detailsParams.toString()}`;
                             console.log('📡 [WorkTimeMobile] ====== НАЧАЛО ЗАПРОСА К API ======');
                             console.log('📡 [WorkTimeMobile] Загружаем activity-details для:', row.username);
