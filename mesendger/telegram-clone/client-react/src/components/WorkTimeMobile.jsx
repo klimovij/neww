@@ -1,7 +1,7 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useMemo, useCallback } from 'react';
 import ReactDOM from 'react-dom';
 import { FaArrowLeft } from 'react-icons/fa';
-import { FiX, FiSearch, FiCalendar, FiRefreshCw } from 'react-icons/fi';
+import { FiX, FiSearch, FiCalendar, FiRefreshCw, FiMonitor } from 'react-icons/fi';
 import UserWorkTimeDetailsModal from './Modals/UserWorkTimeDetailsModal';
 import UserWorkTimeDetailsMobile from './UserWorkTimeDetailsMobile';
 import AppUsageModal from './Modals/AppUsageModal';
@@ -93,6 +93,37 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
   const [importOk, setImportOk] = useState(null);
   const [showAppUsage, setShowAppUsage] = useState(false);
   const [showRemoteWorktime, setShowRemoteWorktime] = useState(false);
+  const [showLocalReport, setShowLocalReport] = useState(false);
+  
+  // Состояния для модалки локального отчета
+  const [localReportStartDate, setLocalReportStartDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    return d.toISOString().slice(0, 10);
+  });
+  const [localReportEndDate, setLocalReportEndDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    return d.toISOString().slice(0, 10);
+  });
+  const [localReportSearchTerm, setLocalReportSearchTerm] = useState('');
+  const [localReportUsers, setLocalReportUsers] = useState([]);
+  const [localReportUsersList, setLocalReportUsersList] = useState([]);
+  const [localReportUserOptions, setLocalReportUserOptions] = useState([]);
+  const [localReportShowAutocomplete, setLocalReportShowAutocomplete] = useState(false);
+  const [loadingLocalReport, setLoadingLocalReport] = useState(false);
+  const [localReportDetailsModal, setLocalReportDetailsModal] = useState({
+    open: false,
+    logs: [],
+    username: '',
+    realUsername: '',
+    activityStats: null,
+    urls: [],
+    applications: [],
+    screenshots: [],
+    startDate: '',
+    endDate: ''
+  });
 
   useEffect(() => {
     if (open) {
@@ -108,6 +139,107 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
         });
     }
   }, [open]);
+
+  // Загрузка списка пользователей для локального отчета
+  useEffect(() => {
+    if (showLocalReport) {
+      fetch('/api/worktime-users')
+        .then(res => res.json())
+        .then(data => {
+          setLocalReportUsersList(data.users || []);
+          setLocalReportUserOptions(data.users || []);
+        })
+        .catch(() => {
+          setLocalReportUsersList([]);
+          setLocalReportUserOptions([]);
+        });
+    }
+  }, [showLocalReport]);
+
+  // Загрузка отчета при изменении дат
+  const fetchLocalReport = React.useCallback(async () => {
+    if (!localReportStartDate || !localReportEndDate) return;
+    
+    setLoadingLocalReport(true);
+    try {
+      const url = `/api/local-worktime-report?start=${localReportStartDate}&end=${localReportEndDate}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      
+      if (data.success && Array.isArray(data.report)) {
+        setLocalReportUsers(data.report);
+      } else {
+        setLocalReportUsers([]);
+      }
+    } catch (error) {
+      console.error('Ошибка загрузки локального отчета:', error);
+      setLocalReportUsers([]);
+    }
+    setLoadingLocalReport(false);
+  }, [localReportStartDate, localReportEndDate]);
+
+  // Автозагрузка при открытии модалки и изменении дат
+  useEffect(() => {
+    if (showLocalReport && localReportStartDate && localReportEndDate) {
+      fetchLocalReport();
+    }
+  }, [showLocalReport, localReportStartDate, localReportEndDate, fetchLocalReport]);
+
+  // Обработка поиска в локальном отчете
+  const handleLocalReportSearchChange = (e) => {
+    const value = e.target.value;
+    setLocalReportSearchTerm(value);
+    if (value.length > 0) {
+      setLocalReportShowAutocomplete(true);
+      setLocalReportUserOptions(localReportUsersList.filter(u => u.toLowerCase().includes(value.toLowerCase())));
+    } else {
+      setLocalReportShowAutocomplete(false);
+      setLocalReportUserOptions(localReportUsersList);
+    }
+  };
+
+  // Фильтрация пользователей по поиску
+  const filteredLocalReportUsers = React.useMemo(() => {
+    if (!localReportSearchTerm.trim()) return localReportUsers;
+    const search = localReportSearchTerm.toLowerCase();
+    return localReportUsers.filter(user => {
+      const fio = (user.fio || user.username || '').toLowerCase();
+      return fio.includes(search);
+    });
+  }, [localReportUsers, localReportSearchTerm]);
+
+  // Открытие деталей пользователя
+  const handleOpenLocalUserDetails = async (user) => {
+    setLoadingLocalReport(true);
+    try {
+      const detailsParams = new URLSearchParams({
+        username: user.username,
+        start: localReportStartDate,
+        end: localReportEndDate
+      });
+      
+      const detailsRes = await fetch(`/api/activity-details?${detailsParams.toString()}`);
+      const detailsData = await detailsRes.json();
+      
+      if (detailsRes.ok && detailsData.success) {
+        setLocalReportDetailsModal({
+          open: true,
+          logs: user.sessions || [],
+          username: user.fio || user.username,
+          realUsername: user.username,
+          activityStats: detailsData.activityStats || null,
+          urls: detailsData.urls || [],
+          applications: detailsData.applications || [],
+          screenshots: detailsData.screenshots || [],
+          startDate: localReportStartDate,
+          endDate: localReportEndDate
+        });
+      }
+    } catch (error) {
+      console.error('Ошибка загрузки деталей:', error);
+    }
+    setLoadingLocalReport(false);
+  };
 
   // Автоматически загружаем данные при открытии модалки, если дата сегодняшняя
   useEffect(() => {
@@ -470,497 +602,42 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
             </button>
           </div>
 
-          {/* Фильтры */}
-          <div style={{ marginBottom: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {/* Даты */}
-            <div style={{ display: 'flex', gap: '12px' }}>
-              <div style={{ flex: 1 }}>
-                <label style={{
-                  display: 'block',
-                  color: '#ffe082',
-                  fontSize: '13px',
-                  fontWeight: 600,
-                  marginBottom: '6px',
-                }}>
-                  Начало
-                </label>
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={e => {
-                    const newStartDate = e.target.value;
-                    setStartDate(newStartDate);
-                    // Автоматически обновляем endDate, если выбрана сегодняшняя дата
-                    const today = getTodayLocalDate();
-                    if (newStartDate === today) {
-                      setEndDate(today);
-                    }
-                  }}
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    borderRadius: '12px',
-                    border: '2px solid rgba(255, 224, 130, 0.3)',
-                    background: 'rgba(255, 255, 255, 0.05)',
-                    color: '#fff',
-                    fontSize: '15px',
-                    fontWeight: 500,
-                    outline: 'none',
-                  }}
-                />
-              </div>
-
-              <div style={{ flex: 1 }}>
-                <label style={{
-                  display: 'block',
-                  color: '#ffe082',
-                  fontSize: '13px',
-                  fontWeight: 600,
-                  marginBottom: '6px',
-                }}>
-                  Конец
-                </label>
-                <input
-                  type="date"
-                  value={endDate}
-                  onChange={e => {
-                    const newEndDate = e.target.value;
-                    setEndDate(newEndDate);
-                    // Автоматически загружаем данные при изменении даты
-                    const today = getTodayLocalDate();
-                    if (newEndDate === today && startDate === today) {
-                      setTimeout(() => fetchReport(), 100);
-                    }
-                  }}
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    borderRadius: '12px',
-                    border: '2px solid rgba(255, 224, 130, 0.3)',
-                    background: 'rgba(255, 255, 255, 0.05)',
-                    color: '#fff',
-                    fontSize: '15px',
-                    fontWeight: 500,
-                    outline: 'none',
-                  }}
-                />
-              </div>
-            </div>
-
-            {/* Поиск сотрудника */}
-            <div style={{ position: 'relative' }}>
-              <label style={{
-                display: 'block',
-                color: '#ffe082',
-                fontSize: '13px',
+          {/* Кнопка отчета локальных ПК */}
+          <div style={{ marginBottom: '20px' }}>
+            <button
+              type="button"
+              onClick={() => {
+                console.log('🔘 [WorkTimeMobile] Кнопка "Отчет активности локальных ПК" нажата');
+                setShowLocalReport(true);
+              }}
+              style={{
+                width: '100%',
+                padding: '14px',
+                borderRadius: '12px',
+                border: '2px solid rgba(67, 233, 123, 0.3)',
+                background: 'linear-gradient(135deg, #43e97b 0%, #2193b0 100%)',
+                color: '#fff',
+                cursor: 'pointer',
                 fontWeight: 600,
-                marginBottom: '6px',
-              }}>
-                Поиск сотрудника
-              </label>
-              <div style={{ position: 'relative' }}>
-                <input
-                  type="text"
-                  placeholder="Введите имя сотрудника..."
-                  value={searchTerm}
-                  onChange={handleSearchChange}
-                  onFocus={() => setShowAutocomplete(true)}
-                  onBlur={() => setTimeout(() => setShowAutocomplete(false), 150)}
-                  style={{
-                    width: '100%',
-                    padding: '12px 40px 12px 12px',
-                    borderRadius: '12px',
-                    border: '2px solid rgba(255, 224, 130, 0.3)',
-                    background: 'rgba(255, 255, 255, 0.05)',
-                    color: '#fff',
-                    fontSize: '15px',
-                    fontWeight: 500,
-                    outline: 'none',
-                  }}
-                />
-                <FiSearch
-                  size={18}
-                  style={{
-                    position: 'absolute',
-                    right: '12px',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    color: '#ffe082',
-                    pointerEvents: 'none',
-                  }}
-                />
-                {searchTerm && (
-                  <button
-                    onClick={handleClearSearch}
-                    style={{
-                      position: 'absolute',
-                      right: '40px',
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      background: 'transparent',
-                      border: 'none',
-                      color: '#fff',
-                      fontSize: '18px',
-                      cursor: 'pointer',
-                      padding: '4px',
-                    }}
-                  >
-                    ×
-                  </button>
-                )}
-              </div>
-
-              {showAutocomplete && userOptions.length > 0 && (
-                <div style={{
-                  position: 'absolute',
-                  top: '100%',
-                  left: 0,
-                  right: 0,
-                  background: 'rgba(35, 41, 49, 0.98)',
-                  border: '2px solid rgba(255, 224, 130, 0.3)',
-                  borderRadius: '12px',
-                  zIndex: 10002,
-                  maxHeight: '200px',
-                  overflowY: 'auto',
-                  marginTop: '6px',
-                  boxShadow: '0 4px 16px rgba(0, 0, 0, 0.3)',
-                }}>
-                  {userOptions.map((u, i) => (
-                    <div
-                      key={u + i}
-                      onMouseDown={() => handleSelectUser(u)}
-                      style={{
-                        padding: '12px 16px',
-                        cursor: 'pointer',
-                        borderBottom: i < userOptions.length - 1 ? '1px solid rgba(255, 255, 255, 0.1)' : 'none',
-                        color: '#fff',
-                        fontSize: '14px',
-                      }}
-                    >
-                      {u}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Кнопка действий */}
-            <div style={{ display: 'flex', gap: '12px' }}>
-              <button
-                onClick={fetchReport}
-                disabled={loading}
-                style={{
-                  width: '100%',
-                  padding: '14px',
-                  borderRadius: '12px',
-                  border: '2px solid rgba(67, 233, 123, 0.3)',
-                  background: loading
-                    ? 'rgba(67, 233, 123, 0.3)'
-                    : 'linear-gradient(135deg, #43e97b 0%, #2193b0 100%)',
-                  color: '#fff',
-                  cursor: loading ? 'not-allowed' : 'pointer',
-                  fontWeight: 600,
-                  fontSize: '15px',
-                  opacity: loading ? 0.6 : 1,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                }}
-              >
-                {loading ? (
-                  <>
-                    <span style={{
-                      width: '16px',
-                      height: '16px',
-                      border: '2px solid rgba(255, 255, 255, 0.3)',
-                      borderTopColor: '#fff',
-                      borderRadius: '50%',
-                      animation: 'spin 0.6s linear infinite',
-                    }} />
-                    Загрузка...
-                  </>
-                ) : (
-                  'Отчет активности локальных ПК'
-                )}
-              </button>
-            </div>
+                fontSize: '15px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                transition: 'all 0.2s',
+                boxShadow: '0 2px 8px rgba(67, 233, 123, 0.2)',
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.boxShadow = '0 4px 12px rgba(67, 233, 123, 0.3)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.boxShadow = '0 2px 8px rgba(67, 233, 123, 0.2)';
+              }}
+            >
+              <FiMonitor size={18} />
+              Отчет активности локальных ПК
+            </button>
           </div>
-
-          {/* Результаты */}
-          {loading ? (
-            <div style={{
-              textAlign: 'center',
-              padding: '40px 20px',
-              color: '#ffe082',
-              fontSize: '16px',
-              fontWeight: 600,
-            }}>
-              Загрузка данных...
-            </div>
-          ) : displayedRows.length === 0 ? (
-            <div style={{
-              textAlign: 'center',
-              padding: '40px 20px',
-              color: 'rgba(255, 255, 255, 0.5)',
-              fontSize: '15px',
-            }}>
-              Нет данных для отображения
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {displayedRows.map((row, idx) => (
-                <div
-                  key={idx}
-                  style={{
-                    background: 'rgba(255, 255, 255, 0.05)',
-                    borderRadius: '12px',
-                    padding: '16px',
-                    border: '1px solid rgba(255, 224, 130, 0.2)',
-                  }}
-                >
-                  {(() => {
-                    // Prefer FIO, but if оно битое (вопросительные знаки) или пустое — показываем username
-                    const displayName =
-                      row.fio && !row.fio.includes('?') && row.fio.trim() ? row.fio : (row.username || 'Неизвестный');
-
-                    console.log('🔍 [WorkTimeMobile] Рендер строки:', { displayName, fio: row.fio, username: row.username, hasSessions: !!row.sessions });
-
-                    return (
-                  <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    marginBottom: '12px',
-                  }}>
-                    <h3 style={{
-                      margin: 0,
-                      color: '#ffe082',
-                      fontSize: '16px',
-                      fontWeight: 700,
-                    }}>
-                      {displayName}
-                    </h3>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        console.log('🔘 [WorkTimeMobile] НОВАЯ кнопка "Детали" нажата!');
-                        console.log('🔘 [WorkTimeMobile] DisplayName:', displayName);
-                        console.log('🔘 [WorkTimeMobile] Row username:', row.username);
-                        console.log('🔘 [WorkTimeMobile] Row sessions:', row.sessions?.length || 0);
-                        console.log('🔘 [WorkTimeMobile] Start date:', startDate, 'End date:', endDate);
-                        
-                        // Асинхронная загрузка активности, URL и скриншотов и открытие модалки
-                        (async () => {
-                          console.log('🔄 [WorkTimeMobile] Начинаем асинхронную загрузку данных...');
-                          let userActivityStats = null;
-                          let urls = [];
-                          let applications = [];
-                          let screenshots = [];
-                          
-                          try {
-                            const params = new URLSearchParams({
-                              start: startDate,
-                              end: endDate,
-                            });
-                            console.log('📡 [WorkTimeMobile] Загружаем activity-summary для:', row.username);
-                            const res = await fetch(`/api/activity-summary?${params.toString()}`);
-                            const data = await res.json();
-                            if (res.ok && data.success && Array.isArray(data.summary)) {
-                              userActivityStats = data.summary.find(
-                                (s) => s.username === row.username
-                              ) || null;
-                              console.log('✅ [WorkTimeMobile] Activity stats загружены:', userActivityStats);
-                            } else {
-                              console.warn('⚠️ [WorkTimeMobile] Activity summary не получен:', data);
-                            }
-                          } catch (err) {
-                            console.error('❌ [WorkTimeMobile] Ошибка загрузки активности:', err);
-                          }
-                          
-                          // Загружаем URL и скриншоты
-                          console.log('📡 [WorkTimeMobile] Начинаем загрузку activity-details...');
-                          console.log('📡 [WorkTimeMobile] Параметры:', { username: row.username, start: startDate, end: endDate });
-                          try {
-                            if (!row.username) {
-                              console.error('❌ [WorkTimeMobile] НЕТ username в row!', row);
-                            }
-                            if (!startDate || !endDate) {
-                              console.error('❌ [WorkTimeMobile] НЕТ дат!', { startDate, endDate });
-                            }
-                            
-                            // Бэкенд сам расширяет диапазон дат для учёта часового пояса (Киев UTC+2/UTC+3)
-                            // Отправляем выбранные даты как есть, без расширения
-                            const detailsParams = new URLSearchParams({
-                              username: row.username || '',
-                              start: startDate || '',
-                              end: endDate || '',
-                            });
-                            console.log('🌍 [WorkTimeMobile] Отправляем даты (киевское время):', startDate, '-', endDate);
-                            console.log('🌍 [WorkTimeMobile] Бэкенд сам расширит диапазон для учёта часового пояса');
-                            const apiUrl = `/api/activity-details?${detailsParams.toString()}`;
-                            console.log('📡 [WorkTimeMobile] ====== НАЧАЛО ЗАПРОСА К API ======');
-                            console.log('📡 [WorkTimeMobile] Загружаем activity-details для:', row.username);
-                            console.log('📡 [WorkTimeMobile] URL запроса:', apiUrl);
-                            console.log('📡 [WorkTimeMobile] Параметры запроса:', detailsParams.toString());
-                            
-                            const detailsRes = await fetch(apiUrl);
-                            console.log('📡 [WorkTimeMobile] Статус ответа:', detailsRes.status, detailsRes.statusText);
-                            
-                            const detailsData = await detailsRes.json();
-                            console.log('📡 [WorkTimeMobile] СЫРОЙ ОТВЕТ ОТ API (полностью):', detailsData);
-                            console.log('📡 [WorkTimeMobile] detailsData.applications существует?', !!detailsData.applications);
-                            console.log('📡 [WorkTimeMobile] detailsData.applications это массив?', Array.isArray(detailsData.applications));
-                            console.log('📡 [WorkTimeMobile] detailsData.applications.length:', detailsData.applications?.length || 0);
-                            console.log('📡 [WorkTimeMobile] ====== ОТВЕТ ОТ API ======');
-                            console.log('📡 [WorkTimeMobile] Полный ответ:', detailsData);
-                            console.log('📡 [WorkTimeMobile] applications в ответе:', detailsData.applications);
-                            console.log('📡 [WorkTimeMobile] applications count:', detailsData.applications?.length || 0);
-                            console.log('📡 [WorkTimeMobile] ===========================');
-                            
-                            if (detailsRes.ok && detailsData.success) {
-                              // КРИТИЧЕСКАЯ ПРОВЕРКА: что пришло от API
-                              console.log('🔍 [WorkTimeMobile] ПРОВЕРКА ОТВЕТА ОТ API:');
-                              console.log('  - detailsData.applications существует?', !!detailsData.applications);
-                              console.log('  - detailsData.applications это массив?', Array.isArray(detailsData.applications));
-                              console.log('  - detailsData.applications.length:', detailsData.applications?.length || 0);
-                              console.log('  - detailsData.applications (первые 5):', detailsData.applications?.slice(0, 5));
-                              
-                              urls = detailsData.urls || [];
-                              applications = detailsData.applications || [];
-                              screenshots = detailsData.screenshots || [];
-                              
-                              console.log('✅ [WorkTimeMobile] URLs, приложения и скриншоты загружены:', { 
-                                urlsCount: urls.length, 
-                                applicationsCount: applications.length,
-                                applications: applications,  // ПОЛНЫЙ МАССИВ
-                                screenshotsCount: screenshots.length,
-                                urls: urls.slice(0, 3),
-                                applicationsPreview: applications.slice(0, 3),
-                                screenshots: screenshots.slice(0, 3)
-                              });
-                              
-                              // КРИТИЧЕСКАЯ ПРОВЕРКА
-                              if (applications.length === 0) {
-                                console.warn('⚠️ [WorkTimeMobile] ВНИМАНИЕ: applications пустой массив!');
-                                console.warn('⚠️ [WorkTimeMobile] Проверьте API ответ выше');
-                                console.warn('⚠️ [WorkTimeMobile] Полный ответ API:', JSON.stringify(detailsData, null, 2));
-                              } else {
-                                console.log('✅ [WorkTimeMobile] Applications загружены успешно:', applications.length, 'шт.');
-                              }
-                            } else {
-                              console.warn('⚠️ [WorkTimeMobile] Activity details не получены:', detailsData);
-                              console.warn('⚠️ [WorkTimeMobile] Status:', detailsRes.status, 'Success:', detailsData.success);
-                            }
-                          } catch (err) {
-                            console.error('❌ [WorkTimeMobile] Ошибка загрузки URL и скриншотов:', err);
-                            console.error('❌ [WorkTimeMobile] Stack:', err.stack);
-                          }
-                          
-                          const logsToShow = Array.isArray(row.sessions) ? row.sessions : (Array.isArray(row.logs) ? row.logs : []);
-                          console.log('📋 [WorkTimeMobile] Логи для модалки:', logsToShow.length, 'items');
-                          
-                          // КРИТИЧЕСКОЕ ЛОГИРОВАНИЕ ПЕРЕД ПЕРЕДАЧЕЙ В МОДАЛКУ
-                          console.log('🚨 [WorkTimeMobile] ====== ПЕРЕДАЧА В МОДАЛКУ ======');
-                          console.log('🚨 [WorkTimeMobile] applications ДО передачи:', applications);
-                          console.log('🚨 [WorkTimeMobile] applications.length:', applications?.length || 0);
-                          console.log('🚨 [WorkTimeMobile] applications является массивом:', Array.isArray(applications));
-                          console.log('🚨 [WorkTimeMobile] row.username:', row.username);
-                          console.log('🚨 [WorkTimeMobile] displayName:', displayName);
-                          console.log('🚨 [WorkTimeMobile] ===============================');
-                          
-                          const newModalState = {
-                            open: true,
-                            logs: logsToShow,
-                            username: displayName, // Для отображения
-                            realUsername: row.username, // Для API запросов
-                            activityStats: userActivityStats,
-                            urls: urls,
-                            applications: applications,
-                            screenshots: screenshots,
-                            startDate: startDate,
-                            endDate: endDate,
-                          };
-                          
-                          console.log('🚀 [WorkTimeMobile] Открываем модалку с данными:', {
-                            open: true,
-                            logsCount: logsToShow.length,
-                            username: displayName,
-                            realUsername: row.username,
-                            activityStats: userActivityStats ? 'present' : 'null',
-                            urlsCount: urls?.length || 0,
-                            applicationsCount: applications?.length || 0,
-                            applications: applications,
-                            screenshotsCount: screenshots?.length || 0,
-                            startDate,
-                            endDate,
-                            urlsPreview: urls?.slice(0, 2),
-                            applicationsPreview: applications?.slice(0, 3),
-                            screenshotsPreview: screenshots?.slice(0, 2),
-                            fullUrls: urls,
-                            fullApplications: applications,
-                            fullScreenshots: screenshots
-                          });
-                          setDetailsModal(newModalState);
-                          console.log('✅ [WorkTimeMobile] setDetailsModal вызван! urls:', urls?.length || 0, 'screenshots:', screenshots?.length || 0);
-                          console.log('✅ [WorkTimeMobile] Содержимое newModalState:', JSON.stringify(newModalState, null, 2));
-                        })();
-                      }}
-                      style={{
-                        padding: '8px 16px',
-                        borderRadius: '10px',
-                        border: '2px solid rgba(33, 147, 176, 0.5)',
-                        background: 'linear-gradient(135deg, #2193b0 0%, #43e97b 100%)',
-                        color: '#fff',
-                        fontWeight: 700,
-                        fontSize: '14px',
-                        cursor: 'pointer',
-                        boxShadow: '0 2px 8px rgba(33, 147, 176, 0.3)',
-                        transition: 'all 0.2s',
-                        zIndex: 10,
-                        position: 'relative',
-                      }}
-                      onMouseEnter={(e) => {
-                        e.target.style.transform = 'scale(1.05)';
-                        e.target.style.boxShadow = '0 4px 12px rgba(33, 147, 176, 0.5)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.target.style.transform = 'scale(1)';
-                        e.target.style.boxShadow = '0 2px 8px rgba(33, 147, 176, 0.3)';
-                      }}
-                    >
-                      Детали
-                    </button>
-                  </div>
-                    );
-                  })()}
-
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
-                      <span style={{ color: 'rgba(255, 255, 255, 0.6)' }}>Первый вход:</span>
-                      <span style={{ color: '#fff', fontWeight: 500 }}>
-                        {row.firstLogin ? formatTime(row.firstLogin) : '—'}
-                      </span>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
-                      <span style={{ color: 'rgba(255, 255, 255, 0.6)' }}>Последний выход:</span>
-                      <span style={{ color: '#fff', fontWeight: 500 }}>
-                        {row.lastLogout ? formatTime(row.lastLogout) : '—'}
-                      </span>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
-                      <span style={{ color: 'rgba(255, 255, 255, 0.6)' }}>Отработано:</span>
-                      <span style={{ color: '#43e97b', fontWeight: 700, fontSize: '15px' }}>
-                        {row.totalTimeStr || (row.firstLogin && row.lastLogout ? formatWorkTime(Math.round((new Date(row.lastLogout) - new Date(row.firstLogin)) / 60000)) : '—')}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
 
         {/* Подсказка о свайпе */}
@@ -1082,6 +759,314 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
           setShowRemoteWorktime(false);
         }} 
       />
+      
+      {/* Модалка локального отчета */}
+      {showLocalReport && ReactDOM.createPortal(
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.8)',
+            zIndex: 10003,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px',
+          }}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
+          <div
+            ref={modalRef}
+            style={{
+              background: 'linear-gradient(135deg, #232931 0%, #181c22 100%)',
+              borderRadius: '20px',
+              width: '100%',
+              maxWidth: '600px',
+              maxHeight: '90vh',
+              display: 'flex',
+              flexDirection: 'column',
+              color: '#fff',
+              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Заголовок */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '20px',
+              borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+            }}>
+              <h2 style={{
+                margin: 0,
+                color: '#43e97b',
+                fontSize: '20px',
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+              }}>
+                <FiMonitor size={20} />
+                Отчет активности локальных ПК
+              </h2>
+              <button
+                onClick={() => {
+                  setShowLocalReport(false);
+                  setLocalReportUsers([]);
+                  setLocalReportSearchTerm('');
+                }}
+                style={{
+                  background: 'rgba(255, 255, 255, 0.2)',
+                  border: 'none',
+                  color: '#fff',
+                  fontSize: '20px',
+                  cursor: 'pointer',
+                  padding: '8px',
+                  borderRadius: '8px',
+                }}
+              >
+                <FiX />
+              </button>
+            </div>
+
+            {/* Контент */}
+            <div style={{ flex: 1, padding: '20px', overflowY: 'auto' }}>
+              {/* Календарь */}
+              <div style={{ marginBottom: '20px', display: 'flex', gap: '12px' }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{
+                    display: 'block',
+                    color: '#ffe082',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    marginBottom: '6px',
+                  }}>
+                    Начало
+                  </label>
+                  <input
+                    type="date"
+                    value={localReportStartDate}
+                    onChange={e => setLocalReportStartDate(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      borderRadius: '12px',
+                      border: '2px solid rgba(255, 224, 130, 0.3)',
+                      background: 'rgba(255, 255, 255, 0.05)',
+                      color: '#fff',
+                      fontSize: '15px',
+                    }}
+                  />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={{
+                    display: 'block',
+                    color: '#ffe082',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    marginBottom: '6px',
+                  }}>
+                    Конец
+                  </label>
+                  <input
+                    type="date"
+                    value={localReportEndDate}
+                    onChange={e => setLocalReportEndDate(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      borderRadius: '12px',
+                      border: '2px solid rgba(255, 224, 130, 0.3)',
+                      background: 'rgba(255, 255, 255, 0.05)',
+                      color: '#fff',
+                      fontSize: '15px',
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Поиск */}
+              <div style={{ marginBottom: '20px', position: 'relative' }}>
+                <label style={{
+                  display: 'block',
+                  color: '#ffe082',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  marginBottom: '6px',
+                }}>
+                  Поиск по имени
+                </label>
+                <input
+                  type="text"
+                  placeholder="Введите имя..."
+                  value={localReportSearchTerm}
+                  onChange={handleLocalReportSearchChange}
+                  onFocus={() => setLocalReportShowAutocomplete(true)}
+                  onBlur={() => setTimeout(() => setLocalReportShowAutocomplete(false), 150)}
+                  style={{
+                    width: '100%',
+                    padding: '12px 40px 12px 12px',
+                    borderRadius: '12px',
+                    border: '2px solid rgba(255, 224, 130, 0.3)',
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    color: '#fff',
+                    fontSize: '15px',
+                  }}
+                />
+                <FiSearch
+                  size={18}
+                  style={{
+                    position: 'absolute',
+                    right: '12px',
+                    top: '38px',
+                    color: '#ffe082',
+                    pointerEvents: 'none',
+                  }}
+                />
+                {localReportShowAutocomplete && localReportUserOptions.length > 0 && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: 0,
+                    right: 0,
+                    background: 'rgba(35, 41, 49, 0.98)',
+                    border: '2px solid rgba(255, 224, 130, 0.3)',
+                    borderRadius: '12px',
+                    zIndex: 10004,
+                    maxHeight: '200px',
+                    overflowY: 'auto',
+                    marginTop: '6px',
+                  }}>
+                    {localReportUserOptions.map((u, i) => (
+                      <div
+                        key={u + i}
+                        onMouseDown={() => {
+                          setLocalReportSearchTerm(u);
+                          setLocalReportShowAutocomplete(false);
+                        }}
+                        style={{
+                          padding: '12px 16px',
+                          cursor: 'pointer',
+                          borderBottom: i < localReportUserOptions.length - 1 ? '1px solid rgba(255, 255, 255, 0.1)' : 'none',
+                          color: '#fff',
+                          fontSize: '14px',
+                        }}
+                      >
+                        {u}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Таблица */}
+              {loadingLocalReport ? (
+                <div style={{ textAlign: 'center', padding: '40px', color: '#ffe082' }}>
+                  Загрузка...
+                </div>
+              ) : filteredLocalReportUsers.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '40px', color: 'rgba(255, 255, 255, 0.5)' }}>
+                  Нет данных за выбранный период
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {filteredLocalReportUsers.map((row, idx) => {
+                    const displayName = row.fio && !row.fio.includes('?') && row.fio.trim() ? row.fio : (row.username || 'Неизвестный');
+                    return (
+                      <div
+                        key={idx}
+                        style={{
+                          background: 'rgba(255, 255, 255, 0.05)',
+                          borderRadius: '12px',
+                          padding: '16px',
+                          border: '1px solid rgba(255, 224, 130, 0.2)',
+                        }}
+                      >
+                        <div style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          marginBottom: '12px',
+                        }}>
+                          <h3 style={{
+                            margin: 0,
+                            color: '#ffe082',
+                            fontSize: '16px',
+                            fontWeight: 700,
+                          }}>
+                            {displayName}
+                          </h3>
+                          <button
+                            type="button"
+                            onClick={() => handleOpenLocalUserDetails(row)}
+                            style={{
+                              padding: '8px 16px',
+                              borderRadius: '10px',
+                              border: '2px solid rgba(33, 147, 176, 0.5)',
+                              background: 'linear-gradient(135deg, #2193b0 0%, #43e97b 100%)',
+                              color: '#fff',
+                              fontWeight: 700,
+                              fontSize: '14px',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            Подробнее
+                          </button>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
+                            <span style={{ color: 'rgba(255, 255, 255, 0.6)' }}>Первый вход:</span>
+                            <span style={{ color: '#fff', fontWeight: 500 }}>
+                              {row.firstLogin ? formatTime(row.firstLogin) : '—'}
+                            </span>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
+                            <span style={{ color: 'rgba(255, 255, 255, 0.6)' }}>Последний выход:</span>
+                            <span style={{ color: '#fff', fontWeight: 500 }}>
+                              {row.lastLogout ? formatTime(row.lastLogout) : '—'}
+                            </span>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
+                            <span style={{ color: 'rgba(255, 255, 255, 0.6)' }}>Отработано:</span>
+                            <span style={{ color: '#43e97b', fontWeight: 700, fontSize: '15px' }}>
+                              {row.totalTimeStr || '—'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Модалка деталей пользователя */}
+      {localReportDetailsModal.open && (
+        <UserWorkTimeDetailsMobile
+          open={localReportDetailsModal.open}
+          onClose={() => setLocalReportDetailsModal({ ...localReportDetailsModal, open: false })}
+          logs={localReportDetailsModal.logs}
+          username={localReportDetailsModal.username}
+          realUsername={localReportDetailsModal.realUsername}
+          activityStats={localReportDetailsModal.activityStats}
+          urls={localReportDetailsModal.urls}
+          applications={localReportDetailsModal.applications}
+          screenshots={localReportDetailsModal.screenshots}
+          startDate={localReportDetailsModal.startDate}
+          endDate={localReportDetailsModal.endDate}
+          onOpenMobileSidebar={() => {}}
+        />
+      )}
     </>
   );
 }
