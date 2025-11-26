@@ -501,6 +501,7 @@ app.delete('/api/custom-emoji/:file', authenticateToken, async (req, res) => {
 
 // ==================== API МАРШРУТЫ ====================
 // --- ОТЧЁТЫ ПО РАБОЧЕМУ ВРЕМЕНИ И АКТИВНОСТИ ---
+console.log('🚀🚀🚀 [SERVER] ДО блока try - начинаем загрузку роутеров');
 try {
   console.log('🚀 [SERVER] Начинаем загрузку роутеров...');
   
