@@ -171,7 +171,10 @@ function WorkTimeReportModal({ isOpen, onRequestClose }) {
   }, [showLocalReport, localReportStartDate, localReportEndDate, fetchLocalReport]);
   
   const handleOpenLocalReport = () => {
+    console.log('🔘 [WorkTimeReportModal] Кнопка "Отчет активности локальных ПК" нажата');
+    console.log('🔘 [WorkTimeReportModal] showLocalReport до:', showLocalReport);
     setShowLocalReport(true);
+    console.log('🔘 [WorkTimeReportModal] setShowLocalReport(true) вызван');
   };
 
   // Обработка поиска
@@ -406,9 +409,11 @@ function WorkTimeReportModal({ isOpen, onRequestClose }) {
             onRequestClose={() => setShowRemoteWorktime(false)} 
           />
           {/* Модалка для локального отчета */}
+          {console.log('🔍 [WorkTimeReportModal] Рендер модалки локального отчета, showLocalReport =', showLocalReport)}
           <Modal
             isOpen={showLocalReport}
             onRequestClose={() => {
+              console.log('🔴 [WorkTimeReportModal] Закрываем модалку локального отчета');
               setShowLocalReport(false);
               setLocalReportUsers([]);
               setLocalReportSearchTerm('');
