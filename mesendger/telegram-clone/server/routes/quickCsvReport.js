@@ -3,13 +3,26 @@ const db = require('../database');
 const router = express.Router();
 
 // Логируем при загрузке модуля
+console.error('🚀 [quickCsvReport] MODULE LOADING STARTED');
 const fs = require('fs');
 const path = require('path');
 try {
+  console.error('🚀 [quickCsvReport] Trying to write ROUTER_LOADED.txt');
   const debugFile = path.join(__dirname, '../../ROUTER_LOADED.txt');
+  console.error('🚀 [quickCsvReport] Debug file path:', debugFile);
+  console.error('🚀 [quickCsvReport] __dirname:', __dirname);
   fs.writeFileSync(debugFile, `[${new Date().toISOString()}] quickCsvReport router module loaded\n`);
+  console.error('✅ [quickCsvReport] ROUTER_LOADED.txt written successfully');
 } catch (e) {
-  console.error('Failed to write ROUTER_LOADED.txt:', e);
+  console.error('❌ [quickCsvReport] Failed to write ROUTER_LOADED.txt:', e);
+  console.error('❌ [quickCsvReport] Error stack:', e.stack);
+  // Пробуем другой путь
+  try {
+    fs.writeFileSync('/tmp/ROUTER_LOADED.txt', `[${new Date().toISOString()}] quickCsvReport router module loaded\n`);
+    console.error('✅ [quickCsvReport] ROUTER_LOADED.txt written to /tmp');
+  } catch (e2) {
+    console.error('❌ [quickCsvReport] Failed to write to /tmp:', e2);
+  }
 }
 console.error('✅ quickCsvReport router module loaded');
 
