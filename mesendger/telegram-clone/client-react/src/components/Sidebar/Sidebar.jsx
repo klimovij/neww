@@ -13,16 +13,51 @@ import frostyImg from '../../assets/icons/Frosty.png';
 
 const SNOWFLAKE_COUNT = 14;
 
-// Индикатор связи с сервером
+// Вывеска статуса сервера в стиле магазина
 const ServerStatus = styled.div`
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 1.01em;
-  font-weight: 600;
-  padding: 10px 0 0 0;
-  margin-bottom: 2px;
-  margin-left: 10px;
+  justify-content: center;
+  font-size: 1.2em;
+  font-weight: 800;
+  padding: 12px 20px;
+  margin: 10px;
+  margin-bottom: 12px;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  text-shadow: 0 0 10px currentColor, 0 0 20px currentColor, 0 0 30px currentColor;
+  animation: ${props => props.connected ? 'pulse-green 2s ease-in-out infinite' : 'pulse-red 2s ease-in-out infinite'};
+  box-shadow: ${props => props.connected 
+    ? '0 0 20px rgba(67, 233, 123, 0.5), inset 0 0 20px rgba(67, 233, 123, 0.1)' 
+    : '0 0 20px rgba(231, 76, 60, 0.5), inset 0 0 20px rgba(231, 76, 60, 0.1)'};
+  color: ${props => props.connected ? '#43e97b' : '#e74c3c'};
+  background: ${props => props.connected 
+    ? 'linear-gradient(135deg, rgba(67, 233, 123, 0.15) 0%, rgba(67, 233, 123, 0.05) 100%)' 
+    : 'linear-gradient(135deg, rgba(231, 76, 60, 0.15) 0%, rgba(231, 76, 60, 0.05) 100%)'};
+  border: 2px solid ${props => props.connected ? 'rgba(67, 233, 123, 0.4)' : 'rgba(231, 76, 60, 0.4)'};
+  
+  @keyframes pulse-green {
+    0%, 100% {
+      text-shadow: 0 0 10px #43e97b, 0 0 20px #43e97b, 0 0 30px #43e97b;
+      box-shadow: 0 0 20px rgba(67, 233, 123, 0.5), inset 0 0 20px rgba(67, 233, 123, 0.1);
+    }
+    50% {
+      text-shadow: 0 0 15px #43e97b, 0 0 30px #43e97b, 0 0 45px #43e97b;
+      box-shadow: 0 0 30px rgba(67, 233, 123, 0.7), inset 0 0 30px rgba(67, 233, 123, 0.2);
+    }
+  }
+  
+  @keyframes pulse-red {
+    0%, 100% {
+      text-shadow: 0 0 10px #e74c3c, 0 0 20px #e74c3c, 0 0 30px #e74c3c;
+      box-shadow: 0 0 20px rgba(231, 76, 60, 0.5), inset 0 0 20px rgba(231, 76, 60, 0.1);
+    }
+    50% {
+      text-shadow: 0 0 15px #e74c3c, 0 0 30px #e74c3c, 0 0 45px #e74c3c;
+      box-shadow: 0 0 30px rgba(231, 76, 60, 0.7), inset 0 0 30px rgba(231, 76, 60, 0.2);
+    }
+  }
 `;
 // import GeneralCalendarModal from '../GeneralCalendarModal';
 // import OnlineUsers from './OnlineUsers';
@@ -537,10 +572,9 @@ export default function Sidebar() {
 
   return (
     <SidebarContainer>
-      {/* Индикатор связи с сервером */}
-      <ServerStatus>
-        <span style={{width:14,height:14,borderRadius:'50%',background:socketConnected?'#43e97b':'#e74c3c',display:'inline-block',boxShadow:socketConnected?'0 0 6px #43e97b88':'0 0 6px #e74c3c88'}}></span>
-        {socketConnected ? 'Онлайн' : 'Нет соединения'}
+      {/* Вывеска статуса сервера в стиле магазина */}
+      <ServerStatus connected={socketConnected}>
+        {socketConnected ? 'Issa Plus онлайн' : 'Issa Plus офлайн'}
       </ServerStatus>
       <SidebarHeader>
         {/* Снеговик (абсолютное позиционирование по блоку) */}

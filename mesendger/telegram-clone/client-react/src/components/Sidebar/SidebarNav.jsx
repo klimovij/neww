@@ -1029,30 +1029,56 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar, 
               justifyContent: 'space-between',
               gap: '12px'
             }}>
-              {/* Индикатор связи с сервером - в левом верхнем углу */}
+              {/* Вывеска статуса сервера в стиле магазина */}
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '6px',
-                fontSize: '0.75em',
-                fontWeight: 600,
-                padding: '6px 10px',
-                background: 'rgba(67,233,123,0.1)',
-                borderRadius: '8px',
-                flexShrink: 0
+                justifyContent: 'center',
+                fontSize: socketConnected ? '0.9em' : '0.85em',
+                fontWeight: 800,
+                padding: '10px 16px',
+                borderRadius: '12px',
+                textTransform: 'uppercase',
+                letterSpacing: '1.5px',
+                textShadow: socketConnected 
+                  ? '0 0 8px #43e97b, 0 0 16px #43e97b, 0 0 24px #43e97b'
+                  : '0 0 8px #e74c3c, 0 0 16px #e74c3c, 0 0 24px #e74c3c',
+                animation: socketConnected ? 'pulse-green-nav 2s ease-in-out infinite' : 'pulse-red-nav 2s ease-in-out infinite',
+                boxShadow: socketConnected 
+                  ? '0 0 15px rgba(67, 233, 123, 0.5), inset 0 0 15px rgba(67, 233, 123, 0.1)'
+                  : '0 0 15px rgba(231, 76, 60, 0.5), inset 0 0 15px rgba(231, 76, 60, 0.1)',
+                color: socketConnected ? '#43e97b' : '#e74c3c',
+                background: socketConnected 
+                  ? 'linear-gradient(135deg, rgba(67, 233, 123, 0.15) 0%, rgba(67, 233, 123, 0.05) 100%)'
+                  : 'linear-gradient(135deg, rgba(231, 76, 60, 0.15) 0%, rgba(231, 76, 60, 0.05) 100%)',
+                border: `2px solid ${socketConnected ? 'rgba(67, 233, 123, 0.4)' : 'rgba(231, 76, 60, 0.4)'}`,
+                flexShrink: 0,
+                whiteSpace: 'nowrap',
               }}>
-                <span style={{
-                  width: 10,
-                  height: 10,
-                  borderRadius: '50%',
-                  background: socketConnected ? '#43e97b' : '#e74c3c',
-                  display: 'inline-block',
-                  boxShadow: socketConnected ? '0 0 6px #43e97b88' : '0 0 6px #e74c3c88'
-                }}></span>
-                <span style={{ whiteSpace: 'nowrap' }}>
-                  {socketConnected ? 'Онлайн' : 'Офлайн'}
-                </span>
+                {socketConnected ? 'Issa Plus онлайн' : 'Issa Plus офлайн'}
               </div>
+              <style>{`
+                @keyframes pulse-green-nav {
+                  0%, 100% {
+                    text-shadow: 0 0 8px #43e97b, 0 0 16px #43e97b, 0 0 24px #43e97b;
+                    box-shadow: 0 0 15px rgba(67, 233, 123, 0.5), inset 0 0 15px rgba(67, 233, 123, 0.1);
+                  }
+                  50% {
+                    text-shadow: 0 0 12px #43e97b, 0 0 24px #43e97b, 0 0 36px #43e97b;
+                    box-shadow: 0 0 25px rgba(67, 233, 123, 0.7), inset 0 0 25px rgba(67, 233, 123, 0.2);
+                  }
+                }
+                @keyframes pulse-red-nav {
+                  0%, 100% {
+                    text-shadow: 0 0 8px #e74c3c, 0 0 16px #e74c3c, 0 0 24px #e74c3c;
+                    box-shadow: 0 0 15px rgba(231, 76, 60, 0.5), inset 0 0 15px rgba(231, 76, 60, 0.1);
+                  }
+                  50% {
+                    text-shadow: 0 0 12px #e74c3c, 0 0 24px #e74c3c, 0 0 36px #e74c3c;
+                    box-shadow: 0 0 25px rgba(231, 76, 60, 0.7), inset 0 0 25px rgba(231, 76, 60, 0.2);
+                  }
+                }
+              `}</style>
               <h2 style={{
                 margin: 0,
                 color: '#43e97b',
