@@ -600,16 +600,51 @@ export default function EmojiSettingsModal({ open, onClose }) {
   const handleSyncEmojis = async () => {
     setIsSyncing(true);
     try {
+      // Показываем начальное сообщение
+      const localEmojis = JSON.parse(localStorage.getItem('customEmojis') || '[]');
+      if (!Array.isArray(localEmojis) || localEmojis.length === 0) {
+        alert('❌ Нет локальных эмодзи для синхронизации.\n\nДобавьте эмодзи через форму выше, затем синхронизируйте.');
+        setIsSyncing(false);
+        return;
+      }
+      
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert('❌ Ошибка: вы не авторизованы.\n\nПожалуйста, перезайдите в приложение.');
+        setIsSyncing(false);
+        return;
+      }
+      
+      // Показываем прогресс
+      const dataUrlEmojis = localEmojis.filter(e => e.src && e.src.startsWith('data:'));
+      const otherEmojis = localEmojis.filter(e => e.src && !e.src.startsWith('data:') && !e.src.startsWith('/uploads/') && !e.src.startsWith('http'));
+      
+      if (dataUrlEmojis.length === 0 && otherEmojis.length === 0) {
+        alert(`ℹ️ Все эмодзи уже на сервере.\n\nЛокальных эмодзи: ${localEmojis.length}\nВсе они уже синхронизированы.`);
+        setIsSyncing(false);
+        return;
+      }
+      
+      alert(`🔄 Начинаю синхронизацию...\n\nЛокальных эмодзи: ${localEmojis.length}\nС data URL (base64): ${dataUrlEmojis.length}\nДругих для загрузки: ${otherEmojis.length}`);
+      
       const result = await syncEmojisToServer();
+      
       if (result.error) {
-        alert(`Ошибка синхронизации: ${result.error}`);
+        alert(`❌ Ошибка синхронизации:\n\n${result.error}\n\nПроверьте подключение к интернету и попробуйте снова.`);
+      } else if (result.synced === 0 && result.skipped > 0) {
+        alert(`✅ Все эмодзи уже синхронизированы!\n\nПропущено: ${result.skipped}\n(Все эмодзи уже были на сервере)`);
       } else {
         await loadAllEmojis();
-        alert(`✅ Синхронизация завершена!\nЗагружено: ${result.synced}\nПропущено: ${result.skipped}\nОшибок: ${result.failed || 0}`);
+        const message = `✅ Синхронизация завершена!\n\n` +
+          `📤 Загружено на сервер: ${result.synced}\n` +
+          `⏭️ Пропущено (уже были): ${result.skipped}\n` +
+          (result.failed > 0 ? `❌ Ошибок: ${result.failed}\n` : '') +
+          `\nТеперь эти эмодзи доступны всем пользователям!`;
+        alert(message);
       }
     } catch (error) {
       console.error('Ошибка синхронизации:', error);
-      alert(`Ошибка синхронизации: ${error.message}`);
+      alert(`❌ Ошибка синхронизации:\n\n${error.message || 'Неизвестная ошибка'}\n\nПроверьте подключение к интернету и попробуйте снова.`);
     } finally {
       setIsSyncing(false);
     }
