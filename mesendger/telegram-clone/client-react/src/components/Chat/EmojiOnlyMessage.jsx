@@ -59,31 +59,69 @@ const EmojiOnlyContent = styled.div.withConfig({
 
 // Функция для определения одиночного эмодзи
 export function isEmojiOnlyMessage(msgText) {
-  if (typeof msgText !== 'string') return false;
-  const trimmed = msgText.trim();
+  if (typeof msgText !== 'string' || !msgText) return false;
   
-  console.log('🔍 Checking if emoji-only:', { msgText, trimmed });
+  // Создаем временный элемент для парсинга HTML
+  const tempDiv = document.createElement('div');
+  tempDiv.innerHTML = msgText;
   
-  // Проверяем обычные эмодзи
-  if (/^\s*(?:\p{Emoji_Presentation}|\p{Extended_Pictographic})\s*$/u.test(trimmed)) {
+  // Получаем текстовое содержимое без HTML тегов
+  const textContent = tempDiv.textContent || tempDiv.innerText || '';
+  const trimmedText = textContent.trim();
+  
+  // Получаем все img теги
+  const imgElements = tempDiv.querySelectorAll('img');
+  const imgCount = imgElements.length;
+  
+  // Убираем все HTML теги и пробелы для проверки
+  const htmlWithoutTags = msgText
+    .replace(/<[^>]+>/g, '') // Убираем все HTML теги
+    .replace(/&nbsp;/g, ' ') // Заменяем &nbsp; на пробел
+    .replace(/&[a-z]+;/gi, '') // Убираем другие HTML entities
+    .replace(/\s+/g, ' ') // Заменяем множественные пробелы на один
+    .trim();
+  
+  console.log('🔍 Checking if emoji-only:', { 
+    msgText, 
+    trimmedText, 
+    htmlWithoutTags,
+    imgCount 
+  });
+  
+  // Случай 1: Обычные эмодзи (Unicode)
+  if (trimmedText && /^\s*(?:\p{Emoji_Presentation}|\p{Extended_Pictographic})+\s*$/u.test(trimmedText)) {
     console.log('✅ Detected as standard emoji-only');
     return true;
   }
   
-  // Проверяем токены custom:emoji-...
-  if (/^\s*(custom:emoji-[\d-]+)\s*$/.test(trimmed)) {
+  // Случай 2: Токены custom:emoji-...
+  if (/^\s*(custom:emoji-[\d-]+)\s*$/.test(trimmedText) || /^\s*(custom:emoji-[\d-]+)\s*$/.test(htmlWithoutTags)) {
     console.log('✅ Detected as custom emoji token');
     return true;
   }
   
-  // Проверяем HTML с одним img тегом (кастомный эмодзи)
-  const imgMatches = trimmed.match(/<img[^>]*>/g);
-  if (imgMatches && imgMatches.length === 1) {
-    // Убираем img тег и проверяем, остался ли только пробельный текст
-    const textWithoutImg = trimmed.replace(/<img[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
-    const isEmojiOnly = textWithoutImg === '';
-    console.log('🔍 HTML img check:', { imgMatches, textWithoutImg, isEmojiOnly });
-    return isEmojiOnly;
+  // Случай 3: HTML с одним или несколькими img тегами (кастомные эмодзи)
+  if (imgCount > 0) {
+    // Проверяем, что после удаления img тегов остался только пробельный текст
+    const textAfterRemovingImgs = htmlWithoutTags.trim();
+    const isEmojiOnly = textAfterRemovingImgs === '' || textAfterRemovingImgs.length === 0;
+    
+    console.log('🔍 HTML img check:', { 
+      imgCount, 
+      textAfterRemovingImgs, 
+      isEmojiOnly 
+    });
+    
+    if (isEmojiOnly) {
+      console.log('✅ Detected as HTML emoji-only (img tags)');
+      return true;
+    }
+  }
+  
+  // Случай 4: Только пробелы и HTML теги (пустое сообщение после очистки)
+  if (htmlWithoutTags === '' && imgCount === 0 && trimmedText === '') {
+    console.log('❌ Empty message after cleaning');
+    return false;
   }
   
   console.log('❌ Not emoji-only message');
@@ -161,7 +199,18 @@ export default function EmojiOnlyMessage({ message, isOwn, state }) {
   const msgText = typeof message.text === 'string' ? message.text : message.content;
   
   // ИСПРАВЛЕНИЕ: Очищаем встроенные стили из HTML, которые перекрывают наши CSS
-  const cleanedMsgText = msgText ? msgText.replace(/style="[^"]*"/g, '') : msgText;
+  // Также убираем другие атрибуты, которые могут влиять на размер
+  const cleanedMsgText = msgText ? msgText
+    .replace(/style="[^"]*"/gi, '') // Убираем style атрибуты
+    .replace(/width="[^"]*"/gi, '') // Убираем width атрибуты
+    .replace(/height="[^"]*"/gi, '') // Убираем height атрибуты
+    .replace(/width:\s*[^;]+;?/gi, '') // Убираем width из inline стилей
+    .replace(/height:\s*[^;]+;?/gi, '') // Убираем height из inline стилей
+    .replace(/max-width:\s*[^;]+;?/gi, '') // Убираем max-width
+    .replace(/max-height:\s*[^;]+;?/gi, '') // Убираем max-height
+    .replace(/min-width:\s*[^;]+;?/gi, '') // Убираем min-width
+    .replace(/min-height:\s*[^;]+;?/gi, '') // Убираем min-height
+    : msgText;
   
   // Дополнительное логирование для отладки
   console.log('🎯 EmojiOnlyMessage final render:', {

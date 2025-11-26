@@ -1755,30 +1755,8 @@ const isTemplateMessage = (message.message_type === 'template' && message.templa
 const templateType = message.message_type === 'sos' ? 'sos' : message.template_type; // urgent, important, info, sos
 
 // Проверяем, является ли сообщение одиночным эмодзи
-const isEmojiOnly = (() => {
-  if (typeof msgText !== 'string') return false;
-  const trimmed = msgText.trim();
-  
-  // Проверяем обычные эмодзи
-  if (/^\s*(?:\p{Emoji_Presentation}|\p{Extended_Pictographic})\s*$/u.test(trimmed)) {
-    return true;
-  }
-  
-  // Проверяем токены custom:emoji-...
-  if (/^\s*(custom:emoji-[\d-]+)\s*$/.test(trimmed)) {
-    return true;
-  }
-  
-  // Проверяем HTML с одним img тегом (кастомный эмодзи)
-  const imgMatches = trimmed.match(/<img[^>]*>/g);
-  if (imgMatches && imgMatches.length === 1) {
-    // Убираем img тег и проверяем, остался ли только пробельный текст
-    const textWithoutImg = trimmed.replace(/<img[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
-    return textWithoutImg === '';
-  }
-  
-  return false;
-})();
+// Используем ту же функцию, что и в EmojiOnlyMessage для консистентности
+const isEmojiOnly = isEmojiOnlyMessage(msgText);
 
 // Если это одиночный эмодзи, используем специальный компонент
 if (isEmojiOnlyMessage(msgText)) {
