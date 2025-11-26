@@ -51,7 +51,6 @@ const navs = [
   { key: 'employees', label: 'Сотрудники компании', icon: <FaUserCircle />, color: '#b2ffb2', event: 'show-employees', tip: 'Список сотрудников компании' },
   { key: 'worktime', label: 'Мониторинг времени', icon: <FaCalendarAlt />, color: '#ffe082', event: 'show-worktime', tip: 'Отчет по рабочему времени' },
   { key: 'leaves-worktime', label: 'Отработка отгулов', icon: <FaCalendarAlt />, color: '#b2ffb2', event: 'show-leaves-worktime', tip: 'Отчет по отработке отгулов' },
-  { key: 'onec-history', label: 'История 1С', icon: <FiFileText />, color: '#ff6b6b', event: 'show-onec-history', tip: 'История документов 1С' },
   { key: 'admin', label: 'Управление', icon: <FiSettings />, color: '#a3e635', event: 'show-admin', tip: 'Администрирование' },
 ];
 
@@ -101,7 +100,6 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar, 
   const [showTodoModal, setShowTodoModal] = useState(false);
   const [showRatingModal, setShowRatingModal] = useState(false);
   const [showAppTitleSettingsModal, setShowAppTitleSettingsModal] = useState(false);
-  const [showOneCHistoryModal, setShowOneCHistoryModal] = useState(false);
   const [portalKey, setPortalKey] = useState(0);
   const { state, dispatch } = useApp();
   const [showLeavesWorktimeButton, setShowLeavesWorktimeButton] = useState(false);
@@ -793,7 +791,7 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar, 
     setActive(n.key);
     
     // Определяем, является ли это модалкой
-    const isModal = ['all-leaves', 'tasks', 'news', 'todo', 'leaves', 'chats', 'employees', 'worktime', 'leaves-worktime', 'onec-history', 'admin'].includes(n.key);
+    const isModal = ['all-leaves', 'tasks', 'news', 'todo', 'leaves', 'chats', 'employees', 'worktime', 'leaves-worktime', 'admin'].includes(n.key);
     
     // Для модалок: сначала открываем модалку, потом закрываем сайдбар
     // Для не-модалок: закрываем все модалки и сайдбар
@@ -814,7 +812,6 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar, 
       // Закрываем остальные модалки
       if (n.key !== 'worktime') setShowWorkTimeModal(false);
       if (n.key !== 'leaves-worktime') setShowLeavesWorktimeModal(false);
-      if (n.key !== 'onec-history') setShowOneCHistoryModal(false);
       if (n.key !== 'employees') {
         setShowEmployeesModal(false);
         setShowBirthdaysModal(false);
@@ -942,16 +939,6 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar, 
                   console.log('SidebarNav: Setting showLeavesWorktimeModal to true (desktop)');
                   setShowLeavesWorktimeModal(true);
                 }, 0);
-          }
-          break;
-        case 'onec-history':
-          console.log('SidebarNav: Opening 1C history modal, isMobile:', isMobile);
-          if (isMobile) {
-            requestAnimationFrame(() => {
-              setShowOneCHistoryModal(true);
-            });
-          } else {
-            setTimeout(() => setShowOneCHistoryModal(true), 0);
           }
           break;
         case 'admin':
@@ -1127,11 +1114,6 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar, 
                 {navs.map(n => {
                   // Кнопка "Мониторинг времени" только для HR и админа
                   if (n.key === 'worktime') {
-                    const role = state.user?.role;
-                    if (role !== 'hr' && role !== 'admin') return null;
-                  }
-                  // Кнопка "История 1С" только для HR и админа
-                  if (n.key === 'onec-history') {
                     const role = state.user?.role;
                     if (role !== 'hr' && role !== 'admin') return null;
                   }
@@ -1469,11 +1451,6 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar, 
         {navs.map(n => {
           // Кнопка "Мониторинг времени" только для HR и админа
           if (n.key === 'worktime') {
-            const role = state.user?.role;
-            if (role !== 'hr' && role !== 'admin') return null;
-          }
-          // Кнопка "История 1С" только для HR и админа
-          if (n.key === 'onec-history') {
             const role = state.user?.role;
             if (role !== 'hr' && role !== 'admin') return null;
           }
@@ -2446,15 +2423,6 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar, 
           </div>
         </div>,
         showUserRightsModal
-      )}
-      {createSafePortal(
-        <OneCDocumentHistoryMobile
-          key={`onec-history-mobile-${portalKey}`}
-          open={showOneCHistoryModal}
-          onClose={() => setShowOneCHistoryModal(false)}
-          onOpenMobileSidebar={onOpenMobileSidebar}
-        />,
-        showOneCHistoryModal
       )}
       {/* {showChatsModal && ReactDOM.createPortal(
         <div

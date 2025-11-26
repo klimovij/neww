@@ -4,6 +4,7 @@ import '../../styles/WorkTimeReportModal.css';
 import AppUsageModal from './AppUsageModal';
 import RemoteWorktimeReportModal from './RemoteWorktimeReportModal';
 import UserWorkTimeDetailsMobile from '../UserWorkTimeDetailsMobile';
+import OneCDocumentHistoryMobile from '../OneCDocumentHistoryMobile';
 
 Modal.setAppElement('#root');
 
@@ -102,6 +103,7 @@ function WorkTimeReportModal({ isOpen, onRequestClose }) {
   const [showAppUsage, setShowAppUsage] = useState(false);
   const [showRemoteWorktime, setShowRemoteWorktime] = useState(false);
   const [showLocalReport, setShowLocalReport] = useState(false);
+  const [showOneCHistoryModal, setShowOneCHistoryModal] = useState(false);
   const [localReportData, setLocalReportData] = useState({ logs: [], username: '', activityStats: null });
 
   // Состояния для модалки локального отчета
@@ -491,6 +493,33 @@ function WorkTimeReportModal({ isOpen, onRequestClose }) {
             >
               Отчет активности локальных ПК
             </button>
+
+            <button
+              type="button"
+              onClick={() => setShowOneCHistoryModal(true)}
+              style={{
+                padding: '16px 24px',
+                borderRadius: 12,
+                border: '1px solid rgba(255,107,107,0.35)',
+                background: 'rgba(255,107,107,0.15)',
+                color: '#ff6b6b',
+                cursor: 'pointer',
+                fontWeight: 800,
+                fontSize: '16px',
+                textAlign: 'left',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.background = 'rgba(255,107,107,0.25)';
+                e.target.style.transform = 'translateX(5px)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = 'rgba(255,107,107,0.15)';
+                e.target.style.transform = 'translateX(0)';
+              }}
+            >
+              История 1С
+            </button>
           </div>
 
           <button onClick={onRequestClose} style={{
@@ -708,6 +737,13 @@ function WorkTimeReportModal({ isOpen, onRequestClose }) {
               )}
             </div>
           </Modal>
+
+          {/* Модалка История 1С */}
+          <OneCDocumentHistoryMobile
+            open={showOneCHistoryModal}
+            onClose={() => setShowOneCHistoryModal(false)}
+            onOpenMobileSidebar={() => {}}
+          />
 
           {/* Модалка деталей пользователя с вкладками */}
           {localReportDetailsModal.open && (
