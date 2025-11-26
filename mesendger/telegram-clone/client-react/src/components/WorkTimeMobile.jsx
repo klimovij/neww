@@ -158,21 +158,29 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
 
   // Загрузка отчета при изменении дат
   const fetchLocalReport = React.useCallback(async () => {
-    if (!localReportStartDate || !localReportEndDate) return;
+    if (!localReportStartDate || !localReportEndDate) {
+      console.log('⚠️ [WorkTimeMobile] fetchLocalReport: нет дат', { localReportStartDate, localReportEndDate });
+      return;
+    }
     
+    console.log('📥 [WorkTimeMobile] Загрузка локального отчета:', { start: localReportStartDate, end: localReportEndDate });
     setLoadingLocalReport(true);
     try {
       const url = `/api/local-worktime-report?start=${localReportStartDate}&end=${localReportEndDate}`;
+      console.log('📡 [WorkTimeMobile] Запрос к API:', url);
       const res = await fetch(url);
       const data = await res.json();
+      console.log('📥 [WorkTimeMobile] Ответ от API:', { success: data.success, reportLength: data.report?.length || 0, data });
       
       if (data.success && Array.isArray(data.report)) {
+        console.log('✅ [WorkTimeMobile] Успешно загружено пользователей:', data.report.length);
         setLocalReportUsers(data.report);
       } else {
+        console.warn('⚠️ [WorkTimeMobile] Нет данных или неверный формат ответа');
         setLocalReportUsers([]);
       }
     } catch (error) {
-      console.error('Ошибка загрузки локального отчета:', error);
+      console.error('❌ [WorkTimeMobile] Ошибка загрузки локального отчета:', error);
       setLocalReportUsers([]);
     }
     setLoadingLocalReport(false);
