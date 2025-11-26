@@ -482,25 +482,20 @@ router.get('/activity-details', async (req, res) => {
     
     console.log(`📊 [activity-details] Всего записей приложений для ${username}: ${allApplications.length}`);
     
-    // Дедуплицируем приложения по procName, оставляя первую запись для каждого приложения
-    const uniqueApplicationsMap = new Map();
-    allApplications.forEach(app => {
-      const key = app.procName.toLowerCase();
-      if (!uniqueApplicationsMap.has(key)) {
-        uniqueApplicationsMap.set(key, app);
-      }
-    });
-    
-    const applications = Array.from(uniqueApplicationsMap.values())
+    // НЕ дедуплицируем - показываем все события открытия/переключения приложений
+    // Сортируем по времени (новые сверху, как для сайтов)
+    const applications = allApplications
       .sort((a, b) => {
-        // Сортируем по имени приложения для предсказуемого порядка
-        return a.procName.localeCompare(b.procName);
+        // Сортируем по времени (новые сверху)
+        const timeA = new Date(a.timestamp || 0).getTime();
+        const timeB = new Date(b.timestamp || 0).getTime();
+        return timeB - timeA; // Убывание (новые сверху)
       });
     
-    console.log(`📊 [activity-details] Уникальных приложений для пользователя ${username}: ${applications.length}`);
+    console.log(`📊 [activity-details] Всего событий приложений для пользователя ${username}: ${applications.length}`);
     if (applications.length > 0) {
-      console.log(`📊 [activity-details] Примеры приложений (первые 10):`, applications.slice(0, 10).map(a => a.procName));
-      console.log(`📊 [activity-details] Все приложения (первые 20):`, applications.slice(0, 20).map(a => ({ procName: a.procName, windowTitle: a.windowTitle?.substring(0, 30) || '' })));
+      console.log(`📊 [activity-details] Примеры событий приложений (первые 10):`, applications.slice(0, 10).map(a => ({ procName: a.procName, timestamp: a.timestamp, windowTitle: a.windowTitle?.substring(0, 30) || '' })));
+      console.log(`📊 [activity-details] Все события приложений (первые 20):`, applications.slice(0, 20).map(a => ({ procName: a.procName, windowTitle: a.windowTitle?.substring(0, 30) || '', timestamp: a.timestamp })));
     } else {
       console.warn(`⚠️ [activity-details] НЕТ ПРИЛОЖЕНИЙ! Проверьте фильтрацию выше.`);
       // Показываем, что было отфильтровано
