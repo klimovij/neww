@@ -505,9 +505,21 @@ try {
   console.error('🚀 [SERVER] Начинаем загрузку роутеров...');
   process.stderr.write('🚀 [SERVER] Начинаем загрузку роутеров...\n');
   
-  const quickCsvReportRouter = require('./routes/quickCsvReport');
-  console.error('✅ [SERVER] quickCsvReportRouter модуль загружен');
-  process.stderr.write('✅ [SERVER] quickCsvReportRouter модуль загружен\n');
+  console.error('🔍 [SERVER] Пытаемся загрузить ./routes/quickCsvReport...');
+  process.stderr.write('🔍 [SERVER] Пытаемся загрузить ./routes/quickCsvReport...\n');
+  
+  let quickCsvReportRouter;
+  try {
+    quickCsvReportRouter = require('./routes/quickCsvReport');
+    console.error('✅ [SERVER] quickCsvReportRouter модуль загружен успешно');
+    process.stderr.write('✅ [SERVER] quickCsvReportRouter модуль загружен успешно\n');
+  } catch (moduleError) {
+    console.error('❌❌❌ [SERVER] ОШИБКА при загрузке модуля quickCsvReport:', moduleError);
+    console.error('❌❌❌ [SERVER] Stack:', moduleError.stack);
+    process.stderr.write(`❌❌❌ [SERVER] ОШИБКА при загрузке модуля: ${moduleError.message}\n`);
+    process.stderr.write(`❌❌❌ [SERVER] Stack: ${moduleError.stack}\n`);
+    throw moduleError; // Пробрасываем дальше
+  }
   
   const congratulationsRouter = require('./routes/congratulations');
   const remoteWorktimeRouter = require('./routes/remoteWorktime');
