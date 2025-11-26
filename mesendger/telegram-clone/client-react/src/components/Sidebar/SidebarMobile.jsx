@@ -895,6 +895,179 @@ export default function SidebarMobile({ open, onClose, onOpen, showNav = true, o
                       </>
                     )}
                   </Avatar>
+                  
+                  {/* Модалка действий с аватаркой */}
+                  {showAvatarActionsModal && (state.user?.avatarUrl || appTitleSettings.avatarImage) && (
+                    <div
+                      onClick={() => setShowAvatarActionsModal(false)}
+                      style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: 'rgba(0, 0, 0, 0.85)',
+                        zIndex: 100010,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '20px',
+                      }}
+                    >
+                      <div
+                        onClick={e => e.stopPropagation()}
+                        style={{
+                          background: 'linear-gradient(135deg, #232931 0%, #181c22 100%)',
+                          borderRadius: '20px',
+                          padding: '30px',
+                          maxWidth: '400px',
+                          width: '100%',
+                          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
+                          border: '2px solid rgba(67, 233, 123, 0.2)',
+                        }}
+                      >
+                        {/* Превью аватарки */}
+                        <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+                          <img
+                            src={appTitleSettings.avatarImage || state.user.avatarUrl}
+                            alt="avatar-preview"
+                            style={{
+                              width: '120px',
+                              height: '120px',
+                              borderRadius: '50%',
+                              objectFit: 'cover',
+                              border: '3px solid rgba(67, 233, 123, 0.3)',
+                              boxShadow: '0 4px 16px rgba(67, 233, 123, 0.3)',
+                              margin: '0 auto',
+                            }}
+                          />
+                        </div>
+
+                        {/* Кнопки действий */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                          <button
+                            onClick={() => {
+                              setShowAvatarActionsModal(false);
+                              setShowAvatarModal(true);
+                            }}
+                            style={{
+                              padding: '14px 20px',
+                              borderRadius: '12px',
+                              border: '2px solid rgba(67, 233, 123, 0.3)',
+                              background: 'linear-gradient(135deg, rgba(67, 233, 123, 0.15) 0%, rgba(67, 233, 123, 0.05) 100%)',
+                              color: '#43e97b',
+                              cursor: 'pointer',
+                              fontWeight: 700,
+                              fontSize: '16px',
+                              transition: 'all 0.2s',
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.background = 'linear-gradient(135deg, rgba(67, 233, 123, 0.25) 0%, rgba(67, 233, 123, 0.15) 100%)';
+                              e.currentTarget.style.borderColor = '#43e97b';
+                              e.currentTarget.style.transform = 'translateY(-2px)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.background = 'linear-gradient(135deg, rgba(67, 233, 123, 0.15) 0%, rgba(67, 233, 123, 0.05) 100%)';
+                              e.currentTarget.style.borderColor = 'rgba(67, 233, 123, 0.3)';
+                              e.currentTarget.style.transform = 'translateY(0)';
+                            }}
+                          >
+                            👁️ Просмотреть
+                          </button>
+
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setShowAvatarActionsModal(false);
+                              fileInputRef.current?.click();
+                            }}
+                            style={{
+                              padding: '14px 20px',
+                              borderRadius: '12px',
+                              border: '2px solid rgba(255, 224, 130, 0.3)',
+                              background: 'linear-gradient(135deg, rgba(255, 224, 130, 0.15) 0%, rgba(255, 224, 130, 0.05) 100%)',
+                              color: '#ffe082',
+                              cursor: 'pointer',
+                              fontWeight: 700,
+                              fontSize: '16px',
+                              transition: 'all 0.2s',
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255, 224, 130, 0.25) 0%, rgba(255, 224, 130, 0.15) 100%)';
+                              e.currentTarget.style.borderColor = '#ffe082';
+                              e.currentTarget.style.transform = 'translateY(-2px)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255, 224, 130, 0.15) 0%, rgba(255, 224, 130, 0.05) 100%)';
+                              e.currentTarget.style.borderColor = 'rgba(255, 224, 130, 0.3)';
+                              e.currentTarget.style.transform = 'translateY(0)';
+                            }}
+                          >
+                            ✏️ Изменить
+                          </button>
+
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setShowAvatarActionsModal(false);
+                              handleRemoveAvatar();
+                            }}
+                            style={{
+                              padding: '14px 20px',
+                              borderRadius: '12px',
+                              border: '2px solid rgba(231, 76, 60, 0.3)',
+                              background: 'linear-gradient(135deg, rgba(231, 76, 60, 0.15) 0%, rgba(231, 76, 60, 0.05) 100%)',
+                              color: '#e74c3c',
+                              cursor: 'pointer',
+                              fontWeight: 700,
+                              fontSize: '16px',
+                              transition: 'all 0.2s',
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.background = 'linear-gradient(135deg, rgba(231, 76, 60, 0.25) 0%, rgba(231, 76, 60, 0.15) 100%)';
+                              e.currentTarget.style.borderColor = '#e74c3c';
+                              e.currentTarget.style.transform = 'translateY(-2px)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.background = 'linear-gradient(135deg, rgba(231, 76, 60, 0.15) 0%, rgba(231, 76, 60, 0.05) 100%)';
+                              e.currentTarget.style.borderColor = 'rgba(231, 76, 60, 0.3)';
+                              e.currentTarget.style.transform = 'translateY(0)';
+                            }}
+                          >
+                            🗑️ Удалить
+                          </button>
+
+                          <button
+                            onClick={() => setShowAvatarActionsModal(false)}
+                            style={{
+                              padding: '14px 20px',
+                              borderRadius: '12px',
+                              border: '2px solid rgba(255, 255, 255, 0.2)',
+                              background: 'rgba(255, 255, 255, 0.1)',
+                              color: '#fff',
+                              cursor: 'pointer',
+                              fontWeight: 700,
+                              fontSize: '16px',
+                              transition: 'all 0.2s',
+                              marginTop: '8px',
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
+                              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.4)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+                            }}
+                          >
+                            ✕ Закрыть
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Модалка просмотра аватарки */}
                   {showAvatarModal && (state.user?.avatarUrl || appTitleSettings.avatarImage) && (
                     <div
                       onClick={() => setShowAvatarModal(false)}
@@ -904,8 +1077,8 @@ export default function SidebarMobile({ open, onClose, onOpen, showNav = true, o
                         left: 0,
                         right: 0,
                         bottom: 0,
-                        background: 'rgba(0,0,0,0.7)',
-                        zIndex: 9999,
+                        background: 'rgba(0, 0, 0, 0.9)',
+                        zIndex: 100011,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center'
@@ -928,7 +1101,18 @@ export default function SidebarMobile({ open, onClose, onOpen, showNav = true, o
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          zIndex: 10000
+                          zIndex: 100012,
+                          transition: 'all 0.2s',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = 'rgba(231, 76, 60, 0.8)';
+                          e.currentTarget.style.borderColor = '#e74c3c';
+                          e.currentTarget.style.transform = 'scale(1.1)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = 'rgba(0, 0, 0, 0.7)';
+                          e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+                          e.currentTarget.style.transform = 'scale(1)';
                         }}
                         title="Закрыть"
                       >
@@ -941,8 +1125,9 @@ export default function SidebarMobile({ open, onClose, onOpen, showNav = true, o
                         style={{
                           maxWidth: '90vw',
                           maxHeight: '90vh',
-                          borderRadius: '18px',
-                          boxShadow: '0 8px 40px 0 rgba(31,38,135,0.25)'
+                          borderRadius: '20px',
+                          boxShadow: '0 8px 40px rgba(67, 233, 123, 0.3)',
+                          border: '3px solid rgba(67, 233, 123, 0.2)',
                         }}
                       />
                     </div>
