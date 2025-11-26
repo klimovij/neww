@@ -51,10 +51,14 @@ export default function UserWorkTimeDetailsMobile({
     applicationsCount: applications?.length || 0,
     applications: applications,
     screenshotsCount: screenshots?.length || 0,
+    screenshots: screenshots, // Добавляем полный массив для отладки
     hasActivityStats: !!activityStats,
     logsCount: logs?.length || 0,
+    startDate,
+    endDate
   });
   console.log('🚨 [UserWorkTimeDetailsMobile] applications (полностью):', applications);
+  console.log('🚨 [UserWorkTimeDetailsMobile] screenshots (полностью):', screenshots);
   console.log('🚨 [UserWorkTimeDetailsMobile] realUsername для API:', realUsername);
   console.log('🚨 [UserWorkTimeDetailsMobile] ====================================');
 
@@ -232,13 +236,15 @@ export default function UserWorkTimeDetailsMobile({
         if (data.screenshots && data.screenshots.length > 0) {
           console.log('📸 [UserWorkTimeDetailsMobile] Скриншоты из API:', data.screenshots.length);
           data.screenshots.forEach((shot, idx) => {
-            console.log(`📸 [${idx}] Screenshot from API:`, {
-              id: shot.id,
-              url: shot.url,
-              filePath: shot.filePath,
-              timestamp: shot.timestamp,
-              fileSize: shot.fileSize
-            });
+            if (idx < 3) { // Логируем только первые 3 для краткости
+              console.log(`📸 [${idx}] Screenshot from API:`, {
+                id: shot.id,
+                url: shot.url,
+                filePath: shot.filePath,
+                timestamp: shot.timestamp,
+                fileSize: shot.fileSize
+              });
+            }
           });
         } else {
           console.warn('⚠️ [UserWorkTimeDetailsMobile] Скриншоты отсутствуют в ответе API');
@@ -253,10 +259,15 @@ export default function UserWorkTimeDetailsMobile({
           setLocalApplications([]);
         }
         if (data.screenshots) {
-          console.log('✅ [UserWorkTimeDetailsMobile] Устанавливаем screenshots:', data.screenshots.length);
+          console.log('✅ [UserWorkTimeDetailsMobile] Устанавливаем screenshots через reloadActivityData:', data.screenshots.length);
+          console.log('📸 [UserWorkTimeDetailsMobile] Первые 3 скриншота перед установкой:', data.screenshots.slice(0, 3).map(s => ({ id: s.id, url: s.url })));
           setLocalScreenshots(data.screenshots);
+          // Проверяем, что state обновился
+          setTimeout(() => {
+            console.log('📸 [UserWorkTimeDetailsMobile] Проверка state после установки screenshots (через 100ms)');
+          }, 100);
         } else {
-          console.warn('⚠️ [UserWorkTimeDetailsMobile] screenshots отсутствуют в ответе API');
+          console.warn('⚠️ [UserWorkTimeDetailsMobile] screenshots отсутствуют в ответе API, устанавливаем пустой массив');
           setLocalScreenshots([]);
         }
         if (data.activityStats) setLocalActivityStats(data.activityStats);
