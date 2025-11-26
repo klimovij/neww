@@ -124,12 +124,12 @@ export async function syncEmojisToServer(force = false) {
 
         // Конвертируем data URL в файлы
         for (const emoji of batch) {
-          // Загружаем только эмодзи с data URL (base64)
-          // Эмодзи с путями /uploads/ но без файлов на сервере не могут быть загружены,
-          // так как у нас нет исходных файлов
-          if (emoji.src && emoji.src.startsWith('data:')) {
+          // Проверяем data URL в src или в поле dataUrl
+          const dataUrl = (emoji.src && emoji.src.startsWith('data:')) ? emoji.src : emoji.dataUrl;
+          
+          if (dataUrl && dataUrl.startsWith('data:')) {
             try {
-              const [header, data] = emoji.src.split(',');
+              const [header, data] = dataUrl.split(',');
               const mimeMatch = header.match(/data:([^;]+)/);
               const mime = mimeMatch ? mimeMatch[1] : 'image/png';
               const byteString = atob(data);
@@ -188,12 +188,25 @@ export async function syncEmojisToServer(force = false) {
         synced += result.count || 0;
         console.log(`✅ Загружено ${result.count || 0} эмодзи на сервер`);
 
-        // Обновляем локальные эмодзи, заменяя data URL на серверные URL
+        // Обновляем локальные эмодзи, добавляя серверный URL, но сохраняя data URL
+        // Это важно, чтобы можно было перезагрузить эмодзи, если файл на сервере будет удален
         const localEmojisUpdated = JSON.parse(localStorage.getItem('customEmojis') || '[]');
         result.emojis.forEach((serverEmoji, idx) => {
           const localIdx = localEmojisUpdated.findIndex(e => e.name === serverEmoji.name);
           if (localIdx !== -1) {
-            localEmojisUpdated[localIdx].src = serverEmoji.url;
+            // Сохраняем и data URL (если есть), и серверный URL
+            const originalEmoji = localEmojisUpdated[localIdx];
+            if (originalEmoji.src && originalEmoji.src.startsWith('data:')) {
+              // Сохраняем data URL в отдельном поле, а серверный URL в src
+              localEmojisUpdated[localIdx] = {
+                ...originalEmoji,
+                src: serverEmoji.url,
+                dataUrl: originalEmoji.src // Сохраняем исходный data URL
+              };
+            } else {
+              // Если data URL нет, просто обновляем src
+              localEmojisUpdated[localIdx].src = serverEmoji.url;
+            }
           }
         });
         localStorage.setItem('customEmojis', JSON.stringify(localEmojisUpdated));
