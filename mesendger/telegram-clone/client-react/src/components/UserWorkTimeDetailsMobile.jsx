@@ -793,11 +793,32 @@ export default function UserWorkTimeDetailsMobile({
                   Нет данных об открытых приложениях
                 </div>
               ) : (
-                <div style={{ 
-                  maxHeight: 'calc(100vh - 300px)', 
-                  overflowY: 'auto',
-                  paddingRight: '4px',
-                }}>
+                <div>
+                  {/* Информация о количестве приложений */}
+                  <div style={{
+                    padding: '12px 16px',
+                    background: 'rgba(67, 233, 123, 0.1)',
+                    borderRadius: '8px',
+                    marginBottom: '12px',
+                    border: '1px solid rgba(67, 233, 123, 0.3)',
+                    textAlign: 'center',
+                    color: '#43e97b',
+                    fontSize: '14px',
+                    fontWeight: 600,
+                  }}>
+                    Всего приложений: {localApplications.length}
+                    {localApplications.length > 3 && (
+                      <div style={{ fontSize: '12px', marginTop: '4px', color: 'rgba(255, 255, 255, 0.7)' }}>
+                        Прокрутите вниз, чтобы увидеть все
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ 
+                    maxHeight: 'calc(100vh - 350px)', 
+                    overflowY: 'auto',
+                    paddingRight: '4px',
+                    WebkitOverflowScrolling: 'touch', // Плавная прокрутка на мобильных
+                  }}>
                   {localApplications.map((app, idx) => {
                     // Уникальный ключ: используем комбинацию procName и индекса, чтобы избежать дубликатов
                     const uniqueKey = `app-${idx}-${app.procName || 'unknown'}-${app.timestamp || Date.now()}`;
@@ -848,6 +869,7 @@ export default function UserWorkTimeDetailsMobile({
                     </div>
                     );
                   })}
+                  </div>
                 </div>
               )}
             </div>
