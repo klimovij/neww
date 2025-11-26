@@ -474,25 +474,47 @@ app.post('/api/custom-emoji', authenticateToken, emojiUpload.single('emoji'), as
 // POST /api/custom-emoji/batch - Массовая загрузка эмодзи (для синхронизации)
 app.post('/api/custom-emoji/batch', authenticateToken, emojiUpload.array('emojis', 100), async (req, res) => {
   try {
+    console.log('📦 [emoji-batch] Получен запрос на массовую загрузку эмодзи');
+    console.log('📦 [emoji-batch] Файлов в запросе:', req.files ? req.files.length : 0);
+    console.log('📦 [emoji-batch] Папка для сохранения:', emojisDir);
+    console.log('📦 [emoji-batch] Папка существует:', fs.existsSync(emojisDir));
+    
     if (!req.files || req.files.length === 0) {
+      console.log('❌ [emoji-batch] Нет файлов в запросе');
       return res.status(400).json({ error: 'Необходимо загрузить хотя бы один файл эмодзи' });
     }
     
     const names = Array.isArray(req.body.names) ? req.body.names : 
                   req.body.names ? JSON.parse(req.body.names) : [];
     
+    console.log('📦 [emoji-batch] Имена эмодзи:', names);
+    console.log('📦 [emoji-batch] Файлы:', req.files.map(f => ({ filename: f.filename, path: f.path, size: f.size })));
+    
     const uploaded = req.files.map((file, idx) => {
       const name = names[idx] || file.originalname.replace(/\.[^.]+$/, '');
+      const filePath = file.path;
+      const fileExists = fs.existsSync(filePath);
+      console.log(`📦 [emoji-batch] Файл ${idx + 1}: ${file.filename}, путь: ${filePath}, существует: ${fileExists}`);
       return {
         name: name.trim(),
         url: `/uploads/emojis/${file.filename}`
       };
     });
     
-    console.log(`✅ Загружено ${uploaded.length} эмодзи на сервер`);
+    // Проверяем, что файлы действительно сохранены
+    const existingFiles = uploaded.filter(e => {
+      const filePath = path.join(emojisDir, e.url.replace('/uploads/emojis/', ''));
+      return fs.existsSync(filePath);
+    });
+    
+    console.log(`✅ [emoji-batch] Загружено ${uploaded.length} эмодзи на сервер`);
+    console.log(`✅ [emoji-batch] Файлов действительно существует: ${existingFiles.length}`);
+    console.log(`✅ [emoji-batch] Всего файлов в папке: ${fs.readdirSync(emojisDir).length}`);
+    
     res.json({ emojis: uploaded, count: uploaded.length });
   } catch (e) {
-    console.error('❌ Ошибка массовой загрузки кастомных эмодзи:', e);
+    console.error('❌ [emoji-batch] Ошибка массовой загрузки кастомных эмодзи:', e);
+    console.error('❌ [emoji-batch] Stack:', e.stack);
     res.status(500).json({ error: 'Ошибка массовой загрузки эмодзи' });
   }
 });
