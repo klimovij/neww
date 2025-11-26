@@ -2361,8 +2361,9 @@ class Database {
           return reject(new Error('Either period or start/end dates must be provided'));
         }
         
-        this.db.serialize(() => {
-          this.db.run('BEGIN TRANSACTION');
+        const db = this.db; // Сохраняем ссылку на db
+        db.serialize(() => {
+          db.run('BEGIN TRANSACTION');
           
           let query, params;
           if (start && end) {
@@ -2376,13 +2377,13 @@ class Database {
           }
           
           // Удаляем из activity_logs
-          this.db.run(query, params, (err) => {
+          db.run(query, params, function(err) {
             if (err) {
-              this.db.run('ROLLBACK');
+              db.run('ROLLBACK');
               console.error('❌ Error deleting activity logs:', err);
               return reject(err);
             }
-            const deletedActivityCount = this.changes;
+            const deletedActivityCount = this.changes; // this.changes доступен в обычной функции
             console.log(`✅ Deleted ${deletedActivityCount} activity logs`);
             
             // Также удаляем скриншоты за тот же период
@@ -2395,16 +2396,16 @@ class Database {
               screenshotParams = [endDate.toISOString()];
             }
             
-            this.db.run(screenshotQuery, screenshotParams, (err) => {
+            db.run(screenshotQuery, screenshotParams, function(err) {
               if (err) {
-                this.db.run('ROLLBACK');
+                db.run('ROLLBACK');
                 console.error('❌ Error deleting activity screenshots:', err);
                 return reject(err);
               }
-              const deletedScreenshotsCount = this.changes;
+              const deletedScreenshotsCount = this.changes; // this.changes доступен в обычной функции
               console.log(`✅ Deleted ${deletedScreenshotsCount} activity screenshots`);
               
-              this.db.run('COMMIT', (commitErr) => {
+              db.run('COMMIT', function(commitErr) {
                 if (commitErr) return reject(commitErr);
                 const totalDeleted = deletedActivityCount + deletedScreenshotsCount;
                 console.log(`✅ Total deleted: ${totalDeleted} records (${deletedActivityCount} logs + ${deletedScreenshotsCount} screenshots)`);
