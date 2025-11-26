@@ -508,16 +508,26 @@ try {
   const activityRouter = require('./routes/activity');
   const onecHistoryRouter = require('./routes/onecHistory');
   const adminRouter = require('./routes/admin');
-  // Middleware для логирования запросов к quick-db-report
-  app.use('/api/quick-db-report', (req, res, next) => {
-    process.stderr.write(`🔍 [MIDDLEWARE] Запрос к /api/quick-db-report: ${JSON.stringify(req.query)}\n`);
-    console.error(`🔍 [MIDDLEWARE] Запрос к /api/quick-db-report:`, req.query);
+  // Подключаем importWorktimeCsvRoutes первым, чтобы избежать конфликта с quickCsvReportRouter
+  app.use('/api', importWorktimeCsvRoutes);
+  
+  // Middleware для логирования ВСЕХ запросов к /api
+  app.use('/api', (req, res, next) => {
+    if (req.path === '/quick-db-report') {
+      const fs = require('fs');
+      const logFile = '/tmp/quick-db-report-middleware.log';
+      const logMsg = `[${new Date().toISOString()}] MIDDLEWARE: ${req.method} ${req.path} ${JSON.stringify(req.query)}\n`;
+      try {
+        fs.appendFileSync(logFile, logMsg);
+      } catch (e) {}
+      process.stderr.write(`🔍 [MIDDLEWARE] Запрос: ${req.method} ${req.path} ${JSON.stringify(req.query)}\n`);
+      console.error(`🔍 [MIDDLEWARE] Запрос:`, req.method, req.path, req.query);
+    }
     next();
   });
   
-  // Подключаем importWorktimeCsvRoutes первым, чтобы избежать конфликта с quickCsvReportRouter
-  app.use('/api', importWorktimeCsvRoutes);
   app.use('/api', quickCsvReportRouter);
+  console.log('✅ [SERVER] quickCsvReportRouter mounted at /api');
   app.use('/api', remoteWorktimeRouter);
   console.log('✅ [SERVER] RemoteWorktime router loaded and mounted at /api');
   app.use('/api', activityRouter);
