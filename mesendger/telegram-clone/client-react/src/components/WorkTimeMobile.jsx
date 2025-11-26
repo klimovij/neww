@@ -219,33 +219,58 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
 
   // Открытие деталей пользователя
   const handleOpenLocalUserDetails = async (user) => {
+    console.log('🔘 [WorkTimeMobile] handleOpenLocalUserDetails вызван для пользователя:', user);
     setLoadingLocalReport(true);
     try {
+      // Загружаем activityStats
+      let userActivityStats = null;
+      try {
+        const params = new URLSearchParams({
+          start: localReportStartDate,
+          end: localReportEndDate,
+        });
+        const res = await fetch(`/api/activity-summary?${params.toString()}`);
+        const data = await res.json();
+        if (res.ok && data.success && Array.isArray(data.summary)) {
+          userActivityStats = data.summary.find(
+            (s) => s.username === user.username
+          ) || null;
+        }
+      } catch (err) {
+        console.error('Ошибка загрузки активности:', err);
+      }
+
+      // Загружаем детали (URLs, applications, screenshots)
       const detailsParams = new URLSearchParams({
-        username: user.username,
-        start: localReportStartDate,
-        end: localReportEndDate
+        username: user.username || '',
+        start: localReportStartDate || '',
+        end: localReportEndDate || '',
       });
-      
+      console.log('📡 [WorkTimeMobile] Запрос деталей:', `/api/activity-details?${detailsParams.toString()}`);
       const detailsRes = await fetch(`/api/activity-details?${detailsParams.toString()}`);
       const detailsData = await detailsRes.json();
+      console.log('📥 [WorkTimeMobile] Ответ деталей:', detailsData);
       
       if (detailsRes.ok && detailsData.success) {
-        setLocalReportDetailsModal({
+        const modalData = {
           open: true,
           logs: user.sessions || [],
           username: user.fio || user.username,
           realUsername: user.username,
-          activityStats: detailsData.activityStats || null,
+          activityStats: userActivityStats,
           urls: detailsData.urls || [],
           applications: detailsData.applications || [],
-          screenshots: detailsData.screenshots || [],
+          screenshots: detailsData.photos || [], // API возвращает 'photos' для скриншотов
           startDate: localReportStartDate,
           endDate: localReportEndDate
-        });
+        };
+        console.log('✅ [WorkTimeMobile] Устанавливаем localReportDetailsModal:', modalData);
+        setLocalReportDetailsModal(modalData);
+      } else {
+        console.error('❌ [WorkTimeMobile] Ошибка загрузки деталей:', detailsData);
       }
     } catch (error) {
-      console.error('Ошибка загрузки деталей:', error);
+      console.error('❌ [WorkTimeMobile] Ошибка загрузки деталей:', error);
     }
     setLoadingLocalReport(false);
   };
