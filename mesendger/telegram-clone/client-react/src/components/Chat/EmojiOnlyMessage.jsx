@@ -1,6 +1,35 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 
+// Функция для нормализации URL эмодзи
+const normalizeEmojiUrl = (url) => {
+  if (!url || typeof url !== 'string') return url;
+  let trimmed = url.trim();
+  if (!trimmed) return url;
+  
+  // Если уже абсолютный URL, возвращаем как есть
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  
+  // Если путь начинается с /uploads/emojis/, нормализуем его
+  if (trimmed.startsWith('/uploads/emojis/')) {
+    // Если путь уже правильный, возвращаем как есть
+    return trimmed;
+  }
+  
+  // Если путь относительный без начального слеша
+  if (trimmed.startsWith('uploads/emojis/')) {
+    return `/${trimmed}`;
+  }
+  
+  // Если путь содержит uploads/emojis где-то внутри
+  const emojiIndex = trimmed.toLowerCase().indexOf('/uploads/emojis/');
+  if (emojiIndex !== -1) {
+    return trimmed.slice(emojiIndex);
+  }
+  
+  return trimmed;
+};
+
 // Контейнер для одиночных эмодзи без пузыря
 const EmojiOnlyContainer = styled.div.withConfig({
   shouldForwardProp: (prop) => !['isOwn'].includes(prop)
@@ -199,18 +228,33 @@ export default function EmojiOnlyMessage({ message, isOwn, state }) {
   const msgText = typeof message.text === 'string' ? message.text : message.content;
   
   // ИСПРАВЛЕНИЕ: Очищаем встроенные стили из HTML, которые перекрывают наши CSS
-  // Также убираем другие атрибуты, которые могут влиять на размер
-  const cleanedMsgText = msgText ? msgText
-    .replace(/style="[^"]*"/gi, '') // Убираем style атрибуты
-    .replace(/width="[^"]*"/gi, '') // Убираем width атрибуты
-    .replace(/height="[^"]*"/gi, '') // Убираем height атрибуты
-    .replace(/width:\s*[^;]+;?/gi, '') // Убираем width из inline стилей
-    .replace(/height:\s*[^;]+;?/gi, '') // Убираем height из inline стилей
-    .replace(/max-width:\s*[^;]+;?/gi, '') // Убираем max-width
-    .replace(/max-height:\s*[^;]+;?/gi, '') // Убираем max-height
-    .replace(/min-width:\s*[^;]+;?/gi, '') // Убираем min-width
-    .replace(/min-height:\s*[^;]+;?/gi, '') // Убираем min-height
-    : msgText;
+  // Также нормализуем URL изображений эмодзи
+  const cleanedMsgText = msgText ? (() => {
+    let cleaned = msgText;
+    
+    // Сначала нормализуем все src атрибуты в img тегах
+    cleaned = cleaned.replace(/<img([^>]*)\ssrc="([^"]*)"([^>]*)>/gi, (match, before, src, after) => {
+      const normalizedSrc = normalizeEmojiUrl(src);
+      return `<img${before} src="${normalizedSrc}"${after}>`;
+    });
+    
+    // Затем убираем встроенные стили и атрибуты размеров
+    cleaned = cleaned
+      .replace(/style="[^"]*"/gi, '') // Убираем style атрибуты
+      .replace(/width="[^"]*"/gi, '') // Убираем width атрибуты
+      .replace(/height="[^"]*"/gi, '') // Убираем height атрибуты
+      .replace(/width:\s*[^;]+;?/gi, '') // Убираем width из inline стилей
+      .replace(/height:\s*[^;]+;?/gi, '') // Убираем height из inline стилей
+      .replace(/max-width:\s*[^;]+;?/gi, '') // Убираем max-width
+      .replace(/max-height:\s*[^;]+;?/gi, '') // Убираем max-height
+      .replace(/min-width:\s*[^;]+;?/gi, '') // Убираем min-width
+      .replace(/min-height:\s*[^;]+;?/gi, '') // Убираем min-height
+      .replace(/vertical-align:\s*[^;]+;?/gi, '') // Убираем vertical-align
+      .replace(/margin:\s*[^;]+;?/gi, '') // Убираем margin
+      .replace(/padding:\s*[^;]+;?/gi, ''); // Убираем padding
+    
+    return cleaned;
+  })() : msgText;
   
   // Дополнительное логирование для отладки
   console.log('🎯 EmojiOnlyMessage final render:', {
