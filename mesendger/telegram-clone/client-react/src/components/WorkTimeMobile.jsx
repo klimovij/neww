@@ -608,7 +608,12 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
               type="button"
               onClick={() => {
                 console.log('🔘 [WorkTimeMobile] Кнопка "Отчет активности локальных ПК" нажата');
+                console.log('🔘 [WorkTimeMobile] showLocalReport до:', showLocalReport);
                 setShowLocalReport(true);
+                console.log('🔘 [WorkTimeMobile] setShowLocalReport(true) вызван');
+                setTimeout(() => {
+                  console.log('🔘 [WorkTimeMobile] showLocalReport после (через 100ms):', showLocalReport);
+                }, 100);
               }}
               style={{
                 width: '100%',
@@ -761,6 +766,7 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
       />
       
       {/* Модалка локального отчета */}
+      {console.log('🔍 [WorkTimeMobile] Рендер модалки локального отчета, showLocalReport =', showLocalReport)}
       {showLocalReport && ReactDOM.createPortal(
         <div
           style={{
@@ -775,6 +781,13 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
             alignItems: 'center',
             justifyContent: 'center',
             padding: '20px',
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowLocalReport(false);
+              setLocalReportUsers([]);
+              setLocalReportSearchTerm('');
+            }
           }}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
