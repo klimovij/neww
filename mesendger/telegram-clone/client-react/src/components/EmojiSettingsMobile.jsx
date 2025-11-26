@@ -314,14 +314,22 @@ export default function EmojiSettingsMobile({ open, onClose, onOpenMobileSidebar
       // Показываем прогресс
       const dataUrlEmojis = localEmojis.filter(e => e.src && e.src.startsWith('data:'));
       const otherEmojis = localEmojis.filter(e => e.src && !e.src.startsWith('data:') && !e.src.startsWith('/uploads/') && !e.src.startsWith('http'));
+      const alreadyOnServer = localEmojis.filter(e => e.src && (e.src.startsWith('/uploads/') || e.src.startsWith('http')));
+      
+      console.log('📊 Статистика эмодзи:', {
+        total: localEmojis.length,
+        dataUrl: dataUrlEmojis.length,
+        other: otherEmojis.length,
+        alreadyOnServer: alreadyOnServer.length
+      });
       
       if (dataUrlEmojis.length === 0 && otherEmojis.length === 0) {
-        alert(`ℹ️ Все эмодзи уже на сервере.\n\nЛокальных эмодзи: ${localEmojis.length}\nВсе они уже синхронизированы.`);
+        alert(`ℹ️ Все эмодзи уже на сервере.\n\nЛокальных эмодзи: ${localEmojis.length}\nУже на сервере: ${alreadyOnServer.length}\n\nНо папка на сервере пустая! Возможно, нужно принудительная синхронизация.`);
         setIsSyncing(false);
         return;
       }
       
-      alert(`🔄 Начинаю синхронизацию...\n\nЛокальных эмодзи: ${localEmojis.length}\nС data URL (base64): ${dataUrlEmojis.length}\nДругих для загрузки: ${otherEmojis.length}`);
+      alert(`🔄 Начинаю синхронизацию...\n\nЛокальных эмодзи: ${localEmojis.length}\nС data URL (base64): ${dataUrlEmojis.length}\nДругих для загрузки: ${otherEmojis.length}\nУже на сервере: ${alreadyOnServer.length}`);
       
       const result = await syncEmojisToServer();
       

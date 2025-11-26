@@ -117,11 +117,13 @@ export async function syncEmojisToServer(force = false) {
           }
         }
 
-        if (formData.getAll('emojis').length === 0) {
+        const filesInFormData = formData.getAll('emojis');
+        if (filesInFormData.length === 0) {
           console.warn('⚠️ Нет файлов для загрузки в этом батче');
           continue;
         }
 
+        console.log(`📤 Отправка батча: ${filesInFormData.length} файлов, имена:`, names);
         formData.append('names', JSON.stringify(names));
 
         const response = await fetch('/api/custom-emoji/batch', {
@@ -132,12 +134,22 @@ export async function syncEmojisToServer(force = false) {
           body: formData
         });
 
+        console.log(`📡 Ответ сервера: статус ${response.status}, ok: ${response.ok}`);
+
         if (!response.ok) {
-          const error = await response.json().catch(() => ({ error: 'Unknown error' }));
+          const errorText = await response.text();
+          console.error('❌ Ошибка ответа сервера:', errorText);
+          let error;
+          try {
+            error = JSON.parse(errorText);
+          } catch {
+            error = { error: errorText || 'Unknown error' };
+          }
           throw new Error(error.error || 'Failed to sync emojis');
         }
 
         const result = await response.json();
+        console.log('📦 Результат от сервера:', result);
         synced += result.count || 0;
         console.log(`✅ Загружено ${result.count || 0} эмодзи на сервер`);
 
