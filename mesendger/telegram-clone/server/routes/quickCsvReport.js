@@ -27,17 +27,33 @@ router.post('/import-worktime-json', async (req, res) => {
 // Генерация отчёта по базе: первый вход (login), последний выход (logout) за период
 async function getDbShortReport({ start, end, username }) {
   const fs = require('fs');
-  const logFile = '/tmp/quick-db-report-debug.log';
+  const path = require('path');
+  // Пробуем несколько путей для лог-файла
+  const logFiles = [
+    '/tmp/quick-db-report-debug.log',
+    '/var/tmp/quick-db-report-debug.log',
+    path.join(__dirname, '../../quick-db-report-debug.log')
+  ];
+  
   const logMsg = (msg) => {
     const timestamp = new Date().toISOString();
     const line = `[${timestamp}] ${msg}\n`;
-    try {
-      fs.appendFileSync(logFile, line);
-    } catch (e) {}
+    // Пробуем записать во все доступные файлы
+    for (const logFile of logFiles) {
+      try {
+        fs.appendFileSync(logFile, line, { mode: 0o666 });
+      } catch (e) {
+        // Игнорируем ошибки
+      }
+    }
+    // Также выводим в консоль
     console.error(`📊 [getDbShortReport] ${msg}`);
     process.stderr.write(`📊 [getDbShortReport] ${msg}\n`);
+    // И в stdout
+    console.log(`📊 [getDbShortReport] ${msg}`);
   };
   
+  logMsg(`=== НАЧАЛО getDbShortReport ===`);
   logMsg(`Запрос данных: start=${start}, end=${end}, username=${username || 'all'}`);
   
   // Получаем логи из обеих таблиц: work_time_logs (старые данные) и remote_work_time_logs (новые данные от агентов)
