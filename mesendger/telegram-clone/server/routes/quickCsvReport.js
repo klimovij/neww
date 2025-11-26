@@ -60,16 +60,42 @@ async function getLocalWorkTimeReport({ start, end, username }) {
   const activityLogs = await db.getActivityLogsBetween({ start, end });
   logMsg(`activity_logs (локальные): ${activityLogs?.length || 0} записей`);
   
+  // Получаем список удаленных пользователей, чтобы ИСКЛЮЧИТЬ их из локального отчета
+  const remoteLogs = await db.getRemoteWorkTimeLogs({ start, end });
+  const remoteUsernames = new Set();
+  for (const log of remoteLogs) {
+    if (log.username) remoteUsernames.add(log.username);
+  }
+  logMsg(`Удаленных пользователей для исключения: ${remoteUsernames.size}`);
+  if (remoteUsernames.size > 0) {
+    logMsg(`Удаленные пользователи: ${Array.from(remoteUsernames).join(', ')}`);
+  }
+  
   const activityUsers = {};
   for (const log of activityLogs) {
     if (!log.username) continue;
     if (username && log.username !== username) continue;
+    // ИСКЛЮЧАЕМ пользователей, которые есть в удаленных данных
+    if (remoteUsernames.has(log.username)) {
+      logMsg(`⚠️ Исключаем пользователя ${log.username} из локального отчета (есть в удаленных данных)`);
+      continue;
+    }
     activityUsers[log.username] = true;
   }
-  logMsg(`Уникальных пользователей в activity_logs: ${Object.keys(activityUsers).length}`);
+  logMsg(`Уникальных локальных пользователей в activity_logs (после исключения удаленных): ${Object.keys(activityUsers).length}`);
   
   // ТОЛЬКО локальные логи (БЕЗ remote_work_time_logs)
-  const allLogs = periodLogs;
+  // ИСКЛЮЧАЕМ логи пользователей, которые есть в удаленных данных
+  const allLogs = periodLogs.filter(log => {
+    if (!log.username) return false;
+    // Исключаем пользователей, которые есть в удаленных данных
+    if (remoteUsernames.has(log.username)) {
+      logMsg(`⚠️ Исключаем логи пользователя ${log.username} из локального отчета (есть в удаленных данных)`);
+      return false;
+    }
+    return true;
+  });
+  logMsg(`Локальных логов после исключения удаленных пользователей: ${allLogs.length}`);
   
   const userMap = {};
   for (const log of allLogs) {
@@ -90,6 +116,12 @@ async function getLocalWorkTimeReport({ start, end, username }) {
   
   for (const [user, sessions] of Object.entries(userMap)) {
     if (!user || (!sessions.length && !activityUsers[user])) {
+      continue;
+    }
+    
+    // ДОПОЛНИТЕЛЬНАЯ ПРОВЕРКА: исключаем пользователей, которые есть в удаленных данных
+    if (remoteUsernames.has(user)) {
+      logMsg(`⚠️ Пропускаем пользователя ${user} - он есть в удаленных данных`);
       continue;
     }
     
