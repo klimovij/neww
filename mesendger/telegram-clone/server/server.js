@@ -508,6 +508,13 @@ try {
   const activityRouter = require('./routes/activity');
   const onecHistoryRouter = require('./routes/onecHistory');
   const adminRouter = require('./routes/admin');
+  // Middleware для логирования запросов к quick-db-report
+  app.use('/api/quick-db-report', (req, res, next) => {
+    process.stderr.write(`🔍 [MIDDLEWARE] Запрос к /api/quick-db-report: ${JSON.stringify(req.query)}\n`);
+    console.error(`🔍 [MIDDLEWARE] Запрос к /api/quick-db-report:`, req.query);
+    next();
+  });
+  
   // Подключаем importWorktimeCsvRoutes первым, чтобы избежать конфликта с quickCsvReportRouter
   app.use('/api', importWorktimeCsvRoutes);
   app.use('/api', quickCsvReportRouter);
