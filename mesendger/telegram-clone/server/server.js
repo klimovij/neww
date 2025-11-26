@@ -540,6 +540,10 @@ try {
   app.use('/api/admin', adminRouter);
   console.log('✅ [SERVER] Admin router loaded and mounted at /api/admin');
 } catch (e) {
+  console.error('❌❌❌ [SERVER] ОШИБКА при загрузке роутеров:', e);
+  console.error('❌❌❌ [SERVER] Stack:', e.stack);
+  process.stderr.write(`❌❌❌ [SERVER] ОШИБКА при загрузке роутеров: ${e.message}\n`);
+  process.stderr.write(`❌❌❌ [SERVER] Stack: ${e.stack}\n`);
   console.log('⚠️ quickCsvReportRouter or related routes not found, skipping...', e.message);
 }
 

@@ -3,6 +3,10 @@ const db = require('../database');
 const router = express.Router();
 
 // Логируем при загрузке модуля
+process.stderr.write('🚀 [quickCsvReport] MODULE LOADED\n');
+console.error('🚀 [quickCsvReport] MODULE LOADED');
+
+// Логируем при загрузке модуля
 console.error('🚀 [quickCsvReport] MODULE LOADING STARTED');
 console.error('✅ quickCsvReport router module loaded');
 
