@@ -853,7 +853,7 @@ function LocalWorktimeReportModalMobile({
         right: 0,
         bottom: 0,
         background: 'rgba(0, 0, 0, 0.8)',
-        zIndex: 10004,
+        zIndex: 100003, // Выше основной модалки WorkTimeMobile (100002)
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -1022,7 +1022,7 @@ function LocalWorktimeReportModalMobile({
                     background: 'rgba(35, 41, 49, 0.98)',
                     border: '2px solid rgba(255, 224, 130, 0.3)',
                     borderRadius: '12px',
-                    zIndex: 10004,
+                    zIndex: 100003,
                     maxHeight: '200px',
                     overflowY: 'auto',
                     marginTop: '6px',
