@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect, useMemo, useCallback } from 'react';
 import ReactDOM from 'react-dom';
 import { FaArrowLeft } from 'react-icons/fa';
-import { FiX, FiLogIn, FiLogOut, FiClock, FiGlobe, FiCamera, FiExternalLink, FiMonitor } from 'react-icons/fi';
+import { FiX, FiLogIn, FiLogOut, FiClock, FiGlobe, FiCamera, FiExternalLink, FiMonitor, FiPrinter } from 'react-icons/fi';
 
 function formatTime(dtStr) {
   if (!dtStr) return '';
@@ -66,6 +66,13 @@ export default function UserWorkTimeDetailsMobile({
   const touchEndX = useRef(null);
   const modalRef = useRef(null);
   const [activeTab, setActiveTab] = useState('events'); // 'events', 'urls', 'applications', 'screenshots'
+  const [showPrintDialog, setShowPrintDialog] = useState(false);
+  const [printOptions, setPrintOptions] = useState({
+    screenshots: true,
+    urls: true,
+    applications: true,
+    events: true
+  });
   
   // Оптимизированное переключение вкладок
   const handleTabChange = useCallback((tab) => {
@@ -1122,13 +1129,45 @@ export default function UserWorkTimeDetailsMobile({
                       </div>
                       {shot.fileSize && (
                         <div style={{
-                          marginLeft: 'auto',
                           color: 'rgba(255, 255, 255, 0.4)',
                           fontSize: '11px',
                         }}>
                           {(shot.fileSize / 1024 / 1024).toFixed(2)} MB
                         </div>
                       )}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handlePrintScreenshot(screenshotUrl, shot.timestamp);
+                        }}
+                        style={{
+                          marginLeft: 'auto',
+                          background: 'rgba(255, 224, 130, 0.2)',
+                          border: '1px solid rgba(255, 224, 130, 0.5)',
+                          color: '#ffe082',
+                          fontSize: '12px',
+                          cursor: 'pointer',
+                          padding: '6px 10px',
+                          borderRadius: '6px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          fontWeight: 600,
+                          transition: 'all 0.2s',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.style.background = 'rgba(255, 224, 130, 0.3)';
+                          e.target.style.borderColor = '#ffe082';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.style.background = 'rgba(255, 224, 130, 0.2)';
+                          e.target.style.borderColor = 'rgba(255, 224, 130, 0.5)';
+                        }}
+                        title="Печать скриншота"
+                      >
+                        <FiPrinter size={14} />
+                        Печать
+                      </button>
                     </div>
                     <div style={{
                       borderRadius: '8px',
