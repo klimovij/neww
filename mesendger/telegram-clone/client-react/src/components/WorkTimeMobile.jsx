@@ -791,6 +791,7 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
             setLocalReportShowAutocomplete(false);
           }}
           formatTime={formatTime}
+          onFetchReport={fetchLocalReport}
         />
       )}
     </>
@@ -813,7 +814,8 @@ function LocalWorktimeReportModalMobile({
   userOptions,
   showAutocomplete,
   onSelectUser,
-  formatTime
+  formatTime,
+  onFetchReport
 }) {
   const modalRef = useRef(null);
   const touchStartX = useRef(null);
@@ -1047,6 +1049,54 @@ function LocalWorktimeReportModalMobile({
                     ))}
                   </div>
                 )}
+              </div>
+
+              {/* Кнопка "Показать отчет" */}
+              <div style={{ marginBottom: '20px' }}>
+                <button
+                  onClick={() => {
+                    console.log('🔘 [LocalWorktimeReportModalMobile] Кнопка "Показать отчет" нажата');
+                    console.log('🔘 [LocalWorktimeReportModalMobile] startDate:', startDate, 'endDate:', endDate);
+                    if (onFetchReport) {
+                      onFetchReport();
+                    }
+                  }}
+                  disabled={loading}
+                  style={{
+                    width: '100%',
+                    padding: '14px',
+                    borderRadius: '12px',
+                    border: '2px solid rgba(67, 233, 123, 0.3)',
+                    background: loading
+                      ? 'rgba(67, 233, 123, 0.3)'
+                      : 'linear-gradient(135deg, #43e97b 0%, #2193b0 100%)',
+                    color: '#fff',
+                    cursor: loading ? 'not-allowed' : 'pointer',
+                    fontWeight: 600,
+                    fontSize: '15px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    opacity: loading ? 0.6 : 1,
+                  }}
+                >
+                  {loading ? (
+                    <>
+                      <span style={{
+                        width: '16px',
+                        height: '16px',
+                        border: '2px solid rgba(255, 255, 255, 0.3)',
+                        borderTopColor: '#fff',
+                        borderRadius: '50%',
+                        animation: 'spin 0.6s linear infinite',
+                      }} />
+                      Загрузка...
+                    </>
+                  ) : (
+                    'Показать отчет'
+                  )}
+                </button>
               </div>
 
               {/* Таблица */}
