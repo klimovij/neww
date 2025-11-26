@@ -269,33 +269,66 @@ export default function EmojiOnlyMessage({ message, isOwn, state }) {
   useEffect(() => {
     if (!cleanedMsgText) return;
     
-    // Находим все img теги в компоненте и добавляем обработчики ошибок
-    const container = document.querySelector(`[data-emoji-message-id="${message.id}"]`);
-    if (container) {
-      const images = container.querySelectorAll('img');
-      images.forEach(img => {
-        // Нормализуем src если нужно
-        if (img.src && !img.src.startsWith('http')) {
-          const normalizedSrc = normalizeEmojiUrl(img.getAttribute('src') || '');
-          if (normalizedSrc && normalizedSrc !== img.src) {
-            img.src = normalizedSrc.startsWith('/') ? normalizedSrc : `/${normalizedSrc}`;
+    // Небольшая задержка, чтобы DOM успел обновиться
+    const timeoutId = setTimeout(() => {
+      // Находим все img теги в компоненте и добавляем обработчики ошибок
+      const container = document.querySelector(`[data-emoji-message-id="${message.id}"]`);
+      if (container) {
+        const images = container.querySelectorAll('img');
+        images.forEach(img => {
+          // Получаем оригинальный src из атрибута
+          const originalSrc = img.getAttribute('src') || img.src;
+          
+          // Нормализуем src если нужно
+          let normalizedSrc = normalizeEmojiUrl(originalSrc);
+          
+          // Если путь относительный, делаем его абсолютным относительно текущего origin
+          if (normalizedSrc && !normalizedSrc.startsWith('http')) {
+            if (!normalizedSrc.startsWith('/')) {
+              normalizedSrc = `/${normalizedSrc}`;
+            }
+            // Обновляем src только если он изменился
+            if (normalizedSrc !== originalSrc) {
+              img.src = normalizedSrc;
+            }
           }
-        }
-        
-        // Добавляем обработчик ошибок
-        const handleError = () => {
-          console.warn('❌ Failed to load emoji image:', img.src);
-          // Можно показать placeholder или скрыть изображение
-          img.style.display = 'none';
-        };
-        
-        img.addEventListener('error', handleError);
-        
-        return () => {
-          img.removeEventListener('error', handleError);
-        };
-      });
-    }
+          
+          // Добавляем обработчик ошибок
+          const handleError = () => {
+            console.warn('❌ Failed to load emoji image:', img.src, 'Original:', originalSrc);
+            
+            // Пытаемся найти альтернативный путь через data-token
+            const dataToken = img.getAttribute('data-token');
+            if (dataToken && dataToken.startsWith('custom:emoji-')) {
+              // Формируем путь из токена
+              const tokenParts = dataToken.replace('custom:emoji-', '');
+              const alternativePath = `/uploads/emojis/emoji-${tokenParts}.jpg`;
+              console.log('🔄 Trying alternative path:', alternativePath);
+              
+              // Пробуем альтернативный путь
+              if (img.src !== alternativePath) {
+                img.src = alternativePath;
+                return; // Не скрываем, ждем загрузки альтернативного пути
+              }
+            }
+            
+            // Если альтернативный путь не помог, показываем placeholder
+            img.style.display = 'none';
+            img.alt = 'Эмодзи не загружен';
+          };
+          
+          // Добавляем обработчик только если его еще нет
+          if (!img.hasAttribute('data-error-handler-added')) {
+            img.addEventListener('error', handleError, { once: true });
+            img.setAttribute('data-error-handler-added', 'true');
+          }
+        });
+      }
+    }, 100);
+    
+    return () => {
+      clearTimeout(timeoutId);
+    };
   }, [cleanedMsgText, message.id]);
 
   return (
