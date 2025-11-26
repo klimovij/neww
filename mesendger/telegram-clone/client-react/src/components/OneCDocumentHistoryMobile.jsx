@@ -227,7 +227,7 @@ export default function OneCDocumentHistoryMobile({
         bottom: 0,
         width: '100vw',
         height: '100vh',
-        backgroundColor: 'rgba(0, 0, 0, 0.95)',
+        background: 'linear-gradient(135deg, #232931 0%, #181c22 100%)',
         zIndex: 100009,
         display: 'flex',
         flexDirection: 'column',
@@ -243,52 +243,77 @@ export default function OneCDocumentHistoryMobile({
     >
       {/* Заголовок */}
       <div style={{
-        padding: '16px',
-        borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+        padding: '20px 16px',
+        borderBottom: '1px solid rgba(255, 107, 107, 0.2)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        backgroundColor: 'rgba(20, 20, 20, 0.9)',
+        background: 'linear-gradient(135deg, rgba(255, 107, 107, 0.15) 0%, rgba(35, 41, 49, 0.95) 100%)',
         flexShrink: 0,
-        minHeight: '56px',
+        minHeight: '64px',
+        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
           {selectedUser ? (
             <button
               onClick={handleBack}
               style={{
-                background: 'none',
-                border: 'none',
+                background: 'rgba(67, 233, 123, 0.15)',
+                border: '1px solid rgba(67, 233, 123, 0.3)',
+                borderRadius: '10px',
                 color: '#43e97b',
                 cursor: 'pointer',
-                padding: '8px',
+                padding: '10px',
                 display: 'flex',
                 alignItems: 'center',
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(67, 233, 123, 0.25)';
+                e.currentTarget.style.transform = 'scale(1.05)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(67, 233, 123, 0.15)';
+                e.currentTarget.style.transform = 'scale(1)';
               }}
             >
-              <FaArrowLeft size={20} />
+              <FaArrowLeft size={18} />
             </button>
           ) : (
             <button
               onClick={handleClose}
               style={{
-                background: 'none',
-                border: 'none',
+                background: 'rgba(67, 233, 123, 0.15)',
+                border: '1px solid rgba(67, 233, 123, 0.3)',
+                borderRadius: '10px',
                 color: '#43e97b',
                 cursor: 'pointer',
-                padding: '8px',
+                padding: '10px',
                 display: 'flex',
                 alignItems: 'center',
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(67, 233, 123, 0.25)';
+                e.currentTarget.style.transform = 'scale(1.05)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(67, 233, 123, 0.15)';
+                e.currentTarget.style.transform = 'scale(1)';
               }}
             >
-              <FaArrowLeft size={20} />
+              <FaArrowLeft size={18} />
             </button>
           )}
           <h2 style={{
-            color: '#ffe082',
-            fontSize: '18px',
-            fontWeight: 600,
+            background: 'linear-gradient(135deg, #ff6b6b 0%, #ffe082 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+            fontSize: '20px',
+            fontWeight: 800,
             margin: 0,
+            letterSpacing: '0.5px',
           }}>
             {selectedUser ? `Документы: ${selectedUser.username || selectedUser.fio}` : 'История 1С'}
           </h2>
@@ -318,7 +343,7 @@ export default function OneCDocumentHistoryMobile({
                     color: '#ffe082',
                     fontSize: '13px',
                     fontWeight: 600,
-                    marginBottom: '6px',
+                    marginBottom: '8px',
                   }}>
                     Начало
                   </label>
@@ -335,14 +360,25 @@ export default function OneCDocumentHistoryMobile({
                     }}
                     style={{
                       width: '100%',
-                      padding: '12px',
+                      padding: '14px',
                       borderRadius: '12px',
-                      border: '2px solid rgba(255, 224, 130, 0.3)',
-                      background: 'rgba(255, 255, 255, 0.05)',
+                      border: '2px solid rgba(255, 107, 107, 0.3)',
+                      background: 'rgba(255, 255, 255, 0.08)',
                       color: '#fff',
                       fontSize: '15px',
                       fontWeight: 500,
                       outline: 'none',
+                      transition: 'all 0.2s',
+                    }}
+                    onFocus={(e) => {
+                      e.currentTarget.style.borderColor = '#ff6b6b';
+                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.12)';
+                      e.currentTarget.style.boxShadow = '0 0 0 3px rgba(255, 107, 107, 0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.currentTarget.style.borderColor = 'rgba(255, 107, 107, 0.3)';
+                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
+                      e.currentTarget.style.boxShadow = 'none';
                     }}
                   />
                 </div>
@@ -353,7 +389,7 @@ export default function OneCDocumentHistoryMobile({
                     color: '#ffe082',
                     fontSize: '13px',
                     fontWeight: 600,
-                    marginBottom: '6px',
+                    marginBottom: '8px',
                   }}>
                     Конец
                   </label>
@@ -366,14 +402,25 @@ export default function OneCDocumentHistoryMobile({
                     }}
                     style={{
                       width: '100%',
-                      padding: '12px',
+                      padding: '14px',
                       borderRadius: '12px',
-                      border: '2px solid rgba(255, 224, 130, 0.3)',
-                      background: 'rgba(255, 255, 255, 0.05)',
+                      border: '2px solid rgba(255, 107, 107, 0.3)',
+                      background: 'rgba(255, 255, 255, 0.08)',
                       color: '#fff',
                       fontSize: '15px',
                       fontWeight: 500,
                       outline: 'none',
+                      transition: 'all 0.2s',
+                    }}
+                    onFocus={(e) => {
+                      e.currentTarget.style.borderColor = '#ff6b6b';
+                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.12)';
+                      e.currentTarget.style.boxShadow = '0 0 0 3px rgba(255, 107, 107, 0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.currentTarget.style.borderColor = 'rgba(255, 107, 107, 0.3)';
+                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
+                      e.currentTarget.style.boxShadow = 'none';
                     }}
                   />
                 </div>
@@ -400,14 +447,25 @@ export default function OneCDocumentHistoryMobile({
                     onBlur={() => setTimeout(() => setShowAutocomplete(false), 150)}
                     style={{
                       width: '100%',
-                      padding: '12px 40px 12px 12px',
+                      padding: '14px 50px 14px 14px',
                       borderRadius: '12px',
-                      border: '2px solid rgba(255, 224, 130, 0.3)',
-                      background: 'rgba(255, 255, 255, 0.05)',
+                      border: '2px solid rgba(255, 107, 107, 0.3)',
+                      background: 'rgba(255, 255, 255, 0.08)',
                       color: '#fff',
                       fontSize: '15px',
                       fontWeight: 500,
                       outline: 'none',
+                      transition: 'all 0.2s',
+                    }}
+                    onFocus={(e) => {
+                      e.currentTarget.style.borderColor = '#ff6b6b';
+                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.12)';
+                      e.currentTarget.style.boxShadow = '0 0 0 3px rgba(255, 107, 107, 0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.currentTarget.style.borderColor = 'rgba(255, 107, 107, 0.3)';
+                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
+                      e.currentTarget.style.boxShadow = 'none';
                     }}
                   />
                   <FiSearch
@@ -482,21 +540,35 @@ export default function OneCDocumentHistoryMobile({
                 disabled={loading}
                 style={{
                   width: '100%',
-                  padding: '14px',
+                  padding: '16px',
                   borderRadius: '12px',
-                  border: '2px solid rgba(67, 233, 123, 0.3)',
+                  border: 'none',
                   background: loading
                     ? 'rgba(67, 233, 123, 0.3)'
-                    : 'linear-gradient(135deg, #43e97b 0%, #2193b0 100%)',
+                    : 'linear-gradient(135deg, #ff6b6b 0%, #ffe082 100%)',
                   color: '#fff',
                   cursor: loading ? 'not-allowed' : 'pointer',
-                  fontWeight: 600,
-                  fontSize: '15px',
+                  fontWeight: 700,
+                  fontSize: '16px',
                   opacity: loading ? 0.6 : 1,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: '8px',
+                  transition: 'all 0.2s',
+                  boxShadow: loading ? 'none' : '0 4px 12px rgba(255, 107, 107, 0.3)',
+                }}
+                onMouseEnter={(e) => {
+                  if (!loading) {
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 6px 16px rgba(255, 107, 107, 0.4)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!loading) {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 107, 107, 0.3)';
+                  }
                 }}
               >
                 {loading ? 'Загрузка...' : 'Показать отчет'}
@@ -533,33 +605,76 @@ export default function OneCDocumentHistoryMobile({
                     key={user.username || index}
                     onClick={() => handleViewUser(user)}
                     style={{
-                      background: 'rgba(255, 255, 255, 0.05)',
-                      border: '2px solid rgba(255, 224, 130, 0.2)',
-                      borderRadius: '12px',
-                      padding: '16px',
+                      background: 'linear-gradient(135deg, rgba(255, 107, 107, 0.1) 0%, rgba(255, 224, 130, 0.05) 100%)',
+                      border: '2px solid rgba(255, 107, 107, 0.3)',
+                      borderRadius: '16px',
+                      padding: '18px',
                       cursor: 'pointer',
-                      transition: 'all 0.2s',
+                      transition: 'all 0.3s',
+                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)',
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
-                      e.currentTarget.style.borderColor = 'rgba(255, 224, 130, 0.4)';
+                      e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255, 107, 107, 0.2) 0%, rgba(255, 224, 130, 0.1) 100%)';
+                      e.currentTarget.style.borderColor = '#ff6b6b';
+                      e.currentTarget.style.transform = 'translateY(-4px)';
+                      e.currentTarget.style.boxShadow = '0 6px 16px rgba(255, 107, 107, 0.3)';
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-                      e.currentTarget.style.borderColor = 'rgba(255, 224, 130, 0.2)';
+                      e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255, 107, 107, 0.1) 0%, rgba(255, 224, 130, 0.05) 100%)';
+                      e.currentTarget.style.borderColor = 'rgba(255, 107, 107, 0.3)';
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.2)';
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <FiUser size={18} color="#43e97b" />
-                        <span style={{ color: '#fff', fontSize: '16px', fontWeight: 600 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div style={{
+                          background: 'linear-gradient(135deg, #ff6b6b 0%, #ffe082 100%)',
+                          borderRadius: '10px',
+                          padding: '8px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}>
+                          <FiUser size={18} color="#fff" />
+                        </div>
+                        <span style={{ 
+                          color: '#fff', 
+                          fontSize: '17px', 
+                          fontWeight: 700,
+                          letterSpacing: '0.3px',
+                        }}>
                           {user.username || user.fio || 'Неизвестно'}
                         </span>
                       </div>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '14px', color: '#ffe082' }}>
-                      <span>📄 Документов: {user.totalDocuments || 0}</span>
-                      <span>🔄 Действий: {user.totalActions || 0}</span>
+                    <div style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '20px', 
+                      fontSize: '14px',
+                      flexWrap: 'wrap',
+                    }}>
+                      <span style={{
+                        background: 'rgba(67, 233, 123, 0.15)',
+                        border: '1px solid rgba(67, 233, 123, 0.3)',
+                        borderRadius: '8px',
+                        padding: '6px 12px',
+                        color: '#43e97b',
+                        fontWeight: 600,
+                      }}>
+                        📄 Документов: {user.totalDocuments || 0}
+                      </span>
+                      <span style={{
+                        background: 'rgba(255, 224, 130, 0.15)',
+                        border: '1px solid rgba(255, 224, 130, 0.3)',
+                        borderRadius: '8px',
+                        padding: '6px 12px',
+                        color: '#ffe082',
+                        fontWeight: 600,
+                      }}>
+                        🔄 Действий: {user.totalActions || 0}
+                      </span>
                     </div>
                   </div>
                 ))}
@@ -596,43 +711,107 @@ export default function OneCDocumentHistoryMobile({
                   <div
                     key={doc.id || index}
                     style={{
-                      background: 'rgba(255, 255, 255, 0.05)',
-                      border: '2px solid rgba(255, 224, 130, 0.2)',
-                      borderRadius: '12px',
-                      padding: '16px',
+                      background: 'linear-gradient(135deg, rgba(255, 107, 107, 0.1) 0%, rgba(255, 224, 130, 0.05) 100%)',
+                      border: '2px solid rgba(255, 107, 107, 0.3)',
+                      borderRadius: '16px',
+                      padding: '18px',
+                      transition: 'all 0.3s',
+                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = '#ff6b6b';
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 107, 107, 0.3)';
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = 'rgba(255, 107, 107, 0.3)';
+                      e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.2)';
+                      e.currentTarget.style.transform = 'translateY(0)';
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-                      <FaFileAlt size={18} color="#43e97b" />
-                      <span style={{ color: '#fff', fontSize: '16px', fontWeight: 600 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+                      <div style={{
+                        background: 'linear-gradient(135deg, #ff6b6b 0%, #ffe082 100%)',
+                        borderRadius: '10px',
+                        padding: '8px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}>
+                        <FaFileAlt size={18} color="#fff" />
+                      </div>
+                      <span style={{ 
+                        color: '#fff', 
+                        fontSize: '17px', 
+                        fontWeight: 700,
+                        letterSpacing: '0.3px',
+                      }}>
                         {doc.document_name || 'Неизвестный документ'}
                       </span>
                     </div>
                     {doc.document_type && (
-                      <div style={{ fontSize: '13px', color: '#ffe082', marginBottom: '6px' }}>
+                      <div style={{ 
+                        fontSize: '13px', 
+                        color: '#ffe082', 
+                        marginBottom: '10px',
+                        background: 'rgba(255, 224, 130, 0.1)',
+                        border: '1px solid rgba(255, 224, 130, 0.2)',
+                        borderRadius: '8px',
+                        padding: '6px 12px',
+                        display: 'inline-block',
+                        fontWeight: 600,
+                      }}>
                         Тип: {doc.document_type}
                       </div>
                     )}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px', color: '#fff', opacity: 0.8 }}>
-                      <FiClock size={14} />
-                      <span>{formatTime(doc.event_time)}</span>
+                    <div style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '12px', 
+                      fontSize: '13px', 
+                      color: '#fff', 
+                      flexWrap: 'wrap',
+                      marginBottom: doc.computer_name ? '8px' : '0',
+                    }}>
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        background: 'rgba(255, 255, 255, 0.1)',
+                        borderRadius: '8px',
+                        padding: '6px 12px',
+                      }}>
+                        <FiClock size={14} color="#43e97b" />
+                        <span>{formatTime(doc.event_time)}</span>
+                      </div>
                       {doc.action_type && (
                         <span style={{ 
-                          padding: '2px 8px', 
-                          borderRadius: '6px', 
-                          background: doc.action_type === 'open' ? 'rgba(67, 233, 123, 0.2)' : 'rgba(255, 224, 130, 0.2)',
+                          padding: '6px 12px', 
+                          borderRadius: '8px', 
+                          background: doc.action_type === 'open' 
+                            ? 'linear-gradient(135deg, rgba(67, 233, 123, 0.2) 0%, rgba(67, 233, 123, 0.1) 100%)'
+                            : 'linear-gradient(135deg, rgba(255, 224, 130, 0.2) 0%, rgba(255, 224, 130, 0.1) 100%)',
+                          border: `1px solid ${doc.action_type === 'open' ? 'rgba(67, 233, 123, 0.3)' : 'rgba(255, 224, 130, 0.3)'}`,
                           color: doc.action_type === 'open' ? '#43e97b' : '#ffe082',
-                          fontSize: '11px',
-                          fontWeight: 600,
-                          marginLeft: '8px'
+                          fontSize: '12px',
+                          fontWeight: 700,
                         }}>
                           {doc.action_type === 'open' ? 'Открыт' : doc.action_type === 'edit' ? 'Изменен' : doc.action_type}
                         </span>
                       )}
                     </div>
                     {doc.computer_name && (
-                      <div style={{ fontSize: '12px', color: '#fff', opacity: 0.6, marginTop: '6px' }}>
-                        Компьютер: {doc.computer_name}
+                      <div style={{ 
+                        fontSize: '12px', 
+                        color: '#fff', 
+                        opacity: 0.7, 
+                        marginTop: '8px',
+                        background: 'rgba(255, 255, 255, 0.05)',
+                        borderRadius: '8px',
+                        padding: '6px 12px',
+                        display: 'inline-block',
+                      }}>
+                        💻 Компьютер: {doc.computer_name}
                       </div>
                     )}
                   </div>
