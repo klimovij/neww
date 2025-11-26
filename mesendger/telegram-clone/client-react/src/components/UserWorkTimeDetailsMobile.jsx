@@ -845,15 +845,29 @@ export default function UserWorkTimeDetailsMobile({
                         <FiMonitor size={18} />
                         {app.procName || 'Unknown'}
                       </div>
-                      {app.windowTitle && app.windowTitle !== app.procName && (
-                        <div style={{
-                          color: 'rgba(255, 255, 255, 0.7)',
-                          fontSize: '14px',
-                          marginBottom: '8px',
-                        }}>
-                          {app.windowTitle}
-                        </div>
-                      )}
+                      {app.windowTitle && (() => {
+                        // Для мессенджеров (Telegram, Viber) всегда показываем windowTitle,
+                        // так как он содержит информацию о группе/чате
+                        const isMessenger = app.procName && (
+                          app.procName.toLowerCase().includes('telegram') ||
+                          app.procName.toLowerCase().includes('viber') ||
+                          app.procName.toLowerCase().includes('whatsapp') ||
+                          app.procName.toLowerCase().includes('discord') ||
+                          app.procName.toLowerCase().includes('skype')
+                        );
+                        // Показываем windowTitle если он отличается от procName ИЛИ это мессенджер
+                        const shouldShow = isMessenger || app.windowTitle !== app.procName;
+                        return shouldShow ? (
+                          <div style={{
+                            color: 'rgba(255, 255, 255, 0.7)',
+                            fontSize: '14px',
+                            marginBottom: '8px',
+                            fontWeight: isMessenger ? 600 : 400,
+                          }}>
+                            {app.windowTitle}
+                          </div>
+                        ) : null;
+                      })()}
                       {app.timestamp && (
                         <div style={{
                           color: 'rgba(255, 255, 255, 0.5)',
