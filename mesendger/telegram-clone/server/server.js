@@ -543,6 +543,8 @@ try {
     });
   }
   
+  console.log('🔍 [SERVER] Перед подключением quickCsvReportRouter, его тип:', typeof quickCsvReportRouter);
+  console.log('🔍 [SERVER] quickCsvReportRouter это роутер?', quickCsvReportRouter && typeof quickCsvReportRouter === 'function');
   app.use('/api', quickCsvReportRouter);
   console.log('✅ [SERVER] quickCsvReportRouter mounted at /api');
   app.use('/api', remoteWorktimeRouter);
