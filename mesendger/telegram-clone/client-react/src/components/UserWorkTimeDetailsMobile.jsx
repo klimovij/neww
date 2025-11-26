@@ -896,7 +896,7 @@ export default function UserWorkTimeDetailsMobile({
               onClick={() => handleTabChange('events')}
               style={{
                 flex: 1,
-                padding: '10px 16px',
+                padding: '10px 8px',
                 borderRadius: '8px',
                 border: 'none',
                 background: activeTab === 'events' 
@@ -904,18 +904,25 @@ export default function UserWorkTimeDetailsMobile({
                   : 'rgba(255, 255, 255, 0.1)',
                 color: '#fff',
                 fontWeight: 600,
-                fontSize: '13px',
+                fontSize: '12px',
                 cursor: 'pointer',
                 transition: 'all 0.2s',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '4px',
               }}
+              title="События"
             >
-              События
+              <FiClock size={18} />
+              <span style={{ fontSize: '11px', fontWeight: 700 }}>{sortedLogs?.length || 0}</span>
             </button>
             <button
               onClick={() => handleTabChange('urls')}
               style={{
                 flex: 1,
-                padding: '10px 16px',
+                padding: '10px 8px',
                 borderRadius: '8px',
                 border: 'none',
                 background: activeTab === 'urls' 
@@ -923,17 +930,19 @@ export default function UserWorkTimeDetailsMobile({
                   : 'rgba(255, 255, 255, 0.1)',
                 color: '#fff',
                 fontWeight: 600,
-                fontSize: '13px',
+                fontSize: '12px',
                 cursor: 'pointer',
                 transition: 'all 0.2s',
                 display: 'flex',
+                flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '6px',
+                gap: '4px',
               }}
+              title="Сайты"
             >
-              <FiGlobe size={14} />
-              Сайты ({localUrls?.length || 0})
+              <FiGlobe size={18} />
+              <span style={{ fontSize: '11px', fontWeight: 700 }}>{localUrls?.length || 0}</span>
             </button>
             <button
               onClick={() => {
@@ -942,7 +951,7 @@ export default function UserWorkTimeDetailsMobile({
               }}
               style={{
                 flex: 1,
-                padding: '10px 16px',
+                padding: '10px 8px',
                 borderRadius: '8px',
                 border: 'none',
                 background: activeTab === 'applications' 
@@ -950,25 +959,27 @@ export default function UserWorkTimeDetailsMobile({
                   : 'rgba(255, 255, 255, 0.1)',
                 color: '#fff',
                 fontWeight: 600,
-                fontSize: '13px',
+                fontSize: '12px',
                 cursor: 'pointer',
                 transition: 'all 0.2s',
                 display: 'flex',
+                flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '6px',
+                gap: '4px',
                 zIndex: 10,
                 position: 'relative',
               }}
+              title="Приложения"
             >
-              <FiMonitor size={14} />
-              Приложения ({localApplications?.length || 0})
+              <FiMonitor size={18} />
+              <span style={{ fontSize: '11px', fontWeight: 700 }}>{localApplications?.length || 0}</span>
             </button>
             <button
               onClick={() => handleTabChange('screenshots')}
               style={{
                 flex: 1,
-                padding: '10px 16px',
+                padding: '10px 8px',
                 borderRadius: '8px',
                 border: 'none',
                 background: activeTab === 'screenshots' 
@@ -976,17 +987,19 @@ export default function UserWorkTimeDetailsMobile({
                   : 'rgba(255, 255, 255, 0.1)',
                 color: '#fff',
                 fontWeight: 600,
-                fontSize: '13px',
+                fontSize: '12px',
                 cursor: 'pointer',
                 transition: 'all 0.2s',
                 display: 'flex',
+                flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '6px',
+                gap: '4px',
               }}
+              title="Скрины"
             >
-              <FiCamera size={14} />
-              Скрины ({localScreenshots?.length || 0})
+              <FiCamera size={18} />
+              <span style={{ fontSize: '11px', fontWeight: 700 }}>{localScreenshots?.length || 0}</span>
             </button>
           </div>
         </div>
