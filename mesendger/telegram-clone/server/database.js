@@ -2326,6 +2326,43 @@ class Database {
       });
     }
 
+    async deleteActivityLogs({ period }) {
+      // period: 'day', 'week', 'month'
+      return new Promise((resolve, reject) => {
+        const now = new Date();
+        let cutoffDate = new Date();
+        
+        switch (period) {
+          case 'day':
+            cutoffDate.setDate(now.getDate() - 1);
+            break;
+          case 'week':
+            cutoffDate.setDate(now.getDate() - 7);
+            break;
+          case 'month':
+            cutoffDate.setMonth(now.getMonth() - 1);
+            break;
+          default:
+            return reject(new Error('Invalid period. Use: day, week, or month'));
+        }
+        
+        const cutoffISO = cutoffDate.toISOString();
+        
+        this.db.run(
+          'DELETE FROM activity_logs WHERE timestamp < ?',
+          [cutoffISO],
+          function(err) {
+            if (err) {
+              console.error('❌ Error deleting activity logs:', err);
+              return reject(err);
+            }
+            console.log(`✅ Deleted activity logs older than ${period} (before ${cutoffISO}). Deleted rows: ${this.changes}`);
+            resolve(this.changes);
+          }
+        );
+      });
+    }
+
     async getActivityLogsBetween({ start, end }) {
       return new Promise((resolve, reject) => {
         let query = 'SELECT * FROM activity_logs WHERE 1=1';

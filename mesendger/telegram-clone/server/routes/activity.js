@@ -582,6 +582,45 @@ router.get('/activity-details', async (req, res) => {
   }
 });
 
+// Endpoint для очистки данных активности
+router.delete('/activity-logs/clear', async (req, res) => {
+  try {
+    const { period } = req.body; // 'day', 'week', 'month'
+    
+    if (!period || !['day', 'week', 'month'].includes(period)) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Invalid period. Use: day, week, or month' 
+      });
+    }
+    
+    // Проверяем права доступа (только HR и админ)
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    if (!token) {
+      return res.status(401).json({ success: false, error: 'Unauthorized' });
+    }
+    
+    const user = await db.getUserByToken(token);
+    if (!user || (user.role !== 'hr' && user.role !== 'admin')) {
+      return res.status(403).json({ success: false, error: 'Forbidden. Only HR and admin can clear activity data' });
+    }
+    
+    const deletedCount = await db.deleteActivityLogs({ period });
+    
+    console.log(`🗑️ [activity-logs/clear] User ${user.username} cleared ${deletedCount} activity logs (period: ${period})`);
+    
+    res.json({ 
+      success: true, 
+      deletedCount,
+      period,
+      message: `Удалено ${deletedCount} записей активности за ${period === 'day' ? 'день' : period === 'week' ? 'неделю' : 'месяц'}`
+    });
+  } catch (error) {
+    console.error('❌ Error clearing activity logs:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 module.exports = router;
 
 

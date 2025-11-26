@@ -110,6 +110,8 @@ function WorkTimeReportModal({ isOpen, onRequestClose }) {
   const [importing, setImporting] = useState(false);
   const [importOk, setImportOk] = useState(null); // null | true | false
   const [showAppUsage, setShowAppUsage] = useState(false);
+  const [clearing, setClearing] = useState(false);
+  const [clearResult, setClearResult] = useState(null); // { success: true/false, message: string }
 
   useEffect(() => {
     if (isOpen) {
@@ -203,6 +205,41 @@ function WorkTimeReportModal({ isOpen, onRequestClose }) {
       setImportOk(false);
     }
     setImporting(false);
+  };
+
+  const clearActivityData = async (period) => {
+    if (!window.confirm(`Вы уверены, что хотите удалить данные активности за ${period === 'day' ? 'день' : period === 'week' ? 'неделю' : 'месяц'}? Это действие нельзя отменить!`)) {
+      return;
+    }
+    
+    setClearing(true);
+    setClearResult(null);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('/api/activity-logs/clear', {
+        method: 'DELETE',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ period })
+      });
+      const data = await res.json();
+      
+      if (res.ok && data.success) {
+        setClearResult({ success: true, message: data.message || `Удалено ${data.deletedCount || 0} записей` });
+        // Обновляем отчет после очистки
+        setTimeout(() => {
+          fetchReport();
+          setClearResult(null);
+        }, 2000);
+      } else {
+        setClearResult({ success: false, message: data.error || 'Ошибка при удалении данных' });
+      }
+    } catch (error) {
+      setClearResult({ success: false, message: 'Ошибка при удалении данных: ' + error.message });
+    }
+    setClearing(false);
   };
 
   // Фильтрация строк таблицы по образцу
@@ -364,7 +401,7 @@ function WorkTimeReportModal({ isOpen, onRequestClose }) {
               Показать отчет
             </button>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
               <button onClick={triggerYesterdayImport} disabled={importing} style={{
                 padding: '6px 12px', borderRadius: 8, border: '1px solid #38d9a9', background: 'rgba(56,217,169,0.1)', color: '#38d9a9', cursor: importing ? 'not-allowed' : 'pointer', fontWeight: 600
               }}>
@@ -372,6 +409,75 @@ function WorkTimeReportModal({ isOpen, onRequestClose }) {
               </button>
               <div title={importOk === true ? 'Импорт успешен' : importOk === false ? 'Импорт не выполнен' : 'Статус импорта неизвестен'}
                 style={{ width: 12, height: 12, borderRadius: '50%', background: importOk === true ? '#43e97b' : importOk === false ? '#e74c3c' : '#95a5a6' }} />
+              
+              {/* Кнопки очистки данных */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 10, paddingLeft: 10, borderLeft: '1px solid rgba(255,255,255,0.2)' }}>
+                <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px', marginRight: 4 }}>Очистить:</span>
+                <button 
+                  onClick={() => clearActivityData('day')} 
+                  disabled={clearing}
+                  style={{
+                    padding: '6px 10px', 
+                    borderRadius: 6, 
+                    border: '1px solid #e74c3c', 
+                    background: 'rgba(231,76,60,0.1)', 
+                    color: '#e74c3c', 
+                    cursor: clearing ? 'not-allowed' : 'pointer', 
+                    fontWeight: 600,
+                    fontSize: '12px'
+                  }}
+                  title="Удалить данные за последний день"
+                >
+                  {clearing ? '...' : 'День'}
+                </button>
+                <button 
+                  onClick={() => clearActivityData('week')} 
+                  disabled={clearing}
+                  style={{
+                    padding: '6px 10px', 
+                    borderRadius: 6, 
+                    border: '1px solid #e74c3c', 
+                    background: 'rgba(231,76,60,0.1)', 
+                    color: '#e74c3c', 
+                    cursor: clearing ? 'not-allowed' : 'pointer', 
+                    fontWeight: 600,
+                    fontSize: '12px'
+                  }}
+                  title="Удалить данные за последнюю неделю"
+                >
+                  {clearing ? '...' : 'Неделя'}
+                </button>
+                <button 
+                  onClick={() => clearActivityData('month')} 
+                  disabled={clearing}
+                  style={{
+                    padding: '6px 10px', 
+                    borderRadius: 6, 
+                    border: '1px solid #e74c3c', 
+                    background: 'rgba(231,76,60,0.1)', 
+                    color: '#e74c3c', 
+                    cursor: clearing ? 'not-allowed' : 'pointer', 
+                    fontWeight: 600,
+                    fontSize: '12px'
+                  }}
+                  title="Удалить данные за последний месяц"
+                >
+                  {clearing ? '...' : 'Месяц'}
+                </button>
+              </div>
+              
+              {clearResult && (
+                <div style={{
+                  padding: '6px 12px',
+                  borderRadius: 6,
+                  background: clearResult.success ? 'rgba(67,233,123,0.2)' : 'rgba(231,76,60,0.2)',
+                  color: clearResult.success ? '#43e97b' : '#e74c3c',
+                  fontSize: '12px',
+                  fontWeight: 600
+                }}>
+                  {clearResult.message}
+                </div>
+              )}
             </div>
           </div>
 
