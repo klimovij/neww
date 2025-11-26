@@ -6027,6 +6027,18 @@ server.listen(PORT, () => {
   console.log(`🌐 CORS enabled for: http://localhost:3000, http://localhost:3001`);
   console.log(`🔌 Socket.IO enabled on port ${PORT}`);
   console.log(`🔑 JWT Secret: ${JWT_SECRET.substring(0, 10)}...`);
+  console.log('========================================');
+  console.log('🔍 [SERVER] После server.listen - проверяем, загружены ли роутеры');
+  console.log('🔍 [SERVER] Проверяем app._router.stack для /api/quick-db-report');
+  if (app._router && app._router.stack) {
+    const quickDbReportRoutes = app._router.stack.filter(layer => {
+      if (layer.route && layer.route.path === '/quick-db-report') return true;
+      if (layer.regexp && layer.regexp.test('/api/quick-db-report')) return true;
+      return false;
+    });
+    console.log(`🔍 [SERVER] Найдено обработчиков для /quick-db-report: ${quickDbReportRoutes.length}`);
+  }
+  console.log('========================================');
 });
 
 // Настройка graceful shutdown
