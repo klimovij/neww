@@ -502,6 +502,62 @@ function WorkTimeReportModal({ isOpen, onRequestClose }) {
                     </div>
                   )}
                 </div>
+
+                {/* Кнопки действий */}
+                <div style={{ display: 'flex', gap: 12, marginTop: 16, flexWrap: 'wrap' }}>
+                  <button onClick={fetchLocalReport} style={{
+                    padding: '8px 16px', borderRadius: 8, border: '1px solid #43e97b', background: 'rgba(67,233,123,0.1)', color: '#43e97b', cursor: 'pointer', fontWeight: 600
+                  }}>
+                    Показать отчет
+                  </button>
+
+                  <button
+                    onClick={() => handleDeleteByDateRange(localReportStartDate, localReportEndDate)}
+                    disabled={!localReportStartDate || !localReportEndDate}
+                    style={{
+                      padding: '8px 16px',
+                      borderRadius: 8,
+                      border: '1px solid rgba(231, 76, 60, 0.5)',
+                      background: (!localReportStartDate || !localReportEndDate) ? 'rgba(231, 76, 60, 0.3)' : 'rgba(231, 76, 60, 0.2)',
+                      color: '#fff',
+                      cursor: (!localReportStartDate || !localReportEndDate) ? 'not-allowed' : 'pointer',
+                      fontWeight: 600,
+                      opacity: (!localReportStartDate || !localReportEndDate) ? 0.6 : 1,
+                    }}
+                  >
+                    🗑️ Удалить за период
+                  </button>
+
+                  <button
+                    onClick={() => handleDeleteByPeriod('week')}
+                    style={{
+                      padding: '8px 16px',
+                      borderRadius: 8,
+                      border: '1px solid rgba(231, 76, 60, 0.5)',
+                      background: 'rgba(231, 76, 60, 0.2)',
+                      color: '#fff',
+                      cursor: 'pointer',
+                      fontWeight: 600,
+                    }}
+                  >
+                    🗑️ За неделю
+                  </button>
+
+                  <button
+                    onClick={() => handleDeleteByPeriod('month')}
+                    style={{
+                      padding: '8px 16px',
+                      borderRadius: 8,
+                      border: '1px solid rgba(231, 76, 60, 0.5)',
+                      background: 'rgba(231, 76, 60, 0.2)',
+                      color: '#fff',
+                      cursor: 'pointer',
+                      fontWeight: 600,
+                    }}
+                  >
+                    🗑️ За месяц
+                  </button>
+                </div>
               </div>
 
               {/* Таблица с пользователями */}
