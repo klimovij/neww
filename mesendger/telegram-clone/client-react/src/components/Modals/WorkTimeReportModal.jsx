@@ -179,12 +179,22 @@ function WorkTimeReportModal({ isOpen, onRequestClose }) {
       // Используем endpoint для ЛОКАЛЬНЫХ данных (work_time_logs + activity_logs)
       let url = `/api/local-worktime-report?start=${startDate}&end=${endDate}`;
       if (selectedUser) url += `&username=${encodeURIComponent(selectedUser)}`;
+      console.log('📊 [WorkTimeReportModal] Запрос локального отчета:', url);
       const res = await fetch(url);
+      console.log('📊 [WorkTimeReportModal] Статус ответа:', res.status, res.statusText);
       const data = await res.json();
       // API возвращает { report: [...] }
-      console.log('Данные из local-worktime-report (локальные):', data);
-      setLogs(Array.isArray(data.report) ? data.report : []);
-    } catch {
+      console.log('📊 [WorkTimeReportModal] Данные из local-worktime-report (локальные):', data);
+      console.log('📊 [WorkTimeReportModal] success:', data.success, 'report length:', data.report?.length || 0);
+      if (data.success && Array.isArray(data.report)) {
+        console.log('📊 [WorkTimeReportModal] Устанавливаем', data.report.length, 'записей');
+        setLogs(data.report);
+      } else {
+        console.warn('⚠️ [WorkTimeReportModal] Некорректный формат данных или ошибка:', data);
+        setLogs([]);
+      }
+    } catch (error) {
+      console.error('❌ [WorkTimeReportModal] Ошибка при загрузке отчета:', error);
       setLogs([]);
     }
     setLoading(false);

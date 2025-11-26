@@ -112,10 +112,13 @@ async function getLocalWorkTimeReport({ start, end, username }) {
   }
   
   const report = [];
-  logMsg(`Всего локальных пользователей: ${Object.keys(userMap).length}`);
+  logMsg(`Всего локальных пользователей в userMap: ${Object.keys(userMap).length}`);
+  logMsg(`Пользователи в userMap: ${Object.keys(userMap).join(', ')}`);
+  logMsg(`Пользователи в activityUsers: ${Object.keys(activityUsers).join(', ')}`);
   
   for (const [user, sessions] of Object.entries(userMap)) {
-    if (!user || (!sessions.length && !activityUsers[user])) {
+    if (!user) {
+      logMsg(`⚠️ Пропускаем пользователя с пустым username`);
       continue;
     }
     
@@ -124,6 +127,14 @@ async function getLocalWorkTimeReport({ start, end, username }) {
       logMsg(`⚠️ Пропускаем пользователя ${user} - он есть в удаленных данных`);
       continue;
     }
+    
+    // Включаем пользователя, если есть либо sessions, либо активность
+    if (!sessions.length && !activityUsers[user]) {
+      logMsg(`⚠️ Пропускаем пользователя ${user} - нет sessions и нет активности`);
+      continue;
+    }
+    
+    logMsg(`✅ Добавляем пользователя ${user} в отчет (sessions: ${sessions.length}, есть активность: ${!!activityUsers[user]})`);
     
     let displayName = user;
     try {
