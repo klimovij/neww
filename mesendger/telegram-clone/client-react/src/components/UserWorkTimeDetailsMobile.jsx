@@ -1501,39 +1501,77 @@ export default function UserWorkTimeDetailsMobile({
                           {(shot.fileSize / 1024 / 1024).toFixed(2)} MB
                         </div>
                       )}
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handlePrintScreenshot(screenshotUrl, shot.timestamp);
-                        }}
-                        style={{
-                          marginLeft: 'auto',
-                          background: 'rgba(255, 224, 130, 0.2)',
-                          border: '1px solid rgba(255, 224, 130, 0.5)',
-                          color: '#ffe082',
-                          fontSize: '12px',
-                          cursor: 'pointer',
-                          padding: '6px 10px',
-                          borderRadius: '6px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                          fontWeight: 600,
-                          transition: 'all 0.2s',
-                        }}
-                        onMouseEnter={(e) => {
-                          e.target.style.background = 'rgba(255, 224, 130, 0.3)';
-                          e.target.style.borderColor = '#ffe082';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.target.style.background = 'rgba(255, 224, 130, 0.2)';
-                          e.target.style.borderColor = 'rgba(255, 224, 130, 0.5)';
-                        }}
-                        title="Печать скриншота"
-                      >
-                        <FiPrinter size={14} />
-                        Печать
-                      </button>
+                      <div style={{
+                        marginLeft: 'auto',
+                        display: 'flex',
+                        gap: '6px',
+                        alignItems: 'center',
+                      }}>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDownloadScreenshot(screenshotUrl, shot.timestamp);
+                          }}
+                          style={{
+                            background: 'rgba(67, 233, 123, 0.2)',
+                            border: '1px solid rgba(67, 233, 123, 0.5)',
+                            color: '#43e97b',
+                            fontSize: '12px',
+                            cursor: 'pointer',
+                            padding: '6px 10px',
+                            borderRadius: '6px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            fontWeight: 600,
+                            transition: 'all 0.2s',
+                          }}
+                          onMouseEnter={(e) => {
+                            e.target.style.background = 'rgba(67, 233, 123, 0.3)';
+                            e.target.style.borderColor = '#43e97b';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.target.style.background = 'rgba(67, 233, 123, 0.2)';
+                            e.target.style.borderColor = 'rgba(67, 233, 123, 0.5)';
+                          }}
+                          title="Скачать скриншот"
+                        >
+                          <FiDownload size={14} />
+                          Скачать
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handlePrintScreenshot(screenshotUrl, shot.timestamp);
+                          }}
+                          style={{
+                            background: 'rgba(255, 224, 130, 0.2)',
+                            border: '1px solid rgba(255, 224, 130, 0.5)',
+                            color: '#ffe082',
+                            fontSize: '12px',
+                            cursor: 'pointer',
+                            padding: '6px 10px',
+                            borderRadius: '6px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            fontWeight: 600,
+                            transition: 'all 0.2s',
+                          }}
+                          onMouseEnter={(e) => {
+                            e.target.style.background = 'rgba(255, 224, 130, 0.3)';
+                            e.target.style.borderColor = '#ffe082';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.target.style.background = 'rgba(255, 224, 130, 0.2)';
+                            e.target.style.borderColor = 'rgba(255, 224, 130, 0.5)';
+                          }}
+                          title="Печать / Сохранить в PDF"
+                        >
+                          <FiPrinter size={14} />
+                          Печать
+                        </button>
+                      </div>
                     </div>
                     <div style={{
                       borderRadius: '8px',
