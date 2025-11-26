@@ -342,6 +342,30 @@ export default function UserWorkTimeDetailsMobile({
     };
   }, [open, username, startDate, endDate, reloadActivityData]);
 
+  // Загружаем данные активности при открытии модалки
+  useEffect(() => {
+    if (open && realUsername && startDate && endDate) {
+      console.log('🔄 [UserWorkTimeDetailsMobile] Модалка открыта, загружаем данные активности для:', realUsername, startDate, endDate);
+      console.log('🔄 [UserWorkTimeDetailsMobile] Текущее состояние localScreenshots перед загрузкой:', localScreenshots?.length || 0);
+      console.log('🔄 [UserWorkTimeDetailsMobile] Скриншоты из props:', screenshots?.length || 0);
+      // Если скриншоты уже есть в props, используем их, иначе загружаем через API
+      if (screenshots && screenshots.length > 0) {
+        console.log('✅ [UserWorkTimeDetailsMobile] Используем скриншоты из props:', screenshots.length);
+        setLocalScreenshots(screenshots);
+      } else {
+        console.log('🔄 [UserWorkTimeDetailsMobile] Скриншотов нет в props, загружаем через API');
+        reloadActivityData();
+      }
+    } else {
+      console.log('⚠️ [UserWorkTimeDetailsMobile] Не загружаем данные - недостаточно параметров:', {
+        open,
+        realUsername,
+        startDate,
+        endDate
+      });
+    }
+  }, [open, realUsername, startDate, endDate, reloadActivityData, screenshots]);
+
   // Сортируем логи по времени (мемоизация для оптимизации)
   // ВАЖНО: хуки должны вызываться ДО условного возврата
   const sortedLogs = useMemo(() => {
