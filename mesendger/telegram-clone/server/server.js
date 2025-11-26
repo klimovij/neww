@@ -502,14 +502,22 @@ app.delete('/api/custom-emoji/:file', authenticateToken, async (req, res) => {
 // ==================== API МАРШРУТЫ ====================
 // --- ОТЧЁТЫ ПО РАБОЧЕМУ ВРЕМЕНИ И АКТИВНОСТИ ---
 try {
+  console.error('🚀 [SERVER] Начинаем загрузку роутеров...');
+  process.stderr.write('🚀 [SERVER] Начинаем загрузку роутеров...\n');
+  
   const quickCsvReportRouter = require('./routes/quickCsvReport');
+  console.error('✅ [SERVER] quickCsvReportRouter модуль загружен');
+  process.stderr.write('✅ [SERVER] quickCsvReportRouter модуль загружен\n');
+  
   const congratulationsRouter = require('./routes/congratulations');
   const remoteWorktimeRouter = require('./routes/remoteWorktime');
   const activityRouter = require('./routes/activity');
   const onecHistoryRouter = require('./routes/onecHistory');
   const adminRouter = require('./routes/admin');
+  
   // Подключаем importWorktimeCsvRoutes первым, чтобы избежать конфликта с quickCsvReportRouter
   app.use('/api', importWorktimeCsvRoutes);
+  console.error('✅ [SERVER] importWorktimeCsvRoutes mounted');
   
   // Middleware для логирования ВСЕХ запросов к /api
   app.use('/api', (req, res, next) => {
@@ -521,7 +529,8 @@ try {
   });
   
   app.use('/api', quickCsvReportRouter);
-  console.log('✅ [SERVER] quickCsvReportRouter mounted at /api');
+  console.error('✅ [SERVER] quickCsvReportRouter mounted at /api');
+  process.stderr.write('✅ [SERVER] quickCsvReportRouter mounted at /api\n');
   app.use('/api', remoteWorktimeRouter);
   console.log('✅ [SERVER] RemoteWorktime router loaded and mounted at /api');
   app.use('/api', activityRouter);
