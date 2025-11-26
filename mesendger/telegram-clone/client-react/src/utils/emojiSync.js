@@ -33,46 +33,54 @@ export async function syncEmojisToServer(force = false) {
     const token = localStorage.getItem('token');
     if (!token) {
       console.warn('⚠️ Нет токена авторизации, синхронизация пропущена');
-      return { synced: 0, skipped: 0 };
+      return { synced: 0, skipped: 0, error: 'Нет токена авторизации' };
     }
 
     // Получаем локальные эмодзи
     const localEmojis = JSON.parse(localStorage.getItem('customEmojis') || '[]');
+    console.log('📋 Локальные эмодзи для синхронизации:', localEmojis.length);
+    
     if (!Array.isArray(localEmojis) || localEmojis.length === 0) {
       console.log('ℹ️ Нет локальных эмодзи для синхронизации');
-      return { synced: 0, skipped: 0 };
+      return { synced: 0, skipped: 0, error: 'Нет локальных эмодзи' };
     }
 
     // Получаем список эмодзи с сервера
     const serverEmojis = await loadEmojisFromServer();
     const serverNames = new Set(serverEmojis.map(e => e.name));
+    console.log('📋 Эмодзи на сервере:', serverEmojis.length);
 
     // Фильтруем эмодзи, которых нет на сервере
     const emojisToSync = localEmojis.filter(emoji => {
       // Пропускаем эмодзи, которые уже есть на сервере (если не принудительная синхронизация)
       if (!force && serverNames.has(emoji.name)) {
+        console.log(`⏭️ Пропуск эмодзи "${emoji.name}" - уже есть на сервере`);
         return false;
       }
       
       // Пропускаем эмодзи с data URL (base64) - их нужно загрузить на сервер
       if (emoji.src && emoji.src.startsWith('data:')) {
+        console.log(`✅ Эмодзи "${emoji.name}" будет загружено (data URL)`);
         return true;
       }
       
       // Пропускаем эмодзи с относительными путями (локальные файлы)
       if (emoji.src && !emoji.src.startsWith('http') && !emoji.src.startsWith('/uploads/')) {
+        console.log(`✅ Эмодзи "${emoji.name}" будет загружено (локальный путь: ${emoji.src.substring(0, 50)}...)`);
         return true;
       }
       
+      console.log(`⏭️ Пропуск эмодзи "${emoji.name}" - уже на сервере (${emoji.src?.substring(0, 50) || 'нет src'}...)`);
       return false;
     });
 
     if (emojisToSync.length === 0) {
       console.log('✅ Все эмодзи уже синхронизированы с сервером');
-      return { synced: 0, skipped: localEmojis.length };
+      return { synced: 0, skipped: localEmojis.length, message: 'Все эмодзи уже на сервере' };
     }
 
     console.log(`🔄 Синхронизация ${emojisToSync.length} эмодзи с сервером...`);
+    console.log('📝 Эмодзи для синхронизации:', emojisToSync.map(e => ({ name: e.name, srcType: e.src?.substring(0, 20) || 'нет src' })));
 
     // Загружаем эмодзи на сервер пакетами
     const batchSize = 10;
