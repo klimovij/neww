@@ -4,26 +4,6 @@ const router = express.Router();
 
 // Логируем при загрузке модуля
 console.error('🚀 [quickCsvReport] MODULE LOADING STARTED');
-const fs = require('fs');
-const path = require('path');
-try {
-  console.error('🚀 [quickCsvReport] Trying to write ROUTER_LOADED.txt');
-  const debugFile = path.join(__dirname, '../../ROUTER_LOADED.txt');
-  console.error('🚀 [quickCsvReport] Debug file path:', debugFile);
-  console.error('🚀 [quickCsvReport] __dirname:', __dirname);
-  fs.writeFileSync(debugFile, `[${new Date().toISOString()}] quickCsvReport router module loaded\n`);
-  console.error('✅ [quickCsvReport] ROUTER_LOADED.txt written successfully');
-} catch (e) {
-  console.error('❌ [quickCsvReport] Failed to write ROUTER_LOADED.txt:', e);
-  console.error('❌ [quickCsvReport] Error stack:', e.stack);
-  // Пробуем другой путь
-  try {
-    fs.writeFileSync('/tmp/ROUTER_LOADED.txt', `[${new Date().toISOString()}] quickCsvReport router module loaded\n`);
-    console.error('✅ [quickCsvReport] ROUTER_LOADED.txt written to /tmp');
-  } catch (e2) {
-    console.error('❌ [quickCsvReport] Failed to write to /tmp:', e2);
-  }
-}
 console.error('✅ quickCsvReport router module loaded');
 
 // Импорт массива событий из PowerShell (JSON)
@@ -88,8 +68,16 @@ async function getDbShortReport({ start, end, username }) {
   logMsg(`remote_work_time_logs: ${remoteLogs?.length || 0} записей`);
   
   // Также получаем пользователей из activity_logs, у которых есть активность, даже если нет login/logout
+  logMsg(`🔍 Вызываем db.getActivityLogsBetween({ start: '${start}', end: '${end}' })`);
   const activityLogs = await db.getActivityLogsBetween({ start, end });
   logMsg(`activity_logs: ${activityLogs?.length || 0} записей`);
+  
+  if (activityLogs.length > 0) {
+    logMsg(`📋 Первые 3 записи activity_logs:`);
+    activityLogs.slice(0, 3).forEach((log, idx) => {
+      logMsg(`  [${idx}] username: ${log.username}, timestamp: ${log.timestamp}`);
+    });
+  }
   
   const activityUsers = {};
   for (const log of activityLogs) {
@@ -98,6 +86,9 @@ async function getDbShortReport({ start, end, username }) {
     activityUsers[log.username] = true;
   }
   logMsg(`Уникальных пользователей в activity_logs: ${Object.keys(activityUsers).length}`);
+  if (Object.keys(activityUsers).length > 0) {
+    logMsg(`👥 Пользователи: ${Object.keys(activityUsers).join(', ')}`);
+  }
   
   // Объединяем логи из обеих таблиц
   const allLogs = [...periodLogs, ...remoteLogs];
