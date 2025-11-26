@@ -50,6 +50,12 @@ export async function syncEmojisToServer(force = false) {
     const serverNames = new Set(serverEmojis.map(e => e.name));
     const serverUrls = new Set(serverEmojis.map(e => e.url));
     console.log('📋 Эмодзи на сервере:', serverEmojis.length);
+    
+    // Если на сервере нет эмодзи, но локально есть - принудительная синхронизация
+    if (serverEmojis.length === 0 && localEmojis.length > 0) {
+      console.log('🔄 Сервер пустой, но есть локальные эмодзи - принудительная синхронизация');
+      force = true;
+    }
 
     // Фильтруем эмодзи, которых нет на сервере
     const emojisToSync = localEmojis.filter(emoji => {
