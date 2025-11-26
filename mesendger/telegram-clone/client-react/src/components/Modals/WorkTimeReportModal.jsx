@@ -142,7 +142,7 @@ function WorkTimeReportModal({ isOpen, onRequestClose }) {
   }, [showLocalReport]);
 
   // Загрузка отчета при изменении дат
-  const fetchLocalReport = async () => {
+  const fetchLocalReport = React.useCallback(async () => {
     if (!localReportStartDate || !localReportEndDate) return;
     
     setLoadingLocalReport(true);
@@ -161,14 +161,14 @@ function WorkTimeReportModal({ isOpen, onRequestClose }) {
       setLocalReportUsers([]);
     }
     setLoadingLocalReport(false);
-  };
+  }, [localReportStartDate, localReportEndDate]);
 
   // Автозагрузка при открытии модалки и изменении дат
   useEffect(() => {
     if (showLocalReport && localReportStartDate && localReportEndDate) {
       fetchLocalReport();
     }
-  }, [showLocalReport, localReportStartDate, localReportEndDate]);
+  }, [showLocalReport, localReportStartDate, localReportEndDate, fetchLocalReport]);
   
   const handleOpenLocalReport = () => {
     setShowLocalReport(true);
