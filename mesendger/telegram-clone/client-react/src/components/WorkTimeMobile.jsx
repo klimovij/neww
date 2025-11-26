@@ -770,6 +770,47 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
               Отчет активности локальных ПК
             </button>
           </div>
+
+          {/* Кнопка История 1С */}
+          <div style={{ marginBottom: '20px' }}>
+            <button
+              type="button"
+              onClick={() => {
+                console.log('🔘 [WorkTimeMobile] Кнопка "История 1С" нажата');
+                setShowOneCHistoryModal(true);
+              }}
+              style={{
+                width: '100%',
+                padding: '14px',
+                borderRadius: '12px',
+                border: '2px solid rgba(255, 107, 107, 0.5)',
+                background: 'rgba(255, 107, 107, 0.15)',
+                color: '#ff6b6b',
+                cursor: 'pointer',
+                fontWeight: 600,
+                fontSize: '15px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                transition: 'all 0.2s',
+                boxShadow: '0 2px 8px rgba(255, 107, 107, 0.2)',
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.background = 'rgba(255, 107, 107, 0.25)';
+                e.target.style.borderColor = '#ff6b6b';
+                e.target.style.boxShadow = '0 4px 12px rgba(255, 107, 107, 0.3)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = 'rgba(255, 107, 107, 0.15)';
+                e.target.style.borderColor = 'rgba(255, 107, 107, 0.5)';
+                e.target.style.boxShadow = '0 2px 8px rgba(255, 107, 107, 0.2)';
+              }}
+            >
+              <FiFileText size={18} />
+              История 1С
+            </button>
+          </div>
         </div>
 
         {/* Подсказка о свайпе */}
@@ -890,6 +931,13 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
           console.log('🔴 [WorkTimeMobile] Закрываем RemoteWorktimeReportModal (desktop)');
           setShowRemoteWorktime(false);
         }} 
+      />
+      
+      {/* Модалка История 1С */}
+      <OneCDocumentHistoryMobile
+        open={showOneCHistoryModal}
+        onClose={() => setShowOneCHistoryModal(false)}
+        onOpenMobileSidebar={() => {}}
       />
       
       {/* Модалка локального отчета - рендерится вне основного портала */}
