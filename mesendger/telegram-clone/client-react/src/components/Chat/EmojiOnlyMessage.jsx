@@ -265,8 +265,41 @@ export default function EmojiOnlyMessage({ message, isOwn, state }) {
     finalSize: Math.max(emojiSize || 64, 64)
   });
   
+  // Добавляем обработчик ошибок для изображений после рендера
+  useEffect(() => {
+    if (!cleanedMsgText) return;
+    
+    // Находим все img теги в компоненте и добавляем обработчики ошибок
+    const container = document.querySelector(`[data-emoji-message-id="${message.id}"]`);
+    if (container) {
+      const images = container.querySelectorAll('img');
+      images.forEach(img => {
+        // Нормализуем src если нужно
+        if (img.src && !img.src.startsWith('http')) {
+          const normalizedSrc = normalizeEmojiUrl(img.getAttribute('src') || '');
+          if (normalizedSrc && normalizedSrc !== img.src) {
+            img.src = normalizedSrc.startsWith('/') ? normalizedSrc : `/${normalizedSrc}`;
+          }
+        }
+        
+        // Добавляем обработчик ошибок
+        const handleError = () => {
+          console.warn('❌ Failed to load emoji image:', img.src);
+          // Можно показать placeholder или скрыть изображение
+          img.style.display = 'none';
+        };
+        
+        img.addEventListener('error', handleError);
+        
+        return () => {
+          img.removeEventListener('error', handleError);
+        };
+      });
+    }
+  }, [cleanedMsgText, message.id]);
+
   return (
-    <EmojiOnlyContainer isOwn={isOwn}>
+    <EmojiOnlyContainer isOwn={isOwn} data-emoji-message-id={message.id}>
       <EmojiOnlyUsername isOwn={isOwn}>
         {isOwn ? state.user?.username || 'Вы' : message.username || 'Неизвестный'}
       </EmojiOnlyUsername>
