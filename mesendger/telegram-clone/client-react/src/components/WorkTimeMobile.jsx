@@ -828,6 +828,70 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
           onFetchReport={fetchLocalReport}
         />
       )}
+
+      {/* Модалка деталей пользователя для локального отчета */}
+      {localReportDetailsModal.open && (
+        isMobile ? (
+          <UserWorkTimeDetailsMobile
+            open={localReportDetailsModal.open}
+            onClose={() => {
+              console.log('🔴 [WorkTimeMobile] Закрываем модалку деталей локального отчета');
+              setLocalReportDetailsModal({
+                open: false,
+                logs: [],
+                username: '',
+                realUsername: '',
+                activityStats: null,
+                urls: [],
+                applications: [],
+                screenshots: [],
+                startDate: '',
+                endDate: '',
+              });
+            }}
+            logs={localReportDetailsModal.logs}
+            username={localReportDetailsModal.username}
+            realUsername={localReportDetailsModal.realUsername}
+            activityStats={localReportDetailsModal.activityStats}
+            urls={localReportDetailsModal.urls || []}
+            applications={localReportDetailsModal.applications || []}
+            screenshots={localReportDetailsModal.screenshots || []}
+            startDate={localReportDetailsModal.startDate}
+            endDate={localReportDetailsModal.endDate}
+            onOpenMobileSidebar={() => {
+              // Не открываем сайдбар, так как мы уже внутри модалки
+            }}
+          />
+        ) : (
+          <UserWorkTimeDetailsModal
+            isOpen={localReportDetailsModal.open}
+            onRequestClose={() => {
+              console.log('🔴 [WorkTimeMobile] Закрываем модалку деталей локального отчета (desktop)');
+              setLocalReportDetailsModal({
+                open: false,
+                logs: [],
+                username: '',
+                realUsername: '',
+                activityStats: null,
+                urls: [],
+                applications: [],
+                screenshots: [],
+                startDate: '',
+                endDate: '',
+              });
+            }}
+            logs={localReportDetailsModal.logs}
+            username={localReportDetailsModal.username}
+            realUsername={localReportDetailsModal.realUsername}
+            activityStats={localReportDetailsModal.activityStats}
+            urls={localReportDetailsModal.urls || []}
+            applications={localReportDetailsModal.applications || []}
+            screenshots={localReportDetailsModal.screenshots || []}
+            startDate={localReportDetailsModal.startDate}
+            endDate={localReportDetailsModal.endDate}
+          />
+        )
+      )}
     </>
   );
 }
