@@ -394,6 +394,221 @@ export default function UserWorkTimeDetailsMobile({
     });
   }, [localScreenshots]);
 
+  // Функция для печати отдельного скриншота
+  const handlePrintScreenshot = useCallback((screenshotUrl, timestamp) => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      alert('Пожалуйста, разрешите всплывающие окна для печати');
+      return;
+    }
+    
+    const dateStr = timestamp ? formatTime(timestamp) : 'Неизвестная дата';
+    const fullUrl = screenshotUrl.startsWith('http') ? screenshotUrl : `${window.location.origin}${screenshotUrl}`;
+    
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Скриншот - ${dateStr}</title>
+          <style>
+            @media print {
+              body { margin: 0; padding: 20px; }
+              .header { margin-bottom: 20px; text-align: center; }
+              .screenshot { max-width: 100%; height: auto; page-break-inside: avoid; }
+            }
+            body { font-family: Arial, sans-serif; padding: 20px; }
+            .header { margin-bottom: 20px; text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; }
+            .screenshot { max-width: 100%; height: auto; border: 1px solid #ddd; }
+            .timestamp { text-align: center; margin-top: 10px; color: #666; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>Скриншот активности</h1>
+            <p>Пользователь: ${username}</p>
+            <p>Дата и время: ${dateStr}</p>
+          </div>
+          <img src="${fullUrl}" alt="Скриншот" class="screenshot" onload="window.print(); window.close();" />
+          <div class="timestamp">${dateStr}</div>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  }, [username]);
+
+  // Функция для печати полного отчета
+  const handlePrintReport = useCallback(() => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      alert('Пожалуйста, разрешите всплывающие окна для печати');
+      return;
+    }
+    
+    const dateRange = `${startDate} - ${endDate}`;
+    let reportContent = '';
+    
+    // Заголовок
+    reportContent += `
+      <div style="text-align: center; margin-bottom: 30px; border-bottom: 3px solid #333; padding-bottom: 20px;">
+        <h1 style="margin: 0; color: #333;">Отчет активности</h1>
+        <p style="margin: 10px 0; color: #666; font-size: 16px;">Пользователь: ${username}</p>
+        <p style="margin: 5px 0; color: #666; font-size: 14px;">Период: ${dateRange}</p>
+        <p style="margin: 5px 0; color: #666; font-size: 12px;">Дата формирования: ${new Date().toLocaleString('ru-RU')}</p>
+      </div>
+    `;
+    
+    // События (входы/выходы)
+    if (printOptions.events && sortedLogs && sortedLogs.length > 0) {
+      reportContent += `
+        <div style="page-break-inside: avoid; margin-bottom: 30px;">
+          <h2 style="color: #333; border-bottom: 2px solid #43e97b; padding-bottom: 10px;">События (${sortedLogs.length})</h2>
+          <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+            <thead>
+              <tr style="background: #f5f5f5;">
+                <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Дата и время</th>
+                <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Тип события</th>
+              </tr>
+            </thead>
+            <tbody>
+      `;
+      sortedLogs.forEach(log => {
+        const eventType = log.event_type === 'login' ? 'Вход' : log.event_type === 'logout' ? 'Выход' : 'Другое';
+        const eventColor = log.event_type === 'login' ? '#43e97b' : log.event_type === 'logout' ? '#e74c3c' : '#666';
+        reportContent += `
+          <tr>
+            <td style="padding: 8px; border: 1px solid #ddd;">${formatTime(log.event_time)}</td>
+            <td style="padding: 8px; border: 1px solid #ddd; color: ${eventColor}; font-weight: 600;">${eventType}</td>
+          </tr>
+        `;
+      });
+      reportContent += `</tbody></table></div>`;
+    }
+    
+    // Приложения
+    if (printOptions.applications && localApplications && localApplications.length > 0) {
+      reportContent += `
+        <div style="page-break-inside: avoid; margin-bottom: 30px;">
+          <h2 style="color: #333; border-bottom: 2px solid #43e97b; padding-bottom: 10px;">Приложения (${localApplications.length})</h2>
+          <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+            <thead>
+              <tr style="background: #f5f5f5;">
+                <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Приложение</th>
+                <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Окно</th>
+                <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Время</th>
+              </tr>
+            </thead>
+            <tbody>
+      `;
+      localApplications.slice(0, 100).forEach(app => {
+        reportContent += `
+          <tr>
+            <td style="padding: 8px; border: 1px solid #ddd; font-weight: 600;">${app.procName || 'Неизвестно'}</td>
+            <td style="padding: 8px; border: 1px solid #ddd;">${(app.windowTitle || '').substring(0, 50)}</td>
+            <td style="padding: 8px; border: 1px solid #ddd;">${app.timestamp ? formatTime(app.timestamp) : '-'}</td>
+          </tr>
+        `;
+      });
+      if (localApplications.length > 100) {
+        reportContent += `
+          <tr>
+            <td colspan="3" style="padding: 8px; border: 1px solid #ddd; text-align: center; color: #666;">
+              ... и еще ${localApplications.length - 100} приложений
+            </td>
+          </tr>
+        `;
+      }
+      reportContent += `</tbody></table></div>`;
+    }
+    
+    // Сайты
+    if (printOptions.urls && localUrls && localUrls.length > 0) {
+      reportContent += `
+        <div style="page-break-inside: avoid; margin-bottom: 30px;">
+          <h2 style="color: #333; border-bottom: 2px solid #2193b0; padding-bottom: 10px;">Сайты (${localUrls.length})</h2>
+          <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+            <thead>
+              <tr style="background: #f5f5f5;">
+                <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">URL</th>
+                <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Время</th>
+              </tr>
+            </thead>
+            <tbody>
+      `;
+      localUrls.slice(0, 100).forEach(url => {
+        reportContent += `
+          <tr>
+            <td style="padding: 8px; border: 1px solid #ddd; word-break: break-all;">${url.url || '-'}</td>
+            <td style="padding: 8px; border: 1px solid #ddd;">${url.timestamp ? formatTime(url.timestamp) : '-'}</td>
+          </tr>
+        `;
+      });
+      if (localUrls.length > 100) {
+        reportContent += `
+          <tr>
+            <td colspan="2" style="padding: 8px; border: 1px solid #ddd; text-align: center; color: #666;">
+              ... и еще ${localUrls.length - 100} сайтов
+            </td>
+          </tr>
+        `;
+      }
+      reportContent += `</tbody></table></div>`;
+    }
+    
+    // Скриншоты
+    if (printOptions.screenshots && sortedScreenshots && sortedScreenshots.length > 0) {
+      reportContent += `
+        <div style="page-break-inside: avoid; margin-bottom: 30px;">
+          <h2 style="color: #333; border-bottom: 2px solid #ffe082; padding-bottom: 10px;">Скриншоты (${sortedScreenshots.length})</h2>
+      `;
+      sortedScreenshots.forEach((shot, idx) => {
+        const screenshotUrl = shot.url && shot.url.startsWith('/') 
+          ? shot.url 
+          : shot.url && shot.url.startsWith('http')
+          ? shot.url
+          : `/uploads/screenshots/${shot.filePath ? shot.filePath.split(/[\/\\]/).pop() : shot.url || `screenshot_${idx}.jpg`}`;
+        const fullUrl = screenshotUrl.startsWith('http') ? screenshotUrl : `${window.location.origin}${screenshotUrl}`;
+        
+        reportContent += `
+          <div style="page-break-inside: avoid; margin-bottom: 20px; border: 1px solid #ddd; padding: 15px;">
+            <p style="margin: 0 0 10px 0; color: #666; font-size: 12px;">Скриншот ${idx + 1} - ${formatTime(shot.timestamp)}</p>
+            <img src="${fullUrl}" alt="Скриншот ${idx + 1}" style="max-width: 100%; height: auto; border: 1px solid #ddd;" />
+          </div>
+        `;
+      });
+      reportContent += `</div>`;
+    }
+    
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Отчет активности - ${username}</title>
+          <style>
+            @media print {
+              body { margin: 0; padding: 20px; }
+              .page-break { page-break-before: always; }
+            }
+            body { font-family: Arial, sans-serif; padding: 20px; color: #333; }
+            h1, h2 { color: #333; }
+            table { width: 100%; border-collapse: collapse; }
+            th, td { padding: 10px; text-align: left; border: 1px solid #ddd; }
+            th { background: #f5f5f5; font-weight: 600; }
+            img { max-width: 100%; height: auto; }
+          </style>
+        </head>
+        <body>
+          ${reportContent}
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+    
+    // Ждем загрузки изображений перед печатью
+    setTimeout(() => {
+      printWindow.print();
+    }, 500);
+  }, [username, startDate, endDate, sortedLogs, localApplications, localUrls, sortedScreenshots, printOptions]);
+
   if (!open) {
     return null;
   }
@@ -1236,6 +1451,137 @@ export default function UserWorkTimeDetailsMobile({
           ← Свайпните влево для возврата
         </div>
       </div>
+
+      {/* Диалог выбора элементов для печати */}
+      {showPrintDialog && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.85)',
+          zIndex: 100002,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '20px',
+        }} onClick={() => setShowPrintDialog(false)}>
+          <div style={{
+            background: 'linear-gradient(135deg, #232931 0%, #181c22 100%)',
+            borderRadius: '16px',
+            padding: '24px',
+            maxWidth: '400px',
+            width: '100%',
+            border: '2px solid rgba(255, 224, 130, 0.3)',
+          }} onClick={(e) => e.stopPropagation()}>
+            <h3 style={{
+              color: '#ffe082',
+              margin: '0 0 20px 0',
+              fontSize: '18px',
+              fontWeight: 700,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+            }}>
+              <FiPrinter size={20} />
+              Печать отчета
+            </h3>
+            
+            <div style={{ marginBottom: '20px' }}>
+              <p style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '14px', marginBottom: '15px' }}>
+                Выберите элементы для печати:
+              </p>
+              
+              {[
+                { key: 'events', label: 'События (входы/выходы)', count: sortedLogs?.length || 0 },
+                { key: 'applications', label: 'Приложения', count: localApplications?.length || 0 },
+                { key: 'urls', label: 'Сайты', count: localUrls?.length || 0 },
+                { key: 'screenshots', label: 'Скриншоты', count: sortedScreenshots?.length || 0 },
+              ].map(option => (
+                <label key={option.key} style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  padding: '12px',
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  borderRadius: '8px',
+                  marginBottom: '10px',
+                  cursor: 'pointer',
+                  border: printOptions[option.key] ? '2px solid rgba(255, 224, 130, 0.5)' : '2px solid transparent',
+                  transition: 'all 0.2s',
+                }}>
+                  <input
+                    type="checkbox"
+                    checked={printOptions[option.key]}
+                    onChange={(e) => setPrintOptions(prev => ({
+                      ...prev,
+                      [option.key]: e.target.checked
+                    }))}
+                    style={{
+                      width: '20px',
+                      height: '20px',
+                      cursor: 'pointer',
+                    }}
+                  />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ color: '#fff', fontWeight: 600, fontSize: '14px' }}>
+                      {option.label}
+                    </div>
+                    <div style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '12px' }}>
+                      {option.count} элементов
+                    </div>
+                  </div>
+                </label>
+              ))}
+            </div>
+            
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setShowPrintDialog(false)}
+                style={{
+                  padding: '10px 20px',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(255, 255, 255, 0.3)',
+                  background: 'rgba(255, 255, 255, 0.1)',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  fontSize: '14px',
+                }}
+              >
+                Отмена
+              </button>
+              <button
+                onClick={() => {
+                  if (!printOptions.events && !printOptions.applications && !printOptions.urls && !printOptions.screenshots) {
+                    alert('Выберите хотя бы один элемент для печати');
+                    return;
+                  }
+                  handlePrintReport();
+                  setShowPrintDialog(false);
+                }}
+                style={{
+                  padding: '10px 20px',
+                  borderRadius: '8px',
+                  border: 'none',
+                  background: 'linear-gradient(135deg, #2193b0 0%, #43e97b 100%)',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  fontSize: '14px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                }}
+              >
+                <FiPrinter size={16} />
+                Печать
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>,
     document.body
   );
