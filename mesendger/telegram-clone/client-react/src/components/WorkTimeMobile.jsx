@@ -111,14 +111,13 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
   const [showLocalReport, setShowLocalReport] = useState(false);
   
   // Состояния для модалки локального отчета
+  // По умолчанию устанавливаем сегодняшнюю дату
   const [localReportStartDate, setLocalReportStartDate] = useState(() => {
     const d = new Date();
-    d.setDate(d.getDate() - 1);
     return d.toISOString().slice(0, 10);
   });
   const [localReportEndDate, setLocalReportEndDate] = useState(() => {
     const d = new Date();
-    d.setDate(d.getDate() - 1);
     return d.toISOString().slice(0, 10);
   });
   const [localReportSearchTerm, setLocalReportSearchTerm] = useState('');
