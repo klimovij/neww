@@ -26,18 +26,30 @@ router.post('/import-worktime-json', async (req, res) => {
 
 // Генерация отчёта по базе: первый вход (login), последний выход (logout) за период
 async function getDbShortReport({ start, end, username }) {
-  console.log(`📊 [getDbShortReport] Запрос данных: start=${start}, end=${end}, username=${username || 'all'}`);
+  const fs = require('fs');
+  const logFile = '/tmp/quick-db-report-debug.log';
+  const logMsg = (msg) => {
+    const timestamp = new Date().toISOString();
+    const line = `[${timestamp}] ${msg}\n`;
+    try {
+      fs.appendFileSync(logFile, line);
+    } catch (e) {}
+    console.error(`📊 [getDbShortReport] ${msg}`);
+    process.stderr.write(`📊 [getDbShortReport] ${msg}\n`);
+  };
+  
+  logMsg(`Запрос данных: start=${start}, end=${end}, username=${username || 'all'}`);
   
   // Получаем логи из обеих таблиц: work_time_logs (старые данные) и remote_work_time_logs (новые данные от агентов)
   const periodLogs = await db.getWorkTimeLogs({ start, end, username });
-  console.log(`📊 [getDbShortReport] work_time_logs: ${periodLogs?.length || 0} записей`);
+  logMsg(`work_time_logs: ${periodLogs?.length || 0} записей`);
   
   const remoteLogs = await db.getRemoteWorkTimeLogs({ start, end, username });
-  console.log(`📊 [getDbShortReport] remote_work_time_logs: ${remoteLogs?.length || 0} записей`);
+  logMsg(`remote_work_time_logs: ${remoteLogs?.length || 0} записей`);
   
   // Также получаем пользователей из activity_logs, у которых есть активность, даже если нет login/logout
   const activityLogs = await db.getActivityLogsBetween({ start, end });
-  console.log(`📊 [getDbShortReport] activity_logs: ${activityLogs?.length || 0} записей`);
+  logMsg(`activity_logs: ${activityLogs?.length || 0} записей`);
   
   const activityUsers = {};
   for (const log of activityLogs) {
@@ -45,7 +57,7 @@ async function getDbShortReport({ start, end, username }) {
     if (username && log.username !== username) continue;
     activityUsers[log.username] = true;
   }
-  console.log(`📊 [getDbShortReport] Уникальных пользователей в activity_logs: ${Object.keys(activityUsers).length}`);
+  logMsg(`Уникальных пользователей в activity_logs: ${Object.keys(activityUsers).length}`);
   
   // Объединяем логи из обеих таблиц
   const allLogs = [...periodLogs, ...remoteLogs];
@@ -67,8 +79,15 @@ async function getDbShortReport({ start, end, username }) {
   
   const report = [];
   
+  logMsg(`Всего пользователей в userMap: ${Object.keys(userMap).length}`);
+  logMsg(`Пользователи в activityUsers: ${Object.keys(activityUsers).join(', ')}`);
+  
   for (const [user, sessions] of Object.entries(userMap)) {
-    if (!user || (!sessions.length && !activityUsers[user])) continue;
+    logMsg(`Обрабатываем пользователя: ${user}, sessions: ${sessions.length}, в activityUsers: ${!!activityUsers[user]}`);
+    if (!user || (!sessions.length && !activityUsers[user])) {
+      logMsg(`Пропускаем пользователя ${user}: нет sessions и нет в activityUsers`);
+      continue;
+    }
     
     // Пытаемся обогатить данные ФИО из таблицы users
     // Это позволяет исправить ситуации, когда в work_time_logs имя хранится битым (????),
