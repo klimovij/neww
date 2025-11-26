@@ -143,22 +143,45 @@ async function getDbShortReport({ start, end, username }) {
 
 // API: /api/quick-db-report?start=YYYY-MM-DD&end=YYYY-MM-DD&username=...
 router.get('/quick-db-report', async (req, res) => {
+  // Логируем ВСЁ, что происходит - принудительно выводим в stderr
+  process.stderr.write(`🚀 [quick-db-report] ПОЛУЧЕН ЗАПРОС: ${JSON.stringify(req.query)}\n`);
+  console.error(`🚀 [quick-db-report] ПОЛУЧЕН ЗАПРОС (stderr):`, req.query);
+  console.log(`🚀 [quick-db-report] ПОЛУЧЕН ЗАПРОС (stdout):`, req.query);
+  
   try {
-    console.log(`🚀 [quick-db-report] ПОЛУЧЕН ЗАПРОС:`, req.query);
     let { start, end, username } = req.query;
     
-    // Фронтенд теперь сам расширяет диапазон для учёта часового пояса,
-    // поэтому здесь мы просто используем переданные даты как есть
-    if (!start || !end) {
-      console.log(`⚠️ [quick-db-report] start или end не указаны: start=${start}, end=${end}`);
+    // Расширяем диапазон дат для учёта часового пояса (Киев UTC+2/UTC+3)
+    // Когда пользователь выбирает дату в киевском времени, нужно найти все данные,
+    // которые попали в эту дату по киевскому времени (они могут быть под разными датами в UTC)
+    const originalStart = start;
+    const originalEnd = end;
+    
+    if (start && end) {
+      // Расширяем диапазон на 1 день назад и вперёд для учёта часового пояса (Киев UTC+2/UTC+3)
+      const startDate = new Date(start + 'T00:00:00');
+      startDate.setDate(startDate.getDate() - 1);
+      start = startDate.toISOString().slice(0, 10);
+      
+      const endDate = new Date(end + 'T23:59:59');
+      endDate.setDate(endDate.getDate() + 1);
+      end = endDate.toISOString().slice(0, 10);
+      
+      process.stderr.write(`🌍 [quick-db-report] Расширение: ${originalStart}-${originalEnd} -> ${start}-${end}\n`);
+      console.error(`🌍 [quick-db-report] Расширение диапазона для учёта часового пояса:`);
+      console.error(`   Запрошено: ${originalStart} - ${originalEnd}`);
+      console.error(`   Запрашиваем: ${start} - ${end}`);
     } else {
-      console.log(`📅 [quick-db-report] Запрашиваем данные за период: ${start} - ${end}`);
+      console.error(`⚠️ [quick-db-report] start или end не указаны: start=${start}, end=${end}`);
     }
     
     const report = await getDbShortReport({ start, end, username });
-    console.log(`✅ [quick-db-report] Возвращаем отчёт: ${report.length} пользователей`);
+    process.stderr.write(`✅ [quick-db-report] Возвращаем отчёт: ${report.length} пользователей\n`);
+    console.error(`✅ [quick-db-report] Возвращаем отчёт: ${report.length} пользователей`);
     res.json({ success: true, report });
   } catch (err) {
+    process.stderr.write(`❌ [quick-db-report] Ошибка: ${err.message}\n`);
+    console.error(`❌ [quick-db-report] Ошибка:`, err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
