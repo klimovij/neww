@@ -519,8 +519,27 @@ router.get('/activity-details', async (req, res) => {
     }
 
     // Получаем скриншоты
+    console.log(`📸 [activity-details] Запрос скриншотов для ${username}, период: ${start} - ${end}`);
     const screenshots = await db.getActivityScreenshots({ username, start, end });
-    console.log(`📊 [activity-details] Получено ${screenshots.length} скриншотов для пользователя ${username}`);
+    console.log(`📊 [activity-details] Получено ${screenshots.length} скриншотов для пользователя ${username} за период ${start} - ${end}`);
+    if (screenshots.length > 0) {
+      console.log(`📸 [activity-details] Первые 3 скриншота из БД:`, screenshots.slice(0, 3).map(s => ({
+        id: s.id,
+        timestamp: s.timestamp,
+        file_path: s.file_path
+      })));
+    } else {
+      console.warn(`⚠️ [activity-details] Скриншоты не найдены для ${username} за период ${start} - ${end}`);
+      // Проверяем, есть ли вообще скриншоты для этого пользователя
+      const allScreenshots = await db.getActivityScreenshots({ username });
+      console.log(`📸 [activity-details] Всего скриншотов для ${username} (без фильтра по дате): ${allScreenshots.length}`);
+      if (allScreenshots.length > 0) {
+        console.log(`📸 [activity-details] Примеры дат скриншотов:`, allScreenshots.slice(0, 5).map(s => ({
+          timestamp: s.timestamp,
+          date: s.timestamp ? new Date(s.timestamp).toISOString().split('T')[0] : 'N/A'
+        })));
+      }
+    }
 
     // Формируем пути для доступа к файлам
     const screenshotsWithUrl = screenshots.map(shot => {

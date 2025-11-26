@@ -2458,20 +2458,40 @@ class Database {
     // Метод для получения скриншотов пользователя за период
     async getActivityScreenshots({ username, start, end }) {
       return new Promise((resolve, reject) => {
+        console.log(`📸 [getActivityScreenshots] Запрос скриншотов для ${username}, период: ${start} - ${end}`);
+        
         let query = 'SELECT * FROM activity_screenshots WHERE username = ?';
         const params = [username];
 
         if (start && end) {
-          query += ' AND date(timestamp) >= ? AND date(timestamp) <= ?';
+          // Используем datetime для правильной фильтрации с учетом времени
+          // Расширяем диапазон на 1 день в обе стороны для учета часовых поясов
+          query += ' AND datetime(timestamp) >= datetime(?, "-1 day") AND datetime(timestamp) <= datetime(?, "+1 day")';
           params.push(start);
           params.push(end);
+          console.log(`📸 [getActivityScreenshots] Фильтрация по дате: ${start} - ${end} (с расширением ±1 день)`);
         }
 
         query += ' ORDER BY timestamp DESC';
 
+        console.log(`📸 [getActivityScreenshots] SQL запрос: ${query}`);
+        console.log(`📸 [getActivityScreenshots] Параметры:`, params);
+
         this.db.all(query, params, (err, rows) => {
-          if (err) reject(err);
-          else resolve(rows || []);
+          if (err) {
+            console.error(`❌ [getActivityScreenshots] Ошибка запроса:`, err);
+            reject(err);
+          } else {
+            console.log(`📸 [getActivityScreenshots] Найдено скриншотов: ${rows?.length || 0}`);
+            if (rows && rows.length > 0) {
+              console.log(`📸 [getActivityScreenshots] Первые 3 скриншота:`, rows.slice(0, 3).map(r => ({
+                id: r.id,
+                timestamp: r.timestamp,
+                file_path: r.file_path
+              })));
+            }
+            resolve(rows || []);
+          }
         });
       });
     }
