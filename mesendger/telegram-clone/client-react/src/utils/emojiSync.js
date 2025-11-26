@@ -90,12 +90,19 @@ export async function syncEmojisToServer(force = false) {
     });
 
     if (emojisToSync.length === 0) {
-      console.log('✅ Все эмодзи уже синхронизированы с сервером');
-      return { synced: 0, skipped: localEmojis.length, message: 'Все эмодзи уже на сервере' };
+      const message = '✅ Все эмодзи уже синхронизированы с сервером';
+      console.log(message);
+      console.log('📊 Детали:', {
+        localTotal: localEmojis.length,
+        serverTotal: serverEmojis.length,
+        serverNames: Array.from(serverNames),
+        localNames: localEmojis.map(e => e.name)
+      });
+      return { synced: 0, skipped: localEmojis.length, message, error: 'Нет эмодзи для синхронизации' };
     }
 
     console.log(`🔄 Синхронизация ${emojisToSync.length} эмодзи с сервером...`);
-    console.log('📝 Эмодзи для синхронизации:', emojisToSync.map(e => ({ name: e.name, srcType: e.src?.substring(0, 20) || 'нет src' })));
+    console.log('📝 Эмодзи для синхронизации:', emojisToSync.map(e => ({ name: e.name, srcType: e.src?.substring(0, 50) || 'нет src' })));
 
     // Загружаем эмодзи на сервер пакетами
     const batchSize = 10;

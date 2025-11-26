@@ -333,8 +333,14 @@ export default function EmojiSettingsMobile({ open, onClose, onOpenMobileSidebar
       
       const result = await syncEmojisToServer();
       
+      console.log('📊 Результат синхронизации:', result);
+      
       if (result.error) {
-        alert(`❌ Ошибка синхронизации:\n\n${result.error}\n\nПроверьте подключение к интернету и попробуйте снова.`);
+        if (result.error === 'Нет эмодзи для синхронизации') {
+          alert(`ℹ️ Все эмодзи уже на сервере.\n\nНо папка на сервере пустая!\n\nВозможно, нужно принудительно перезагрузить.\n\nЛокальных эмодзи: ${localEmojis.length}\nПропущено: ${result.skipped || 0}`);
+        } else {
+          alert(`❌ Ошибка синхронизации:\n\n${result.error}\n\nПроверьте подключение к интернету и попробуйте снова.`);
+        }
       } else if (result.synced === 0 && result.skipped > 0) {
         alert(`✅ Все эмодзи уже синхронизированы!\n\nПропущено: ${result.skipped}\n(Все эмодзи уже были на сервере)`);
       } else {
