@@ -85,7 +85,7 @@ function AppContent() {
 
   // Инициализация синхронизации эмодзи при старте приложения
   useEffect(() => {
-    import('../utils/emojiSync.js').then(({ initEmojiSync }) => {
+    import('./utils/emojiSync.js').then(({ initEmojiSync }) => {
       initEmojiSync().catch(err => {
         console.error('❌ Ошибка инициализации синхронизации эмодзи:', err);
       });
