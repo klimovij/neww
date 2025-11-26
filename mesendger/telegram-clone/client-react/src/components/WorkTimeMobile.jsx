@@ -171,6 +171,7 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
       const res = await fetch(url);
       const data = await res.json();
       console.log('📥 [WorkTimeMobile] Ответ от API:', { success: data.success, reportLength: data.report?.length || 0, data });
+      console.log('📥 [WorkTimeMobile] Полный ответ API:', JSON.stringify(data, null, 2));
       
       if (data.success && Array.isArray(data.report)) {
         console.log('✅ [WorkTimeMobile] Успешно загружено пользователей:', data.report.length);

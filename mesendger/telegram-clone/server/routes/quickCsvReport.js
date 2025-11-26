@@ -481,8 +481,12 @@ router.get('/local-worktime-report', async (req, res) => {
     
     const report = await getLocalWorkTimeReport({ start, end, username });
     console.log(`✅ [local-worktime-report] Вернул ${report.length} локальных пользователей`);
+    if (report.length === 0) {
+      console.log(`⚠️ [local-worktime-report] Нет данных для периода ${start} - ${end}`);
+      console.log(`⚠️ [local-worktime-report] Проверьте логи getLocalWorkTimeReport выше`);
+    }
     
-    res.json({ success: true, report });
+    res.json({ success: true, report, debug: { start, end, username, count: report.length } });
   } catch (err) {
     console.error(`❌ [local-worktime-report] Ошибка:`, err);
     res.status(500).json({ success: false, error: err.message });
