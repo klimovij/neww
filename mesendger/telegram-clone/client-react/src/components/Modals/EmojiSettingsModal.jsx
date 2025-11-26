@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import styled from 'styled-components';
-import { FiX, FiSettings, FiSave, FiRotateCcw, FiTrash2, FiCheckSquare, FiSquare } from 'react-icons/fi';
+import { FiX, FiSettings, FiSave, FiRotateCcw, FiTrash2, FiCheckSquare, FiSquare, FiRefreshCw } from 'react-icons/fi';
 import { Modal, ModalContent, CloseButton } from '../../styles/GlobalStyles';
 import axios from 'axios';
+import { syncEmojisToServer } from '../../utils/emojiSync';
 
 const ModalTitle = styled.h3`
   margin: 0 0 1.5rem 0;
@@ -364,6 +365,8 @@ export default function EmojiSettingsModal({ open, onClose }) {
   const [selectedKeys, setSelectedKeys] = useState(new Set());
   const [stdSelectedKeys, setStdSelectedKeys] = useState(new Set());
   const [blacklist, setBlacklist] = useState(getEmojiBlacklist());
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   useEffect(() => {
     // Загружаем сохраненные настройки из localStorage
@@ -594,6 +597,25 @@ export default function EmojiSettingsModal({ open, onClose }) {
     alert('Выбранные стандартные эмодзи удалены из приложения (фактически отключены).');
   };
 
+  // Синхронизация локальных эмодзи с сервером
+  const handleSyncEmojis = async () => {
+    setIsSyncing(true);
+    try {
+      const result = await syncEmojisToServer();
+      if (result.error) {
+        alert(`Ошибка синхронизации: ${result.error}`);
+      } else {
+        await loadAllEmojis();
+        alert(`✅ Синхронизация завершена!\nЗагружено: ${result.synced}\nПропущено: ${result.skipped}\nОшибок: ${result.failed || 0}`);
+      }
+    } catch (error) {
+      console.error('Ошибка синхронизации:', error);
+      alert(`Ошибка синхронизации: ${error.message}`);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   const getPreviewEmoji = () => {
     const customEmoji = EMOJI_TO_ICON['👍'] || EMOJI_TO_ICON['🏆'];
     return customEmoji;
@@ -647,8 +669,8 @@ export default function EmojiSettingsModal({ open, onClose }) {
             Добавить эмодзи
           </AddEmojiBtn>
         </AddEmojiForm>
-        <div style={{ marginBottom: 10 }}>
-          <label>
+        <div style={{ marginBottom: 10, display: 'flex', alignItems: 'center', gap: '15px', flexWrap: 'wrap' }}>
+          <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
             <input
               type="checkbox"
               checked={uploadToServer}
@@ -657,6 +679,35 @@ export default function EmojiSettingsModal({ open, onClose }) {
             />
             Загружать эмодзи на сервер (рекомендуется)
           </label>
+          <button
+            onClick={handleSyncEmojis}
+            disabled={isSyncing}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '8px 16px',
+              background: isSyncing ? '#6c757d' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: isSyncing ? 'not-allowed' : 'pointer',
+              fontSize: '14px',
+              fontWeight: 600,
+              transition: 'all 0.2s',
+              opacity: isSyncing ? 0.7 : 1
+            }}
+            title="Синхронизировать локальные эмодзи с сервером (загрузить те, которых нет на сервере)"
+          >
+            <FiRefreshCw style={{ animation: isSyncing ? 'spin 1s linear infinite' : 'none' }} />
+            {isSyncing ? 'Синхронизация...' : 'Синхронизировать с сервером'}
+          </button>
+          <style>{`
+            @keyframes spin {
+              from { transform: rotate(0deg); }
+              to { transform: rotate(360deg); }
+            }
+          `}</style>
         </div>
 
         {/* --- Список стандартных эмодзи (встроенные) --- */}

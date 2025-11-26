@@ -83,6 +83,15 @@ function AppContent() {
     console.log('%cЕсли вы видите этот лог - новый код загружен!', 'background: #00ff00; color: #000000; font-size: 16px; padding: 5px;');
   }, []);
 
+  // Инициализация синхронизации эмодзи при старте приложения
+  useEffect(() => {
+    import('../utils/emojiSync').then(({ initEmojiSync }) => {
+      initEmojiSync().catch(err => {
+        console.error('❌ Ошибка инициализации синхронизации эмодзи:', err);
+      });
+    });
+  }, []);
+
   useEffect(() => {
     // Тестовый вызов звука при монтировании компонента
     playNotificationSound();

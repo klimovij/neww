@@ -471,6 +471,32 @@ app.post('/api/custom-emoji', authenticateToken, emojiUpload.single('emoji'), as
   }
 });
 
+// POST /api/custom-emoji/batch - Массовая загрузка эмодзи (для синхронизации)
+app.post('/api/custom-emoji/batch', authenticateToken, emojiUpload.array('emojis', 100), async (req, res) => {
+  try {
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ error: 'Необходимо загрузить хотя бы один файл эмодзи' });
+    }
+    
+    const names = Array.isArray(req.body.names) ? req.body.names : 
+                  req.body.names ? JSON.parse(req.body.names) : [];
+    
+    const uploaded = req.files.map((file, idx) => {
+      const name = names[idx] || file.originalname.replace(/\.[^.]+$/, '');
+      return {
+        name: name.trim(),
+        url: `/uploads/emojis/${file.filename}`
+      };
+    });
+    
+    console.log(`✅ Загружено ${uploaded.length} эмодзи на сервер`);
+    res.json({ emojis: uploaded, count: uploaded.length });
+  } catch (e) {
+    console.error('❌ Ошибка массовой загрузки кастомных эмодзи:', e);
+    res.status(500).json({ error: 'Ошибка массовой загрузки эмодзи' });
+  }
+});
+
 // Список доступных кастомных эмодзи (публичный)
 app.get('/api/emojis/list', async (req, res) => {
   try {

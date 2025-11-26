@@ -1,4 +1,4 @@
-# Скрипт для создания задачи Logout Agent вручную
+﻿# Скрипт для создания задачи Logout Agent вручную
 # Используется если auto_install_agents.ps1 не смог создать задачу
 
 $InstallPath = "$env:USERPROFILE\AppData\Local\mesendger-agents"

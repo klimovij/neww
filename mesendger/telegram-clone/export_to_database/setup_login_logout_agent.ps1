@@ -26,14 +26,56 @@ $SCRIPT_NAME = "remote_login_logout_agent.ps1"
 $TARGET_SCRIPT = Join-Path $AGENT_DIR $SCRIPT_NAME
 $LOGIN_TASK_NAME = "MesendgerLoginAgent"
 $LOGOUT_TASK_NAME = "MesendgerLogoutAgent"
-$CURRENT_SCRIPT = $MyInvocation.MyCommand.Path
-$CURRENT_DIR = Split-Path -Parent $CURRENT_SCRIPT
-$SOURCE_SCRIPT = Join-Path $CURRENT_DIR $SCRIPT_NAME
 
-# Проверяем существование исходного скрипта
-if (-not (Test-Path $SOURCE_SCRIPT)) {
-    Write-Host "❌ Ошибка: Не найден файл $SOURCE_SCRIPT" -ForegroundColor Red
-    Write-Host "Убедитесь, что скрипт remote_login_logout_agent.ps1 находится в той же папке, что и установщик." -ForegroundColor Yellow
+# Определяем возможные пути к исходному скрипту
+$possiblePaths = @()
+
+# 1. В той же папке, что и установщик
+$CURRENT_SCRIPT = $MyInvocation.MyCommand.Path
+if ($CURRENT_SCRIPT) {
+    $CURRENT_DIR = Split-Path -Parent $CURRENT_SCRIPT
+    $possiblePaths += Join-Path $CURRENT_DIR $SCRIPT_NAME
+} else {
+    # Если $MyInvocation.MyCommand.Path пуст, используем PSScriptRoot
+    if ($PSScriptRoot) {
+        $possiblePaths += Join-Path $PSScriptRoot $SCRIPT_NAME
+    }
+}
+
+# 2. В текущей рабочей директории
+$possiblePaths += Join-Path $PWD $SCRIPT_NAME
+
+# 3. В директории, откуда запущен PowerShell
+$possiblePaths += Join-Path (Get-Location).Path $SCRIPT_NAME
+
+# Ищем файл в возможных местах
+$SOURCE_SCRIPT = $null
+foreach ($path in $possiblePaths) {
+    if (Test-Path $path) {
+        $SOURCE_SCRIPT = $path
+        Write-Host "✅ Найден файл: $SOURCE_SCRIPT" -ForegroundColor Green
+        break
+    }
+}
+
+# Если файл не найден, показываем подробное сообщение
+if (-not $SOURCE_SCRIPT) {
+    Write-Host "❌ Ошибка: Не найден файл $SCRIPT_NAME" -ForegroundColor Red
+    Write-Host ""
+    Write-Host "Искали в следующих местах:" -ForegroundColor Yellow
+    foreach ($path in $possiblePaths) {
+        Write-Host "  • $path" -ForegroundColor Gray
+    }
+    Write-Host ""
+    Write-Host "Инструкция:" -ForegroundColor Cyan
+    Write-Host "  1. Убедитесь, что файл $SCRIPT_NAME находится в той же папке, что и установщик" -ForegroundColor Gray
+    Write-Host "  2. Или скопируйте оба файла в одну папку:" -ForegroundColor Gray
+    Write-Host "     - setup_login_logout_agent.ps1" -ForegroundColor Gray
+    Write-Host "     - remote_login_logout_agent.ps1" -ForegroundColor Gray
+    Write-Host "  3. Запустите установщик из этой папки" -ForegroundColor Gray
+    Write-Host ""
+    Write-Host "Текущая рабочая директория: $(Get-Location)" -ForegroundColor Yellow
+    Write-Host "Директория установщика: $CURRENT_DIR" -ForegroundColor Yellow
     Write-Host ""
     Write-Host "Нажмите любую клавишу для выхода..."
     $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
@@ -44,7 +86,7 @@ if (-not (Test-Path $SOURCE_SCRIPT)) {
 Write-Host "🔍 Проверка конфигурации скрипта..." -ForegroundColor Cyan
 $scriptContent = Get-Content $SOURCE_SCRIPT -Raw -Encoding UTF8
 
-if ($scriptContent -match '\$script:USERNAME\s*=\s*"USERNAME_HERE"') {
+if ($scriptContent -match '\$script:USERNAME\s*=\s*"elena_popovich"') {
     Write-Host ""
     Write-Host "❌ ОШИБКА: Username не указан в скрипте!" -ForegroundColor Red
     Write-Host ""
@@ -154,10 +196,10 @@ try {
 Write-Host ""
 Write-Host "📝 Создание задачи Logout (при выходе из системы)..." -ForegroundColor Cyan
 
-# Для logout используем XML, так как прямого триггера AtLogOff нет в New-ScheduledTaskTrigger
+# Для logout используем максимально упрощенный XML
 $logoutTaskXml = @"
 <?xml version="1.0" encoding="UTF-16"?>
-<Task version="1.4" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
+<Task version="1.3" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
   <RegistrationInfo>
     <Description>Автоматическая отправка события выхода пользователя из системы Mesendger.</Description>
   </RegistrationInfo>
@@ -165,36 +207,21 @@ $logoutTaskXml = @"
     <EventTrigger>
       <Enabled>true</Enabled>
       <Subscription>&lt;QueryList&gt;&lt;Query Id="0" Path="System"&gt;&lt;Select Path="System"&gt;*[System[Provider[@Name='Microsoft-Windows-User Profiles Service'] and EventID=1531]]&lt;/Select&gt;&lt;/Query&gt;&lt;/QueryList&gt;</Subscription>
-      <Delay>PT30S</Delay>
     </EventTrigger>
   </Triggers>
   <Actions Context="Author">
     <Exec>
       <Command>powershell.exe</Command>
       <Arguments>-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "$TARGET_SCRIPT" logout</Arguments>
-      <WorkingDirectory>$AGENT_DIR</WorkingDirectory>
     </Exec>
   </Actions>
   <Principals>
     <Principal id="Author">
       <UserId>$env:USERDOMAIN\$env:USERNAME</UserId>
-      <LogonType>Interactive</LogonType>
-      <RunLevel>Highest</RunLevel>
     </Principal>
   </Principals>
   <Settings>
-    <Hidden>true</Hidden>
-    <AllowStartIfOnBatteries>true</AllowStartIfOnBatteries>
-    <DontStopIfGoingOnBatteries>true</DontStopIfGoingOnBatteries>
-    <StartWhenAvailable>true</StartWhenAvailable>
-    <RunOnlyIfNetworkAvailable>true</RunOnlyIfNetworkAvailable>
-    <DontStopOnIdleEnd>true</DontStopOnIdleEnd>
     <MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy>
-    <ExecutionTimeLimit>PT0S</ExecutionTimeLimit>
-    <RestartOnFailure>
-      <Interval>PT1M</Interval>
-      <Count>3</Count>
-    </RestartOnFailure>
   </Settings>
 </Task>
 "@
@@ -204,7 +231,7 @@ $xmlFile = "$env:TEMP\MesendgerLogoutAgent.xml"
 [System.IO.File]::WriteAllText($xmlFile, $logoutTaskXml, [System.Text.Encoding]::Unicode)
 
 try {
-    # Регистрируем задачу через schtasks.exe (так как XML-задачи лучше регистрировать так)
+    # Регистрируем задачу через schtasks.exe
     $result = & schtasks.exe /Create /TN $LOGOUT_TASK_NAME /XML $xmlFile /F 2>&1
     
     if ($LASTEXITCODE -eq 0) {
@@ -216,8 +243,11 @@ try {
 } catch {
     Write-Host "❌ Ошибка при создании задачи Logout: $($_.Exception.Message)" -ForegroundColor Red
     if (Test-Path $xmlFile) {
-        Remove-Item $xmlFile -Force -ErrorAction SilentlyContinue
+        Write-Host "⚠️  XML файл сохранен для отладки: $xmlFile" -ForegroundColor Yellow
     }
+    Write-Host ""
+    Write-Host "💡 Альтернативный вариант: Задача Logout может быть создана вручную через Планировщик задач Windows" -ForegroundColor Cyan
+    Write-Host "   с триггером на событие выхода пользователя (Event ID 1531)." -ForegroundColor Gray
     Write-Host ""
     Write-Host "Нажмите любую клавишу для выхода..."
     $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
