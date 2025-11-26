@@ -4553,7 +4553,14 @@ socket.on('delete_chat', requireAuth(async (data) => {
     
     // Заменяем токены custom:emoji-... на <img> теги
     const result = content.replace(/custom:emoji-(\d+)-(\d+)/g, (match, timestamp, id) => {
-      return `<img src="/uploads/emojis/emoji-${timestamp}-${id}.jpg" alt="${match}" data-custom-emoji="true" data-token="${match}" style="width: 24px; height: 24px; object-fit: cover; vertical-align: middle; margin: 0px 2px; border-radius: 6px;">`;
+      // Пробуем разные расширения файлов
+      const possibleExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.svg'];
+      // Формируем путь с разными расширениями для fallback
+      const basePath = `/uploads/emojis/emoji-${timestamp}-${id}`;
+      const primaryPath = `${basePath}.jpg`;
+      
+      // Возвращаем img тег с обработчиком ошибок для fallback
+      return `<img src="${primaryPath}" alt="${match}" data-custom-emoji="true" data-token="${match}" data-base-path="${basePath}" data-extensions="${possibleExtensions.join(',')}" style="width: 24px; height: 24px; object-fit: cover; vertical-align: middle; margin: 0px 2px; border-radius: 6px;" onerror="this.onerror=null; const base=this.dataset.basePath; const exts=this.dataset.extensions.split(','); let idx=exts.indexOf(this.src.split('.').pop())||0; if(idx<exts.length-1){this.src=base+exts[idx+1];}else{this.style.display='none';}">`;
     });
     
     return result;
