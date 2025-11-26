@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Modal from 'react-modal';
 import '../../styles/WorkTimeReportModal.css';
 import AppUsageModal from './AppUsageModal';
 import RemoteWorktimeReportModal from './RemoteWorktimeReportModal';
-import UserWorkTimeDetailsModal from './UserWorkTimeDetailsModal';
+import UserWorkTimeDetailsMobile from '../UserWorkTimeDetailsMobile';
 
 Modal.setAppElement('#root');
 
@@ -95,21 +95,59 @@ function WorkTimeReportModal({ isOpen, onRequestClose }) {
   const [showLocalReport, setShowLocalReport] = useState(false);
   const [localReportData, setLocalReportData] = useState({ logs: [], username: '', activityStats: null });
 
+  // Состояния для модалки локального отчета
+  const [localReportStartDate, setLocalReportStartDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    return d.toISOString().slice(0, 10);
+  });
+  const [localReportEndDate, setLocalReportEndDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    return d.toISOString().slice(0, 10);
+  });
+  const [localReportSearchTerm, setLocalReportSearchTerm] = useState('');
   const [localReportUsers, setLocalReportUsers] = useState([]);
+  const [localReportUsersList, setLocalReportUsersList] = useState([]);
+  const [localReportUserOptions, setLocalReportUserOptions] = useState([]);
+  const [localReportShowAutocomplete, setLocalReportShowAutocomplete] = useState(false);
   const [loadingLocalReport, setLoadingLocalReport] = useState(false);
-  const [selectedLocalUser, setSelectedLocalUser] = useState(null);
+  const [localReportDetailsModal, setLocalReportDetailsModal] = useState({
+    open: false,
+    logs: [],
+    username: '',
+    realUsername: '',
+    activityStats: null,
+    urls: [],
+    applications: [],
+    screenshots: [],
+    startDate: '',
+    endDate: ''
+  });
 
-  const handleOpenLocalReport = async () => {
-    setShowLocalReport(true);
+  // Загрузка списка пользователей
+  useEffect(() => {
+    if (showLocalReport) {
+      fetch('/api/worktime-users')
+        .then(res => res.json())
+        .then(data => {
+          setLocalReportUsersList(data.users || []);
+          setLocalReportUserOptions(data.users || []);
+        })
+        .catch(() => {
+          setLocalReportUsersList([]);
+          setLocalReportUserOptions([]);
+        });
+    }
+  }, [showLocalReport]);
+
+  // Загрузка отчета при изменении дат
+  const fetchLocalReport = async () => {
+    if (!localReportStartDate || !localReportEndDate) return;
+    
     setLoadingLocalReport(true);
-    // Загружаем данные для локального отчета
     try {
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
-      const startDate = yesterday.toISOString().slice(0, 10);
-      const endDate = yesterday.toISOString().slice(0, 10);
-      
-      const url = `/api/local-worktime-report?start=${startDate}&end=${endDate}`;
+      const url = `/api/local-worktime-report?start=${localReportStartDate}&end=${localReportEndDate}`;
       const res = await fetch(url);
       const data = await res.json();
       
@@ -125,37 +163,71 @@ function WorkTimeReportModal({ isOpen, onRequestClose }) {
     setLoadingLocalReport(false);
   };
 
-  const handleSelectLocalUser = async (user) => {
-    setSelectedLocalUser(user);
-    // Загружаем activityStats для выбранного пользователя
-    try {
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
-      const startDate = yesterday.toISOString().slice(0, 10);
-      const endDate = yesterday.toISOString().slice(0, 10);
-      
-      const params = new URLSearchParams({ start: startDate, end: endDate });
-      const res = await fetch(`/api/activity-summary?${params.toString()}`);
-      const data = await res.json();
-      
-      let activityStats = null;
-      if (res.ok && data.success && Array.isArray(data.summary)) {
-        activityStats = data.summary.find(s => s.username === user.username) || null;
-      }
-      
-      setLocalReportData({
-        logs: user.sessions || [],
-        username: user.fio || user.username,
-        activityStats
-      });
-    } catch (error) {
-      console.error('Ошибка загрузки активности:', error);
-      setLocalReportData({
-        logs: user.sessions || [],
-        username: user.fio || user.username,
-        activityStats: null
-      });
+  // Автозагрузка при открытии модалки и изменении дат
+  useEffect(() => {
+    if (showLocalReport && localReportStartDate && localReportEndDate) {
+      fetchLocalReport();
     }
+  }, [showLocalReport, localReportStartDate, localReportEndDate]);
+  
+  const handleOpenLocalReport = () => {
+    setShowLocalReport(true);
+  };
+
+  // Обработка поиска
+  const handleLocalReportSearchChange = (e) => {
+    const value = e.target.value;
+    setLocalReportSearchTerm(value);
+    if (value.length > 0) {
+      setLocalReportShowAutocomplete(true);
+      setLocalReportUserOptions(localReportUsersList.filter(u => u.toLowerCase().includes(value.toLowerCase())));
+    } else {
+      setLocalReportShowAutocomplete(false);
+      setLocalReportUserOptions(localReportUsersList);
+    }
+  };
+
+  // Фильтрация пользователей по поиску
+  const filteredLocalReportUsers = useMemo(() => {
+    if (!localReportSearchTerm.trim()) return localReportUsers;
+    const search = localReportSearchTerm.toLowerCase();
+    return localReportUsers.filter(user => {
+      const fio = (user.fio || user.username || '').toLowerCase();
+      return fio.includes(search);
+    });
+  }, [localReportUsers, localReportSearchTerm]);
+
+  // Открытие деталей пользователя
+  const handleOpenLocalUserDetails = async (user) => {
+    setLoadingLocalReport(true);
+    try {
+      const detailsParams = new URLSearchParams({
+        username: user.username,
+        start: localReportStartDate,
+        end: localReportEndDate
+      });
+      
+      const detailsRes = await fetch(`/api/activity-details?${detailsParams.toString()}`);
+      const detailsData = await detailsRes.json();
+      
+      if (detailsRes.ok && detailsData.success) {
+        setLocalReportDetailsModal({
+          open: true,
+          logs: user.sessions || [],
+          username: user.fio || user.username,
+          realUsername: user.username,
+          activityStats: detailsData.activityStats || null,
+          urls: detailsData.urls || [],
+          applications: detailsData.applications || [],
+          screenshots: detailsData.screenshots || [],
+          startDate: localReportStartDate,
+          endDate: localReportEndDate
+        });
+      }
+    } catch (error) {
+      console.error('Ошибка загрузки деталей:', error);
+    }
+    setLoadingLocalReport(false);
   };
 
   function formatTime(dtStr) {
@@ -338,8 +410,8 @@ function WorkTimeReportModal({ isOpen, onRequestClose }) {
             isOpen={showLocalReport}
             onRequestClose={() => {
               setShowLocalReport(false);
-              setSelectedLocalUser(null);
               setLocalReportUsers([]);
+              setLocalReportSearchTerm('');
             }}
             contentLabel="Отчет активности локальных ПК"
             style={modalStyles}
@@ -364,8 +436,8 @@ function WorkTimeReportModal({ isOpen, onRequestClose }) {
             }}>
               <button onClick={() => {
                 setShowLocalReport(false);
-                setSelectedLocalUser(null);
                 setLocalReportUsers([]);
+                setLocalReportSearchTerm('');
               }} style={{
                 position: 'absolute', top: 16, right: 16, fontSize: 28, background: 'transparent', border: 'none',
                 cursor: 'pointer', color: '#fff', fontWeight: 'bold', width: 36, height: 36, borderRadius: '50%'
@@ -375,27 +447,64 @@ function WorkTimeReportModal({ isOpen, onRequestClose }) {
                 Отчет активности локальных ПК
               </h2>
 
+              {/* Календарь и поиск */}
+              <div style={{ marginBottom: 24, display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
+                <label>
+                  Начало:
+                  <input 
+                    type="date" 
+                    value={localReportStartDate} 
+                    onChange={e => setLocalReportStartDate(e.target.value)}
+                    style={{ marginLeft: 6, padding: '6px 12px', borderRadius: 8, border: '1px solid #43e97b', background: '#2d3748', color: '#fff' }} 
+                  />
+                </label>
+
+                <label>
+                  Конец:
+                  <input 
+                    type="date" 
+                    value={localReportEndDate} 
+                    onChange={e => setLocalReportEndDate(e.target.value)}
+                    style={{ marginLeft: 6, padding: '6px 12px', borderRadius: 8, border: '1px solid #43e97b', background: '#2d3748', color: '#fff' }} 
+                  />
+                </label>
+
+                <div style={{ position: 'relative', marginLeft: 'auto' }}>
+                  <input
+                    type="text"
+                    placeholder="Поиск по имени..."
+                    value={localReportSearchTerm}
+                    onChange={handleLocalReportSearchChange}
+                    onFocus={() => setLocalReportShowAutocomplete(true)}
+                    onBlur={() => setTimeout(() => setLocalReportShowAutocomplete(false), 150)}
+                    style={{ width: 240, padding: '6px 12px', borderRadius: 8, border: '1px solid #43e97b', background: '#2d3748', color: '#fff' }}
+                  />
+                  {localReportShowAutocomplete && localReportUserOptions && localReportUserOptions.length > 0 && (
+                    <div style={{
+                      position: 'absolute', top: '100%', left: 0, background: '#232931', color: '#fff',
+                      border: '1px solid #43e97b', borderRadius: 8, zIndex: 10, maxHeight: 200, overflowY: 'auto', width: 240, marginTop: 6
+                    }}>
+                      {localReportUserOptions.map((u, i) => (
+                        <div key={u + i}
+                          onMouseDown={() => {
+                            setLocalReportSearchTerm(u);
+                            setLocalReportShowAutocomplete(false);
+                          }}
+                          style={{ padding: '8px 12px', cursor: 'pointer', borderBottom: i < localReportUserOptions.length - 1 ? '1px solid #4a5568' : 'none' }}>
+                          {u}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Таблица с пользователями */}
               {loadingLocalReport ? (
                 <div style={{ textAlign: 'center', padding: 40 }}>Загрузка...</div>
-              ) : selectedLocalUser ? (
-                <div>
-                  <button onClick={() => setSelectedLocalUser(null)} style={{
-                    marginBottom: 20, padding: '8px 16px', borderRadius: 8, border: '1px solid #43e97b',
-                    background: 'rgba(67,233,123,0.1)', color: '#43e97b', cursor: 'pointer', fontWeight: 600
-                  }}>
-                    ← Назад к списку
-                  </button>
-                  <UserWorkTimeDetailsModal
-                    isOpen={true}
-                    onRequestClose={() => setSelectedLocalUser(null)}
-                    logs={localReportData.logs}
-                    username={localReportData.username}
-                    activityStats={localReportData.activityStats}
-                  />
-                </div>
-              ) : localReportUsers.length === 0 ? (
+              ) : filteredLocalReportUsers.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: 40, color: 'rgba(255,255,255,0.6)' }}>
-                  <p style={{ fontSize: '16px' }}>Нет данных за вчерашний день</p>
+                  <p style={{ fontSize: '16px' }}>Нет данных за выбранный период</p>
                 </div>
               ) : (
                 <div style={{ maxHeight: 500, overflowY: 'auto', borderRadius: 12 }}>
@@ -410,7 +519,7 @@ function WorkTimeReportModal({ isOpen, onRequestClose }) {
                       </tr>
                     </thead>
                     <tbody>
-                      {localReportUsers.map((row, idx) => (
+                      {filteredLocalReportUsers.map((row, idx) => (
                         <tr key={idx} style={{ background: 'rgba(255,255,255,0.03)', borderBottom: '1px solid #2a323d' }}>
                           <td style={{ padding: '12px 14px', fontWeight: 700 }}>{row.fio}</td>
                           <td style={{ padding: '12px 14px' }}>{row.firstLogin ? formatTime(row.firstLogin) : '—'}</td>
@@ -419,7 +528,7 @@ function WorkTimeReportModal({ isOpen, onRequestClose }) {
                           <td style={{ padding: '12px 14px' }}>
                             <button
                               type="button"
-                              onClick={() => handleSelectLocalUser(row)}
+                              onClick={() => handleOpenLocalUserDetails(row)}
                               style={{
                                 padding: '6px 12px',
                                 borderRadius: 10,
@@ -441,6 +550,23 @@ function WorkTimeReportModal({ isOpen, onRequestClose }) {
               )}
             </div>
           </Modal>
+
+          {/* Модалка деталей пользователя с вкладками */}
+          {localReportDetailsModal.open && (
+            <UserWorkTimeDetailsMobile
+              open={localReportDetailsModal.open}
+              onClose={() => setLocalReportDetailsModal({ ...localReportDetailsModal, open: false })}
+              logs={localReportDetailsModal.logs}
+              username={localReportDetailsModal.username}
+              realUsername={localReportDetailsModal.realUsername}
+              activityStats={localReportDetailsModal.activityStats}
+              urls={localReportDetailsModal.urls}
+              applications={localReportDetailsModal.applications}
+              screenshots={localReportDetailsModal.screenshots}
+              startDate={localReportDetailsModal.startDate}
+              endDate={localReportDetailsModal.endDate}
+            />
+          )}
         </div>
       </div>
     </Modal>
