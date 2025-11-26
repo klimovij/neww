@@ -2,6 +2,17 @@ const express = require('express');
 const db = require('../database');
 const router = express.Router();
 
+// Логируем при загрузке модуля
+const fs = require('fs');
+const path = require('path');
+try {
+  const debugFile = path.join(__dirname, '../../ROUTER_LOADED.txt');
+  fs.writeFileSync(debugFile, `[${new Date().toISOString()}] quickCsvReport router module loaded\n`);
+} catch (e) {
+  console.error('Failed to write ROUTER_LOADED.txt:', e);
+}
+console.error('✅ quickCsvReport router module loaded');
+
 // Импорт массива событий из PowerShell (JSON)
 router.post('/import-worktime-json', async (req, res) => {
   try {
