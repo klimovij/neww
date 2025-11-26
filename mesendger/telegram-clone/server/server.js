@@ -561,6 +561,12 @@ try {
   console.log('⚠️ quickCsvReportRouter or related routes not found, skipping...', e.message);
 }
 
+// ВРЕМЕННЫЙ ОБРАБОТЧИК ДЛЯ ОТЛАДКИ - проверяем, доходит ли запрос до сервера
+app.get('/api/quick-db-report', (req, res) => {
+  console.log('🚨🚨🚨 [DEBUG HANDLER] Запрос получен напрямую в server.js!', req.query);
+  res.json({ success: true, report: [], debug: 'Direct handler called' });
+});
+
 // === ДОКУМЕНТЫ: таблица и маршруты ===
 const documentsDir = path.join(uploadsDir, 'documents');
 if (!fs.existsSync(documentsDir)) {
