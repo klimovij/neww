@@ -84,7 +84,9 @@ async function getLocalWorkTimeReport({ start, end, username }) {
   
   // Пользователи из activity_logs считаются локальными, если:
   // 1. Они есть в work_time_logs (локальная таблица) ИЛИ
-  // 2. Их НЕТ в remote_work_time_logs (т.е. они только локальные)
+  // 2. У них есть активность в activity_logs (это локальная активность)
+  // Исключаем только тех, кто есть ТОЛЬКО в remote_work_time_logs и НЕТ в activity_logs
+  // Если пользователь есть в activity_logs, значит он работал локально, независимо от удаленных данных
   const activityUsers = {};
   for (const log of activityLogs) {
     if (!log.username) continue;
@@ -92,13 +94,14 @@ async function getLocalWorkTimeReport({ start, end, username }) {
     
     // Пользователь считается локальным, если:
     // - он есть в work_time_logs (локальная таблица), ИЛИ
-    // - его нет в remote_work_time_logs (только локальный)
-    const isLocalUser = localUsernames.has(log.username) || !remoteUsernames.has(log.username);
+    // - у него есть активность в activity_logs (это локальная активность)
+    // НЕ исключаем пользователей из activity_logs, даже если они есть в удаленных данных
+    // Если есть активность в activity_logs, значит пользователь работал локально
+    const isLocalUser = localUsernames.has(log.username) || true; // Всегда включаем, если есть в activity_logs
     
     if (isLocalUser) {
       activityUsers[log.username] = true;
-    } else {
-      logMsg(`⚠️ Пропускаем пользователя ${log.username} из activity_logs - он только в удаленных данных`);
+      logMsg(`✅ Включаем пользователя ${log.username} из activity_logs (локальная активность)`);
     }
   }
   logMsg(`Уникальных локальных пользователей в activity_logs: ${Object.keys(activityUsers).length}`);
@@ -120,9 +123,11 @@ async function getLocalWorkTimeReport({ start, end, username }) {
   }
   
   // Добавляем пользователей из activity_logs, у которых нет login/logout, но есть активность
+  // ВАЖНО: включаем всех пользователей из activity_logs, даже если у них нет записей в work_time_logs
   for (const activityUser of Object.keys(activityUsers)) {
     if (!userMap[activityUser]) {
       userMap[activityUser] = [];
+      logMsg(`✅ Добавляем пользователя ${activityUser} в userMap (только активность, нет login/logout)`);
     }
   }
   
