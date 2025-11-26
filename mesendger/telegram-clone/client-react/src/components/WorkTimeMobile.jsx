@@ -217,6 +217,83 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
     });
   }, [localReportUsers, localReportSearchTerm]);
 
+  // Удаление данных за период дат
+  const handleDeleteByDateRange = async (start, end) => {
+    if (!start || !end) {
+      alert('Выберите период дат для удаления');
+      return;
+    }
+    
+    if (!window.confirm(`Вы уверены, что хотите удалить все данные активности за период с ${start} по ${end}? Это действие нельзя отменить.`)) {
+      return;
+    }
+    
+    setLoadingLocalReport(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('/api/activity-logs/clear', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ start, end })
+      });
+      
+      const data = await res.json();
+      
+      if (res.ok && data.success) {
+        alert(`✅ ${data.message || `Удалено ${data.deletedCount || 0} записей`}`);
+        // Обновляем отчет после удаления
+        if (fetchLocalReport) {
+          fetchLocalReport();
+        }
+      } else {
+        alert(`❌ Ошибка: ${data.error || 'Не удалось удалить данные'}`);
+      }
+    } catch (error) {
+      console.error('Ошибка удаления данных:', error);
+      alert('❌ Ошибка при удалении данных');
+    }
+    setLoadingLocalReport(false);
+  };
+
+  // Удаление данных за период (неделя/месяц)
+  const handleDeleteByPeriod = async (period) => {
+    if (!window.confirm(`Вы уверены, что хотите удалить все данные активности за ${period === 'week' ? 'последнюю неделю' : 'последний месяц'}? Это действие нельзя отменить.`)) {
+      return;
+    }
+    
+    setLoadingLocalReport(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('/api/activity-logs/clear', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ period })
+      });
+      
+      const data = await res.json();
+      
+      if (res.ok && data.success) {
+        alert(`✅ ${data.message || `Удалено ${data.deletedCount || 0} записей`}`);
+        // Обновляем отчет после удаления
+        if (fetchLocalReport) {
+          fetchLocalReport();
+        }
+      } else {
+        alert(`❌ Ошибка: ${data.error || 'Не удалось удалить данные'}`);
+      }
+    } catch (error) {
+      console.error('Ошибка удаления данных:', error);
+      alert('❌ Ошибка при удалении данных');
+    }
+    setLoadingLocalReport(false);
+  };
+
   // Открытие деталей пользователя
   const handleOpenLocalUserDetails = async (user) => {
     console.log('🔘 [WorkTimeMobile] handleOpenLocalUserDetails вызван для пользователя:', user);
