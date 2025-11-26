@@ -56,6 +56,7 @@ export default function SidebarMobile({ open, onClose, onOpen, showNav = true, o
   const fileInputRef = useRef();
   const [avatarHover, setAvatarHover] = useState(false);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
+  const [showAvatarActionsModal, setShowAvatarActionsModal] = useState(false);
   const [socketConnected, setSocketConnected] = useState(() => window.socket?.connected ?? false);
   const [appTitleSettings, setAppTitleSettings] = useState(getAppTitleSettings());
   const [showChatsModal, setShowChatsModal] = useState(false);
@@ -835,8 +836,11 @@ export default function SidebarMobile({ open, onClose, onOpen, showNav = true, o
                     onMouseEnter={() => setAvatarHover(true)}
                     onMouseLeave={() => setAvatarHover(false)}
                     onClick={() => {
-                      if (state.user?.avatarUrl || appTitleSettings.avatarImage) setShowAvatarModal(true);
-                      else fileInputRef.current?.click();
+                      if (state.user?.avatarUrl || appTitleSettings.avatarImage) {
+                        setShowAvatarActionsModal(true);
+                      } else {
+                        fileInputRef.current?.click();
+                      }
                     }}
                     title={(state.user?.avatarUrl || appTitleSettings.avatarImage) ? 'Просмотреть/изменить аватар' : 'Загрузить аватар'}
                   >
