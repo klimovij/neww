@@ -502,22 +502,17 @@ app.delete('/api/custom-emoji/:file', authenticateToken, async (req, res) => {
 // ==================== API МАРШРУТЫ ====================
 // --- ОТЧЁТЫ ПО РАБОЧЕМУ ВРЕМЕНИ И АКТИВНОСТИ ---
 try {
-  console.error('🚀 [SERVER] Начинаем загрузку роутеров...');
-  process.stderr.write('🚀 [SERVER] Начинаем загрузку роутеров...\n');
+  console.log('🚀 [SERVER] Начинаем загрузку роутеров...');
   
-  console.error('🔍 [SERVER] Пытаемся загрузить ./routes/quickCsvReport...');
-  process.stderr.write('🔍 [SERVER] Пытаемся загрузить ./routes/quickCsvReport...\n');
+  console.log('🔍 [SERVER] Пытаемся загрузить ./routes/quickCsvReport...');
   
   let quickCsvReportRouter;
   try {
     quickCsvReportRouter = require('./routes/quickCsvReport');
-    console.error('✅ [SERVER] quickCsvReportRouter модуль загружен успешно');
-    process.stderr.write('✅ [SERVER] quickCsvReportRouter модуль загружен успешно\n');
+    console.log('✅ [SERVER] quickCsvReportRouter модуль загружен успешно');
   } catch (moduleError) {
-    console.error('❌❌❌ [SERVER] ОШИБКА при загрузке модуля quickCsvReport:', moduleError);
-    console.error('❌❌❌ [SERVER] Stack:', moduleError.stack);
-    process.stderr.write(`❌❌❌ [SERVER] ОШИБКА при загрузке модуля: ${moduleError.message}\n`);
-    process.stderr.write(`❌❌❌ [SERVER] Stack: ${moduleError.stack}\n`);
+    console.log('❌❌❌ [SERVER] ОШИБКА при загрузке модуля quickCsvReport:', moduleError.message);
+    console.log('❌❌❌ [SERVER] Stack:', moduleError.stack);
     throw moduleError; // Пробрасываем дальше
   }
   
@@ -529,29 +524,27 @@ try {
   
   // Подключаем importWorktimeCsvRoutes первым, чтобы избежать конфликта с quickCsvReportRouter
   app.use('/api', importWorktimeCsvRoutes);
-  console.error('✅ [SERVER] importWorktimeCsvRoutes mounted');
+  console.log('✅ [SERVER] importWorktimeCsvRoutes mounted');
   
   // Middleware для логирования ВСЕХ запросов к /api
   app.use('/api', (req, res, next) => {
     if (req.path === '/quick-db-report') {
-      process.stderr.write(`\n🔍🔍🔍 [MIDDLEWARE] Запрос к /quick-db-report: ${req.method} ${req.path} ${JSON.stringify(req.query)}\n`);
-      console.error(`\n🔍🔍🔍 [MIDDLEWARE] Запрос к /quick-db-report:`, req.method, req.path, req.query);
+      console.log(`🔍🔍🔍 [MIDDLEWARE] Запрос к /quick-db-report: ${req.method} ${req.path} ${JSON.stringify(req.query)}`);
     }
     next();
   });
   
   // Проверяем, что роутер действительно загружен и имеет обработчики
-  console.error('🔍 [SERVER] Проверка quickCsvReportRouter:', typeof quickCsvReportRouter);
-  console.error('🔍 [SERVER] Роутер stack:', quickCsvReportRouter.stack?.length || 'no stack');
+  console.log('🔍 [SERVER] Проверка quickCsvReportRouter:', typeof quickCsvReportRouter);
+  console.log('🔍 [SERVER] Роутер stack:', quickCsvReportRouter.stack?.length || 'no stack');
   if (quickCsvReportRouter.stack) {
     quickCsvReportRouter.stack.forEach((layer, idx) => {
-      console.error(`🔍 [SERVER] Route ${idx}: ${layer.method || 'ALL'} ${layer.path || layer.regexp}`);
+      console.log(`🔍 [SERVER] Route ${idx}: ${layer.method || 'ALL'} ${layer.path || layer.regexp}`);
     });
   }
   
   app.use('/api', quickCsvReportRouter);
-  console.error('✅ [SERVER] quickCsvReportRouter mounted at /api');
-  process.stderr.write('✅ [SERVER] quickCsvReportRouter mounted at /api\n');
+  console.log('✅ [SERVER] quickCsvReportRouter mounted at /api');
   app.use('/api', remoteWorktimeRouter);
   console.log('✅ [SERVER] RemoteWorktime router loaded and mounted at /api');
   app.use('/api', activityRouter);
@@ -561,10 +554,8 @@ try {
   app.use('/api/admin', adminRouter);
   console.log('✅ [SERVER] Admin router loaded and mounted at /api/admin');
 } catch (e) {
-  console.error('❌❌❌ [SERVER] ОШИБКА при загрузке роутеров:', e);
-  console.error('❌❌❌ [SERVER] Stack:', e.stack);
-  process.stderr.write(`❌❌❌ [SERVER] ОШИБКА при загрузке роутеров: ${e.message}\n`);
-  process.stderr.write(`❌❌❌ [SERVER] Stack: ${e.stack}\n`);
+  console.log('❌❌❌ [SERVER] ОШИБКА при загрузке роутеров:', e.message);
+  console.log('❌❌❌ [SERVER] Stack:', e.stack);
   console.log('⚠️ quickCsvReportRouter or related routes not found, skipping...', e.message);
 }
 

@@ -201,9 +201,8 @@ async function getDbShortReport({ start, end, username }) {
 
 // API: /api/quick-db-report?start=YYYY-MM-DD&end=YYYY-MM-DD&username=...
 router.get('/quick-db-report', async (req, res) => {
-  // ПРИНУДИТЕЛЬНОЕ логирование - БЕЗ файлов, только в stderr
-  process.stderr.write(`\n🚨🚨🚨 [quick-db-report] HANDLER CALLED! Query: ${JSON.stringify(req.query)}\n`);
-  console.error(`\n🚨🚨🚨 [quick-db-report] HANDLER CALLED! Query:`, req.query);
+  // ПРИНУДИТЕЛЬНОЕ логирование - используем console.log для PM2
+  console.log(`🚨🚨🚨 [quick-db-report] HANDLER CALLED! Query: ${JSON.stringify(req.query)}`);
   
   try {
     let { start, end, username } = req.query;
