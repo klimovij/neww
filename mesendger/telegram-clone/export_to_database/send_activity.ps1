@@ -33,6 +33,8 @@ Add-Type -TypeDefinition @"
 using System;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Collections.Generic;
+
 public class Win32 {
     [DllImport("user32.dll")]
     public static extern IntPtr GetForegroundWindow();
@@ -40,6 +42,38 @@ public class Win32 {
     public static extern int GetWindowText(IntPtr hWnd, StringBuilder text, int count);
     [DllImport("user32.dll")]
     public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
+    [DllImport("user32.dll")]
+    public static extern bool EnumWindows(EnumWindowsProc enumProc, IntPtr lParam);
+    [DllImport("user32.dll")]
+    public static extern bool IsWindowVisible(IntPtr hWnd);
+    [DllImport("user32.dll")]
+    public static extern int GetWindowTextLength(IntPtr hWnd);
+    
+    // Для скриншотов
+    [DllImport("user32.dll")]
+    public static extern IntPtr GetDesktopWindow();
+    [DllImport("user32.dll")]
+    public static extern IntPtr GetWindowDC(IntPtr hWnd);
+    [DllImport("user32.dll")]
+    public static extern IntPtr ReleaseDC(IntPtr hWnd, IntPtr hDC);
+    [DllImport("gdi32.dll")]
+    public static extern IntPtr CreateCompatibleBitmap(IntPtr hdc, int nWidth, int nHeight);
+    [DllImport("gdi32.dll")]
+    public static extern IntPtr CreateCompatibleDC(IntPtr hdc);
+    [DllImport("gdi32.dll")]
+    public static extern IntPtr SelectObject(IntPtr hdc, IntPtr hgdiobj);
+    [DllImport("gdi32.dll")]
+    public static extern bool DeleteObject(IntPtr hObject);
+    [DllImport("gdi32.dll")]
+    public static extern bool BitBlt(IntPtr hObject, int nXDest, int nYDest, int nWidth, int nHeight, IntPtr hObjSource, int nXSrc, int nYSrc, int dwRop);
+    [DllImport("user32.dll")]
+    public static extern int GetSystemMetrics(int nIndex);
+    
+    public const int SRCCOPY = 0x00CC0020;
+    public const int SM_CXSCREEN = 0;
+    public const int SM_CYSCREEN = 1;
+    
+    public delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
 }
 "@ -ErrorAction SilentlyContinue
 
@@ -94,25 +128,51 @@ function Get-Config {
     # Проверяем, запущен ли скрипт в автоматическом режиме (через планировщик задач с параметром "loop")
     $isLoopMode = $runLoop -or ($ScriptArgs -contains "loop")
     
-    # Получаем username
-    if (-not $username) {
-        if ($config.username) {
-            $username = $config.username.Trim()
-        } else {
-            # Если автоматический режим - используем имя пользователя по умолчанию без запросов
-            if ($isLoopMode) {
+    # Получаем username (аналогично Get-Username в других скриптах)
+    # 1. Проверяем аргументы командной строки (высший приоритет)
+    if ($username) {
+        Write-Log "Username получен из аргументов командной строки: $username"
+        # Сохраняем в конфиг для будущих запусков
+        try {
+            if (-not $config) { $config = @{} }
+            $config.username = $username
+            $configToSave = $config | ConvertTo-Json
+            $configToSave | Out-File -FilePath $CONFIG_FILE -Encoding UTF8 -Force
+            Write-Log "Username сохранён в конфигурационный файл: $username"
+        } catch {
+            Write-Log "Error saving config file: $($_.Exception.Message)"
+        }
+    }
+    # 2. Проверяем конфигурационный файл (для автоматического запуска)
+    elseif ($config.username -and $config.username.Trim()) {
+        $username = $config.username.Trim()
+        Write-Log "Username получен из конфигурационного файла: $username"
+    }
+    # 3. Запрашиваем у пользователя (только при интерактивном запуске)
+    else {
+        # Проверяем, запущен ли скрипт интерактивно (не через планировщик задач)
+        $isInteractive = [Environment]::UserInteractive -and $Host.Name -eq "ConsoleHost"
+        
+        if ($isInteractive) {
+            Write-Host ""
+            Write-Host "⚠️ Username не найден в конфигурации!" -ForegroundColor Yellow
+            Write-Host "Введите username сотрудника (например: Ksendzik_Oleg):" -ForegroundColor Yellow
+            Write-Host "Этот username должен соответствовать username в базе данных Mesendger" -ForegroundColor Gray
+            Write-Host "После ввода username будет сохранён для автоматических запусков" -ForegroundColor Gray
+            $username = Read-Host
+            
+            if ([string]::IsNullOrWhiteSpace($username)) {
+                Write-Log "Username не указан, используем имя текущего пользователя Windows: $env:USERNAME"
+                Write-Host "⚠️ Используется имя текущего пользователя Windows: $env:USERNAME" -ForegroundColor Yellow
+                Write-Host "   Убедитесь, что этот username существует в базе данных Mesendger!" -ForegroundColor Yellow
                 $username = $env:USERNAME
-            } else {
-                # Запрашиваем у пользователя только в интерактивном режиме
-                Write-Host ""
-                Write-Host "Введите username сотрудника (например: Ksendzik_Oleg):" -ForegroundColor Yellow
-                $username = Read-Host
-                
-                if ([string]::IsNullOrWhiteSpace($username)) {
-                    Write-Host "Username не указан, используем имя текущего пользователя: $env:USERNAME" -ForegroundColor Yellow
-                    $username = $env:USERNAME
-                }
             }
+        } else {
+            # Автоматический запуск (через планировщик задач) - используем имя пользователя Windows
+            Write-Log "Автоматический запуск: username не найден в конфиге, используем имя текущего пользователя Windows: $env:USERNAME"
+            Write-Log "⚠️ ВНИМАНИЕ: Убедитесь, что username '$env:USERNAME' существует в базе данных Mesendger!"
+            Write-Log "   Для правильной идентификации запустите скрипт вручную один раз и введите правильный username"
+            $username = $env:USERNAME
         }
     }
     
@@ -230,7 +290,62 @@ function Get-ActiveWindow {
     }
 }
 
-# Функция сбора данных активности
+# Функция получения всех процессов с окнами
+function Get-AllProcessesWithWindows {
+    try {
+        $processesWithWindows = @{}
+        
+        # Получаем все процессы текущего пользователя, у которых есть окна
+        # Изменено: собираем ВСЕ процессы с MainWindowHandle, даже если заголовок пустой
+        $allProcesses = Get-Process | Where-Object {
+            $null -ne $_.MainWindowHandle -and
+            $_.MainWindowHandle -ne [IntPtr]::Zero
+        }
+        
+        foreach ($proc in $allProcesses) {
+            try {
+                $procName = $proc.ProcessName
+                
+                # Пропускаем системные процессы
+                if ($procName -match "^(dwm|csrss|winlogon|services|lsass|svchost|explorer|SearchUI|RuntimeBroker)$") {
+                    continue
+                }
+                
+                if (-not $processesWithWindows.ContainsKey($procName)) {
+                    $processesWithWindows[$procName] = @{
+                        processName = $procName
+                        windowTitles = @()
+                    }
+                }
+                
+                # Добавляем заголовок окна, если он есть, иначе используем имя процесса
+                if ($proc.MainWindowTitle -and $proc.MainWindowTitle.Length -gt 0) {
+                    $windowTitle = $proc.MainWindowTitle.Trim()
+                    if ($windowTitle -and -not ($processesWithWindows[$procName].windowTitles -contains $windowTitle)) {
+                        $processesWithWindows[$procName].windowTitles += $windowTitle
+                    }
+                } else {
+                    # Если заголовок пустой, используем имя процесса
+                    $processDisplayName = $procName
+                    if (-not ($processesWithWindows[$procName].windowTitles -contains $processDisplayName)) {
+                        $processesWithWindows[$procName].windowTitles += $processDisplayName
+                    }
+                }
+            } catch {
+                # Игнорируем ошибки доступа к процессу, но логируем для отладки
+                Write-Log "Warning: Could not access process $($proc.ProcessName): $($_.Exception.Message)"
+                continue
+            }
+        }
+        
+        return $processesWithWindows
+    } catch {
+        Write-Log "Error getting processes with windows: $($_.Exception.Message)"
+        return @{}
+    }
+}
+
+# Функция сбора данных активности (улучшена для работы в фоновом режиме)
 function Collect-Activity {
     param([string]$Username)
     
@@ -241,39 +356,94 @@ function Collect-Activity {
         $now = Get-Date
         $timestamp = $now.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss.fffZ")
         
-        # Получаем активное окно
-        $activeWindow = Get-ActiveWindow
-        
-        # Получаем информацию о процессе
-        $hwnd = [Win32]::GetForegroundWindow()
-        $procId = 0
+        # Пытаемся получить активное окно (работает только в интерактивном сеансе)
+        $activeWindow = "Unknown"
+        $activeHwnd = [IntPtr]::Zero
         $processName = "Unknown"
         $browserUrl = ""
         
-        if ($hwnd -ne [IntPtr]::Zero) {
-            [Win32]::GetWindowThreadProcessId($hwnd, [ref]$procId) | Out-Null
-            if ($procId -ne 0) {
-                try {
-                    $proc = Get-Process -Id $procId -ErrorAction Stop
-                    if ($proc) {
-                        $processName = $proc.ProcessName
-                        
-                        # Проверяем, является ли процесс браузером
-                        $procNameLower = $processName.ToLower()
-                        if ($procNameLower -match "chrome|msedge|firefox|opera") {
-                            if ($activeWindow -match "http") {
-                                $browserUrl = $activeWindow
+        try {
+            $activeHwnd = [Win32]::GetForegroundWindow()
+            if ($activeHwnd -ne [IntPtr]::Zero) {
+                $activeWindow = Get-ActiveWindow
+                
+                # Получаем информацию об активном процессе
+                $procId = 0
+                [Win32]::GetWindowThreadProcessId($activeHwnd, [ref]$procId) | Out-Null
+                if ($procId -ne 0) {
+                    try {
+                        $proc = Get-Process -Id $procId -ErrorAction Stop
+                        if ($proc) {
+                            $processName = $proc.ProcessName
+                            
+                            # Проверяем, является ли процесс браузером
+                            $procNameLower = $processName.ToLower()
+                            if ($procNameLower -match "chrome|msedge|firefox|opera") {
+                                # Пытаемся извлечь URL из заголовка окна
+                                if ($activeWindow -match "http[s]?://[^\s]+") {
+                                    $browserUrl = $Matches[0]
+                                } elseif ($activeWindow -match "http") {
+                                    $browserUrl = $activeWindow
+                                } else {
+                                    # Используем заголовок окна как URL, если он содержит домен
+                                    if ($activeWindow -match "[-a-zA-Z0-9]+\.[a-zA-Z]{2,}") {
+                                        $browserUrl = "https://$($Matches[0])"
+                                    } else {
+                                        $browserUrl = "${procNameLower}://active-tab"
+                                    }
+                                }
+                            }
+                        }
+                    } catch {
+                        $processName = "Unknown"
+                    }
+                }
+            }
+        } catch {
+            # GetForegroundWindow не работает в фоновом режиме - это нормально
+            Write-Log "GetForegroundWindow не доступен (фоновый режим), используем альтернативный метод"
+        }
+        
+        # Если не удалось получить активное окно, используем альтернативный метод
+        # Получаем процесс с самым большим временем работы процессора (вероятно, активный)
+        if ($processName -eq "Unknown" -or $activeHwnd -eq [IntPtr]::Zero) {
+            try {
+                # Получаем все процессы с окнами текущего пользователя
+                $allProcesses = Get-Process | Where-Object {
+                    $null -ne $_.MainWindowHandle -and
+                    $_.MainWindowHandle -ne [IntPtr]::Zero -and
+                    $_.MainWindowTitle -and $_.MainWindowTitle.Length -gt 0
+                } | Sort-Object -Property CPU -Descending | Select-Object -First 1
+                
+                if ($allProcesses) {
+                    $proc = $allProcesses
+                    $processName = $proc.ProcessName
+                    $activeWindow = $proc.MainWindowTitle
+                    
+                    # Проверяем, является ли процесс браузером
+                    $procNameLower = $processName.ToLower()
+                    if ($procNameLower -match "chrome|msedge|firefox|opera") {
+                        # Пытаемся извлечь URL из заголовка окна
+                        if ($activeWindow -match "http[s]?://[^\s]+") {
+                            $browserUrl = $Matches[0]
+                        } elseif ($activeWindow -match "http") {
+                            $browserUrl = $activeWindow
+                        } else {
+                            # Используем заголовок окна как URL, если он содержит домен
+                            if ($activeWindow -match "[-a-zA-Z0-9]+\.[a-zA-Z]{2,}") {
+                                $browserUrl = "https://$($Matches[0])"
                             } else {
                                 $browserUrl = "${procNameLower}://active-tab"
                             }
                         }
                     }
-                } catch {
-                    $processName = "Unknown"
                 }
+            } catch {
+                Write-Log "Error getting alternative process info: $($_.Exception.Message)"
             }
         }
         
+        # Создаем основную запись для активного окна
         $activityData = @{
             username = $Username
             timestamp = $timestamp
@@ -290,36 +460,129 @@ function Collect-Activity {
     }
 }
 
-# Функция создания скриншота
+# Функция создания скриншота (улучшена для работы в фоновом режиме)
 function Take-Screenshot {
     try {
-        # Создаём скриншот экрана используя .NET (классы уже добавлены в начале скрипта)
-        $bounds = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
-        $bitmap = New-Object System.Drawing.Bitmap($bounds.Width, $bounds.Height)
-        $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
+        Write-Log "Attempting to create screenshot..."
         
-        # Копируем содержимое экрана в bitmap
-        $graphics.CopyFromScreen($bounds.Location, [System.Drawing.Point]::Empty, $bounds.Size)
+        # Метод 1: Пытаемся использовать .NET Screen API (работает в интерактивном режиме)
+        $screenshotPath = $null
+        try {
+            $screen = [System.Windows.Forms.Screen]::PrimaryScreen
+            if ($screen) {
+                $bounds = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+                Write-Log "Screenshot: Screen bounds: $($bounds.Width)x$($bounds.Height)"
+                
+                $bitmap = New-Object System.Drawing.Bitmap($bounds.Width, $bounds.Height)
+                $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
+                
+                try {
+                    $graphics.CopyFromScreen($bounds.Location, [System.Drawing.Point]::Empty, $bounds.Size)
+                    Write-Log "Screenshot: CopyFromScreen succeeded (method 1)"
+                    
+                    # Сохраняем скриншот
+                    $timestamp = Get-Date -Format "yyyyMMddHHmmss"
+                    $screenshotPath = Join-Path $SCREENSHOTS_DIR "screenshot_$timestamp.jpg"
+                    
+                    if (-not (Test-Path $SCREENSHOTS_DIR)) {
+                        New-Item -ItemType Directory -Path $SCREENSHOTS_DIR -Force | Out-Null
+                    }
+                    
+                    $jpegCodec = [System.Drawing.Imaging.ImageCodecInfo]::GetImageEncoders() | Where-Object { $_.MimeType -eq "image/jpeg" }
+                    if ($jpegCodec) {
+                        $encoderParams = New-Object System.Drawing.Imaging.EncoderParameters(1)
+                        $encoderParams.Param[0] = New-Object System.Drawing.Imaging.EncoderParameter([System.Drawing.Imaging.Encoder]::Quality, 80)
+                        $bitmap.Save($screenshotPath, $jpegCodec, $encoderParams)
+                        
+                        if (Test-Path $screenshotPath) {
+                            $fileSize = (Get-Item $screenshotPath).Length
+                            Write-Log "Screenshot created successfully (method 1): $screenshotPath ($fileSize bytes)"
+                            $graphics.Dispose()
+                            $bitmap.Dispose()
+                            return $screenshotPath
+                        }
+                    }
+                    
+                    $graphics.Dispose()
+                    $bitmap.Dispose()
+                } catch {
+                    Write-Log "Screenshot: CopyFromScreen failed (method 1): $($_.Exception.Message)"
+                    $graphics.Dispose()
+                    $bitmap.Dispose()
+                }
+            }
+        } catch {
+            Write-Log "Screenshot: Screen API not available (method 1): $($_.Exception.Message)"
+        }
         
-        # Сохраняем во временный файл (JPEG для меньшего размера)
-        $timestamp = Get-Date -Format "yyyyMMddHHmmss"
-        $screenshotPath = Join-Path $SCREENSHOTS_DIR "screenshot_$timestamp.jpg"
+        # Метод 2: Используем Windows API напрямую (может работать в фоновом режиме)
+        Write-Log "Screenshot: Trying method 2 (Windows API)..."
+        try {
+            $width = [Win32]::GetSystemMetrics([Win32]::SM_CXSCREEN)
+            $height = [Win32]::GetSystemMetrics([Win32]::SM_CYSCREEN)
+            
+            if ($width -gt 0 -and $height -gt 0) {
+                Write-Log "Screenshot: Screen size via API: ${width}x${height}"
+                
+                $desktopHwnd = [Win32]::GetDesktopWindow()
+                $desktopDC = [Win32]::GetWindowDC($desktopHwnd)
+                
+                if ($desktopDC -ne [IntPtr]::Zero) {
+                    $memoryDC = [Win32]::CreateCompatibleDC($desktopDC)
+                    if ($memoryDC -ne [IntPtr]::Zero) {
+                        $bitmap = [Win32]::CreateCompatibleBitmap($desktopDC, $width, $height)
+                        if ($bitmap -ne [IntPtr]::Zero) {
+                            $oldBitmap = [Win32]::SelectObject($memoryDC, $bitmap)
+                            $result = [Win32]::BitBlt($memoryDC, 0, 0, $width, $height, $desktopDC, 0, 0, [Win32]::SRCCOPY)
+                            
+                            if ($result) {
+                                # Конвертируем в .NET Bitmap
+                                $netBitmap = [System.Drawing.Image]::FromHbitmap($bitmap)
+                                
+                                # Сохраняем скриншот
+                                $timestamp = Get-Date -Format "yyyyMMddHHmmss"
+                                $screenshotPath = Join-Path $SCREENSHOTS_DIR "screenshot_$timestamp.jpg"
+                                
+                                if (-not (Test-Path $SCREENSHOTS_DIR)) {
+                                    New-Item -ItemType Directory -Path $SCREENSHOTS_DIR -Force | Out-Null
+                                }
+                                
+                                $jpegCodec = [System.Drawing.Imaging.ImageCodecInfo]::GetImageEncoders() | Where-Object { $_.MimeType -eq "image/jpeg" }
+                                if ($jpegCodec) {
+                                    $encoderParams = New-Object System.Drawing.Imaging.EncoderParameters(1)
+                                    $encoderParams.Param[0] = New-Object System.Drawing.Imaging.EncoderParameter([System.Drawing.Imaging.Encoder]::Quality, 80)
+                                    $netBitmap.Save($screenshotPath, $jpegCodec, $encoderParams)
+                                    
+                                    if (Test-Path $screenshotPath) {
+                                        $fileSize = (Get-Item $screenshotPath).Length
+                                        Write-Log "Screenshot created successfully (method 2): $screenshotPath ($fileSize bytes)"
+                                    }
+                                }
+                                
+                                $netBitmap.Dispose()
+                                [Win32]::SelectObject($memoryDC, $oldBitmap) | Out-Null
+                            }
+                            
+                            [Win32]::DeleteObject($bitmap) | Out-Null
+                        }
+                        [Win32]::DeleteObject($memoryDC) | Out-Null
+                    }
+                    [Win32]::ReleaseDC($desktopHwnd, $desktopDC) | Out-Null
+                }
+                
+                if ($screenshotPath -and (Test-Path $screenshotPath)) {
+                    return $screenshotPath
+                }
+            }
+        } catch {
+            Write-Log "Screenshot: Windows API method failed (method 2): $($_.Exception.Message)"
+        }
         
-        # Сохраняем в JPEG формате с качеством 80% для уменьшения размера
-        $jpegCodec = [System.Drawing.Imaging.ImageCodecInfo]::GetImageEncoders() | Where-Object { $_.MimeType -eq "image/jpeg" }
-        $encoderParams = New-Object System.Drawing.Imaging.EncoderParameters(1)
-        $encoderParams.Param[0] = New-Object System.Drawing.Imaging.EncoderParameter([System.Drawing.Imaging.Encoder]::Quality, 80)
-        
-        $bitmap.Save($screenshotPath, $jpegCodec, $encoderParams)
-        
-        # Освобождаем ресурсы
-        $graphics.Dispose()
-        $bitmap.Dispose()
-        
-        Write-Log "Screenshot created: $screenshotPath"
-        return $screenshotPath
+        Write-Log "Screenshot: All methods failed, screenshot cannot be created"
+        return $null
     } catch {
         Write-Log "Error creating screenshot: $($_.Exception.Message)"
+        Write-Log "Stack trace: $($_.ScriptStackTrace)"
         return $null
     }
 }
@@ -345,37 +608,38 @@ function Send-Screenshot {
         $fileInfo = Get-Item $ScreenshotPath
         $fileName = $fileInfo.Name
         
-        # Формируем multipart/form-data вручную
+        # Формируем multipart/form-data вручную (исправлено для правильной работы)
         $boundary = [System.Guid]::NewGuid().ToString()
         $fileBytes = [System.IO.File]::ReadAllBytes($ScreenshotPath)
+        $newline = "`r`n"
         
         # Создаём multipart body
         $bodyParts = New-Object System.Collections.ArrayList
         
         # Username
-        $usernamePart = "--$boundary`r`n"
-        $usernamePart += "Content-Disposition: form-data; name=`"username`"`r`n"
-        $usernamePart += "`r`n"
-        $usernamePart += "$Username`r`n"
+        $usernamePart = "--$boundary$newline"
+        $usernamePart += "Content-Disposition: form-data; name=`"username`"$newline"
+        $usernamePart += "$newline"
+        $usernamePart += "$Username$newline"
         [void]$bodyParts.Add([System.Text.Encoding]::UTF8.GetBytes($usernamePart))
         
         # Timestamp
-        $timestampPart = "--$boundary`r`n"
-        $timestampPart += "Content-Disposition: form-data; name=`"timestamp`"`r`n"
-        $timestampPart += "`r`n"
-        $timestampPart += "$Timestamp`r`n"
+        $timestampPart = "--$boundary$newline"
+        $timestampPart += "Content-Disposition: form-data; name=`"timestamp`"$newline"
+        $timestampPart += "$newline"
+        $timestampPart += "$Timestamp$newline"
         [void]$bodyParts.Add([System.Text.Encoding]::UTF8.GetBytes($timestampPart))
         
         # File
-        $filePart = "--$boundary`r`n"
-        $filePart += "Content-Disposition: form-data; name=`"screenshot`"; filename=`"$fileName`"`r`n"
-        $filePart += "Content-Type: image/jpeg`r`n"
-        $filePart += "`r`n"
+        $filePart = "--$boundary$newline"
+        $filePart += "Content-Disposition: form-data; name=`"screenshot`"; filename=`"$fileName`"$newline"
+        $filePart += "Content-Type: image/jpeg$newline"
+        $filePart += "$newline"
         [void]$bodyParts.Add([System.Text.Encoding]::UTF8.GetBytes($filePart))
         [void]$bodyParts.Add($fileBytes)
         
         # End boundary
-        $endPart = "`r`n--$boundary--`r`n"
+        $endPart = "$newline--$boundary--$newline"
         [void]$bodyParts.Add([System.Text.Encoding]::UTF8.GetBytes($endPart))
         
         # Объединяем все части
@@ -387,6 +651,9 @@ function Send-Screenshot {
             $offset += $part.Length
         }
         
+        Write-Log "Multipart body size: $totalLength bytes"
+        Write-Log "File size: $($fileBytes.Length) bytes"
+        
         # Отправляем запрос
         $headers = @{
             "X-API-Key" = $API_KEY
@@ -394,6 +661,10 @@ function Send-Screenshot {
         }
         
         try {
+            Write-Log "Sending screenshot to: $url"
+            Write-Log "File size: $($fileBytes.Length) bytes"
+            Write-Log "Boundary: $boundary"
+            
             $response = Invoke-WebRequest -Uri $url `
                 -Method POST `
                 -Headers $headers `
@@ -420,6 +691,7 @@ function Send-Screenshot {
                 return $true
             } else {
                 Write-Log "❌ Error sending screenshot: Status code $($response.StatusCode)"
+                Write-Log "Response: $($response.Content)"
                 return $false
             }
         } catch {
@@ -428,14 +700,19 @@ function Send-Screenshot {
             
             if ($_.Exception.Response) {
                 try {
-                    $reader = New-Object System.IO.StreamReader($_.Exception.Response.GetResponseStream())
+                    $stream = $_.Exception.Response.GetResponseStream()
+                    $reader = New-Object System.IO.StreamReader($stream)
                     $responseBody = $reader.ReadToEnd()
                     Write-Log "Response body: $responseBody"
                     $reader.Close()
+                    $stream.Close()
                 } catch {
-                    Write-Log "Could not read error response"
+                    Write-Log "Could not read error response: $($_.Exception.Message)"
                 }
             }
+            
+            # Не удаляем файл при ошибке, чтобы можно было повторить отправку
+            Write-Log "Screenshot file kept for retry: $ScreenshotPath"
             
             return $false
         }
@@ -576,12 +853,92 @@ try {
         while ($true) {
             $now = Get-Date
             
-            # Собираем данные активности
+            # Собираем данные активности (активное окно)
             $activity = Collect-Activity -Username $username
             
             if ($activity) {
                 $activityBuffer += $activity
                 Write-Log "Collected activity: $($activity.procName) - $($activity.windowTitle)"
+                
+                # Собираем все открытые программы каждый раз (но с умной дедупликацией)
+                # Это гарантирует, что все открытые программы попадут в активность
+                try {
+                    $allProcesses = Get-AllProcessesWithWindows
+                    $collectedCount = 0
+                    $activeProcName = $activity.procName  # Запоминаем активный процесс
+                    
+                    foreach ($procName in $allProcesses.Keys) {
+                        # Пропускаем активный процесс - он уже добавлен выше с правильным URL
+                        if ($procName -eq $activeProcName) {
+                            continue
+                        }
+                        
+                        $procInfo = $allProcesses[$procName]
+                        # Теперь собираем даже если windowTitles пустой (будет использовано имя процесса)
+                        if ($procInfo.windowTitles -and $procInfo.windowTitles.Count -gt 0) {
+                            $windowTitle = $procInfo.windowTitles[0]
+                        } else {
+                            $windowTitle = $procName  # Используем имя процесса, если заголовка нет
+                        }
+                        
+                        # Проверяем, нет ли уже такой записи в буфере за последние 30 секунд (сократили время)
+                        $exists = $null
+                        foreach ($bufItem in $activityBuffer) {
+                            if ($bufItem.procName -eq $procName) {
+                                try {
+                                    $timeDiff = (New-TimeSpan -Start (Get-Date $bufItem.timestamp) -End $now).TotalSeconds
+                                    if ($timeDiff -lt 30) {  # Уменьшили с 120 до 30 секунд для более частого обновления
+                                        $exists = $bufItem
+                                        break
+                                    }
+                                } catch {
+                                    # Игнорируем ошибки парсинга времени
+                                }
+                            }
+                        }
+                        
+                        if (-not $exists) {
+                            $procTimestamp = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss.fffZ")
+                            
+                            # Для браузеров стараемся сохранить URL, если есть в windowTitle
+                            $browserUrl = ""
+                            $procNameLower = $procName.ToLower()
+                            if ($procNameLower -match "chrome|msedge|firefox|opera") {
+                                # Пытаемся извлечь URL из заголовка окна
+                                if ($windowTitle -match "http[s]?://[^\s]+") {
+                                    $browserUrl = $Matches[0]
+                                } elseif ($windowTitle -match "http") {
+                                    $browserUrl = $windowTitle
+                                } else {
+                                    # Используем заголовок окна как URL, если он содержит домен
+                                    if ($windowTitle -match "[-a-zA-Z0-9]+\.[a-zA-Z]{2,}") {
+                                        $browserUrl = "https://$($Matches[0])"
+                                    } else {
+                                        $browserUrl = "${procNameLower}://active-tab"
+                                    }
+                                }
+                            }
+                            
+                            $procActivity = @{
+                                username = $username
+                                timestamp = $procTimestamp
+                                idleMinutes = 0
+                                procName = $procName
+                                windowTitle = $windowTitle
+                                browserUrl = $browserUrl
+                            }
+                            $activityBuffer += $procActivity
+                            $collectedCount++
+                            Write-Log "Added process to buffer: $procName - $windowTitle"
+                        }
+                    }
+                    
+                    if ($collectedCount -gt 0) {
+                        Write-Log "Collected $collectedCount additional open programs"
+                    }
+                } catch {
+                    Write-Log "Error collecting all programs: $($_.Exception.Message)"
+                }
                 
                 # Отправляем каждые 3 записей ИЛИ каждые 3 минуты (чтобы данные не задерживались)
                 $shouldSend = $false
@@ -612,16 +969,23 @@ try {
             $timeSinceLastScreenshot = ($now - $lastScreenshotTime).TotalSeconds
             if ($timeSinceLastScreenshot -ge $screenshotIntervalSeconds) {
                 try {
+                    Write-Log "Time to take screenshot (interval: $screenshotIntervalSeconds seconds, elapsed: $timeSinceLastScreenshot seconds)"
                     $screenshotPath = Take-Screenshot
                     if ($screenshotPath) {
+                        Write-Log "Screenshot created, attempting to send: $screenshotPath"
                         $timestamp = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss.fffZ")
                         if (Send-Screenshot -ScreenshotPath $screenshotPath -Username $username -Timestamp $timestamp) {
                             $lastScreenshotTime = $now
-                            Write-Log "Screenshot sent successfully"
+                            Write-Log "✅ Screenshot sent successfully"
+                        } else {
+                            Write-Log "❌ Failed to send screenshot"
                         }
+                    } else {
+                        Write-Log "⚠️ Screenshot creation returned null (may be in background mode or no GUI access)"
                     }
                 } catch {
-                    Write-Log "Error in screenshot process: $($_.Exception.Message)"
+                    Write-Log "❌ Error in screenshot process: $($_.Exception.Message)"
+                    Write-Log "Stack trace: $($_.ScriptStackTrace)"
                 }
             }
             

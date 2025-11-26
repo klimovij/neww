@@ -526,15 +526,31 @@ router.get('/activity-details', async (req, res) => {
     const screenshotsWithUrl = screenshots.map(shot => {
       // Извлекаем имя файла из полного пути
       let fileName = path.basename(shot.file_path);
+      console.log(`📸 [activity-details] Обработка скриншота:`, {
+        id: shot.id,
+        file_path: shot.file_path,
+        basename: fileName
+      });
+      
       // Если путь уже содержит имя файла, используем его
       // Иначе формируем имя из timestamp
       if (!fileName || fileName === '' || fileName === '/') {
         const ts = new Date(shot.timestamp);
         fileName = `screenshot_${username}_${ts.toISOString().split('T')[0]}_${ts.toISOString().split('T')[1].replace(/[:.]/g, '-').split('.')[0]}.jpg`;
+        console.log(`📸 [activity-details] Сгенерировано имя файла из timestamp:`, fileName);
       }
       
       // Убеждаемся, что путь правильный - удаляем все префиксы путей, оставляем только имя файла
       fileName = fileName.replace(/^.*[\/\\]/, ''); // Убираем все пути перед именем файла
+      
+      // Проверяем, существует ли файл
+      const fullPath = path.join(screenshotsDir, fileName);
+      const fileExists = fs.existsSync(fullPath);
+      console.log(`📸 [activity-details] Проверка файла:`, {
+        fileName,
+        fullPath,
+        exists: fileExists
+      });
       
       // Формируем URL для доступа к файлу
       const screenshotUrl = `/uploads/screenshots/${fileName}`;
@@ -543,7 +559,9 @@ router.get('/activity-details', async (req, res) => {
         id: shot.id,
         file_path: shot.file_path,
         fileName,
-        url: screenshotUrl
+        url: screenshotUrl,
+        fileExists,
+        fileSize: shot.file_size
       });
       
       return {

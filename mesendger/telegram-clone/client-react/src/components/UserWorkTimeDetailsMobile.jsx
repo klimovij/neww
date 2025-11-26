@@ -948,7 +948,21 @@ export default function UserWorkTimeDetailsMobile({
           })()}
 
           {/* Таб: Скриншоты */}
-          {activeTab === 'screenshots' && (
+          {activeTab === 'screenshots' && (() => {
+            console.log('📸 [UserWorkTimeDetailsMobile] Рендер вкладки Скриншоты');
+            console.log('📸 [UserWorkTimeDetailsMobile] localScreenshots:', localScreenshots?.length || 0, localScreenshots);
+            if (localScreenshots && localScreenshots.length > 0) {
+              localScreenshots.forEach((shot, idx) => {
+                console.log(`📸 [${idx}] Screenshot:`, {
+                  id: shot.id,
+                  url: shot.url,
+                  filePath: shot.filePath,
+                  timestamp: shot.timestamp,
+                  fileSize: shot.fileSize
+                });
+              });
+            }
+            return (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {/* Краткая статистика */}
               {activityStats && (
@@ -982,9 +996,23 @@ export default function UserWorkTimeDetailsMobile({
                   Нет скриншотов
                 </div>
               ) : (
-                localScreenshots.map((shot, idx) => (
+                localScreenshots.map((shot, idx) => {
+                  // Формируем правильный URL - убеждаемся, что он начинается с /
+                  const screenshotUrl = shot.url && shot.url.startsWith('/') 
+                    ? shot.url 
+                    : shot.url && shot.url.startsWith('http')
+                    ? shot.url
+                    : `/uploads/screenshots/${shot.filePath ? shot.filePath.split(/[\/\\]/).pop() : shot.url || `screenshot_${idx}.jpg`}`;
+                  
+                  console.log(`📸 [UserWorkTimeDetailsMobile] Рендер скриншота ${idx}:`, {
+                    originalUrl: shot.url,
+                    filePath: shot.filePath,
+                    finalUrl: screenshotUrl
+                  });
+                  
+                  return (
                   <div
-                    key={idx}
+                    key={shot.id || `screenshot-${idx}`}
                     style={{
                       background: 'rgba(255, 224, 130, 0.1)',
                       borderRadius: '12px',
@@ -1009,13 +1037,15 @@ export default function UserWorkTimeDetailsMobile({
                         <FiClock size={12} />
                         {formatTime(shot.timestamp)}
                       </div>
-                      <div style={{
-                        marginLeft: 'auto',
-                        color: 'rgba(255, 255, 255, 0.4)',
-                        fontSize: '11px',
-                      }}>
-                        {(shot.fileSize / 1024 / 1024).toFixed(2)} MB
-                      </div>
+                      {shot.fileSize && (
+                        <div style={{
+                          marginLeft: 'auto',
+                          color: 'rgba(255, 255, 255, 0.4)',
+                          fontSize: '11px',
+                        }}>
+                          {(shot.fileSize / 1024 / 1024).toFixed(2)} MB
+                        </div>
+                      )}
                     </div>
                     <div style={{
                       borderRadius: '8px',
@@ -1024,17 +1054,28 @@ export default function UserWorkTimeDetailsMobile({
                       background: 'rgba(0, 0, 0, 0.3)',
                     }}>
                       <img
-                        src={shot.url}
+                        src={screenshotUrl}
                         alt={`Скриншот ${idx + 1}`}
+                        onLoad={() => {
+                          console.log(`✅ [UserWorkTimeDetailsMobile] Скриншот ${idx} загружен успешно:`, screenshotUrl);
+                        }}
                         onError={(e) => {
-                          console.error('Failed to load screenshot:', shot.url, shot);
+                          console.error('❌ [UserWorkTimeDetailsMobile] Ошибка загрузки скриншота:', {
+                            idx,
+                            url: screenshotUrl,
+                            originalUrl: shot.url,
+                            filePath: shot.filePath,
+                            shot
+                          });
                           e.target.style.display = 'none';
-                          e.target.parentElement.innerHTML = `
-                            <div style="padding: 40px 20px; text-align: center; color: rgba(255, 100, 100, 0.8);">
-                              Не удалось загрузить скриншот<br/>
-                              <small style="font-size: 11px; color: rgba(255, 255, 255, 0.4);">URL: ${shot.url}</small>
-                            </div>
+                          const errorDiv = document.createElement('div');
+                          errorDiv.style.cssText = 'padding: 40px 20px; text-align: center; color: rgba(255, 100, 100, 0.8);';
+                          errorDiv.innerHTML = `
+                            Не удалось загрузить скриншот<br/>
+                            <small style="font-size: 11px; color: rgba(255, 255, 255, 0.4);">URL: ${screenshotUrl}</small><br/>
+                            <small style="font-size: 10px; color: rgba(255, 255, 255, 0.3);">Path: ${shot.filePath || 'N/A'}</small>
                           `;
+                          e.target.parentElement.appendChild(errorDiv);
                         }}
                         style={{
                           width: '100%',
@@ -1044,15 +1085,17 @@ export default function UserWorkTimeDetailsMobile({
                         }}
                         onClick={() => {
                           // Открываем скриншот в новой вкладке в полном размере
-                          window.open(shot.url, '_blank');
+                          window.open(screenshotUrl, '_blank');
                         }}
                       />
                     </div>
                   </div>
-                ))
+                  );
+                })
               )}
             </div>
-          )}
+            );
+          })()}
         </div>
 
         {/* Подсказка о свайпе */}
