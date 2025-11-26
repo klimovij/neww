@@ -1,11 +1,10 @@
-# Скрипт отправки данных о выключении ПК (выход пользователя)
+﻿# Скрипт отправки данных о выключении ПК (выход пользователя)
 # Совместим с PowerShell 5.1 и ниже
 # Использование: .\send_pc_shutdown.ps1 [username]
-# Если username не указан, будет прочитан из конфига или запрошен
+# Если username не указан, будет запрошен при запуске
 
 # Конфигурация
 $SERVER_URL = "http://35.232.108.72"
-$API_KEY = "BsKFpZmdp6ocPKUD6g6YxTgMSTZEaPZXkbddxsifERA="
 $LOG_FILE = "$env:APPDATA\mesendger\pc_shutdown.log"
 $CONFIG_FILE = "$env:APPDATA\mesendger\agent_config.json"
 
@@ -70,15 +69,6 @@ function Get-Username {
     return $username.Trim()
 }
 
-# Функция логирования
-function Write-Log {
-    param([string]$Message)
-    $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-    $logMessage = "$timestamp - $Message"
-    Write-Host $logMessage
-    $logMessage | Out-File -FilePath $LOG_FILE -Append -Encoding UTF8
-}
-
 try {
     Write-Log "=== PC SHUTDOWN SCRIPT STARTED ==="
     Write-Log "PowerShell version: $($PSVersionTable.PSVersion)"
@@ -87,57 +77,44 @@ try {
     $username = Get-Username $args
     Write-Log "Username: $username (будет отображаться ФИО из базы на сервере)"
     
-    # Получаем текущее время в UTC
+    # Получаем текущее время в UTC и конвертируем в формат YYYY-MM-DD HH:mm:ss
     $now = Get-Date
-    $eventTime = $now.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss.fffZ")
+    $utcTime = $now.ToUniversalTime()
+    # Формат для локальных ПК: YYYY-MM-DD HH:mm:ss
+    $eventTime = $utcTime.ToString("yyyy-MM-dd HH:mm:ss")
     Write-Log "Event time: $eventTime"
     
-    # Формируем данные для отправки (сервер ожидает массив событий или { events: [...] })
+    # Формируем данные для отправки на локальный endpoint
+    # event_id: 4624 = login (вход), 4634 = logout (выход)
     $eventData = @{
         username = $username
         event_type = "logout"
         event_time = $eventTime
+        event_id = 4634  # Windows Event ID для выхода
     }
     
-    # Обертываем в массив, так как сервер ожидает массив событий
-    # В PowerShell 5.1 нужно явно создать массив и использовать правильный синтаксис
-    $eventsArray = New-Object System.Collections.ArrayList
-    [void]$eventsArray.Add($eventData)
+    Write-Log "Event data: username=$username, event_type=logout, event_time=$eventTime, event_id=4634"
     
-    Write-Log "Events array count: $($eventsArray.Count)"
-    
-    # Преобразуем в JSON с явным указанием, что это массив
-    $jsonData = $eventsArray | ConvertTo-Json -Depth 10
+    # Преобразуем в JSON
+    $jsonData = $eventData | ConvertTo-Json -Depth 10
     Write-Log "JSON data: $jsonData"
     
-    # Проверяем, что JSON начинается с '['
-    $trimmedJson = $jsonData.TrimStart()
-    if ($trimmedJson.StartsWith('[')) {
-        Write-Log "✅ JSON is array format (correct)"
-    } else {
-        Write-Log "❌ WARNING: JSON is NOT array format, wrapping manually..."
-        # Если всё равно не массив, обернём вручную
-        $jsonData = "[$jsonData]"
-        Write-Log "JSON data (after manual wrap): $jsonData"
-    }
-    
-    # Подготавливаем заголовки
+    # Подготавливаем заголовки (для локальных ПК API ключ не требуется)
     $headers = @{
-        "X-API-Key" = $API_KEY
         "Content-Type" = "application/json"
     }
     
-    # URL для отправки
-    $url = "$SERVER_URL/api/remote-worktime-batch"
-    Write-Log "Sending to: $url"
+    # URL для отправки на локальный endpoint
+    $url = "$SERVER_URL/api/worktime"
+    Write-Log "Sending to: $url (local PC endpoint)"
     
-    # Отправляем данные (с меньшим таймаутом для shutdown)
+    # Отправляем данные
     try {
         $response = Invoke-RestMethod -Uri $url `
             -Method POST `
             -Headers $headers `
             -Body $jsonData `
-            -TimeoutSec 5 `
+            -TimeoutSec 10 `
             -ErrorAction Stop
         
         if ($response) {
@@ -173,4 +150,3 @@ try {
     Write-Log "=== PC SHUTDOWN SCRIPT FAILED ==="
     exit 1
 }
-

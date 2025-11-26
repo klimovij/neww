@@ -532,6 +532,7 @@ try {
   const activityRouter = require('./routes/activity');
   const onecHistoryRouter = require('./routes/onecHistory');
   const adminRouter = require('./routes/admin');
+  const reportRouter = require('./routes/report');
   
   // Подключаем importWorktimeCsvRoutes первым, чтобы избежать конфликта с quickCsvReportRouter
   app.use('/api', importWorktimeCsvRoutes);
@@ -561,6 +562,8 @@ try {
   app.use('/api', remoteWorktimeRouter);
   console.log('✅ [SERVER] RemoteWorktime router loaded and mounted at /api');
   app.use('/api', activityRouter);
+  app.use('/api', reportRouter);
+  console.log('✅ [SERVER] Report router loaded and mounted at /api');
   app.use('/api/congratulations', congratulationsRouter);
   app.use('/api', onecHistoryRouter);
   console.log('✅ [SERVER] OneC History router loaded and mounted at /api');

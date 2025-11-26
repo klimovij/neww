@@ -29,16 +29,44 @@ router.get('/leaves', async (req, res) => {
   }
 });
 
-// Прием событий рабочего времени от PowerShell-скрипта
+// Прием событий рабочего времени от PowerShell-скрипта (локальные ПК)
 router.post('/worktime', async (req, res) => {
   try {
     const { username, event_type, event_time, event_id } = req.body;
-    if (!username || !event_type || !event_time || !event_id) {
-      return res.status(400).json({ success: false, error: 'Missing fields' });
+    if (!username || !event_type || !event_time) {
+      return res.status(400).json({ success: false, error: 'Missing required fields: username, event_type, event_time' });
     }
-    await db.addWorkTimeLog({ username, event_type, event_time, event_id });
-    res.json({ success: true });
+    
+    // Определяем event_id если не указан
+    let finalEventId = event_id;
+    if (!finalEventId) {
+      finalEventId = event_type === 'logout' ? 4634 : 4624;
+    }
+    
+    // Конвертируем ISO формат даты (2025-11-26T14:53:13.419Z) в YYYY-MM-DD HH:mm:ss
+    let convertedTime = event_time;
+    if (event_time.includes('T') && event_time.includes('Z')) {
+      // ISO формат: 2025-11-26T14:53:13.419Z
+      try {
+        const date = new Date(event_time);
+        const year = date.getUTCFullYear();
+        const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+        const day = String(date.getUTCDate()).padStart(2, '0');
+        const hours = String(date.getUTCHours()).padStart(2, '0');
+        const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+        const seconds = String(date.getUTCSeconds()).padStart(2, '0');
+        convertedTime = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+        console.log(`✅ Converted ISO date: ${event_time} -> ${convertedTime}`);
+      } catch (e) {
+        console.warn(`⚠️ Failed to convert ISO date: ${event_time}, using as-is`);
+      }
+    }
+    
+    await db.addWorkTimeLog({ username, event_type, event_time: convertedTime, event_id: finalEventId });
+    console.log(`✅ Local worktime log added: ${username} - ${event_type} - ${convertedTime} (event_id: ${finalEventId})`);
+    res.json({ success: true, message: 'Event logged successfully' });
   } catch (err) {
+    console.error('❌ Error adding local worktime log:', err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
