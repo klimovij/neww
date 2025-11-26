@@ -882,16 +882,33 @@ export default function UserWorkTimeDetailsMobile({
                           });
                         }
                         
-                        return shouldShow && cleanWindowTitle ? (
-                          <div style={{
-                            color: 'rgba(255, 255, 255, 0.7)',
-                            fontSize: '14px',
-                            marginBottom: '8px',
-                            fontWeight: isMessenger ? 600 : 400,
-                          }}>
-                            {cleanWindowTitle}
-                          </div>
-                        ) : null;
+                        if (shouldShow && cleanWindowTitle) {
+                          if (isMessenger) {
+                            console.log(`✅ [UserWorkTimeDetailsMobile] РЕНДЕРИМ windowTitle для ${app.procName}:`, cleanWindowTitle);
+                          }
+                          return (
+                            <div style={{
+                              color: 'rgba(255, 255, 255, 0.7)',
+                              fontSize: '14px',
+                              marginBottom: '8px',
+                              fontWeight: isMessenger ? 600 : 400,
+                              display: 'block', // Явно указываем display
+                              visibility: 'visible', // Явно указываем visibility
+                              opacity: 1, // Явно указываем opacity
+                            }}>
+                              {cleanWindowTitle}
+                            </div>
+                          );
+                        } else {
+                          if (isMessenger) {
+                            console.warn(`⚠️ [UserWorkTimeDetailsMobile] НЕ РЕНДЕРИМ windowTitle для ${app.procName}:`, {
+                              shouldShow,
+                              cleanWindowTitle,
+                              hasCleanTitle: !!cleanWindowTitle
+                            });
+                          }
+                          return null;
+                        }
                       })()}
                       {app.timestamp && (
                         <div style={{
