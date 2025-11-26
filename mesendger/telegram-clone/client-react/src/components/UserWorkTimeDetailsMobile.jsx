@@ -866,24 +866,30 @@ export default function UserWorkTimeDetailsMobile({
                         // Показываем windowTitle если он отличается от procName ИЛИ это мессенджер
                         const shouldShow = isMessenger || app.windowTitle !== app.procName;
                         
+                        // Очищаем windowTitle от невидимых символов (left-to-right mark, right-to-left mark и т.д.)
+                        const cleanWindowTitle = app.windowTitle
+                          .replace(/[\u200E\u200F\u202A-\u202E\u2066-\u2069]/g, '') // Удаляем направляющие символы
+                          .trim();
+                        
                         // Логирование для отладки мессенджеров
                         if (isMessenger) {
                           console.log(`🔍 [UserWorkTimeDetailsMobile] Рендер мессенджера ${app.procName}:`, {
                             procName: app.procName,
                             windowTitle: app.windowTitle,
+                            cleanWindowTitle: cleanWindowTitle,
                             shouldShow,
                             isMessenger
                           });
                         }
                         
-                        return shouldShow ? (
+                        return shouldShow && cleanWindowTitle ? (
                           <div style={{
                             color: 'rgba(255, 255, 255, 0.7)',
                             fontSize: '14px',
                             marginBottom: '8px',
                             fontWeight: isMessenger ? 600 : 400,
                           }}>
-                            {app.windowTitle}
+                            {cleanWindowTitle}
                           </div>
                         ) : null;
                       })()}
