@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Modal from 'react-modal';
 import '../../styles/WorkTimeReportModal.css';
-import UserWorkTimeDetailsModal from './UserWorkTimeDetailsModal';
 import AppUsageModal from './AppUsageModal';
+import RemoteWorktimeReportModal from './RemoteWorktimeReportModal';
+import UserWorkTimeDetailsModal from './UserWorkTimeDetailsModal';
 
 Modal.setAppElement('#root');
 
@@ -89,181 +90,35 @@ function calculateWorkTime(logs, startDate, endDate) {
 }
 
 function WorkTimeReportModal({ isOpen, onRequestClose }) {
-  const [selectedUser, setSelectedUser] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [usersList, setUsersList] = useState([]);
-  const [userOptions, setUserOptions] = useState([]);
-  const [showAutocomplete, setShowAutocomplete] = useState(false);
-  const [startDate, setStartDate] = useState(() => {
-    const d = new Date();
-    d.setDate(d.getDate() - 1);
-    return d.toISOString().slice(0, 10);
-  });
-  const [endDate, setEndDate] = useState(() => {
-    const d = new Date();
-    d.setDate(d.getDate() - 1);
-    return d.toISOString().slice(0, 10);
-  });
-  const [logs, setLogs] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [detailsModal, setDetailsModal] = useState({ open: false, logs: [], username: '', activityStats: null });
-  const [importing, setImporting] = useState(false);
-  const [importOk, setImportOk] = useState(null); // null | true | false
   const [showAppUsage, setShowAppUsage] = useState(false);
-  const [clearing, setClearing] = useState(false);
-  const [clearResult, setClearResult] = useState(null); // { success: true/false, message: string }
+  const [showRemoteWorktime, setShowRemoteWorktime] = useState(false);
+  const [showLocalReport, setShowLocalReport] = useState(false);
+  const [localReportData, setLocalReportData] = useState({ logs: [], username: '', activityStats: null });
 
-  useEffect(() => {
-    if (isOpen) {
-      fetch('/api/worktime-users')
-        .then(res => res.json())
-        .then(data => {
-          setUsersList(data.users || []);
-          setUserOptions(data.users || []);
-        })
-        .catch(() => {
-          setUsersList([]);
-          setUserOptions([]);
-        });
-    }
-  }, [isOpen]);
-
-  // WebSocket для обновления данных в реальном времени (используем общий socket)
-  useEffect(() => {
-    if (!isOpen) return;
-
-    // Используем общий socket из SocketProvider вместо создания нового
-    const socket = window.socket;
-    if (!socket || !socket.connected) return;
-
-    // Слушаем обновления данных активности
-    const handleActivityUpdate = (updateData) => {
-      // Проверяем, попадает ли дата обновления в выбранный диапазон
-      const updateDate = updateData.date;
-      if (updateDate >= startDate && updateDate <= endDate) {
-        // Обновляем данные, если они попадают в выбранный диапазон дат
-        fetchReport();
-      }
-    };
-
-    socket.on('activity_data_updated', handleActivityUpdate);
-
-    return () => {
-      if (socket) {
-        socket.off('activity_data_updated', handleActivityUpdate);
-      }
-    };
-  }, [isOpen, startDate, endDate, fetchReport]);
-
-  const handleSearchChange = (e) => {
-    const value = e.target.value;
-    setSearchTerm(value);
-    if (value.length > 0) {
-      setShowAutocomplete(true);
-      setUserOptions(usersList.filter(u => u.toLowerCase().includes(value.toLowerCase())));
-    } else {
-      setShowAutocomplete(false);
-      setUserOptions(usersList);
-    }
-  };
-
-  const handleSelectUser = (user) => {
-    setSelectedUser(user);
-    setSearchTerm(user);
-    setShowAutocomplete(false);
-  };
-
-  const fetchReport = async () => {
-    setLoading(true);
+  const handleOpenLocalReport = async () => {
+    setShowLocalReport(true);
+    // Загружаем данные для локального отчета
     try {
-      // Используем endpoint для ЛОКАЛЬНЫХ данных (work_time_logs + activity_logs)
-      let url = `/api/local-worktime-report?start=${startDate}&end=${endDate}`;
-      if (selectedUser) url += `&username=${encodeURIComponent(selectedUser)}`;
-      console.log('📊 [WorkTimeReportModal] Запрос локального отчета:', url);
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const startDate = yesterday.toISOString().slice(0, 10);
+      const endDate = yesterday.toISOString().slice(0, 10);
+      
+      const url = `/api/local-worktime-report?start=${startDate}&end=${endDate}`;
       const res = await fetch(url);
-      console.log('📊 [WorkTimeReportModal] Статус ответа:', res.status, res.statusText);
-      const data = await res.json();
-      // API возвращает { report: [...] }
-      console.log('📊 [WorkTimeReportModal] Данные из local-worktime-report (локальные):', data);
-      console.log('📊 [WorkTimeReportModal] success:', data.success, 'report length:', data.report?.length || 0);
-      if (data.success && Array.isArray(data.report)) {
-        console.log('📊 [WorkTimeReportModal] Устанавливаем', data.report.length, 'записей');
-        setLogs(data.report);
-      } else {
-        console.warn('⚠️ [WorkTimeReportModal] Некорректный формат данных или ошибка:', data);
-        setLogs([]);
-      }
-    } catch (error) {
-      console.error('❌ [WorkTimeReportModal] Ошибка при загрузке отчета:', error);
-      setLogs([]);
-    }
-    setLoading(false);
-  };
-
-  const triggerYesterdayImport = async () => {
-    setImporting(true);
-    setImportOk(null);
-    try {
-      const res = await fetch('/api/auto-import-csv-yesterday', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({})
-      });
-      const data = await res.json();
-      const ok = res.ok && data && data.success && typeof data.imported === 'number' && data.imported > 0;
-      setImportOk(ok);
-    } catch {
-      setImportOk(false);
-    }
-    setImporting(false);
-  };
-
-  const clearActivityData = async (period) => {
-    if (!window.confirm(`Вы уверены, что хотите удалить данные активности за ${period === 'day' ? 'день' : period === 'week' ? 'неделю' : 'месяц'}? Это действие нельзя отменить!`)) {
-      return;
-    }
-    
-    setClearing(true);
-    setClearResult(null);
-    try {
-      const token = localStorage.getItem('token');
-      const res = await fetch('/api/activity-logs/clear', {
-        method: 'DELETE',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ period })
-      });
       const data = await res.json();
       
-      if (res.ok && data.success) {
-        setClearResult({ success: true, message: data.message || `Удалено ${data.deletedCount || 0} записей` });
-        // Обновляем отчет после очистки
-        setTimeout(() => {
-          fetchReport();
-          setClearResult(null);
-        }, 2000);
-      } else {
-        setClearResult({ success: false, message: data.error || 'Ошибка при удалении данных' });
+      if (data.success && Array.isArray(data.report)) {
+        setLocalReportData({ 
+          logs: data.report, 
+          username: '', 
+          activityStats: null 
+        });
       }
     } catch (error) {
-      setClearResult({ success: false, message: 'Ошибка при удалении данных: ' + error.message });
+      console.error('Ошибка загрузки локального отчета:', error);
     }
-    setClearing(false);
   };
-
-  // Фильтрация строк таблицы по образцу
-  const displayedRows = React.useMemo(() => {
-    if (!Array.isArray(logs) || logs.length === 0) return [];
-    const q = (searchTerm || '').trim().toLowerCase();
-    return logs.filter(row => {
-      const fio = (row.fio || row.username || '').trim();
-      if (selectedUser) return fio === selectedUser;
-      if (q) return fio.toLowerCase().includes(q);
-      return true;
-    });
-  }, [logs, selectedUser, searchTerm]);
 
   function formatTime(dtStr) {
     if (!dtStr) return '';
@@ -338,271 +193,95 @@ function WorkTimeReportModal({ isOpen, onRequestClose }) {
             cursor: 'pointer', color: '#fff', fontWeight: 'bold', width: 36, height: 36, borderRadius: '50%'
           }}>×</button>
 
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-            <h2 style={{ marginTop: 0, marginBottom: 18, color: '#43e97b', fontWeight: 900, fontSize: '2em' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 40 }}>
+            <h2 style={{ marginTop: 0, marginBottom: 0, color: '#43e97b', fontWeight: 900, fontSize: '2em' }}>
               Мониторинг отработанного времени
             </h2>
+          </div>
+
+          {/* Три кнопки отчетов */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20, marginBottom: 40 }}>
             <button
               type="button"
               onClick={() => setShowAppUsage(true)}
               style={{
-                padding: '10px 14px',
+                padding: '16px 24px',
                 borderRadius: 12,
                 border: '1px solid rgba(67,233,123,0.35)',
                 background: 'rgba(67,233,123,0.15)',
                 color: '#b2ffb2',
                 cursor: 'pointer',
-                fontWeight: 800
+                fontWeight: 800,
+                fontSize: '16px',
+                textAlign: 'left',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.background = 'rgba(67,233,123,0.25)';
+                e.target.style.transform = 'translateX(5px)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = 'rgba(67,233,123,0.15)';
+                e.target.style.transform = 'translateX(0)';
               }}
             >
-              Отчёт запусков приложения
+              Отчет запусков приложения
             </button>
-          </div>
 
-          <div style={{ marginBottom: 16, display: 'flex', gap: 16, alignItems: 'center', position: 'relative' }}>
-            <label>
-              Начало:
-              <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
-                style={{ marginLeft: 6, padding: '6px 12px', borderRadius: 8, border: '1px solid #43e97b', background: '#2d3748', color: '#fff' }} />
-            </label>
+            <button
+              type="button"
+              onClick={() => setShowRemoteWorktime(true)}
+              style={{
+                padding: '16px 24px',
+                borderRadius: 12,
+                border: '1px solid rgba(67,233,123,0.35)',
+                background: 'rgba(67,233,123,0.15)',
+                color: '#b2ffb2',
+                cursor: 'pointer',
+                fontWeight: 800,
+                fontSize: '16px',
+                textAlign: 'left',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.background = 'rgba(67,233,123,0.25)';
+                e.target.style.transform = 'translateX(5px)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = 'rgba(67,233,123,0.15)';
+                e.target.style.transform = 'translateX(0)';
+              }}
+            >
+              Отчет Удаленка
+            </button>
 
-            <label>
-              Конец:
-              <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)}
-                style={{ marginLeft: 6, padding: '6px 12px', borderRadius: 8, border: '1px solid #43e97b', background: '#2d3748', color: '#fff' }} />
-            </label>
-
-            <div style={{ position: 'relative', marginLeft: 16 }}>
-              {/* Убрана надпись "Сотрудник" */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <input
-                  type="text"
-                  placeholder="Поиск сотрудника..."
-                  value={searchTerm}
-                  onChange={handleSearchChange}
-                  onFocus={() => setShowAutocomplete(true)}
-                  onBlur={() => setTimeout(() => setShowAutocomplete(false), 150)}
-                  style={{ width: 240, padding: '6px 12px', borderRadius: 8, border: '1px solid #43e97b', background: '#2d3748', color: '#fff' }}
-                />
-              </div>
-
-              {showAutocomplete && userOptions && (
-                <div style={{
-                  position: 'absolute', top: '100%', left: 0, background: '#232931', color: '#fff',
-                  border: '1px solid #43e97b', borderRadius: 8, zIndex: 10, maxHeight: 200, overflowY: 'auto', width: 240, marginTop: 6
-                }}>
-                  {userOptions.length === 0 ? (
-                    <div style={{ padding: 8 }}>Нет совпадений</div>
-                  ) : (
-                    userOptions.map((u, i) => (
-                      <div key={u + i}
-                        onMouseDown={() => handleSelectUser(u)}
-                        style={{ padding: '8px 12px', cursor: 'pointer', borderBottom: i < userOptions.length - 1 ? '1px solid #4a5568' : 'none' }}>
-                        {u}
-                      </div>
-                    ))
-                  )}
-                </div>
-              )}
-            </div>
-
-            <button onClick={fetchReport} style={{
-              padding: '6px 12px', borderRadius: 8, border: '1px solid #43e97b', background: 'rgba(67,233,123,0.1)', color: '#43e97b', cursor: 'pointer', fontWeight: 600
-            }}>
+            <button
+              type="button"
+              onClick={handleOpenLocalReport}
+              style={{
+                padding: '16px 24px',
+                borderRadius: 12,
+                border: '1px solid rgba(67,233,123,0.35)',
+                background: 'rgba(67,233,123,0.15)',
+                color: '#b2ffb2',
+                cursor: 'pointer',
+                fontWeight: 800,
+                fontSize: '16px',
+                textAlign: 'left',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.background = 'rgba(67,233,123,0.25)';
+                e.target.style.transform = 'translateX(5px)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = 'rgba(67,233,123,0.15)';
+                e.target.style.transform = 'translateX(0)';
+              }}
+            >
               Отчет активности локальных ПК
             </button>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-              <button onClick={triggerYesterdayImport} disabled={importing} style={{
-                padding: '6px 12px', borderRadius: 8, border: '1px solid #38d9a9', background: 'rgba(56,217,169,0.1)', color: '#38d9a9', cursor: importing ? 'not-allowed' : 'pointer', fontWeight: 600
-              }}>
-                {importing ? 'Получение…' : 'Получить данные'}
-              </button>
-              <div title={importOk === true ? 'Импорт успешен' : importOk === false ? 'Импорт не выполнен' : 'Статус импорта неизвестен'}
-                style={{ width: 12, height: 12, borderRadius: '50%', background: importOk === true ? '#43e97b' : importOk === false ? '#e74c3c' : '#95a5a6' }} />
-              
-              {/* Кнопки очистки данных */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 10, paddingLeft: 10, borderLeft: '1px solid rgba(255,255,255,0.2)' }}>
-                <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px', marginRight: 4 }}>Очистить:</span>
-                <button 
-                  onClick={() => clearActivityData('day')} 
-                  disabled={clearing}
-                  style={{
-                    padding: '6px 10px', 
-                    borderRadius: 6, 
-                    border: '1px solid #e74c3c', 
-                    background: 'rgba(231,76,60,0.1)', 
-                    color: '#e74c3c', 
-                    cursor: clearing ? 'not-allowed' : 'pointer', 
-                    fontWeight: 600,
-                    fontSize: '12px'
-                  }}
-                  title="Удалить данные за последний день"
-                >
-                  {clearing ? '...' : 'День'}
-                </button>
-                <button 
-                  onClick={() => clearActivityData('week')} 
-                  disabled={clearing}
-                  style={{
-                    padding: '6px 10px', 
-                    borderRadius: 6, 
-                    border: '1px solid #e74c3c', 
-                    background: 'rgba(231,76,60,0.1)', 
-                    color: '#e74c3c', 
-                    cursor: clearing ? 'not-allowed' : 'pointer', 
-                    fontWeight: 600,
-                    fontSize: '12px'
-                  }}
-                  title="Удалить данные за последнюю неделю"
-                >
-                  {clearing ? '...' : 'Неделя'}
-                </button>
-                <button 
-                  onClick={() => clearActivityData('month')} 
-                  disabled={clearing}
-                  style={{
-                    padding: '6px 10px', 
-                    borderRadius: 6, 
-                    border: '1px solid #e74c3c', 
-                    background: 'rgba(231,76,60,0.1)', 
-                    color: '#e74c3c', 
-                    cursor: clearing ? 'not-allowed' : 'pointer', 
-                    fontWeight: 600,
-                    fontSize: '12px'
-                  }}
-                  title="Удалить данные за последний месяц"
-                >
-                  {clearing ? '...' : 'Месяц'}
-                </button>
-              </div>
-              
-              {clearResult && (
-                <div style={{
-                  padding: '6px 12px',
-                  borderRadius: 6,
-                  background: clearResult.success ? 'rgba(67,233,123,0.2)' : 'rgba(231,76,60,0.2)',
-                  color: clearResult.success ? '#43e97b' : '#e74c3c',
-                  fontSize: '12px',
-                  fontWeight: 600
-                }}>
-                  {clearResult.message}
-                </div>
-              )}
-            </div>
           </div>
-
-          {loading ? (
-            <div style={{ textAlign: 'center', padding: 20 }}>Загрузка...</div>
-          ) : displayedRows.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: 40, color: 'rgba(255,255,255,0.6)' }}>
-              {logs.length === 0 ? (
-                <div>
-                  <p style={{ fontSize: '16px', marginBottom: '10px' }}>Нет данных за выбранный период</p>
-                  <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.4)' }}>
-                    Проверьте даты и убедитесь, что есть данные активности для локальных ПК
-                  </p>
-                </div>
-              ) : (
-                <div>
-                  <p style={{ fontSize: '16px', marginBottom: '10px' }}>Нет данных, соответствующих фильтрам</p>
-                  <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.4)' }}>
-                    Всего записей: {logs.length}, но они не соответствуют выбранным фильтрам
-                  </p>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div style={{ maxHeight: 400, overflowY: 'auto', borderRadius: 12 }}>
-              <table style={{ width: '100%', borderCollapse: 'separate', color: '#e6f7ef' }}>
-                <thead>
-                  <tr style={{ background: '#1f2630' }}>
-                    <th style={{ padding: '12px 14px', textAlign: 'left', color: '#ffe082' }}>ФИО</th>
-                    <th style={{ padding: '12px 14px', textAlign: 'left', color: '#ffe082' }}>Первый вход</th>
-                    <th style={{ padding: '12px 14px', textAlign: 'left', color: '#ffe082' }}>Последний выход</th>
-                    <th style={{ padding: '12px 14px', textAlign: 'left', color: '#ffe082' }}>Отработано</th>
-                    <th style={{ padding: '12px 14px', textAlign: 'left', color: '#ffe082' }}>Детали</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {displayedRows.map((row, idx) => (
-                    <tr key={idx} style={{ background: 'rgba(255,255,255,0.03)', borderBottom: '1px solid #2a323d' }}>
-                      <td style={{ padding: '12px 14px', fontWeight: 700 }}>{row.fio}</td>
-                      <td style={{ padding: '12px 14px' }}>{row.firstLogin ? formatTime(row.firstLogin) : '—'}</td>
-                      <td style={{ padding: '12px 14px' }}>{row.lastLogout ? formatTime(row.lastLogout) : '—'}</td>
-                      <td style={{ padding: '12px 14px' }}>{row.totalTimeStr || (row.firstLogin && row.lastLogout ? formatWorkTime(Math.round((new Date(row.lastLogout) - new Date(row.firstLogin)) / 60000)) : '—')}</td>
-                      <td style={{ padding: '12px 14px' }}>
-                        <button
-                          type="button"
-                          onClick={async (e) => { 
-                            e.stopPropagation();
-                            // Загружаем данные активности перед открытием модалки
-                            let activityStats = null;
-                            try {
-                              const params = new URLSearchParams({
-                                start: startDate,
-                                end: endDate,
-                              });
-                              console.log('🔍 [WorkTimeReportModal] Загружаем activity-summary...');
-                              console.log('🔍 [WorkTimeReportModal] Row data:', { username: row.username, fio: row.fio });
-                              console.log('🔍 [WorkTimeReportModal] Date range:', { start: startDate, end: endDate });
-                              
-                              const res = await fetch(`/api/activity-summary?${params.toString()}`);
-                              const data = await res.json();
-                              
-                              console.log('🔍 [WorkTimeReportModal] Response status:', res.status);
-                              console.log('🔍 [WorkTimeReportModal] Response data:', data);
-                              
-                              if (res.ok && data.success && Array.isArray(data.summary)) {
-                                // Сопоставляем по username (важно для activity-summary)
-                                const usernameForMatch = row.username || row.fio;
-                                console.log('🔍 [WorkTimeReportModal] Ищем activityStats для username:', usernameForMatch);
-                                console.log('🔍 [WorkTimeReportModal] Доступные usernames в summary:', data.summary.map(s => s.username));
-                                
-                                activityStats = data.summary.find(
-                                  (s) => s.username === usernameForMatch
-                                ) || null;
-                                
-                                if (activityStats) {
-                                  console.log('✅ [WorkTimeReportModal] Найденный activityStats:', activityStats);
-                                } else {
-                                  console.warn('⚠️ [WorkTimeReportModal] activityStats НЕ найден!');
-                                  console.warn('⚠️ [WorkTimeReportModal] Искали:', usernameForMatch);
-                                  console.warn('⚠️ [WorkTimeReportModal] Доступны:', data.summary.map(s => s.username));
-                                }
-                              } else {
-                                console.error('❌ [WorkTimeReportModal] Ошибка в ответе:', { ok: res.ok, success: data.success, isArray: Array.isArray(data.summary) });
-                              }
-                            } catch (err) {
-                              console.error('Ошибка загрузки активности:', err);
-                            }
-                            setDetailsModal({ 
-                              open: true, 
-                              logs: row.sessions || row.logs || [], 
-                              username: row.fio || row.username,
-                              activityStats 
-                            }); 
-                          }}
-                          style={{
-                            padding: '6px 12px',
-                            borderRadius: 10,
-                            border: 'none',
-                            background: '#2193b0',
-                            color: '#fff',
-                            fontWeight: 700,
-                            cursor: 'pointer',
-                            pointerEvents: 'auto'
-                          }}
-                        >
-                          Подробнее
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
 
           <button onClick={onRequestClose} style={{
             marginTop: 16, width: '100%', padding: '12px 18px', borderRadius: 12, border: 'none',
@@ -611,14 +290,18 @@ function WorkTimeReportModal({ isOpen, onRequestClose }) {
             Закрыть
           </button>
 
-          <UserWorkTimeDetailsModal
-            isOpen={detailsModal.open}
-            onRequestClose={() => setDetailsModal({ open: false, logs: [], username: '', activityStats: null })}
-            logs={detailsModal.logs}
-            username={detailsModal.username}
-            activityStats={detailsModal.activityStats}
-          />
           <AppUsageModal isOpen={showAppUsage} onRequestClose={() => setShowAppUsage(false)} />
+          <RemoteWorktimeReportModal 
+            isOpen={showRemoteWorktime} 
+            onRequestClose={() => setShowRemoteWorktime(false)} 
+          />
+          <UserWorkTimeDetailsModal
+            isOpen={showLocalReport}
+            onRequestClose={() => setShowLocalReport(false)}
+            logs={localReportData.logs}
+            username={localReportData.username}
+            activityStats={localReportData.activityStats}
+          />
         </div>
       </div>
     </Modal>
