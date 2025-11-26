@@ -60,42 +60,57 @@ async function getLocalWorkTimeReport({ start, end, username }) {
   const activityLogs = await db.getActivityLogsBetween({ start, end });
   logMsg(`activity_logs (локальные): ${activityLogs?.length || 0} записей`);
   
-  // Получаем список удаленных пользователей, чтобы ИСКЛЮЧИТЬ их из локального отчета
+  // Получаем список удаленных пользователей для информации
+  // НО НЕ исключаем их, если они есть в локальных данных (work_time_logs)
   const remoteLogs = await db.getRemoteWorkTimeLogs({ start, end });
   const remoteUsernames = new Set();
   for (const log of remoteLogs) {
     if (log.username) remoteUsernames.add(log.username);
   }
-  logMsg(`Удаленных пользователей для исключения: ${remoteUsernames.size}`);
+  logMsg(`Удаленных пользователей (для информации): ${remoteUsernames.size}`);
   if (remoteUsernames.size > 0) {
     logMsg(`Удаленные пользователи: ${Array.from(remoteUsernames).join(', ')}`);
   }
   
+  // Создаем множество локальных пользователей (из work_time_logs)
+  const localUsernames = new Set();
+  for (const log of periodLogs) {
+    if (log.username) localUsernames.add(log.username);
+  }
+  logMsg(`Локальных пользователей в work_time_logs: ${localUsernames.size}`);
+  if (localUsernames.size > 0) {
+    logMsg(`Локальные пользователи: ${Array.from(localUsernames).join(', ')}`);
+  }
+  
+  // Пользователи из activity_logs считаются локальными, если:
+  // 1. Они есть в work_time_logs (локальная таблица) ИЛИ
+  // 2. Их НЕТ в remote_work_time_logs (т.е. они только локальные)
   const activityUsers = {};
   for (const log of activityLogs) {
     if (!log.username) continue;
     if (username && log.username !== username) continue;
-    // ИСКЛЮЧАЕМ пользователей, которые есть в удаленных данных
-    if (remoteUsernames.has(log.username)) {
-      logMsg(`⚠️ Исключаем пользователя ${log.username} из локального отчета (есть в удаленных данных)`);
-      continue;
+    
+    // Пользователь считается локальным, если:
+    // - он есть в work_time_logs (локальная таблица), ИЛИ
+    // - его нет в remote_work_time_logs (только локальный)
+    const isLocalUser = localUsernames.has(log.username) || !remoteUsernames.has(log.username);
+    
+    if (isLocalUser) {
+      activityUsers[log.username] = true;
+    } else {
+      logMsg(`⚠️ Пропускаем пользователя ${log.username} из activity_logs - он только в удаленных данных`);
     }
-    activityUsers[log.username] = true;
   }
-  logMsg(`Уникальных локальных пользователей в activity_logs (после исключения удаленных): ${Object.keys(activityUsers).length}`);
+  logMsg(`Уникальных локальных пользователей в activity_logs: ${Object.keys(activityUsers).length}`);
   
-  // ТОЛЬКО локальные логи (БЕЗ remote_work_time_logs)
-  // ИСКЛЮЧАЕМ логи пользователей, которые есть в удаленных данных
+  // Включаем ВСЕ логи из work_time_logs (это локальная таблица)
+  // НЕ фильтруем по удаленным пользователям, т.к. если пользователь есть в work_time_logs,
+  // значит он работает на локальном ПК, даже если также есть в удаленных данных
   const allLogs = periodLogs.filter(log => {
     if (!log.username) return false;
-    // Исключаем пользователей, которые есть в удаленных данных
-    if (remoteUsernames.has(log.username)) {
-      logMsg(`⚠️ Исключаем логи пользователя ${log.username} из локального отчета (есть в удаленных данных)`);
-      return false;
-    }
-    return true;
+    return true; // Включаем все логи из work_time_logs
   });
-  logMsg(`Локальных логов после исключения удаленных пользователей: ${allLogs.length}`);
+  logMsg(`Локальных логов из work_time_logs: ${allLogs.length}`);
   
   const userMap = {};
   for (const log of allLogs) {
@@ -122,19 +137,17 @@ async function getLocalWorkTimeReport({ start, end, username }) {
       continue;
     }
     
-    // ДОПОЛНИТЕЛЬНАЯ ПРОВЕРКА: исключаем пользователей, которые есть в удаленных данных
-    if (remoteUsernames.has(user)) {
-      logMsg(`⚠️ Пропускаем пользователя ${user} - он есть в удаленных данных`);
+    // Пользователь считается локальным, если:
+    // - он есть в work_time_logs (sessions.length > 0), ИЛИ
+    // - он есть в activity_logs и НЕ только в удаленных данных
+    const isLocalUser = sessions.length > 0 || activityUsers[user];
+    
+    if (!isLocalUser) {
+      logMsg(`⚠️ Пропускаем пользователя ${user} - нет локальных sessions и нет локальной активности`);
       continue;
     }
     
-    // Включаем пользователя, если есть либо sessions, либо активность
-    if (!sessions.length && !activityUsers[user]) {
-      logMsg(`⚠️ Пропускаем пользователя ${user} - нет sessions и нет активности`);
-      continue;
-    }
-    
-    logMsg(`✅ Добавляем пользователя ${user} в отчет (sessions: ${sessions.length}, есть активность: ${!!activityUsers[user]})`);
+    logMsg(`✅ Добавляем пользователя ${user} в локальный отчет (sessions: ${sessions.length}, есть активность: ${!!activityUsers[user]})`);
     
     let displayName = user;
     try {
