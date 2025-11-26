@@ -157,6 +157,10 @@ async function getDbShortReport({ start, end, username }) {
     });
   }
   
+  logMsg(`Итоговый отчёт содержит ${report.length} пользователей`);
+  if (report.length > 0) {
+    logMsg(`Первый пользователь в отчёте: ${report[0].username}, fio: ${report[0].fio}`);
+  }
   return report;
 }
 
