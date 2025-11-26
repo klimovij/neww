@@ -319,24 +319,30 @@ export default function EmojiSettingsMobile({ open, onClose, onOpenMobileSidebar
       }
       
       // Показываем прогресс
-      const dataUrlEmojis = localEmojis.filter(e => e.src && e.src.startsWith('data:'));
-      const otherEmojis = localEmojis.filter(e => e.src && !e.src.startsWith('data:') && !e.src.startsWith('/uploads/') && !e.src.startsWith('http'));
+      const dataUrlEmojis = localEmojis.filter(e => (e.src && e.src.startsWith('data:')) || e.dataUrl);
+      const otherEmojis = localEmojis.filter(e => e.src && !e.src.startsWith('data:') && !e.src.startsWith('/uploads/') && !e.src.startsWith('http') && !e.dataUrl);
       const alreadyOnServer = localEmojis.filter(e => e.src && (e.src.startsWith('/uploads/') || e.src.startsWith('http')));
+      const emojisWithoutDataUrl = localEmojis.filter(e => e.src && e.src.startsWith('/uploads/') && !e.dataUrl && !e.src.startsWith('data:'));
       
       console.log('📊 Статистика эмодзи:', {
         total: localEmojis.length,
         dataUrl: dataUrlEmojis.length,
         other: otherEmojis.length,
-        alreadyOnServer: alreadyOnServer.length
+        alreadyOnServer: alreadyOnServer.length,
+        withoutDataUrl: emojisWithoutDataUrl.length
       });
       
       if (dataUrlEmojis.length === 0 && otherEmojis.length === 0) {
-        alert(`ℹ️ Все эмодзи уже на сервере.\n\nЛокальных эмодзи: ${localEmojis.length}\nУже на сервере: ${alreadyOnServer.length}\n\nНо папка на сервере пустая! Возможно, нужно принудительная синхронизация.`);
+        if (emojisWithoutDataUrl.length > 0) {
+          alert(`⚠️ Проблема с синхронизацией!\n\nЛокальных эмодзи: ${localEmojis.length}\nЭмодзи без исходных файлов: ${emojisWithoutDataUrl.length}\n\nЭти эмодзи имеют пути /uploads/, но нет исходных data URL.\n\nРешение: удалите эти эмодзи и добавьте их заново, или дождитесь, пока они будут загружены с сервера.`);
+        } else {
+          alert(`ℹ️ Все эмодзи уже на сервере.\n\nЛокальных эмодзи: ${localEmojis.length}\nУже на сервере: ${alreadyOnServer.length}`);
+        }
         setIsSyncing(false);
         return;
       }
       
-      alert(`🔄 Начинаю синхронизацию...\n\nЛокальных эмодзи: ${localEmojis.length}\nС data URL (base64): ${dataUrlEmojis.length}\nДругих для загрузки: ${otherEmojis.length}\nУже на сервере: ${alreadyOnServer.length}`);
+      alert(`🔄 Начинаю синхронизацию...\n\nЛокальных эмодзи: ${localEmojis.length}\nС data URL (можно загрузить): ${dataUrlEmojis.length}\nДругих для загрузки: ${otherEmojis.length}\nУже на сервере: ${alreadyOnServer.length}${emojisWithoutDataUrl.length > 0 ? `\n⚠️ Без исходных файлов: ${emojisWithoutDataUrl.length}` : ''}`);
       
       const result = await syncEmojisToServer();
       
