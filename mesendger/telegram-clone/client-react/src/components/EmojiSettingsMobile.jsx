@@ -1,8 +1,9 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import ReactDOM from 'react-dom';
 import { FaArrowLeft } from 'react-icons/fa';
-import { FiX, FiSettings, FiSave, FiRotateCcw, FiTrash2, FiCheckSquare, FiSquare } from 'react-icons/fi';
+import { FiX, FiSettings, FiSave, FiRotateCcw, FiTrash2, FiCheckSquare, FiSquare, FiRefreshCw } from 'react-icons/fi';
 import axios from 'axios';
+import { syncEmojisToServer } from '../utils/emojiSync.js';
 
 // Импорт эмодзи для превью - ОЧИЩЕНО
 const SMILE_IMAGES = [];
@@ -75,6 +76,7 @@ export default function EmojiSettingsMobile({ open, onClose, onOpenMobileSidebar
   const [selectedKeys, setSelectedKeys] = useState(new Set());
   const [stdSelectedKeys, setStdSelectedKeys] = useState(new Set());
   const [blacklist, setBlacklist] = useState(getEmojiBlacklist());
+  const [isSyncing, setIsSyncing] = useState(false);
 
   useEffect(() => {
     const savedSettings = localStorage.getItem('emojiSettings');
@@ -288,6 +290,25 @@ export default function EmojiSettingsMobile({ open, onClose, onOpenMobileSidebar
   const getPreviewEmoji = () => {
     const customEmoji = EMOJI_TO_ICON['👍'] || EMOJI_TO_ICON['🏆'];
     return customEmoji;
+  };
+
+  // Синхронизация локальных эмодзи с сервером
+  const handleSyncEmojis = async () => {
+    setIsSyncing(true);
+    try {
+      const result = await syncEmojisToServer();
+      if (result.error) {
+        alert(`Ошибка синхронизации: ${result.error}`);
+      } else {
+        await loadAllEmojis();
+        alert(`✅ Синхронизация завершена!\nЗагружено: ${result.synced}\nПропущено: ${result.skipped}\nОшибок: ${result.failed || 0}`);
+      }
+    } catch (error) {
+      console.error('Ошибка синхронизации:', error);
+      alert(`Ошибка синхронизации: ${error.message}`);
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
   const handleTouchStart = useCallback((e) => {
