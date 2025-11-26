@@ -193,12 +193,19 @@ export default function EmojiSettingsMobile({ open, onClose, onOpenMobileSidebar
             ...(token ? { Authorization: `Bearer ${token}` } : {})
           }
         });
-        const arr = getCustomEmojis();
-        arr.push({
-          name: res.data.name,
-          src: res.data.url
-        });
-        setCustomEmojis(arr);
+        // Сохраняем data URL перед загрузкой на сервер
+        const reader = new FileReader();
+        reader.onload = function (evt) {
+          const arr = getCustomEmojis();
+          arr.push({
+            name: res.data.name,
+            src: res.data.url,
+            dataUrl: evt.target.result // Сохраняем исходный data URL
+          });
+          setCustomEmojis(arr);
+          setCustomEmojisState(getCustomEmojis());
+        };
+        reader.readAsDataURL(newEmojiFile);
         setCustomEmojisState(getCustomEmojis());
         setNewEmojiFile(null);
         setNewEmojiName('');

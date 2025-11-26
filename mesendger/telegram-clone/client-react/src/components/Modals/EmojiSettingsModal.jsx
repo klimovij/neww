@@ -492,22 +492,33 @@ export default function EmojiSettingsModal({ open, onClose }) {
         formData.append('emoji', newEmojiFile);
         formData.append('name', newEmojiName.trim());
         const token = localStorage.getItem('token');
-        const res = await axios.post('/api/custom-emoji', formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-            ...(token ? { Authorization: `Bearer ${token}` } : {})
-          }
-        });
-        const arr = getCustomEmojis();
-        arr.push({
-          name: res.data.name,
-          src: res.data.url
-        });
-        setCustomEmojis(arr); // Сохраняем в localStorage
-        setCustomEmojisState(getCustomEmojis()); // Обновляем состояние из localStorage
-        setNewEmojiFile(null);
-        setNewEmojiName('');
-        setIsAdding(false);
+        // Сначала сохраняем data URL
+        const reader = new FileReader();
+        reader.onload = async function (evt) {
+          const dataUrl = evt.target.result;
+          
+          // Теперь загружаем на сервер
+          const res = await axios.post('/api/custom-emoji', formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+              ...(token ? { Authorization: `Bearer ${token}` } : {})
+            }
+          });
+          
+          // Сохраняем с серверным URL и исходным data URL
+          const arr = getCustomEmojis();
+          arr.push({
+            name: res.data.name,
+            src: res.data.url,
+            dataUrl: dataUrl // Сохраняем исходный data URL для будущих синхронизаций
+          });
+          setCustomEmojis(arr); // Сохраняем в localStorage
+          setCustomEmojisState(getCustomEmojis()); // Обновляем состояние из localStorage
+          setNewEmojiFile(null);
+          setNewEmojiName('');
+          setIsAdding(false);
+        };
+        reader.readAsDataURL(newEmojiFile);
       } catch (err) {
         alert('Ошибка загрузки эмодзи: ' + (err?.response?.data?.error || err.message));
         setIsAdding(false);
