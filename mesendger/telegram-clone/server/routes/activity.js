@@ -427,7 +427,12 @@ router.get('/activity-details', async (req, res) => {
         windowTitle: log.window_title || '',
         procName: log.proc_name || '',
       }))
-      .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+      .sort((a, b) => {
+        // Сортируем по времени (новые сверху, как для приложений)
+        const timeA = new Date(a.timestamp || 0).getTime();
+        const timeB = new Date(b.timestamp || 0).getTime();
+        return timeB - timeA; // Убывание (новые сверху)
+      });
     
     // Получаем приложения (программы) - только НЕ-браузеры без browser_url
     // Исключаем браузеры и записи с browser_url (они уже в разделе "Сайты")
