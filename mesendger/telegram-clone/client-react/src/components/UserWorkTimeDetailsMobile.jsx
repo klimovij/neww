@@ -149,7 +149,20 @@ export default function UserWorkTimeDetailsMobile({
       console.log('ℹ️ [UserWorkTimeDetailsMobile] Нет данных для applications, оставляем текущее состояние');
       // НЕ перезаписываем, если данных нет
     }
-    setLocalScreenshots(screenshots);
+    if (screenshots !== undefined && screenshots !== null) {
+      console.log('✅ [UserWorkTimeDetailsMobile] Устанавливаем screenshots из props:', screenshots.length);
+      if (screenshots.length > 0) {
+        console.log('📸 [UserWorkTimeDetailsMobile] Первые 3 скриншота из props:', screenshots.slice(0, 3).map(s => ({
+          id: s.id,
+          url: s.url,
+          filePath: s.filePath,
+          timestamp: s.timestamp
+        })));
+      }
+      setLocalScreenshots(screenshots);
+    } else {
+      console.log('ℹ️ [UserWorkTimeDetailsMobile] screenshots не передан в props, оставляем текущее состояние');
+    }
     setLocalActivityStats(activityStats);
   }, [urls, applications, screenshots, activityStats]);
 

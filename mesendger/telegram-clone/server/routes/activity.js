@@ -610,8 +610,10 @@ router.get('/activity-details', async (req, res) => {
         id: s.id,
         url: s.url,
         filePath: s.filePath,
-        timestamp: s.timestamp
+        timestamp: s.timestamp,
+        fileSize: s.fileSize
       })));
+      console.log(`📸 [activity-details] Всего скриншотов в ответе: ${screenshotsWithUrl.length}`);
     } else {
       console.warn(`  ⚠️ [activity-details] ПУСТОЙ МАССИВ СКРИНШОТОВ В ОТВЕТЕ!`);
       console.warn(`  ⚠️ [activity-details] Проверка: screenshots из БД = ${screenshots?.length || 0}, screenshotsWithUrl = ${screenshotsWithUrl?.length || 0}`);
