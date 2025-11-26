@@ -545,6 +545,42 @@ export default function EmojiSettingsMobile({ open, onClose, onOpenMobileSidebar
                 Загружать эмодзи на сервер (рекомендуется)
               </label>
             </form>
+            
+            {/* Кнопка синхронизации */}
+            <div style={{ marginTop: '15px', marginBottom: '20px' }}>
+              <button
+                onClick={handleSyncEmojis}
+                disabled={isSyncing}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  padding: '12px 16px',
+                  background: isSyncing ? '#6c757d' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: isSyncing ? 'not-allowed' : 'pointer',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  transition: 'all 0.2s',
+                  opacity: isSyncing ? 0.7 : 1,
+                  width: '100%',
+                  boxShadow: isSyncing ? 'none' : '0 2px 8px rgba(102, 126, 234, 0.3)'
+                }}
+                title="Синхронизировать локальные эмодзи с сервером (загрузить те, которых нет на сервере)"
+              >
+                <FiRefreshCw style={{ animation: isSyncing ? 'spin 1s linear infinite' : 'none', fontSize: '16px' }} />
+                {isSyncing ? 'Синхронизация...' : 'Синхронизировать с сервером'}
+              </button>
+              <style>{`
+                @keyframes spin {
+                  from { transform: rotate(0deg); }
+                  to { transform: rotate(360deg); }
+                }
+              `}</style>
+            </div>
 
             {/* Standard Emojis Section */}
             {visibleStandardItems.length > 0 && (
