@@ -197,18 +197,9 @@ async function getDbShortReport({ start, end, username }) {
 
 // API: /api/quick-db-report?start=YYYY-MM-DD&end=YYYY-MM-DD&username=...
 router.get('/quick-db-report', async (req, res) => {
-  // СРАЗУ пишем в файл, чтобы убедиться, что обработчик вызывается
-  const fs = require('fs');
-  const path = require('path');
-  const debugFile = path.join(__dirname, '../../QUICK_DB_REPORT_DEBUG.txt');
-  try {
-    fs.appendFileSync(debugFile, `[${new Date().toISOString()}] HANDLER CALLED: ${JSON.stringify(req.query)}\n`);
-  } catch (e) {}
-  
-  // Логируем ВСЁ, что происходит - принудительно выводим в stderr
-  process.stderr.write(`🚀 [quick-db-report] ПОЛУЧЕН ЗАПРОС: ${JSON.stringify(req.query)}\n`);
-  console.error(`🚀 [quick-db-report] ПОЛУЧЕН ЗАПРОС (stderr):`, req.query);
-  console.log(`🚀 [quick-db-report] ПОЛУЧЕН ЗАПРОС (stdout):`, req.query);
+  // ПРИНУДИТЕЛЬНОЕ логирование - БЕЗ файлов, только в stderr
+  process.stderr.write(`\n🚨🚨🚨 [quick-db-report] HANDLER CALLED! Query: ${JSON.stringify(req.query)}\n`);
+  console.error(`\n🚨🚨🚨 [quick-db-report] HANDLER CALLED! Query:`, req.query);
   
   try {
     let { start, end, username } = req.query;
