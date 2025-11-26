@@ -826,6 +826,8 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
           }}
           formatTime={formatTime}
           onFetchReport={fetchLocalReport}
+          onDeleteByDateRange={handleDeleteByDateRange}
+          onDeleteByPeriod={handleDeleteByPeriod}
         />
       )}
 
@@ -913,7 +915,9 @@ function LocalWorktimeReportModalMobile({
   showAutocomplete,
   onSelectUser,
   formatTime,
-  onFetchReport
+  onFetchReport,
+  onDeleteByDateRange,
+  onDeleteByPeriod
 }) {
   const modalRef = useRef(null);
   const touchStartX = useRef(null);
@@ -1149,8 +1153,8 @@ function LocalWorktimeReportModalMobile({
                 )}
               </div>
 
-              {/* Кнопка "Показать отчет" */}
-              <div style={{ marginBottom: '20px' }}>
+              {/* Кнопки действий */}
+              <div style={{ marginBottom: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <button
                   onClick={() => {
                     console.log('🔘 [LocalWorktimeReportModalMobile] Кнопка "Показать отчет" нажата');
@@ -1195,6 +1199,92 @@ function LocalWorktimeReportModalMobile({
                     'Показать отчет'
                   )}
                 </button>
+
+                {/* Кнопка удаления за выбранный период */}
+                <button
+                  onClick={() => {
+                    if (!startDate || !endDate) {
+                      alert('Выберите период дат для удаления');
+                      return;
+                    }
+                    if (window.confirm(`Вы уверены, что хотите удалить все данные активности за период с ${startDate} по ${endDate}? Это действие нельзя отменить.`)) {
+                      onDeleteByDateRange && onDeleteByDateRange(startDate, endDate);
+                    }
+                  }}
+                  disabled={loading || !startDate || !endDate}
+                  style={{
+                    width: '100%',
+                    padding: '14px',
+                    borderRadius: '12px',
+                    border: '2px solid rgba(231, 76, 60, 0.5)',
+                    background: loading || !startDate || !endDate
+                      ? 'rgba(231, 76, 60, 0.3)'
+                      : 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)',
+                    color: '#fff',
+                    cursor: loading || !startDate || !endDate ? 'not-allowed' : 'pointer',
+                    fontWeight: 600,
+                    fontSize: '15px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    opacity: loading || !startDate || !endDate ? 0.6 : 1,
+                  }}
+                >
+                  🗑️ Удалить за период
+                </button>
+
+                {/* Быстрые кнопки удаления */}
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button
+                    onClick={() => {
+                      if (window.confirm('Вы уверены, что хотите удалить все данные активности за последнюю неделю? Это действие нельзя отменить.')) {
+                        onDeleteByPeriod && onDeleteByPeriod('week');
+                      }
+                    }}
+                    disabled={loading}
+                    style={{
+                      flex: 1,
+                      padding: '12px',
+                      borderRadius: '12px',
+                      border: '2px solid rgba(231, 76, 60, 0.5)',
+                      background: loading
+                        ? 'rgba(231, 76, 60, 0.3)'
+                        : 'rgba(231, 76, 60, 0.2)',
+                      color: '#fff',
+                      cursor: loading ? 'not-allowed' : 'pointer',
+                      fontWeight: 600,
+                      fontSize: '14px',
+                      opacity: loading ? 0.6 : 1,
+                    }}
+                  >
+                    🗑️ За неделю
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (window.confirm('Вы уверены, что хотите удалить все данные активности за последний месяц? Это действие нельзя отменить.')) {
+                        onDeleteByPeriod && onDeleteByPeriod('month');
+                      }
+                    }}
+                    disabled={loading}
+                    style={{
+                      flex: 1,
+                      padding: '12px',
+                      borderRadius: '12px',
+                      border: '2px solid rgba(231, 76, 60, 0.5)',
+                      background: loading
+                        ? 'rgba(231, 76, 60, 0.3)'
+                        : 'rgba(231, 76, 60, 0.2)',
+                      color: '#fff',
+                      cursor: loading ? 'not-allowed' : 'pointer',
+                      fontWeight: 600,
+                      fontSize: '14px',
+                      opacity: loading ? 0.6 : 1,
+                    }}
+                  >
+                    🗑️ За месяц
+                  </button>
+                </div>
               </div>
 
               {/* Таблица */}

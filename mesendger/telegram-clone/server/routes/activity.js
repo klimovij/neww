@@ -4,6 +4,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const db = require('../database');
+const authenticateToken = require('../middleware/authenticateToken');
 
 // Настройка multer для скриншотов
 const screenshotsDir = path.join(__dirname, '../uploads/screenshots');
@@ -583,40 +584,54 @@ router.get('/activity-details', async (req, res) => {
 });
 
 // Endpoint для очистки данных активности
-router.delete('/activity-logs/clear', async (req, res) => {
+router.delete('/activity-logs/clear', authenticateToken, async (req, res) => {
+  console.log('🗑️ [activity-logs/clear] Request received to clear activity logs.');
   try {
-    const { period } = req.body; // 'day', 'week', 'month'
+    const { period, start, end } = req.body; // period: 'day', 'week', 'month' ИЛИ start/end: 'YYYY-MM-DD'
+    const user = req.user; // Получаем пользователя из токена
     
-    if (!period || !['day', 'week', 'month'].includes(period)) {
+    // Проверка прав: только HR или Admin могут очищать данные
+    if (!user || (user.role !== 'hr' && user.role !== 'admin')) {
+      console.warn(`🚫 [activity-logs/clear] Пользователь ${user?.username} (роль: ${user?.role}) попытался очистить логи без прав.`);
+      return res.status(403).json({ success: false, error: 'Недостаточно прав для выполнения операции' });
+    }
+    
+    // Проверяем, что передан либо period, либо start/end
+    if (!period && (!start || !end)) {
       return res.status(400).json({ 
         success: false, 
-        error: 'Invalid period. Use: day, week, or month' 
+        error: 'Необходимо указать либо period (day/week/month), либо start и end (YYYY-MM-DD)' 
       });
     }
     
-    // Проверяем права доступа (только HR и админ)
-    const token = req.headers.authorization?.replace('Bearer ', '');
-    if (!token) {
-      return res.status(401).json({ success: false, error: 'Unauthorized' });
+    if (period && !['day', 'week', 'month'].includes(period)) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Неверный период. Допустимые значения: day, week, month.' 
+      });
     }
     
-    const user = await db.getUserByToken(token);
-    if (!user || (user.role !== 'hr' && user.role !== 'admin')) {
-      return res.status(403).json({ success: false, error: 'Forbidden. Only HR and admin can clear activity data' });
+    console.log(`🗑️ [activity-logs/clear] Пользователь ${user.username} (роль: ${user.role}) очищает логи:`, { period, start, end });
+    const deletedCount = await db.deleteActivityLogs({ period, start, end });
+    console.log(`✅ [activity-logs/clear] Удалено ${deletedCount} записей активности`);
+    
+    let message;
+    if (period) {
+      message = `Удалено ${deletedCount} записей активности за ${period === 'day' ? 'день' : period === 'week' ? 'неделю' : 'месяц'}`;
+    } else {
+      message = `Удалено ${deletedCount} записей активности за период с ${start} по ${end}`;
     }
-    
-    const deletedCount = await db.deleteActivityLogs({ period });
-    
-    console.log(`🗑️ [activity-logs/clear] User ${user.username} cleared ${deletedCount} activity logs (period: ${period})`);
     
     res.json({ 
       success: true, 
       deletedCount,
       period,
-      message: `Удалено ${deletedCount} записей активности за ${period === 'day' ? 'день' : period === 'week' ? 'неделю' : 'месяц'}`
+      start,
+      end,
+      message
     });
   } catch (error) {
-    console.error('❌ Error clearing activity logs:', error);
+    console.error('❌ [activity-logs/clear] Ошибка при очистке логов активности:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });

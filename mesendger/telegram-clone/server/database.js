@@ -2326,40 +2326,93 @@ class Database {
       });
     }
 
-    async deleteActivityLogs({ period }) {
-      // period: 'day', 'week', 'month'
+    async deleteActivityLogs({ period, start, end }) {
+      // period: 'day', 'week', 'month' (для быстрого удаления)
+      // start, end: конкретные даты в формате 'YYYY-MM-DD' (для удаления по диапазону)
       return new Promise((resolve, reject) => {
-        const now = new Date();
-        let cutoffDate = new Date();
+        let startDate, endDate;
         
-        switch (period) {
-          case 'day':
-            cutoffDate.setDate(now.getDate() - 1);
-            break;
-          case 'week':
-            cutoffDate.setDate(now.getDate() - 7);
-            break;
-          case 'month':
-            cutoffDate.setMonth(now.getMonth() - 1);
-            break;
-          default:
-            return reject(new Error('Invalid period. Use: day, week, or month'));
+        if (start && end) {
+          // Удаление по конкретному диапазону дат
+          startDate = new Date(start + 'T00:00:00.000Z');
+          endDate = new Date(end + 'T23:59:59.999Z');
+        } else if (period) {
+          // Быстрое удаление по периоду
+          const now = new Date();
+          let cutoffDate = new Date();
+          
+          switch (period) {
+            case 'day':
+              cutoffDate.setDate(now.getDate() - 1);
+              break;
+            case 'week':
+              cutoffDate.setDate(now.getDate() - 7);
+              break;
+            case 'month':
+              cutoffDate.setMonth(now.getMonth() - 1);
+              break;
+            default:
+              return reject(new Error('Invalid period. Use: day, week, or month'));
+          }
+          
+          startDate = null;
+          endDate = cutoffDate;
+        } else {
+          return reject(new Error('Either period or start/end dates must be provided'));
         }
         
-        const cutoffISO = cutoffDate.toISOString();
-        
-        this.db.run(
-          'DELETE FROM activity_logs WHERE timestamp < ?',
-          [cutoffISO],
-          function(err) {
+        this.db.serialize(() => {
+          this.db.run('BEGIN TRANSACTION');
+          
+          let query, params;
+          if (start && end) {
+            // Удаление по диапазону дат
+            query = 'DELETE FROM activity_logs WHERE timestamp >= ? AND timestamp <= ?';
+            params = [startDate.toISOString(), endDate.toISOString()];
+          } else {
+            // Удаление до определенной даты
+            query = 'DELETE FROM activity_logs WHERE timestamp < ?';
+            params = [endDate.toISOString()];
+          }
+          
+          // Удаляем из activity_logs
+          this.db.run(query, params, (err) => {
             if (err) {
+              this.db.run('ROLLBACK');
               console.error('❌ Error deleting activity logs:', err);
               return reject(err);
             }
-            console.log(`✅ Deleted activity logs older than ${period} (before ${cutoffISO}). Deleted rows: ${this.changes}`);
-            resolve(this.changes);
-          }
-        );
+            const deletedActivityCount = this.changes;
+            console.log(`✅ Deleted ${deletedActivityCount} activity logs`);
+            
+            // Также удаляем скриншоты за тот же период
+            let screenshotQuery, screenshotParams;
+            if (start && end) {
+              screenshotQuery = 'DELETE FROM activity_screenshots WHERE timestamp >= ? AND timestamp <= ?';
+              screenshotParams = [startDate.toISOString(), endDate.toISOString()];
+            } else {
+              screenshotQuery = 'DELETE FROM activity_screenshots WHERE timestamp < ?';
+              screenshotParams = [endDate.toISOString()];
+            }
+            
+            this.db.run(screenshotQuery, screenshotParams, (err) => {
+              if (err) {
+                this.db.run('ROLLBACK');
+                console.error('❌ Error deleting activity screenshots:', err);
+                return reject(err);
+              }
+              const deletedScreenshotsCount = this.changes;
+              console.log(`✅ Deleted ${deletedScreenshotsCount} activity screenshots`);
+              
+              this.db.run('COMMIT', (commitErr) => {
+                if (commitErr) return reject(commitErr);
+                const totalDeleted = deletedActivityCount + deletedScreenshotsCount;
+                console.log(`✅ Total deleted: ${totalDeleted} records (${deletedActivityCount} logs + ${deletedScreenshotsCount} screenshots)`);
+                resolve(totalDeleted);
+              });
+            });
+          });
+        });
       });
     }
 
