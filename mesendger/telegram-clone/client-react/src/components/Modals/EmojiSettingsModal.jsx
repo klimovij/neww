@@ -366,7 +366,6 @@ export default function EmojiSettingsModal({ open, onClose }) {
   const [stdSelectedKeys, setStdSelectedKeys] = useState(new Set());
   const [blacklist, setBlacklist] = useState(getEmojiBlacklist());
   const [isSyncing, setIsSyncing] = useState(false);
-  const [isSyncing, setIsSyncing] = useState(false);
 
   useEffect(() => {
     // Загружаем сохраненные настройки из localStorage
