@@ -48,14 +48,23 @@ export async function syncEmojisToServer(force = false) {
     // Получаем список эмодзи с сервера
     const serverEmojis = await loadEmojisFromServer();
     const serverNames = new Set(serverEmojis.map(e => e.name));
+    const serverUrls = new Set(serverEmojis.map(e => e.url));
     console.log('📋 Эмодзи на сервере:', serverEmojis.length);
 
     // Фильтруем эмодзи, которых нет на сервере
     const emojisToSync = localEmojis.filter(emoji => {
       // Пропускаем эмодзи, которые уже есть на сервере (если не принудительная синхронизация)
       if (!force && serverNames.has(emoji.name)) {
-        console.log(`⏭️ Пропуск эмодзи "${emoji.name}" - уже есть на сервере`);
-        return false;
+        // Проверяем, действительно ли файл существует на сервере
+        const serverEmoji = serverEmojis.find(e => e.name === emoji.name);
+        if (serverEmoji && serverUrls.has(emoji.src)) {
+          console.log(`⏭️ Пропуск эмодзи "${emoji.name}" - уже есть на сервере`);
+          return false;
+        } else {
+          // Имя есть, но URL не совпадает или файла нет - нужно перезагрузить
+          console.log(`🔄 Эмодзи "${emoji.name}" будет перезагружено (файл отсутствует или URL не совпадает)`);
+          return true;
+        }
       }
       
       // Пропускаем эмодзи с data URL (base64) - их нужно загрузить на сервер
@@ -67,6 +76,12 @@ export async function syncEmojisToServer(force = false) {
       // Пропускаем эмодзи с относительными путями (локальные файлы)
       if (emoji.src && !emoji.src.startsWith('http') && !emoji.src.startsWith('/uploads/')) {
         console.log(`✅ Эмодзи "${emoji.name}" будет загружено (локальный путь: ${emoji.src.substring(0, 50)}...)`);
+        return true;
+      }
+      
+      // Если эмодзи имеет путь /uploads/emojis/, но его нет в списке сервера - нужно загрузить
+      if (emoji.src && emoji.src.startsWith('/uploads/emojis/') && !serverUrls.has(emoji.src)) {
+        console.log(`🔄 Эмодзи "${emoji.name}" будет перезагружено (файл отсутствует на сервере: ${emoji.src})`);
         return true;
       }
       
