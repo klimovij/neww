@@ -765,34 +765,109 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
         }} 
       />
       
-      {/* Модалка локального отчета */}
-      {console.log('🔍 [WorkTimeMobile] Рендер модалки локального отчета, showLocalReport =', showLocalReport)}
-      {showLocalReport && ReactDOM.createPortal(
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'rgba(0, 0, 0, 0.8)',
-            zIndex: 10004,
-            display: showLocalReport ? 'flex' : 'none',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '20px',
+      {/* Модалка локального отчета - рендерится вне основного портала */}
+      {showLocalReport && (
+        <LocalWorktimeReportModalMobile
+          open={showLocalReport}
+          onClose={() => {
+            console.log('🔴 [WorkTimeMobile] Закрываем модалку локального отчета');
+            setShowLocalReport(false);
+            setLocalReportUsers([]);
+            setLocalReportSearchTerm('');
           }}
-          onClick={(e) => {
-            if (e.target === e.currentTarget) {
-              setShowLocalReport(false);
-              setLocalReportUsers([]);
-              setLocalReportSearchTerm('');
-            }
+          startDate={localReportStartDate}
+          endDate={localReportEndDate}
+          onStartDateChange={setLocalReportStartDate}
+          onEndDateChange={setLocalReportEndDate}
+          searchTerm={localReportSearchTerm}
+          onSearchChange={handleLocalReportSearchChange}
+          users={filteredLocalReportUsers}
+          loading={loadingLocalReport}
+          onUserClick={handleOpenLocalUserDetails}
+          userOptions={localReportUserOptions}
+          showAutocomplete={localReportShowAutocomplete}
+          onSelectUser={(user) => {
+            setLocalReportSearchTerm(user);
+            setLocalReportShowAutocomplete(false);
           }}
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-        >
+          formatTime={formatTime}
+        />
+      )}
+    </>
+  );
+}
+
+// Модалка локального отчета - отдельный компонент
+function LocalWorktimeReportModalMobile({ 
+  open, 
+  onClose, 
+  startDate, 
+  endDate, 
+  onStartDateChange, 
+  onEndDateChange,
+  searchTerm,
+  onSearchChange,
+  users,
+  loading,
+  onUserClick,
+  userOptions,
+  showAutocomplete,
+  onSelectUser,
+  formatTime
+}) {
+  const modalRef = useRef(null);
+  const touchStartX = useRef(null);
+  const touchEndX = useRef(null);
+
+  const handleTouchStart = (e) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchMove = (e) => {
+    touchEndX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStartX.current || !touchEndX.current) return;
+    const distance = touchStartX.current - touchEndX.current;
+    if (distance > 50) {
+      onClose();
+    }
+    touchStartX.current = null;
+    touchEndX.current = null;
+  };
+
+  if (!open) {
+    console.log('🚫 [LocalWorktimeReportModalMobile] Модалка закрыта, не рендерим');
+    return null;
+  }
+
+  console.log('✅ [LocalWorktimeReportModalMobile] Рендерим модалку локального отчета');
+
+  return ReactDOM.createPortal(
+    <div
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: 'rgba(0, 0, 0, 0.8)',
+        zIndex: 10004,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '20px',
+      }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
           <div
             ref={modalRef}
             style={{
@@ -829,11 +904,7 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
                 Отчет активности локальных ПК
               </h2>
               <button
-                onClick={() => {
-                  setShowLocalReport(false);
-                  setLocalReportUsers([]);
-                  setLocalReportSearchTerm('');
-                }}
+                onClick={onClose}
                 style={{
                   background: 'rgba(255, 255, 255, 0.2)',
                   border: 'none',
@@ -864,8 +935,8 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
                   </label>
                   <input
                     type="date"
-                    value={localReportStartDate}
-                    onChange={e => setLocalReportStartDate(e.target.value)}
+                    value={startDate}
+                    onChange={e => onStartDateChange(e.target.value)}
                     style={{
                       width: '100%',
                       padding: '12px',
@@ -889,8 +960,8 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
                   </label>
                   <input
                     type="date"
-                    value={localReportEndDate}
-                    onChange={e => setLocalReportEndDate(e.target.value)}
+                    value={endDate}
+                    onChange={e => onEndDateChange(e.target.value)}
                     style={{
                       width: '100%',
                       padding: '12px',
@@ -918,10 +989,10 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
                 <input
                   type="text"
                   placeholder="Введите имя..."
-                  value={localReportSearchTerm}
-                  onChange={handleLocalReportSearchChange}
-                  onFocus={() => setLocalReportShowAutocomplete(true)}
-                  onBlur={() => setTimeout(() => setLocalReportShowAutocomplete(false), 150)}
+                  value={searchTerm}
+                  onChange={onSearchChange}
+                  onFocus={() => {}}
+                  onBlur={() => {}}
                   style={{
                     width: '100%',
                     padding: '12px 40px 12px 12px',
@@ -942,7 +1013,7 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
                     pointerEvents: 'none',
                   }}
                 />
-                {localReportShowAutocomplete && localReportUserOptions.length > 0 && (
+                {showAutocomplete && userOptions && userOptions.length > 0 && (
                   <div style={{
                     position: 'absolute',
                     top: '100%',
@@ -956,17 +1027,16 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
                     overflowY: 'auto',
                     marginTop: '6px',
                   }}>
-                    {localReportUserOptions.map((u, i) => (
+                    {userOptions.map((u, i) => (
                       <div
                         key={u + i}
                         onMouseDown={() => {
-                          setLocalReportSearchTerm(u);
-                          setLocalReportShowAutocomplete(false);
+                          onSelectUser(u);
                         }}
                         style={{
                           padding: '12px 16px',
                           cursor: 'pointer',
-                          borderBottom: i < localReportUserOptions.length - 1 ? '1px solid rgba(255, 255, 255, 0.1)' : 'none',
+                          borderBottom: i < userOptions.length - 1 ? '1px solid rgba(255, 255, 255, 0.1)' : 'none',
                           color: '#fff',
                           fontSize: '14px',
                         }}
@@ -979,17 +1049,17 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
               </div>
 
               {/* Таблица */}
-              {loadingLocalReport ? (
+              {loading ? (
                 <div style={{ textAlign: 'center', padding: '40px', color: '#ffe082' }}>
                   Загрузка...
                 </div>
-              ) : filteredLocalReportUsers.length === 0 ? (
+              ) : !users || users.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '40px', color: 'rgba(255, 255, 255, 0.5)' }}>
                   Нет данных за выбранный период
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {filteredLocalReportUsers.map((row, idx) => {
+                  {users.map((row, idx) => {
                     const displayName = row.fio && !row.fio.includes('?') && row.fio.trim() ? row.fio : (row.username || 'Неизвестный');
                     return (
                       <div
@@ -1017,7 +1087,7 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
                           </h3>
                           <button
                             type="button"
-                            onClick={() => handleOpenLocalUserDetails(row)}
+                            onClick={() => onUserClick(row)}
                             style={{
                               padding: '8px 16px',
                               borderRadius: '10px',
