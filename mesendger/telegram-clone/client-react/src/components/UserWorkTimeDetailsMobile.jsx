@@ -768,6 +768,13 @@ export default function UserWorkTimeDetailsMobile({
           {/* Таб: Приложения */}
           {activeTab === 'applications' && (() => {
             console.log('📱 [UserWorkTimeDetailsMobile] Рендер вкладки Приложения, activeTab:', activeTab, 'localApplications:', localApplications?.length || 0);
+            console.log('📱 [UserWorkTimeDetailsMobile] ВСЕ localApplications:', localApplications);
+            if (localApplications && localApplications.length > 0) {
+              console.log('📱 [UserWorkTimeDetailsMobile] Всего приложений для отображения:', localApplications.length);
+              localApplications.forEach((app, idx) => {
+                console.log(`  [${idx}] ${app.procName || 'NO procName'} - timestamp: ${app.timestamp || 'NO timestamp'}`);
+              });
+            }
             return (
             <div style={{ 
               display: 'flex', 
@@ -791,9 +798,12 @@ export default function UserWorkTimeDetailsMobile({
                   overflowY: 'auto',
                   paddingRight: '4px',
                 }}>
-                  {localApplications.map((app, idx) => (
+                  {localApplications.map((app, idx) => {
+                    // Уникальный ключ: используем комбинацию procName и индекса, чтобы избежать дубликатов
+                    const uniqueKey = `app-${idx}-${app.procName || 'unknown'}-${app.timestamp || Date.now()}`;
+                    return (
                     <div
-                      key={`app-${app.timestamp || idx}-${app.procName || idx}`}
+                      key={uniqueKey}
                       style={{
                         background: 'rgba(255, 255, 255, 0.05)',
                         borderRadius: '12px',
@@ -836,7 +846,8 @@ export default function UserWorkTimeDetailsMobile({
                         </div>
                       )}
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
