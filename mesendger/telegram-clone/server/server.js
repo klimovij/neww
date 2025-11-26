@@ -514,14 +514,8 @@ try {
   // Middleware для логирования ВСЕХ запросов к /api
   app.use('/api', (req, res, next) => {
     if (req.path === '/quick-db-report') {
-      const fs = require('fs');
-      const logFile = '/tmp/quick-db-report-middleware.log';
-      const logMsg = `[${new Date().toISOString()}] MIDDLEWARE: ${req.method} ${req.path} ${JSON.stringify(req.query)}\n`;
-      try {
-        fs.appendFileSync(logFile, logMsg);
-      } catch (e) {}
-      process.stderr.write(`🔍 [MIDDLEWARE] Запрос: ${req.method} ${req.path} ${JSON.stringify(req.query)}\n`);
-      console.error(`🔍 [MIDDLEWARE] Запрос:`, req.method, req.path, req.query);
+      process.stderr.write(`\n🔍🔍🔍 [MIDDLEWARE] Запрос к /quick-db-report: ${req.method} ${req.path} ${JSON.stringify(req.query)}\n`);
+      console.error(`\n🔍🔍🔍 [MIDDLEWARE] Запрос к /quick-db-report:`, req.method, req.path, req.query);
     }
     next();
   });
