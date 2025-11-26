@@ -773,6 +773,14 @@ export default function UserWorkTimeDetailsMobile({
               console.log('📱 [UserWorkTimeDetailsMobile] Всего приложений для отображения:', localApplications.length);
               localApplications.forEach((app, idx) => {
                 console.log(`  [${idx}] ${app.procName || 'NO procName'} - timestamp: ${app.timestamp || 'NO timestamp'}`);
+                if (app.procName && (app.procName.toLowerCase().includes('telegram') || app.procName.toLowerCase().includes('viber'))) {
+                  console.log(`  🔍 [${idx}] МЕССЕНДЖЕР ${app.procName}:`, {
+                    procName: app.procName,
+                    windowTitle: app.windowTitle,
+                    hasWindowTitle: !!app.windowTitle,
+                    windowTitleLength: app.windowTitle?.length || 0
+                  });
+                }
               });
             }
             return (
@@ -857,6 +865,17 @@ export default function UserWorkTimeDetailsMobile({
                         );
                         // Показываем windowTitle если он отличается от procName ИЛИ это мессенджер
                         const shouldShow = isMessenger || app.windowTitle !== app.procName;
+                        
+                        // Логирование для отладки мессенджеров
+                        if (isMessenger) {
+                          console.log(`🔍 [UserWorkTimeDetailsMobile] Рендер мессенджера ${app.procName}:`, {
+                            procName: app.procName,
+                            windowTitle: app.windowTitle,
+                            shouldShow,
+                            isMessenger
+                          });
+                        }
+                        
                         return shouldShow ? (
                           <div style={{
                             color: 'rgba(255, 255, 255, 0.7)',
