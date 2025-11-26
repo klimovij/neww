@@ -119,11 +119,12 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
           setLoading(true);
           try {
             // Сервер сам расширяет диапазон для учёта часового пояса
-            let url = `/api/quick-db-report?start=${startDate}&end=${endDate}`;
+            // Используем endpoint для ЛОКАЛЬНЫХ данных
+            let url = `/api/local-worktime-report?start=${startDate}&end=${endDate}`;
             if (selectedUser) url += `&username=${encodeURIComponent(selectedUser)}`;
             const res = await fetch(url);
             const data = await res.json();
-            console.log('📊 [WorkTimeMobile] Данные из quick-db-report (автозагрузка):', data);
+            console.log('📊 [WorkTimeMobile] Данные из local-worktime-report (локальные, автозагрузка):', data);
             if (data.report && data.report.length > 0) {
               console.log('📊 [WorkTimeMobile] Первый элемент отчёта:', JSON.stringify(data.report[0], null, 2));
               console.log('📊 [WorkTimeMobile] FIO:', data.report[0].fio, 'Username:', data.report[0].username);
@@ -171,11 +172,12 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
     setLoading(true);
     try {
       // Сервер сам расширяет диапазон для учёта часового пояса
-      let url = `/api/quick-db-report?start=${startDate}&end=${endDate}`;
+      // Используем endpoint для ЛОКАЛЬНЫХ данных
+      let url = `/api/local-worktime-report?start=${startDate}&end=${endDate}`;
       if (selectedUser) url += `&username=${encodeURIComponent(selectedUser)}`;
       const res = await fetch(url);
       const data = await res.json();
-      console.log('📊 [WorkTimeMobile] Данные из quick-db-report:', data);
+      console.log('📊 [WorkTimeMobile] Данные из local-worktime-report (локальные):', data);
       if (data.report && data.report.length > 0) {
         console.log('📊 [WorkTimeMobile] Первый элемент отчёта:', JSON.stringify(data.report[0], null, 2));
         console.log('📊 [WorkTimeMobile] FIO:', data.report[0].fio, 'Username:', data.report[0].username, 'Sessions:', data.report[0].sessions?.length || 0);

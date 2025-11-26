@@ -176,12 +176,13 @@ function WorkTimeReportModal({ isOpen, onRequestClose }) {
   const fetchReport = async () => {
     setLoading(true);
     try {
-      let url = `/api/quick-db-report?start=${startDate}&end=${endDate}`;
+      // Используем endpoint для ЛОКАЛЬНЫХ данных (work_time_logs + activity_logs)
+      let url = `/api/local-worktime-report?start=${startDate}&end=${endDate}`;
       if (selectedUser) url += `&username=${encodeURIComponent(selectedUser)}`;
       const res = await fetch(url);
       const data = await res.json();
-      // Новый API возвращает { report: [...] }
-      console.log('Данные из quick-db-report:', data);
+      // API возвращает { report: [...] }
+      console.log('Данные из local-worktime-report (локальные):', data);
       setLogs(Array.isArray(data.report) ? data.report : []);
     } catch {
       setLogs([]);

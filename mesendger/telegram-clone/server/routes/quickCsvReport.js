@@ -28,7 +28,212 @@ router.post('/import-worktime-json', async (req, res) => {
   }
 });
 
+// Генерация отчёта для ЛОКАЛЬНЫХ пользователей: work_time_logs + activity_logs
+async function getLocalWorkTimeReport({ start, end, username }) {
+  const fs = require('fs');
+  const path = require('path');
+  const logFiles = [
+    '/tmp/quick-db-report-debug.log',
+    '/var/tmp/quick-db-report-debug.log',
+    path.join(__dirname, '../../quick-db-report-debug.log')
+  ];
+  
+  const logMsg = (msg) => {
+    const timestamp = new Date().toISOString();
+    const line = `[${timestamp}] ${msg}\n`;
+    for (const logFile of logFiles) {
+      try {
+        fs.appendFileSync(logFile, line, { mode: 0o666 });
+      } catch (e) {}
+    }
+    console.log(`📊 [getLocalWorkTimeReport] ${msg}`);
+  };
+  
+  logMsg(`=== НАЧАЛО getLocalWorkTimeReport (ЛОКАЛЬНЫЕ данные) ===`);
+  logMsg(`Запрос данных: start=${start}, end=${end}, username=${username || 'all'}`);
+  
+  // ТОЛЬКО локальные данные: work_time_logs (от агента включения/выключения)
+  const periodLogs = await db.getWorkTimeLogs({ start, end, username });
+  logMsg(`work_time_logs (локальные): ${periodLogs?.length || 0} записей`);
+  
+  // Также получаем пользователей из activity_logs (от агента активности)
+  const activityLogs = await db.getActivityLogsBetween({ start, end });
+  logMsg(`activity_logs (локальные): ${activityLogs?.length || 0} записей`);
+  
+  const activityUsers = {};
+  for (const log of activityLogs) {
+    if (!log.username) continue;
+    if (username && log.username !== username) continue;
+    activityUsers[log.username] = true;
+  }
+  logMsg(`Уникальных пользователей в activity_logs: ${Object.keys(activityUsers).length}`);
+  
+  // ТОЛЬКО локальные логи (БЕЗ remote_work_time_logs)
+  const allLogs = periodLogs;
+  
+  const userMap = {};
+  for (const log of allLogs) {
+    if (!log.username) continue;
+    userMap[log.username] = userMap[log.username] || [];
+    userMap[log.username].push(log);
+  }
+  
+  // Добавляем пользователей из activity_logs, у которых нет login/logout, но есть активность
+  for (const activityUser of Object.keys(activityUsers)) {
+    if (!userMap[activityUser]) {
+      userMap[activityUser] = [];
+    }
+  }
+  
+  const report = [];
+  logMsg(`Всего локальных пользователей: ${Object.keys(userMap).length}`);
+  
+  for (const [user, sessions] of Object.entries(userMap)) {
+    if (!user || (!sessions.length && !activityUsers[user])) {
+      continue;
+    }
+    
+    let displayName = user;
+    try {
+      let userRow = await db.getUserByUsername(user);
+      if (!userRow) {
+        const allUsers = await db.getAllUsers();
+        const usersWithEmptyUsername = allUsers.filter(u => !u.username || u.username === '');
+        if (usersWithEmptyUsername.length === 1 && usersWithEmptyUsername[0].fio) {
+          userRow = usersWithEmptyUsername[0];
+        }
+      }
+      if (userRow) {
+        displayName = userRow.fio || userRow.full_name || userRow.name || userRow.username || user;
+      }
+    } catch (e) {
+      displayName = user;
+    }
+    
+    sessions.sort((a, b) => new Date(a.event_time) - new Date(b.event_time));
+    const firstLogin = sessions.find(e => e.event_type === 'login');
+    const lastLogout = [...sessions].reverse().find(e => e.event_type === 'logout');
+    
+    let totalHours = 0;
+    let totalMinutes = 0;
+    let totalTimeStr = '';
+    
+    if (firstLogin && lastLogout) {
+      const diffMs = new Date(lastLogout.event_time) - new Date(firstLogin.event_time);
+      totalHours = Math.floor(diffMs / 3600000);
+      totalMinutes = Math.floor((diffMs % 3600000) / 60000);
+      totalTimeStr = `${totalHours} ч ${totalMinutes} мин`;
+    }
+    
+    report.push({
+      username: user,
+      fio: displayName,
+      firstLogin: firstLogin ? firstLogin.event_time : '',
+      lastLogout: lastLogout ? lastLogout.event_time : '',
+      totalHours: firstLogin && lastLogout ? 
+        Number(((new Date(lastLogout.event_time) - new Date(firstLogin.event_time)) / 3600000).toFixed(1)) : 0,
+      totalTimeStr,
+      sessions: sessions || []
+    });
+  }
+  
+  logMsg(`Итоговый локальный отчёт содержит ${report.length} пользователей`);
+  return report;
+}
+
+// Генерация отчёта для УДАЛЕННЫХ пользователей: только remote_work_time_logs
+async function getRemoteWorkTimeReport({ start, end, username }) {
+  const fs = require('fs');
+  const path = require('path');
+  const logFiles = [
+    '/tmp/quick-db-report-debug.log',
+    '/var/tmp/quick-db-report-debug.log',
+    path.join(__dirname, '../../quick-db-report-debug.log')
+  ];
+  
+  const logMsg = (msg) => {
+    const timestamp = new Date().toISOString();
+    const line = `[${timestamp}] ${msg}\n`;
+    for (const logFile of logFiles) {
+      try {
+        fs.appendFileSync(logFile, line, { mode: 0o666 });
+      } catch (e) {}
+    }
+    console.log(`📊 [getRemoteWorkTimeReport] ${msg}`);
+  };
+  
+  logMsg(`=== НАЧАЛО getRemoteWorkTimeReport (УДАЛЕННЫЕ данные) ===`);
+  logMsg(`Запрос данных: start=${start}, end=${end}, username=${username || 'all'}`);
+  
+  // ТОЛЬКО удаленные данные: remote_work_time_logs (от удаленного сервера)
+  const remoteLogs = await db.getRemoteWorkTimeLogs({ start, end, username });
+  logMsg(`remote_work_time_logs (удаленные): ${remoteLogs?.length || 0} записей`);
+  
+  const userMap = {};
+  for (const log of remoteLogs) {
+    if (!log.username) continue;
+    userMap[log.username] = userMap[log.username] || [];
+    userMap[log.username].push(log);
+  }
+  
+  const report = [];
+  logMsg(`Всего удаленных пользователей: ${Object.keys(userMap).length}`);
+  
+  for (const [user, sessions] of Object.entries(userMap)) {
+    if (!user || !sessions.length) {
+      continue;
+    }
+    
+    let displayName = user;
+    try {
+      let userRow = await db.getUserByUsername(user);
+      if (!userRow) {
+        const allUsers = await db.getAllUsers();
+        const usersWithEmptyUsername = allUsers.filter(u => !u.username || u.username === '');
+        if (usersWithEmptyUsername.length === 1 && usersWithEmptyUsername[0].fio) {
+          userRow = usersWithEmptyUsername[0];
+        }
+      }
+      if (userRow) {
+        displayName = userRow.fio || userRow.full_name || userRow.name || userRow.username || user;
+      }
+    } catch (e) {
+      displayName = user;
+    }
+    
+    sessions.sort((a, b) => new Date(a.event_time) - new Date(b.event_time));
+    const firstLogin = sessions.find(e => e.event_type === 'login');
+    const lastLogout = [...sessions].reverse().find(e => e.event_type === 'logout');
+    
+    let totalHours = 0;
+    let totalMinutes = 0;
+    let totalTimeStr = '';
+    
+    if (firstLogin && lastLogout) {
+      const diffMs = new Date(lastLogout.event_time) - new Date(firstLogin.event_time);
+      totalHours = Math.floor(diffMs / 3600000);
+      totalMinutes = Math.floor((diffMs % 3600000) / 60000);
+      totalTimeStr = `${totalHours} ч ${totalMinutes} мин`;
+    }
+    
+    report.push({
+      username: user,
+      fio: displayName,
+      firstLogin: firstLogin ? firstLogin.event_time : '',
+      lastLogout: lastLogout ? lastLogout.event_time : '',
+      totalHours: firstLogin && lastLogout ? 
+        Number(((new Date(lastLogout.event_time) - new Date(firstLogin.event_time)) / 3600000).toFixed(1)) : 0,
+      totalTimeStr,
+      sessions: sessions || []
+    });
+  }
+  
+  logMsg(`Итоговый удаленный отчёт содержит ${report.length} пользователей`);
+  return report;
+}
+
 // Генерация отчёта по базе: первый вход (login), последний выход (logout) за период
+// УСТАРЕВШАЯ ФУНКЦИЯ - используется только для обратной совместимости
 async function getDbShortReport({ start, end, username }) {
   const fs = require('fs');
   const path = require('path');
@@ -87,6 +292,8 @@ async function getDbShortReport({ start, end, username }) {
     logMsg(`👥 Пользователи: ${Object.keys(activityUsers).join(', ')}`);
   }
   
+  // УСТАРЕВШАЯ ФУНКЦИЯ - объединяет локальные и удаленные данные
+  // Используется только для обратной совместимости
   // Объединяем логи из обеих таблиц
   const allLogs = [...periodLogs, ...remoteLogs];
   
@@ -192,22 +399,53 @@ async function getDbShortReport({ start, end, username }) {
   return report;
 }
 
-// API: /api/quick-db-report?start=YYYY-MM-DD&end=YYYY-MM-DD&username=...
-router.get('/quick-db-report', async (req, res) => {
-  // ПРИНУДИТЕЛЬНОЕ логирование - используем console.log для PM2
-  console.log(`🚨🚨🚨 [quick-db-report] HANDLER CALLED! Query: ${JSON.stringify(req.query)}`);
+// API: /api/local-worktime-report?start=YYYY-MM-DD&end=YYYY-MM-DD&username=...
+// Отчет для ЛОКАЛЬНЫХ пользователей (work_time_logs + activity_logs)
+router.get('/local-worktime-report', async (req, res) => {
+  console.log(`📊 [local-worktime-report] Запрос локальных данных. Query: ${JSON.stringify(req.query)}`);
   
   try {
     let { start, end, username } = req.query;
     
     // Расширяем диапазон дат для учёта часового пояса (Киев UTC+2/UTC+3)
-    // Когда пользователь выбирает дату в киевском времени, нужно найти все данные,
-    // которые попали в эту дату по киевскому времени (они могут быть под разными датами в UTC)
     const originalStart = start;
     const originalEnd = end;
     
     if (start && end) {
-      // Расширяем диапазон на 1 день назад и вперёд для учёта часового пояса (Киев UTC+2/UTC+3)
+      const startDate = new Date(start + 'T00:00:00');
+      startDate.setDate(startDate.getDate() - 1);
+      start = startDate.toISOString().slice(0, 10);
+      
+      const endDate = new Date(end + 'T23:59:59');
+      endDate.setDate(endDate.getDate() + 1);
+      end = endDate.toISOString().slice(0, 10);
+      
+      console.log(`🌍 [local-worktime-report] Расширение: ${originalStart}-${originalEnd} -> ${start}-${end}`);
+    }
+    
+    const report = await getLocalWorkTimeReport({ start, end, username });
+    console.log(`✅ [local-worktime-report] Вернул ${report.length} локальных пользователей`);
+    
+    res.json({ success: true, report });
+  } catch (err) {
+    console.error(`❌ [local-worktime-report] Ошибка:`, err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// API: /api/quick-db-report?start=YYYY-MM-DD&end=YYYY-MM-DD&username=...
+// Отчет для УДАЛЕННЫХ пользователей (только remote_work_time_logs)
+router.get('/quick-db-report', async (req, res) => {
+  console.log(`📊 [quick-db-report] Запрос УДАЛЕННЫХ данных. Query: ${JSON.stringify(req.query)}`);
+  
+  try {
+    let { start, end, username } = req.query;
+    
+    // Расширяем диапазон дат для учёта часового пояса (Киев UTC+2/UTC+3)
+    const originalStart = start;
+    const originalEnd = end;
+    
+    if (start && end) {
       const startDate = new Date(start + 'T00:00:00');
       startDate.setDate(startDate.getDate() - 1);
       start = startDate.toISOString().slice(0, 10);
@@ -217,21 +455,13 @@ router.get('/quick-db-report', async (req, res) => {
       end = endDate.toISOString().slice(0, 10);
       
       console.log(`🌍 [quick-db-report] Расширение: ${originalStart}-${originalEnd} -> ${start}-${end}`);
-    } else {
-      console.log(`⚠️ [quick-db-report] start или end не указаны: start=${start}, end=${end}`);
     }
     
-    console.log(`📊 [quick-db-report] Вызываем getDbShortReport с параметрами: start=${start}, end=${end}, username=${username || 'all'}`);
-    const report = await getDbShortReport({ start, end, username });
-    console.log(`✅ [quick-db-report] getDbShortReport вернул ${report.length} пользователей`);
-    
-    if (report.length > 0) {
-      console.log(`👤 [quick-db-report] Первый пользователь: ${report[0].username}, fio: ${report[0].fio}`);
-    }
+    const report = await getRemoteWorkTimeReport({ start, end, username });
+    console.log(`✅ [quick-db-report] Вернул ${report.length} удаленных пользователей`);
     
     res.json({ success: true, report });
   } catch (err) {
-    process.stderr.write(`❌ [quick-db-report] Ошибка: ${err.message}\n`);
     console.error(`❌ [quick-db-report] Ошибка:`, err);
     res.status(500).json({ success: false, error: err.message });
   }
