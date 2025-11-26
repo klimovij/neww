@@ -708,6 +708,38 @@ export default function UserWorkTimeDetailsMobile({
           </h2>
 
           <button
+            onClick={() => setShowPrintDialog(true)}
+            style={{
+              background: 'rgba(255, 224, 130, 0.2)',
+              border: '1px solid rgba(255, 224, 130, 0.5)',
+              color: '#ffe082',
+              fontSize: '14px',
+              cursor: 'pointer',
+              padding: '8px 12px',
+              borderRadius: '8px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              fontWeight: 600,
+              marginRight: '8px',
+              transition: 'all 0.2s',
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.background = 'rgba(255, 224, 130, 0.3)';
+              e.target.style.borderColor = '#ffe082';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.background = 'rgba(255, 224, 130, 0.2)';
+              e.target.style.borderColor = 'rgba(255, 224, 130, 0.5)';
+            }}
+            title="Печать отчета"
+          >
+            <FiPrinter size={16} />
+            Печать
+          </button>
+
+          <button
             onClick={handleClose}
             style={{
               background: 'rgba(255, 255, 255, 0.2)',
