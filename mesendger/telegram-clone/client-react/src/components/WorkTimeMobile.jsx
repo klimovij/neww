@@ -852,17 +852,13 @@ function LocalWorktimeReportModalMobile({
         left: 0,
         right: 0,
         bottom: 0,
-        background: 'rgba(0, 0, 0, 0.8)',
+        background: 'linear-gradient(135deg, #232931 0%, #181c22 100%)',
         zIndex: 100003, // Выше основной модалки WorkTimeMobile (100002)
         display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '20px',
-      }}
-      onClick={(e) => {
-        if (e.target === e.currentTarget) {
-          onClose();
-        }
+        flexDirection: 'column',
+        color: '#fff',
+        overflowY: 'auto',
+        overflowX: 'hidden',
       }}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
@@ -871,15 +867,11 @@ function LocalWorktimeReportModalMobile({
           <div
             ref={modalRef}
             style={{
-              background: 'linear-gradient(135deg, #232931 0%, #181c22 100%)',
-              borderRadius: '20px',
               width: '100%',
-              maxWidth: '600px',
-              maxHeight: '90vh',
+              height: '100%',
               display: 'flex',
               flexDirection: 'column',
               color: '#fff',
-              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
             }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -888,19 +880,24 @@ function LocalWorktimeReportModalMobile({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              padding: '20px',
-              borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+              padding: '16px',
+              background: 'linear-gradient(90deg, #43e97b 0%, #38d9a9 100%)',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+              zIndex: 10001,
             }}>
               <h2 style={{
                 margin: 0,
-                color: '#43e97b',
-                fontSize: '20px',
+                color: '#fff',
+                fontSize: '18px',
                 fontWeight: 700,
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
+                flex: 1,
+                textAlign: 'center',
+                justifyContent: 'center',
               }}>
-                <FiMonitor size={20} />
+                <FiMonitor size={18} />
                 Отчет активности локальных ПК
               </h2>
               <button
@@ -913,14 +910,18 @@ function LocalWorktimeReportModalMobile({
                   cursor: 'pointer',
                   padding: '8px',
                   borderRadius: '8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                 }}
+                title="Закрыть"
               >
                 <FiX />
               </button>
             </div>
 
             {/* Контент */}
-            <div style={{ flex: 1, padding: '20px', overflowY: 'auto' }}>
+            <div style={{ flex: 1, padding: '24px 16px', overflowY: 'auto', maxWidth: '600px', margin: '0 auto', width: '100%' }}>
               {/* Календарь */}
               <div style={{ marginBottom: '20px', display: 'flex', gap: '12px' }}>
                 <div style={{ flex: 1 }}>
