@@ -95,8 +95,13 @@ function WorkTimeReportModal({ isOpen, onRequestClose }) {
   const [showLocalReport, setShowLocalReport] = useState(false);
   const [localReportData, setLocalReportData] = useState({ logs: [], username: '', activityStats: null });
 
+  const [localReportUsers, setLocalReportUsers] = useState([]);
+  const [loadingLocalReport, setLoadingLocalReport] = useState(false);
+  const [selectedLocalUser, setSelectedLocalUser] = useState(null);
+
   const handleOpenLocalReport = async () => {
     setShowLocalReport(true);
+    setLoadingLocalReport(true);
     // Загружаем данные для локального отчета
     try {
       const yesterday = new Date();
@@ -109,14 +114,47 @@ function WorkTimeReportModal({ isOpen, onRequestClose }) {
       const data = await res.json();
       
       if (data.success && Array.isArray(data.report)) {
-        setLocalReportData({ 
-          logs: data.report, 
-          username: '', 
-          activityStats: null 
-        });
+        setLocalReportUsers(data.report);
+      } else {
+        setLocalReportUsers([]);
       }
     } catch (error) {
       console.error('Ошибка загрузки локального отчета:', error);
+      setLocalReportUsers([]);
+    }
+    setLoadingLocalReport(false);
+  };
+
+  const handleSelectLocalUser = async (user) => {
+    setSelectedLocalUser(user);
+    // Загружаем activityStats для выбранного пользователя
+    try {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const startDate = yesterday.toISOString().slice(0, 10);
+      const endDate = yesterday.toISOString().slice(0, 10);
+      
+      const params = new URLSearchParams({ start: startDate, end: endDate });
+      const res = await fetch(`/api/activity-summary?${params.toString()}`);
+      const data = await res.json();
+      
+      let activityStats = null;
+      if (res.ok && data.success && Array.isArray(data.summary)) {
+        activityStats = data.summary.find(s => s.username === user.username) || null;
+      }
+      
+      setLocalReportData({
+        logs: user.sessions || [],
+        username: user.fio || user.username,
+        activityStats
+      });
+    } catch (error) {
+      console.error('Ошибка загрузки активности:', error);
+      setLocalReportData({
+        logs: user.sessions || [],
+        username: user.fio || user.username,
+        activityStats: null
+      });
     }
   };
 
@@ -295,13 +333,114 @@ function WorkTimeReportModal({ isOpen, onRequestClose }) {
             isOpen={showRemoteWorktime} 
             onRequestClose={() => setShowRemoteWorktime(false)} 
           />
-          <UserWorkTimeDetailsModal
+          {/* Модалка для локального отчета */}
+          <Modal
             isOpen={showLocalReport}
-            onRequestClose={() => setShowLocalReport(false)}
-            logs={localReportData.logs}
-            username={localReportData.username}
-            activityStats={localReportData.activityStats}
-          />
+            onRequestClose={() => {
+              setShowLocalReport(false);
+              setSelectedLocalUser(null);
+              setLocalReportUsers([]);
+            }}
+            contentLabel="Отчет активности локальных ПК"
+            style={modalStyles}
+            ariaHideApp={false}
+          >
+            <div onClick={(e) => e.stopPropagation()} style={{
+              background: 'linear-gradient(135deg, #232931 0%, #181c22 100%)',
+              borderRadius: 28,
+              width: '100%',
+              minWidth: '600px',
+              maxWidth: '1200px',
+              height: '100%',
+              boxSizing: 'border-box',
+              boxShadow: '0 4px 32px rgba(0,0,0,0.15)',
+              display: 'flex',
+              flexDirection: 'column',
+              position: 'relative',
+              color: '#fff',
+              padding: '40px 48px',
+              overflowY: 'auto',
+              overflowX: 'hidden'
+            }}>
+              <button onClick={() => {
+                setShowLocalReport(false);
+                setSelectedLocalUser(null);
+                setLocalReportUsers([]);
+              }} style={{
+                position: 'absolute', top: 16, right: 16, fontSize: 28, background: 'transparent', border: 'none',
+                cursor: 'pointer', color: '#fff', fontWeight: 'bold', width: 36, height: 36, borderRadius: '50%'
+              }}>×</button>
+
+              <h2 style={{ marginTop: 0, marginBottom: 24, color: '#43e97b', fontWeight: 900, fontSize: '2em' }}>
+                Отчет активности локальных ПК
+              </h2>
+
+              {loadingLocalReport ? (
+                <div style={{ textAlign: 'center', padding: 40 }}>Загрузка...</div>
+              ) : selectedLocalUser ? (
+                <div>
+                  <button onClick={() => setSelectedLocalUser(null)} style={{
+                    marginBottom: 20, padding: '8px 16px', borderRadius: 8, border: '1px solid #43e97b',
+                    background: 'rgba(67,233,123,0.1)', color: '#43e97b', cursor: 'pointer', fontWeight: 600
+                  }}>
+                    ← Назад к списку
+                  </button>
+                  <UserWorkTimeDetailsModal
+                    isOpen={true}
+                    onRequestClose={() => setSelectedLocalUser(null)}
+                    logs={localReportData.logs}
+                    username={localReportData.username}
+                    activityStats={localReportData.activityStats}
+                  />
+                </div>
+              ) : localReportUsers.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: 40, color: 'rgba(255,255,255,0.6)' }}>
+                  <p style={{ fontSize: '16px' }}>Нет данных за вчерашний день</p>
+                </div>
+              ) : (
+                <div style={{ maxHeight: 500, overflowY: 'auto', borderRadius: 12 }}>
+                  <table style={{ width: '100%', borderCollapse: 'separate', color: '#e6f7ef' }}>
+                    <thead>
+                      <tr style={{ background: '#1f2630' }}>
+                        <th style={{ padding: '12px 14px', textAlign: 'left', color: '#ffe082' }}>ФИО</th>
+                        <th style={{ padding: '12px 14px', textAlign: 'left', color: '#ffe082' }}>Первый вход</th>
+                        <th style={{ padding: '12px 14px', textAlign: 'left', color: '#ffe082' }}>Последний выход</th>
+                        <th style={{ padding: '12px 14px', textAlign: 'left', color: '#ffe082' }}>Отработано</th>
+                        <th style={{ padding: '12px 14px', textAlign: 'left', color: '#ffe082' }}>Детали</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {localReportUsers.map((row, idx) => (
+                        <tr key={idx} style={{ background: 'rgba(255,255,255,0.03)', borderBottom: '1px solid #2a323d' }}>
+                          <td style={{ padding: '12px 14px', fontWeight: 700 }}>{row.fio}</td>
+                          <td style={{ padding: '12px 14px' }}>{row.firstLogin ? formatTime(row.firstLogin) : '—'}</td>
+                          <td style={{ padding: '12px 14px' }}>{row.lastLogout ? formatTime(row.lastLogout) : '—'}</td>
+                          <td style={{ padding: '12px 14px' }}>{row.totalTimeStr || '—'}</td>
+                          <td style={{ padding: '12px 14px' }}>
+                            <button
+                              type="button"
+                              onClick={() => handleSelectLocalUser(row)}
+                              style={{
+                                padding: '6px 12px',
+                                borderRadius: 10,
+                                border: 'none',
+                                background: '#2193b0',
+                                color: '#fff',
+                                fontWeight: 700,
+                                cursor: 'pointer'
+                              }}
+                            >
+                              Подробнее
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </Modal>
         </div>
       </div>
     </Modal>
