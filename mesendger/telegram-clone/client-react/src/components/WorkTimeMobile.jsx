@@ -1,13 +1,14 @@
 import React, { useRef, useState, useEffect, useMemo, useCallback } from 'react';
 import ReactDOM from 'react-dom';
 import { FaArrowLeft } from 'react-icons/fa';
-import { FiX, FiSearch, FiCalendar, FiRefreshCw, FiMonitor } from 'react-icons/fi';
+import { FiX, FiSearch, FiCalendar, FiRefreshCw, FiMonitor, FiFileText } from 'react-icons/fi';
 import UserWorkTimeDetailsModal from './Modals/UserWorkTimeDetailsModal';
 import UserWorkTimeDetailsMobile from './UserWorkTimeDetailsMobile';
 import AppUsageModal from './Modals/AppUsageModal';
 import AppUsageMobile from './AppUsageMobile';
 import RemoteWorktimeReportModal from './Modals/RemoteWorktimeReportModal';
 import RemoteWorktimeReportMobile from './RemoteWorktimeReportMobile';
+import OneCDocumentHistoryMobile from './OneCDocumentHistoryMobile';
 
 // Вынесем парсер вне функции
 function parseDate(str) {
