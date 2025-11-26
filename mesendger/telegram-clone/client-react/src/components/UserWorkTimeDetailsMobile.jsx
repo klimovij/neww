@@ -202,7 +202,8 @@ export default function UserWorkTimeDetailsMobile({
         urlsCount: data.urls?.length || 0,
         applicationsCount: data.applications?.length || 0,
         screenshotsCount: data.screenshots?.length || 0,
-        applications: data.applications?.slice(0, 5)
+        applications: data.applications?.slice(0, 5),
+        screenshots: data.screenshots?.slice(0, 3) // Показываем первые 3 скриншота для отладки
       });
       
       if (res.ok && data.success) {
@@ -210,8 +211,26 @@ export default function UserWorkTimeDetailsMobile({
           urlsCount: data.urls?.length || 0,
           applicationsCount: data.applications?.length || 0,
           applications: data.applications,
-          screenshotsCount: data.screenshots?.length || 0
+          screenshotsCount: data.screenshots?.length || 0,
+          screenshots: data.screenshots
         });
+        
+        // Детальное логирование скриншотов
+        if (data.screenshots && data.screenshots.length > 0) {
+          console.log('📸 [UserWorkTimeDetailsMobile] Скриншоты из API:', data.screenshots.length);
+          data.screenshots.forEach((shot, idx) => {
+            console.log(`📸 [${idx}] Screenshot from API:`, {
+              id: shot.id,
+              url: shot.url,
+              filePath: shot.filePath,
+              timestamp: shot.timestamp,
+              fileSize: shot.fileSize
+            });
+          });
+        } else {
+          console.warn('⚠️ [UserWorkTimeDetailsMobile] Скриншоты отсутствуют в ответе API');
+        }
+        
         if (data.urls) setLocalUrls(data.urls);
         if (data.applications) {
           console.log('✅ [UserWorkTimeDetailsMobile] Устанавливаем applications:', data.applications.length, data.applications.slice(0, 3));
@@ -220,7 +239,13 @@ export default function UserWorkTimeDetailsMobile({
           console.warn('⚠️ [UserWorkTimeDetailsMobile] applications отсутствуют в ответе API');
           setLocalApplications([]);
         }
-        if (data.screenshots) setLocalScreenshots(data.screenshots);
+        if (data.screenshots) {
+          console.log('✅ [UserWorkTimeDetailsMobile] Устанавливаем screenshots:', data.screenshots.length);
+          setLocalScreenshots(data.screenshots);
+        } else {
+          console.warn('⚠️ [UserWorkTimeDetailsMobile] screenshots отсутствуют в ответе API');
+          setLocalScreenshots([]);
+        }
         if (data.activityStats) setLocalActivityStats(data.activityStats);
       } else {
         console.error('❌ [UserWorkTimeDetailsMobile] Ошибка ответа API:', data);

@@ -585,6 +585,19 @@ router.get('/activity-details', async (req, res) => {
       console.warn(`  ⚠️ [activity-details] ПУСТОЙ МАССИВ ПРИЛОЖЕНИЙ В ОТВЕТЕ!`);
     }
     
+    // Детальное логирование скриншотов
+    if (screenshotsWithUrl && screenshotsWithUrl.length > 0) {
+      console.log(`📸 [activity-details] Первые 5 скриншотов в ответе:`, screenshotsWithUrl.slice(0, 5).map(s => ({
+        id: s.id,
+        url: s.url,
+        filePath: s.filePath,
+        timestamp: s.timestamp
+      })));
+    } else {
+      console.warn(`  ⚠️ [activity-details] ПУСТОЙ МАССИВ СКРИНШОТОВ В ОТВЕТЕ!`);
+      console.warn(`  ⚠️ [activity-details] Проверка: screenshots из БД = ${screenshots?.length || 0}, screenshotsWithUrl = ${screenshotsWithUrl?.length || 0}`);
+    }
+    
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     const responseData = {
       success: true,
@@ -593,6 +606,7 @@ router.get('/activity-details', async (req, res) => {
       screenshots: screenshotsWithUrl,
     };
     console.log(`📤 [activity-details] Размер ответа (приблизительно):`, JSON.stringify(responseData).length, 'байт');
+    console.log(`📤 [activity-details] Скриншоты в JSON ответе:`, JSON.stringify(responseData.screenshots?.slice(0, 2) || []));
     res.json(responseData);
   } catch (error) {
     console.error('❌ Error in /activity-details:', error);
