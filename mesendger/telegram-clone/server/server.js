@@ -528,6 +528,15 @@ try {
     next();
   });
   
+  // Проверяем, что роутер действительно загружен и имеет обработчики
+  console.error('🔍 [SERVER] Проверка quickCsvReportRouter:', typeof quickCsvReportRouter);
+  console.error('🔍 [SERVER] Роутер stack:', quickCsvReportRouter.stack?.length || 'no stack');
+  if (quickCsvReportRouter.stack) {
+    quickCsvReportRouter.stack.forEach((layer, idx) => {
+      console.error(`🔍 [SERVER] Route ${idx}: ${layer.method || 'ALL'} ${layer.path || layer.regexp}`);
+    });
+  }
+  
   app.use('/api', quickCsvReportRouter);
   console.error('✅ [SERVER] quickCsvReportRouter mounted at /api');
   process.stderr.write('✅ [SERVER] quickCsvReportRouter mounted at /api\n');
