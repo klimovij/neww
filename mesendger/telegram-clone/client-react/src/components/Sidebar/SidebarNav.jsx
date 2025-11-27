@@ -630,33 +630,47 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar, 
               setAdminUsers([]);
             }
           } else {
-            console.error('Ошибка загрузки пользователей:', r.status, r.statusText);
             // Пытаемся прочитать сообщение об ошибке
             let errorMessage = `Сервер вернул ошибку ${r.status}`;
+            let isWindowsError = false;
             try {
               const errorText = await r.text();
-              console.error('Ответ сервера:', errorText);
               try {
                 const errorJson = JSON.parse(errorText);
                 if (errorJson.error) {
                   errorMessage = errorJson.error;
                   // Понятные сообщения для известных ошибок
-                  if (errorMessage.includes('powershell.exe')) {
-                    errorMessage = 'Ошибка: API недоступно на данном сервере (требуется Windows)';
+                  if (errorMessage.includes('powershell.exe') || errorMessage.includes('Windows systems') || errorMessage.includes('only available on Windows')) {
+                    errorMessage = 'Управление локальными пользователями доступно только на Windows-серверах';
+                    isWindowsError = true;
                   } else if (errorMessage.includes('ENOENT')) {
                     errorMessage = 'Ошибка: системная команда недоступна на данном сервере';
                   }
                 } else if (errorJson.message) {
                   errorMessage = errorJson.message;
+                  if (errorMessage.includes('Windows systems') || errorMessage.includes('only available on Windows')) {
+                    errorMessage = 'Управление локальными пользователями доступно только на Windows-серверах';
+                    isWindowsError = true;
+                  }
                 }
               } catch {
                 // Если не JSON, оставляем текст как есть
                 if (errorText && errorText.length < 200) {
                   errorMessage = errorText;
+                  if (errorMessage.includes('Windows systems') || errorMessage.includes('only available on Windows')) {
+                    errorMessage = 'Управление локальными пользователями доступно только на Windows-серверах';
+                    isWindowsError = true;
+                  }
                 }
               }
             } catch {}
-            setAdminError(`Не удалось получить пользователей: ${errorMessage}`);
+            
+            // Для ошибок Windows не логируем в консоль, так как это ожидаемое поведение
+            if (!isWindowsError) {
+              console.error('Ошибка загрузки пользователей:', r.status, r.statusText);
+            }
+            
+            setAdminError(isWindowsError ? errorMessage : `Не удалось получить пользователей: ${errorMessage}`);
             setAdminUsers([]);
           }
       } catch (e) {
