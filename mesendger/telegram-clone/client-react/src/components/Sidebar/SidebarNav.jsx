@@ -1046,7 +1046,7 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar, 
               overflow: 'hidden'
             }}
           >
-            {/* Вывеска статуса сервера сверху по центру */}
+            {/* Вывеска статуса сервера и кнопка гамбургер на одном уровне */}
             <div style={{
               padding: '16px 20px',
               borderBottom: '1px solid rgba(67,233,123,0.2)',
@@ -1056,71 +1056,10 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar, 
               zIndex: 10,
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
+              justifyContent: 'space-between',
               gap: '12px'
             }}>
-              {/* Вывеска статуса сервера в стиле магазина */}
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: socketConnected ? '0.9em' : '0.85em',
-                fontWeight: 800,
-                padding: '10px 16px',
-                borderRadius: '12px',
-                textTransform: 'uppercase',
-                letterSpacing: '1.5px',
-                textShadow: socketConnected 
-                  ? '0 0 8px #43e97b, 0 0 16px #43e97b, 0 0 24px #43e97b'
-                  : '0 0 8px #e74c3c, 0 0 16px #e74c3c, 0 0 24px #e74c3c',
-                animation: socketConnected ? 'pulse-green-nav 2s ease-in-out infinite' : 'pulse-red-nav 2s ease-in-out infinite',
-                boxShadow: socketConnected 
-                  ? '0 0 15px rgba(67, 233, 123, 0.5), inset 0 0 15px rgba(67, 233, 123, 0.1)'
-                  : '0 0 15px rgba(231, 76, 60, 0.5), inset 0 0 15px rgba(231, 76, 60, 0.1)',
-                color: socketConnected ? '#43e97b' : '#e74c3c',
-                background: socketConnected 
-                  ? 'linear-gradient(135deg, rgba(67, 233, 123, 0.15) 0%, rgba(67, 233, 123, 0.05) 100%)'
-                  : 'linear-gradient(135deg, rgba(231, 76, 60, 0.15) 0%, rgba(231, 76, 60, 0.05) 100%)',
-                border: `2px solid ${socketConnected ? 'rgba(67, 233, 123, 0.4)' : 'rgba(231, 76, 60, 0.4)'}`,
-                flexShrink: 0,
-                whiteSpace: 'nowrap',
-              }}>
-                {socketConnected ? 'Issa Plus онлайн' : 'Issa Plus офлайн'}
-              </div>
-              <style>{`
-                @keyframes pulse-green-nav {
-                  0%, 100% {
-                    text-shadow: 0 0 8px #43e97b, 0 0 16px #43e97b, 0 0 24px #43e97b;
-                    box-shadow: 0 0 15px rgba(67, 233, 123, 0.5), inset 0 0 15px rgba(67, 233, 123, 0.1);
-                  }
-                  50% {
-                    text-shadow: 0 0 12px #43e97b, 0 0 24px #43e97b, 0 0 36px #43e97b;
-                    box-shadow: 0 0 25px rgba(67, 233, 123, 0.7), inset 0 0 25px rgba(67, 233, 123, 0.2);
-                  }
-                }
-                @keyframes pulse-red-nav {
-                  0%, 100% {
-                    text-shadow: 0 0 8px #e74c3c, 0 0 16px #e74c3c, 0 0 24px #e74c3c;
-                    box-shadow: 0 0 15px rgba(231, 76, 60, 0.5), inset 0 0 15px rgba(231, 76, 60, 0.1);
-                  }
-                  50% {
-                    text-shadow: 0 0 12px #e74c3c, 0 0 24px #e74c3c, 0 0 36px #e74c3c;
-                    box-shadow: 0 0 25px rgba(231, 76, 60, 0.7), inset 0 0 25px rgba(231, 76, 60, 0.2);
-                  }
-                }
-              `}</style>
-            </div>
-            
-            {/* Заголовок с кнопкой-гамбургером */}
-            <div style={{
-              padding: '12px 20px',
-              borderBottom: '1px solid rgba(67,233,123,0.2)',
-              background: 'rgba(34,40,49,0.95)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'flex-end',
-              gap: '12px'
-            }}>
+              {/* Кнопка гамбургер слева */}
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -1157,6 +1096,64 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar, 
               >
                 <FaBars />
               </button>
+              
+              {/* Вывеска статуса сервера в стиле магазина по центру */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: socketConnected ? '0.9em' : '0.85em',
+                fontWeight: 800,
+                padding: '10px 16px',
+                borderRadius: '12px',
+                textTransform: 'uppercase',
+                letterSpacing: '1.5px',
+                textShadow: socketConnected 
+                  ? '0 0 8px #43e97b, 0 0 16px #43e97b, 0 0 24px #43e97b'
+                  : '0 0 8px #e74c3c, 0 0 16px #e74c3c, 0 0 24px #e74c3c',
+                animation: socketConnected ? 'pulse-green-nav 2s ease-in-out infinite' : 'pulse-red-nav 2s ease-in-out infinite',
+                boxShadow: socketConnected 
+                  ? '0 0 15px rgba(67, 233, 123, 0.5), inset 0 0 15px rgba(67, 233, 123, 0.1)'
+                  : '0 0 15px rgba(231, 76, 60, 0.5), inset 0 0 15px rgba(231, 76, 60, 0.1)',
+                color: socketConnected ? '#43e97b' : '#e74c3c',
+                background: socketConnected 
+                  ? 'linear-gradient(135deg, rgba(67, 233, 123, 0.15) 0%, rgba(67, 233, 123, 0.05) 100%)'
+                  : 'linear-gradient(135deg, rgba(231, 76, 60, 0.15) 0%, rgba(231, 76, 60, 0.05) 100%)',
+                border: `2px solid ${socketConnected ? 'rgba(67, 233, 123, 0.4)' : 'rgba(231, 76, 60, 0.4)'}`,
+                flexShrink: 0,
+                whiteSpace: 'nowrap',
+                flex: 1,
+                margin: '0 auto',
+                maxWidth: 'fit-content'
+              }}>
+                {socketConnected ? 'Issa Plus онлайн' : 'Issa Plus офлайн'}
+              </div>
+              
+              {/* Пустой блок справа для балансировки (такой же размер как кнопка) */}
+              <div style={{ width: 48, flexShrink: 0 }}></div>
+              
+              <style>{`
+                @keyframes pulse-green-nav {
+                  0%, 100% {
+                    text-shadow: 0 0 8px #43e97b, 0 0 16px #43e97b, 0 0 24px #43e97b;
+                    box-shadow: 0 0 15px rgba(67, 233, 123, 0.5), inset 0 0 15px rgba(67, 233, 123, 0.1);
+                  }
+                  50% {
+                    text-shadow: 0 0 12px #43e97b, 0 0 24px #43e97b, 0 0 36px #43e97b;
+                    box-shadow: 0 0 25px rgba(67, 233, 123, 0.7), inset 0 0 25px rgba(67, 233, 123, 0.2);
+                  }
+                }
+                @keyframes pulse-red-nav {
+                  0%, 100% {
+                    text-shadow: 0 0 8px #e74c3c, 0 0 16px #e74c3c, 0 0 24px #e74c3c;
+                    box-shadow: 0 0 15px rgba(231, 76, 60, 0.5), inset 0 0 15px rgba(231, 76, 60, 0.1);
+                  }
+                  50% {
+                    text-shadow: 0 0 12px #e74c3c, 0 0 24px #e74c3c, 0 0 36px #e74c3c;
+                    box-shadow: 0 0 25px rgba(231, 76, 60, 0.7), inset 0 0 25px rgba(231, 76, 60, 0.2);
+                  }
+                }
+              `}</style>
             </div>
 
             {/* Контент навигации */}
