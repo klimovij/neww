@@ -1180,7 +1180,103 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar, 
                 <FaBars />
               </button>
               
-              {/* Текст "Мульти-мессенджер" и название "Issa Plus" удалены */}
+              {/* Текст "Мульти-мессенджер" и название "Issa Plus" по центру */}
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flex: 1,
+                margin: '0 auto',
+                maxWidth: 'fit-content',
+                gap: '4px'
+              }}>
+                <span style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  fontSize: '1.18em',
+                  fontWeight: 700,
+                  letterSpacing: '0.01em',
+                  color: '#fff'
+                }}>
+                  <span role="img" aria-label="chat">💬</span> Мульти-мессенджер
+                </span>
+                <span className="neon-issa-plus issa-plus-festive" style={(() => {
+                  const style = {
+                    fontSize: appTitleSettings.fontSize || '2em',
+                    fontFamily: appTitleSettings.customFontName ? `"${appTitleSettings.customFontName}", ${appTitleSettings.fontFamily}` : appTitleSettings.fontFamily,
+                    marginTop: 2,
+                  };
+
+                  // Применяем градиент (если не используется градиентная анимация)
+                  const effectType = appTitleSettings.effectType || 'neon';
+                  if (appTitleSettings.useGradient === true && effectType !== 'gradient-animation') {
+                    const gradientStart = appTitleSettings.gradientStart || '#43e97b';
+                    const gradientEnd = appTitleSettings.gradientEnd || '#2193b0';
+                    style.background = `linear-gradient(135deg, ${gradientStart} 0%, ${gradientEnd} 100%)`;
+                    style.WebkitBackgroundClip = 'text';
+                    style.WebkitTextFillColor = 'transparent';
+                    style.backgroundClip = 'text';
+                    style.color = 'transparent';
+                  } else if (effectType === 'gradient-animation' && appTitleSettings.glowEnabled) {
+                    style.color = 'transparent';
+                  } else {
+                    style.color = appTitleSettings.color || '#43e97b';
+                    style.background = 'none';
+                    style.WebkitBackgroundClip = 'unset';
+                    style.WebkitTextFillColor = 'unset';
+                    style.backgroundClip = 'unset';
+                  }
+
+                  // Применяем эффекты в зависимости от выбранного типа
+                  if (appTitleSettings.glowEnabled === true) {
+                    const intensity = Number(appTitleSettings.glowIntensity);
+                    const spread = Number(appTitleSettings.glowSpread);
+                    const glowColor = appTitleSettings.glowColor || '#43e97b';
+                    
+                    const finalIntensity = (isNaN(intensity) || intensity === 0) ? 12 : intensity;
+                    const finalSpread = (isNaN(spread) || spread === 0) ? 32 : spread;
+                    
+                    switch (effectType) {
+                      case 'shadow':
+                        style.textShadow = `3px 3px 6px rgba(0,0,0,0.5), 0 0 ${finalIntensity}px ${glowColor}, 0 0 ${finalSpread}px ${glowColor}`;
+                        break;
+                      case 'outline':
+                        style.textShadow = `-1px -1px 0 ${glowColor}, 1px -1px 0 ${glowColor}, -1px 1px 0 ${glowColor}, 1px 1px 0 ${glowColor}, 0 0 ${finalIntensity}px ${glowColor}, 0 0 ${finalSpread}px ${glowColor}`;
+                        break;
+                      case 'sparkle':
+                        style.textShadow = `0 0 ${finalIntensity}px ${glowColor}, 0 0 ${finalSpread}px ${glowColor}, 0 0 ${finalSpread * 1.5}px ${glowColor}, 2px 2px 4px rgba(0,0,0,0.3), -2px -2px 4px ${glowColor}88`;
+                        break;
+                      case 'gradient-animation':
+                        style.textShadow = `0 0 ${finalIntensity}px ${glowColor}, 0 0 ${finalSpread}px ${glowColor}`;
+                        break;
+                      case 'new-year':
+                        break;
+                      case 'neon':
+                      default:
+                        break;
+                    }
+                  } else {
+                    style.textShadow = 'none';
+                  }
+
+                  return style;
+                })()}>
+                  <span className="issa-plus-text">
+                    <span className="issa-plus-word">
+                      {appTitleSettings.text}
+                      {isWinterSeason && (
+                        <span className="issa-plus-last">
+                          <span className="santa-hat">
+                            <span className="santa-hat__pom" />
+                          </span>
+                        </span>
+                      )}
+                    </span>
+                  </span>
+                </span>
+              </div>
               
               {/* Пустой блок справа для балансировки (такой же размер как кнопка) */}
               <div style={{ width: 48, flexShrink: 0 }}></div>
