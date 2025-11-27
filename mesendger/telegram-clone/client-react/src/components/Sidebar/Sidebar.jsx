@@ -21,7 +21,8 @@ const ServerStatus = styled.div`
   font-size: 1.2em;
   font-weight: 800;
   padding: 12px 20px;
-  margin: 10px;
+  margin: 0 auto;
+  margin-top: 10px;
   margin-bottom: 12px;
   border-radius: 12px;
   text-transform: uppercase;

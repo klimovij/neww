@@ -1016,7 +1016,7 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar, 
               overflow: 'hidden'
             }}
           >
-            {/* Заголовок с кнопкой-гамбургером */}
+            {/* Вывеска статуса сервера сверху по центру */}
             <div style={{
               padding: '16px 20px',
               borderBottom: '1px solid rgba(67,233,123,0.2)',
@@ -1026,7 +1026,7 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar, 
               zIndex: 10,
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'space-between',
+              justifyContent: 'center',
               gap: '12px'
             }}>
               {/* Вывеска статуса сервера в стиле магазина */}
@@ -1079,16 +1079,18 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar, 
                   }
                 }
               `}</style>
-              <h2 style={{
-                margin: 0,
-                color: '#43e97b',
-                fontWeight: 900,
-                fontSize: '1.3em',
-                textAlign: 'center',
-                flex: 1
-              }}>
-                Навигация
-              </h2>
+            </div>
+            
+            {/* Заголовок с кнопкой-гамбургером */}
+            <div style={{
+              padding: '12px 20px',
+              borderBottom: '1px solid rgba(67,233,123,0.2)',
+              background: 'rgba(34,40,49,0.95)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'flex-end',
+              gap: '12px'
+            }}>
               <button
                 onClick={(e) => {
                   e.stopPropagation();
