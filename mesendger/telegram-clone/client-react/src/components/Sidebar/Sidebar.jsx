@@ -715,7 +715,7 @@ export default function Sidebar() {
 
       <SidebarContent>
         {/* Убрано: {!showChatsModal && !state.currentChat && <ChatList />} */}
-        <SidebarNav showChatsModal={showChatsModal} setShowChatsModal={setShowChatsModal} />
+        <SidebarNav showChatsModal={showChatsModal} setShowChatsModal={setShowChatsModal} hideTitle={true} />
       </SidebarContent>
       {showAllUsers && createPortal((
         <RightsWrapper onClick={()=>setShowAllUsers(false)}>

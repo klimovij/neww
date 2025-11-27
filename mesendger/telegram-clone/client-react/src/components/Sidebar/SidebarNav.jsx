@@ -93,7 +93,7 @@ function getAppTitleSettings() {
   return DEFAULT_APP_TITLE_SETTINGS;
 }
 
-export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar, isMobileNavModal = false, open = false }) {
+export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar, isMobileNavModal = false, open = false, hideTitle = false }) {
   const { state: appState } = useApp();
   const [active, setActive] = useState('chats');
   const [socketConnected, setSocketConnected] = useState(() => window.socket?.connected ?? false);
@@ -1181,7 +1181,7 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar, 
               </button>
               
               {/* Текст "Мульти-мессенджер" и название "Issa Plus" по центру */}
-              <div style={{
+              {!hideTitle && <div style={{
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
@@ -1280,7 +1280,7 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar, 
                     </span>
                   </span>
                 </span>
-              </div>
+              </div>}
               
               {/* Пустой блок справа для балансировки (такой же размер как кнопка) */}
               <div style={{ width: 48, flexShrink: 0 }}></div>
