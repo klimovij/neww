@@ -606,6 +606,16 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar, 
     async function loadUsers() {
       const token = localStorage.getItem('token');
       if (!token) return;
+      
+      // Проверяем, не является ли сервер Linux (кэшируем результат)
+      const isLinuxServer = sessionStorage.getItem('admin_is_linux_server') === 'true';
+      if (isLinuxServer) {
+        setAdminError('Управление локальными пользователями доступно только на Windows-серверах');
+        setAdminUsers([]);
+        setAdminLoading(false);
+        return;
+      }
+      
       setAdminLoading(true);
       setAdminError('');
       try {
@@ -643,6 +653,8 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar, 
                   if (errorMessage.includes('powershell.exe') || errorMessage.includes('Windows systems') || errorMessage.includes('only available on Windows')) {
                     errorMessage = 'Управление локальными пользователями доступно только на Windows-серверах';
                     isWindowsError = true;
+                    // Кэшируем, что сервер на Linux, чтобы не делать повторные запросы
+                    sessionStorage.setItem('admin_is_linux_server', 'true');
                   } else if (errorMessage.includes('ENOENT')) {
                     errorMessage = 'Ошибка: системная команда недоступна на данном сервере';
                   }
@@ -651,6 +663,8 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar, 
                   if (errorMessage.includes('Windows systems') || errorMessage.includes('only available on Windows')) {
                     errorMessage = 'Управление локальными пользователями доступно только на Windows-серверах';
                     isWindowsError = true;
+                    // Кэшируем, что сервер на Linux, чтобы не делать повторные запросы
+                    sessionStorage.setItem('admin_is_linux_server', 'true');
                   }
                 }
               } catch {
@@ -660,6 +674,8 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar, 
                   if (errorMessage.includes('Windows systems') || errorMessage.includes('only available on Windows')) {
                     errorMessage = 'Управление локальными пользователями доступно только на Windows-серверах';
                     isWindowsError = true;
+                    // Кэшируем, что сервер на Linux, чтобы не делать повторные запросы
+                    sessionStorage.setItem('admin_is_linux_server', 'true');
                   }
                 }
               }
