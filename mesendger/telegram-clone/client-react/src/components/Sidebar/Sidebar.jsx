@@ -612,7 +612,6 @@ export default function Sidebar() {
             ))}
           </div>
         )}
-        {/* Блок с текстом "Мульти-мессенджер" и названием "Issa Plus" удален - перенесен в SidebarNav */}
         <UserInfo>
           <UserDetails style={{
             position: 'relative',
