@@ -573,10 +573,6 @@ export default function Sidebar() {
 
   return (
     <SidebarContainer>
-      {/* Вывеска статуса сервера в стиле магазина */}
-      <ServerStatus connected={socketConnected}>
-        {socketConnected ? 'Issa Plus онлайн' : 'Issa Plus офлайн'}
-      </ServerStatus>
       <SidebarHeader>
         {/* Снеговик (абсолютное позиционирование по блоку) */}
         {appTitleSettings.snowmanEnabled && appTitleSettings.snowmanPositionType === 'absolute' && (

@@ -53,10 +53,93 @@ const navs = [
   { key: 'admin', label: 'Управление', icon: <FiSettings />, color: '#a3e635', event: 'show-admin', tip: 'Администрирование' },
 ];
 
+const DEFAULT_APP_TITLE_SETTINGS = {
+  text: 'Issa Plus',
+  fontSize: '2em',
+  fontFamily: 'Arial, sans-serif',
+  customFontUrl: '',
+  customFontName: '',
+  color: '#43e97b',
+  useGradient: false,
+  gradientStart: '#43e97b',
+  gradientEnd: '#2193b0',
+  glowEnabled: true,
+  glowColor: '#43e97b',
+  glowIntensity: 12,
+  glowSpread: 32,
+  effectType: 'neon',
+  snowmanEnabled: false,
+  snowmanImage: null,
+  snowmanPositionX: 0,
+  snowmanPositionY: 0,
+  snowmanScale: 100,
+  snowmanPositionType: 'relative',
+  avatarImage: null,
+  avatarPositionX: 0,
+  avatarPositionY: 0,
+  avatarWidth: 88,
+  avatarHeight: 88
+};
+
+function getAppTitleSettings() {
+  try {
+    const saved = localStorage.getItem('appTitleSettings');
+    if (saved) {
+      return { ...DEFAULT_APP_TITLE_SETTINGS, ...JSON.parse(saved) };
+    }
+  } catch (e) {
+    console.error('Error loading app title settings:', e);
+  }
+  return DEFAULT_APP_TITLE_SETTINGS;
+}
+
 export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar, isMobileNavModal = false, open = false }) {
   const { state: appState } = useApp();
   const [active, setActive] = useState('chats');
   const [socketConnected, setSocketConnected] = useState(() => window.socket?.connected ?? false);
+  const [appTitleSettings, setAppTitleSettings] = useState(getAppTitleSettings());
+  
+  const isWinterSeason = React.useMemo(() => {
+    const today = new Date();
+    const month = today.getMonth(); // 0 - январь, 11 - декабрь
+    const day = today.getDate();
+    if (month === 11) return true; // декабрь
+    if (month === 0) return true; // январь
+    if (month === 1 && day <= 28) return true; // февраль до 28 включительно
+    return false;
+  }, []);
+  
+  // Загрузка настроек названия приложения и загрузка кастомных шрифтов
+  useEffect(() => {
+    const settings = getAppTitleSettings();
+    setAppTitleSettings(settings);
+    
+    // Загрузка кастомного шрифта, если указан URL
+    if (settings.customFontUrl) {
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = settings.customFontUrl;
+      document.head.appendChild(link);
+    }
+    
+    const handler = () => {
+      const newSettings = getAppTitleSettings();
+      setAppTitleSettings(newSettings);
+      
+      // Загрузка нового кастомного шрифта, если изменился URL
+      if (newSettings.customFontUrl) {
+        const existingLink = document.querySelector(`link[href="${newSettings.customFontUrl}"]`);
+        if (!existingLink) {
+          const link = document.createElement('link');
+          link.rel = 'stylesheet';
+          link.href = newSettings.customFontUrl;
+          document.head.appendChild(link);
+        }
+      }
+    };
+    window.addEventListener('appTitleSettingsUpdated', handler);
+    return () => window.removeEventListener('appTitleSettingsUpdated', handler);
+  }, []);
   const [pendingCount, setPendingCount] = useState(0);
   const [myTasksCount, setMyTasksCount] = useState(0);
   const [showUploadModal, setShowUploadModal] = useState(false);
@@ -1097,61 +1180,266 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar, 
                 <FaBars />
               </button>
               
-              {/* Вывеска статуса сервера в стиле магазина по центру */}
+              {/* Текст "Мульти-мессенджер" и название "Issa Plus" по центру */}
               <div style={{
                 display: 'flex',
+                flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: socketConnected ? '0.9em' : '0.85em',
-                fontWeight: 800,
-                padding: '10px 16px',
-                borderRadius: '12px',
-                textTransform: 'uppercase',
-                letterSpacing: '1.5px',
-                textShadow: socketConnected 
-                  ? '0 0 8px #43e97b, 0 0 16px #43e97b, 0 0 24px #43e97b'
-                  : '0 0 8px #e74c3c, 0 0 16px #e74c3c, 0 0 24px #e74c3c',
-                animation: socketConnected ? 'pulse-green-nav 2s ease-in-out infinite' : 'pulse-red-nav 2s ease-in-out infinite',
-                boxShadow: socketConnected 
-                  ? '0 0 15px rgba(67, 233, 123, 0.5), inset 0 0 15px rgba(67, 233, 123, 0.1)'
-                  : '0 0 15px rgba(231, 76, 60, 0.5), inset 0 0 15px rgba(231, 76, 60, 0.1)',
-                color: socketConnected ? '#43e97b' : '#e74c3c',
-                background: socketConnected 
-                  ? 'linear-gradient(135deg, rgba(67, 233, 123, 0.15) 0%, rgba(67, 233, 123, 0.05) 100%)'
-                  : 'linear-gradient(135deg, rgba(231, 76, 60, 0.15) 0%, rgba(231, 76, 60, 0.05) 100%)',
-                border: `2px solid ${socketConnected ? 'rgba(67, 233, 123, 0.4)' : 'rgba(231, 76, 60, 0.4)'}`,
-                flexShrink: 0,
-                whiteSpace: 'nowrap',
                 flex: 1,
                 margin: '0 auto',
-                maxWidth: 'fit-content'
+                maxWidth: 'fit-content',
+                gap: '4px'
               }}>
-                {socketConnected ? 'Issa Plus онлайн' : 'Issa Plus офлайн'}
+                <span style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  fontSize: '1.18em',
+                  fontWeight: 700,
+                  letterSpacing: '0.01em',
+                  color: '#fff'
+                }}>
+                  <span role="img" aria-label="chat">💬</span> Мульти-мессенджер
+                </span>
+                <span className="neon-issa-plus issa-plus-festive" style={(() => {
+                  const style = {
+                    fontSize: appTitleSettings.fontSize || '2em',
+                    fontFamily: appTitleSettings.customFontName ? `"${appTitleSettings.customFontName}", ${appTitleSettings.fontFamily}` : appTitleSettings.fontFamily,
+                    marginTop: 2,
+                  };
+
+                  // Применяем градиент (если не используется градиентная анимация)
+                  const effectType = appTitleSettings.effectType || 'neon';
+                  if (appTitleSettings.useGradient === true && effectType !== 'gradient-animation') {
+                    const gradientStart = appTitleSettings.gradientStart || '#43e97b';
+                    const gradientEnd = appTitleSettings.gradientEnd || '#2193b0';
+                    style.background = `linear-gradient(135deg, ${gradientStart} 0%, ${gradientEnd} 100%)`;
+                    style.WebkitBackgroundClip = 'text';
+                    style.WebkitTextFillColor = 'transparent';
+                    style.backgroundClip = 'text';
+                    style.color = 'transparent';
+                  } else if (effectType === 'gradient-animation' && appTitleSettings.glowEnabled) {
+                    style.color = 'transparent';
+                  } else {
+                    style.color = appTitleSettings.color || '#43e97b';
+                    style.background = 'none';
+                    style.WebkitBackgroundClip = 'unset';
+                    style.WebkitTextFillColor = 'unset';
+                    style.backgroundClip = 'unset';
+                  }
+
+                  // Применяем эффекты в зависимости от выбранного типа
+                  if (appTitleSettings.glowEnabled === true) {
+                    const intensity = Number(appTitleSettings.glowIntensity);
+                    const spread = Number(appTitleSettings.glowSpread);
+                    const glowColor = appTitleSettings.glowColor || '#43e97b';
+                    
+                    const finalIntensity = (isNaN(intensity) || intensity === 0) ? 12 : intensity;
+                    const finalSpread = (isNaN(spread) || spread === 0) ? 32 : spread;
+                    
+                    switch (effectType) {
+                      case 'shadow':
+                        style.textShadow = `3px 3px 6px rgba(0,0,0,0.5), 0 0 ${finalIntensity}px ${glowColor}, 0 0 ${finalSpread}px ${glowColor}`;
+                        break;
+                      case 'outline':
+                        style.textShadow = `-1px -1px 0 ${glowColor}, 1px -1px 0 ${glowColor}, -1px 1px 0 ${glowColor}, 1px 1px 0 ${glowColor}, 0 0 ${finalIntensity}px ${glowColor}, 0 0 ${finalSpread}px ${glowColor}`;
+                        break;
+                      case 'sparkle':
+                        style.textShadow = `0 0 ${finalIntensity}px ${glowColor}, 0 0 ${finalSpread}px ${glowColor}, 0 0 ${finalSpread * 1.5}px ${glowColor}, 2px 2px 4px rgba(0,0,0,0.3), -2px -2px 4px ${glowColor}88`;
+                        break;
+                      case 'gradient-animation':
+                        style.textShadow = `0 0 ${finalIntensity}px ${glowColor}, 0 0 ${finalSpread}px ${glowColor}`;
+                        break;
+                      case 'new-year':
+                        break;
+                      case 'neon':
+                      default:
+                        break;
+                    }
+                  } else {
+                    style.textShadow = 'none';
+                  }
+
+                  return style;
+                })()}>
+                  <span className="issa-plus-text">
+                    <span className="issa-plus-word">
+                      {appTitleSettings.text}
+                      {isWinterSeason && (
+                        <span className="issa-plus-last">
+                          <span className="santa-hat">
+                            <span className="santa-hat__pom" />
+                          </span>
+                        </span>
+                      )}
+                    </span>
+                  </span>
+                </span>
               </div>
               
               {/* Пустой блок справа для балансировки (такой же размер как кнопка) */}
               <div style={{ width: 48, flexShrink: 0 }}></div>
               
               <style>{`
-                @keyframes pulse-green-nav {
-                  0%, 100% {
-                    text-shadow: 0 0 8px #43e97b, 0 0 16px #43e97b, 0 0 24px #43e97b;
-                    box-shadow: 0 0 15px rgba(67, 233, 123, 0.5), inset 0 0 15px rgba(67, 233, 123, 0.1);
+                @keyframes neonGlow {
+                  0% { 
+                    text-shadow: 0 0 ${Number(appTitleSettings.glowIntensity) || 12}px ${appTitleSettings.glowColor || '#43e97b'}, 
+                                0 0 ${((Number(appTitleSettings.glowSpread) || 32) * 0.5)}px ${appTitleSettings.glowColor || '#43e97b'}, 
+                                0 0 2px #fff, 
+                                0 0 ${((Number(appTitleSettings.glowSpread) || 32) * 0.75)}px ${appTitleSettings.glowColor || '#43e97b'}88; 
                   }
-                  50% {
-                    text-shadow: 0 0 12px #43e97b, 0 0 24px #43e97b, 0 0 36px #43e97b;
-                    box-shadow: 0 0 25px rgba(67, 233, 123, 0.7), inset 0 0 25px rgba(67, 233, 123, 0.2);
+                  50% { 
+                    text-shadow: 0 0 ${((Number(appTitleSettings.glowIntensity) || 12) * 2)}px ${appTitleSettings.glowColor || '#43e97b'}, 
+                                0 0 ${Number(appTitleSettings.glowSpread) || 32}px ${appTitleSettings.glowColor || '#43e97b'}, 
+                                0 0 8px #fff, 
+                                0 0 ${Number(appTitleSettings.glowSpread) || 32}px ${appTitleSettings.glowColor || '#43e97b'}cc; 
+                  }
+                  100% { 
+                    text-shadow: 0 0 ${Number(appTitleSettings.glowIntensity) || 12}px ${appTitleSettings.glowColor || '#43e97b'}, 
+                                0 0 ${((Number(appTitleSettings.glowSpread) || 32) * 0.5)}px ${appTitleSettings.glowColor || '#43e97b'}, 
+                                0 0 2px #fff, 
+                                0 0 ${((Number(appTitleSettings.glowSpread) || 32) * 0.75)}px ${appTitleSettings.glowColor || '#43e97b'}88; 
                   }
                 }
-                @keyframes pulse-red-nav {
-                  0%, 100% {
-                    text-shadow: 0 0 8px #e74c3c, 0 0 16px #e74c3c, 0 0 24px #e74c3c;
-                    box-shadow: 0 0 15px rgba(231, 76, 60, 0.5), inset 0 0 15px rgba(231, 76, 60, 0.1);
+                @keyframes gradientAnimation {
+                  0% { 
+                    background-position: 0% 50%;
                   }
-                  50% {
-                    text-shadow: 0 0 12px #e74c3c, 0 0 24px #e74c3c, 0 0 36px #e74c3c;
-                    box-shadow: 0 0 25px rgba(231, 76, 60, 0.7), inset 0 0 25px rgba(231, 76, 60, 0.2);
+                  50% { 
+                    background-position: 100% 50%;
                   }
+                  100% { 
+                    background-position: 0% 50%;
+                  }
+                }
+                @keyframes sparkleAnimation {
+                  0%, 100% { 
+                    text-shadow: 0 0 ${Number(appTitleSettings.glowIntensity) || 12}px ${appTitleSettings.glowColor || '#43e97b'}, 
+                                0 0 ${Number(appTitleSettings.glowSpread) || 32}px ${appTitleSettings.glowColor || '#43e97b'}, 
+                                2px 2px 4px rgba(0,0,0,0.3),
+                                -2px -2px 4px ${appTitleSettings.glowColor || '#43e97b'}88;
+                  }
+                  25% { 
+                    text-shadow: 0 0 ${Number(appTitleSettings.glowIntensity) || 12}px ${appTitleSettings.glowColor || '#43e97b'}, 
+                                0 0 ${Number(appTitleSettings.glowSpread) || 32}px ${appTitleSettings.glowColor || '#43e97b'}, 
+                                4px 4px 8px rgba(0,0,0,0.3),
+                                -4px -4px 8px ${appTitleSettings.glowColor || '#43e97b'}cc,
+                                0 0 ${(Number(appTitleSettings.glowSpread) || 32) * 1.5}px ${appTitleSettings.glowColor || '#43e97b'};
+                  }
+                  50% { 
+                    text-shadow: 0 0 ${Number(appTitleSettings.glowIntensity) || 12}px ${appTitleSettings.glowColor || '#43e97b'}, 
+                                0 0 ${Number(appTitleSettings.glowSpread) || 32}px ${appTitleSettings.glowColor || '#43e97b'}, 
+                                2px 2px 4px rgba(0,0,0,0.3),
+                                -2px -2px 4px ${appTitleSettings.glowColor || '#43e97b'}88;
+                  }
+                  75% { 
+                    text-shadow: 0 0 ${Number(appTitleSettings.glowIntensity) || 12}px ${appTitleSettings.glowColor || '#43e97b'}, 
+                                0 0 ${Number(appTitleSettings.glowSpread) || 32}px ${appTitleSettings.glowColor || '#43e97b'}, 
+                                -4px -4px 8px rgba(0,0,0,0.3),
+                                4px 4px 8px ${appTitleSettings.glowColor || '#43e97b'}cc,
+                                0 0 ${(Number(appTitleSettings.glowSpread) || 32) * 1.5}px ${appTitleSettings.glowColor || '#43e97b'};
+                  }
+                }
+                @keyframes newYearAnimation {
+                  0% { 
+                    text-shadow: 0 0 ${Number(appTitleSettings.glowIntensity) || 12}px #ff0000, 
+                                0 0 ${Number(appTitleSettings.glowSpread) || 32}px #ff0000, 
+                                0 0 ${(Number(appTitleSettings.glowSpread) || 32) * 0.5}px #ffd700,
+                                2px 2px 4px rgba(255, 0, 0, 0.5);
+                    filter: hue-rotate(0deg);
+                  }
+                  25% { 
+                    text-shadow: 0 0 ${Number(appTitleSettings.glowIntensity) || 12}px #00ff00, 
+                                0 0 ${Number(appTitleSettings.glowSpread) || 32}px #00ff00, 
+                                0 0 ${(Number(appTitleSettings.glowSpread) || 32) * 0.5}px #ffd700,
+                                2px 2px 4px rgba(0, 255, 0, 0.5);
+                    filter: hue-rotate(90deg);
+                  }
+                  50% { 
+                    text-shadow: 0 0 ${Number(appTitleSettings.glowIntensity) || 12}px #ffd700, 
+                                0 0 ${Number(appTitleSettings.glowSpread) || 32}px #ffd700, 
+                                0 0 ${(Number(appTitleSettings.glowSpread) || 32) * 0.5}px #ff0000,
+                                2px 2px 4px rgba(255, 215, 0, 0.5);
+                    filter: hue-rotate(180deg);
+                  }
+                  75% { 
+                    text-shadow: 0 0 ${Number(appTitleSettings.glowIntensity) || 12}px #ff1493, 
+                                0 0 ${Number(appTitleSettings.glowSpread) || 32}px #ff1493, 
+                                0 0 ${(Number(appTitleSettings.glowSpread) || 32) * 0.5}px #00ff00,
+                                2px 2px 4px rgba(255, 20, 147, 0.5);
+                    filter: hue-rotate(270deg);
+                  }
+                  100% { 
+                    text-shadow: 0 0 ${Number(appTitleSettings.glowIntensity) || 12}px #ff0000, 
+                                0 0 ${Number(appTitleSettings.glowSpread) || 32}px #ff0000, 
+                                0 0 ${(Number(appTitleSettings.glowSpread) || 32) * 0.5}px #ffd700,
+                                2px 2px 4px rgba(255, 0, 0, 0.5);
+                    filter: hue-rotate(360deg);
+                  }
+                }
+                .neon-issa-plus {
+                  display: inline;
+                  white-space: nowrap;
+                  ${(appTitleSettings.glowEnabled === true && (appTitleSettings.effectType || 'neon') === 'neon') ? 'animation: neonGlow 1.6s infinite alternate;' : ''}
+                  ${(appTitleSettings.glowEnabled === true && appTitleSettings.effectType === 'gradient-animation') ? 'animation: gradientAnimation 3s ease infinite;' : ''}
+                  ${(appTitleSettings.glowEnabled === true && appTitleSettings.effectType === 'gradient-animation') ? `background: linear-gradient(-45deg, ${appTitleSettings.glowColor || '#43e97b'}, ${appTitleSettings.color || '#43e97b'}, ${appTitleSettings.glowColor || '#43e97b'}, ${appTitleSettings.color || '#43e97b'});` : ''}
+                  ${(appTitleSettings.glowEnabled === true && appTitleSettings.effectType === 'gradient-animation') ? 'background-size: 400% 400%;' : ''}
+                  ${(appTitleSettings.glowEnabled === true && appTitleSettings.effectType === 'gradient-animation') ? '-webkit-background-clip: text;' : ''}
+                  ${(appTitleSettings.glowEnabled === true && appTitleSettings.effectType === 'gradient-animation') ? '-webkit-text-fill-color: transparent;' : ''}
+                  ${(appTitleSettings.glowEnabled === true && appTitleSettings.effectType === 'gradient-animation') ? 'background-clip: text;' : ''}
+                  ${(appTitleSettings.glowEnabled === true && appTitleSettings.effectType === 'sparkle') ? 'animation: sparkleAnimation 2s ease-in-out infinite;' : ''}
+                  ${(appTitleSettings.glowEnabled === true && appTitleSettings.effectType === 'new-year') ? 'animation: newYearAnimation 3s ease-in-out infinite;' : ''}
+                }
+                .issa-plus-festive {
+                  position: relative;
+                }
+                .issa-plus-text {
+                  position: relative;
+                  display: inline-flex;
+                  align-items: center;
+                  gap: 10px;
+                }
+                .issa-plus-word {
+                  position: relative;
+                  display: inline-flex;
+                  align-items: flex-start;
+                  gap: 2px;
+                  white-space: nowrap;
+                }
+                .issa-plus-last {
+                  position: relative;
+                  display: inline-block;
+                  padding-right: 2px;
+                }
+                .santa-hat {
+                  position: absolute;
+                  top: -12px;
+                  left: -4px;
+                  width: 24px;
+                  height: 20px;
+                  background: #ff0000;
+                  border-radius: 50% 50% 0 0;
+                  transform: rotate(-15deg);
+                }
+                .santa-hat::before {
+                  content: '';
+                  position: absolute;
+                  top: -8px;
+                  left: 8px;
+                  width: 8px;
+                  height: 8px;
+                  background: #fff;
+                  border-radius: 50%;
+                }
+                .santa-hat__pom {
+                  position: absolute;
+                  top: -10px;
+                  left: 10px;
+                  width: 6px;
+                  height: 6px;
+                  background: #fff;
+                  border-radius: 50%;
                 }
               `}</style>
             </div>
