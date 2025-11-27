@@ -612,27 +612,7 @@ export default function Sidebar() {
             ))}
           </div>
         )}
-        <div style={{padding:'18px 0 8px 0',textAlign:'center',fontWeight:700,fontSize:'1.18em',letterSpacing:'0.01em',color:'#fff',display:'flex',flexDirection:'column',alignItems:'center', position: 'relative'}}>
-          {/* Снеговик */}
-          {appTitleSettings.snowmanEnabled && appTitleSettings.snowmanPositionType === 'relative' && (
-            <img
-              src={appTitleSettings.snowmanImage || frostyImg}
-              alt="Снеговик"
-              style={{
-                position: 'absolute',
-                left: `calc(50% + ${appTitleSettings.snowmanPositionX || 0}px)`,
-                top: `${appTitleSettings.snowmanPositionY || 0}px`,
-                transform: 'translateX(-50%)',
-                width: `${(appTitleSettings.snowmanScale || 100) * 0.6}px`,
-                height: 'auto',
-                zIndex: 10,
-                pointerEvents: 'none',
-                userSelect: 'none'
-              }}
-            />
-          )}
-          {/* Текст и название перенесены в SidebarNav */}
-        </div>
+        {/* Блок с текстом "Мульти-мессенджер" и названием "Issa Plus" удален - перенесен в SidebarNav */}
         <UserInfo>
           <UserDetails style={{
             position: 'relative',
