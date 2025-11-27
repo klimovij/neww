@@ -631,6 +631,8 @@ export default function Sidebar() {
               }}
             />
           )}
+          {/* Текст и название перенесены в SidebarNav */}
+          {/* 
           <span style={{display:'flex',alignItems:'center',gap:6,marginLeft:-50,}}>
             <span role="img" aria-label="chat">💬</span> Мульти-мессенджер
           </span>
@@ -929,6 +931,7 @@ export default function Sidebar() {
               100% { transform: translate3d(var(--snow-x, 40px), var(--snow-y, 160px), 0) rotate(360deg); opacity: 0; }
             }
           `}</style>
+          */}
         </div>
         <UserInfo>
           <UserDetails style={{
