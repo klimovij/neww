@@ -99,6 +99,15 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar, 
   const [socketConnected, setSocketConnected] = useState(() => window.socket?.connected ?? false);
   const [appTitleSettings, setAppTitleSettings] = useState(getAppTitleSettings());
   
+  // Отладка: проверяем, что hideTitle передается правильно
+  React.useEffect(() => {
+    if (hideTitle) {
+      console.log('🔴 [SidebarNav] hideTitle=true, текст должен быть скрыт');
+    } else {
+      console.log('🟢 [SidebarNav] hideTitle=false, текст должен быть виден');
+    }
+  }, [hideTitle]);
+  
   const isWinterSeason = React.useMemo(() => {
     const today = new Date();
     const month = today.getMonth(); // 0 - январь, 11 - декабрь
