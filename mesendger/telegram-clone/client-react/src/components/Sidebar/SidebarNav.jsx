@@ -1228,6 +1228,10 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar, 
                     style.WebkitTextFillColor = 'unset';
                     style.backgroundClip = 'unset';
                   }
+                  
+                  // Убеждаемся, что текст всегда виден
+                  style.display = 'inline-block';
+                  style.visibility = 'visible';
 
                   // Применяем эффекты в зависимости от выбранного типа
                   if (appTitleSettings.glowEnabled === true) {
