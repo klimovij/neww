@@ -2370,13 +2370,17 @@ class Database {
           
           let query, params;
           if (start && end) {
-            // Удаление по диапазону дат
-            query = 'DELETE FROM activity_logs WHERE timestamp >= ? AND timestamp <= ?';
-            params = [startDate.toISOString(), endDate.toISOString()];
+            // Удаление по диапазону дат - используем date() как в getActivityLogsBetween
+            query = 'DELETE FROM activity_logs WHERE date(timestamp) >= date(?) AND date(timestamp) <= date(?)';
+            params = [start, end];
+            console.log(`🗑️ [deleteActivityLogs] Удаление activity_logs за период: ${start} - ${end}`);
+            console.log(`🗑️ [deleteActivityLogs] SQL запрос: ${query}`, `Параметры:`, params);
           } else {
             // Удаление до определенной даты
-            query = 'DELETE FROM activity_logs WHERE timestamp < ?';
-            params = [endDate.toISOString()];
+            const cutoffDateStr = endDate.toISOString().slice(0, 10); // YYYY-MM-DD
+            query = 'DELETE FROM activity_logs WHERE date(timestamp) < date(?)';
+            params = [cutoffDateStr];
+            console.log(`🗑️ [deleteActivityLogs] Удаление activity_logs до даты: ${cutoffDateStr}`);
           }
           
           // Удаляем из activity_logs
@@ -2389,14 +2393,17 @@ class Database {
             const deletedActivityCount = this.changes; // this.changes доступен в обычной функции
             console.log(`✅ Deleted ${deletedActivityCount} activity logs`);
             
-            // Также удаляем скриншоты за тот же период
+            // Также удаляем скриншоты за тот же период - используем date() для нормализации
             let screenshotQuery, screenshotParams;
             if (start && end) {
-              screenshotQuery = 'DELETE FROM activity_screenshots WHERE timestamp >= ? AND timestamp <= ?';
-              screenshotParams = [startDate.toISOString(), endDate.toISOString()];
+              screenshotQuery = 'DELETE FROM activity_screenshots WHERE date(timestamp) >= date(?) AND date(timestamp) <= date(?)';
+              screenshotParams = [start, end];
+              console.log(`🗑️ [deleteActivityLogs] Удаление activity_screenshots за период: ${start} - ${end}`);
             } else {
-              screenshotQuery = 'DELETE FROM activity_screenshots WHERE timestamp < ?';
-              screenshotParams = [endDate.toISOString()];
+              const cutoffDateStr = endDate.toISOString().slice(0, 10); // YYYY-MM-DD
+              screenshotQuery = 'DELETE FROM activity_screenshots WHERE date(timestamp) < date(?)';
+              screenshotParams = [cutoffDateStr];
+              console.log(`🗑️ [deleteActivityLogs] Удаление activity_screenshots до даты: ${cutoffDateStr}`);
             }
             
             db.run(screenshotQuery, screenshotParams, function(err) {
