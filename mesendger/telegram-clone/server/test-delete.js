@@ -35,34 +35,36 @@ db.all('SELECT event_time FROM work_time_logs LIMIT 5', [], (err, rows) => {
       
       const start = testDate;
       const end = testDate;
-  
-  // Проверяем, сколько записей будет удалено (используем date() как в реальном запросе)
-  const checkQuery = `SELECT COUNT(*) as count FROM work_time_logs WHERE date(event_time) >= date(?) AND date(event_time) <= date(?)`;
-  
-  db.get(checkQuery, [start, end], (err, row) => {
-    if (err) {
-      console.error('❌ Ошибка проверки:', err);
-      db.close();
-      return;
-    }
-    console.log(`  Найдено записей для удаления: ${row.count}`);
-    
-    if (row.count > 0) {
-      // Показываем примеры записей, которые будут удалены
-      const sampleQuery = checkQuery.replace('COUNT(*) as count', '*');
-      db.all(sampleQuery + ' LIMIT 3', [start, end], (err, samples) => {
-        if (!err && samples) {
-          console.log('  Примеры записей:');
-          samples.forEach((s, i) => {
-            console.log(`    ${i + 1}. ${s.username} - ${s.event_type} - ${s.event_time}`);
-          });
+      
+      // Проверяем, сколько записей будет удалено (используем date() как в реальном запросе)
+      const checkQuery = `SELECT COUNT(*) as count FROM work_time_logs WHERE date(event_time) >= date(?) AND date(event_time) <= date(?)`;
+      
+      db.get(checkQuery, [start, end], (err, row) => {
+        if (err) {
+          console.error('❌ Ошибка проверки:', err);
+          db.close();
+          return;
         }
-        db.close();
+        console.log(`  Найдено записей для удаления: ${row.count}`);
+        
+        if (row.count > 0) {
+          // Показываем примеры записей, которые будут удалены
+          const sampleQuery = checkQuery.replace('COUNT(*) as count', '*');
+          db.all(sampleQuery + ' LIMIT 3', [start, end], (err, samples) => {
+            if (!err && samples) {
+              console.log('  Примеры записей:');
+              samples.forEach((s, i) => {
+                console.log(`    ${i + 1}. ${s.username} - ${s.event_type} - ${s.event_time}`);
+              });
+            }
+            db.close();
+          });
+        } else {
+          db.close();
+        }
       });
     } else {
       db.close();
     }
-    });
   });
 });
-
