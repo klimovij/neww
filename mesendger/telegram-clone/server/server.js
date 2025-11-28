@@ -3752,23 +3752,31 @@ app.get('/api/sidebar-settings', authenticateToken, async (req, res) => {
     const settingsData = await db.getSidebarSettings();
     console.log('📡 GET /api/sidebar-settings - Settings retrieved:', settingsData ? 'Found' : 'Not found');
     
-    if (settingsData) {
-      // Удаляем служебные поля (updated_at, updated_by) перед отправкой клиенту
-      const { updated_at, updated_by, ...settings } = settingsData;
-      
-      console.log('📦 Settings type:', typeof settings);
-      console.log('📦 Settings keys:', Object.keys(settings).slice(0, 10));
-      console.log('📦 Settings data preview:', JSON.stringify(settings).substring(0, 200) + '...');
-      console.log('🖼️ Snowman images count:', settings.snowmanImages ? settings.snowmanImages.length : 0);
-      
-      // Убеждаемся, что отправляем объект, а не строку
-      res.json({ success: true, settings });
+    if (settingsData && typeof settingsData === 'object') {
+      try {
+        // Удаляем служебные поля (updated_at, updated_by) перед отправкой клиенту
+        const { updated_at, updated_by, ...settings } = settingsData;
+        
+        console.log('📦 Settings type:', typeof settings);
+        console.log('📦 Settings keys:', Object.keys(settings).slice(0, 10));
+        console.log('📦 Settings data preview:', JSON.stringify(settings).substring(0, 200) + '...');
+        console.log('🖼️ Snowman images count:', settings.snowmanImages ? settings.snowmanImages.length : 0);
+        
+        // Убеждаемся, что отправляем объект, а не строку
+        res.json({ success: true, settings });
+      } catch (parseError) {
+        console.error('❌ Error processing settings data:', parseError);
+        // Если не удалось обработать данные, возвращаем null
+        res.json({ success: true, settings: null });
+      }
     } else {
       res.json({ success: true, settings: null });
     }
   } catch (error) {
     console.error('❌ Error getting sidebar settings:', error);
-    res.status(500).json({ success: false, error: 'Ошибка получения настроек сайдбара' });
+    console.error('❌ Error stack:', error.stack);
+    // Возвращаем успешный ответ с null вместо 500, чтобы клиент мог работать с локальными настройками
+    res.json({ success: true, settings: null });
   }
 });
 

@@ -4995,17 +4995,33 @@ class Database {
         (err, row) => {
           if (err) {
             console.error('Error getting sidebar settings:', err);
+            // Если таблица не существует, возвращаем null вместо ошибки
+            if (err.message && err.message.includes('no such table')) {
+              console.warn('Table app_sidebar_settings does not exist yet, returning null');
+              resolve(null);
+              return;
+            }
             reject(err);
-          } else if (row) {
+          } else if (row && row.settings) {
             try {
-              let settings = JSON.parse(row.settings);
+              // Проверяем, что settings не пустая строка
+              const settingsStr = String(row.settings).trim();
+              if (!settingsStr || settingsStr === 'null' || settingsStr === 'undefined') {
+                console.warn('Sidebar settings is empty or null, returning null');
+                resolve(null);
+                return;
+              }
+              
+              let settings = JSON.parse(settingsStr);
               // Если после парсинга получилась строка, значит была двойная сериализация
               if (typeof settings === 'string') {
                 try {
                   settings = JSON.parse(settings);
                 } catch (doubleParseErr) {
                   console.error('Error parsing double-serialized sidebar settings:', doubleParseErr);
-                  reject(doubleParseErr);
+                  // Вместо reject, возвращаем null
+                  console.warn('Failed to parse double-serialized settings, returning null');
+                  resolve(null);
                   return;
                 }
               }
@@ -5016,7 +5032,10 @@ class Database {
               });
             } catch (parseErr) {
               console.error('Error parsing sidebar settings:', parseErr);
-              reject(parseErr);
+              console.error('Settings value:', row.settings);
+              // Вместо reject, возвращаем null для более мягкой обработки
+              console.warn('Failed to parse settings, returning null');
+              resolve(null);
             }
           } else {
             // Возвращаем null если настроек нет
