@@ -569,10 +569,17 @@ app.delete('/api/custom-emoji/:file', authenticateToken, async (req, res) => {
 // ВРЕМЕННЫЙ ТЕСТОВЫЙ РОУТ для проверки работы /api/local-worktime-report
 // Подключаем ПЕРЕД блоком try, чтобы он был доступен сразу
 app.get('/api/local-worktime-report', async (req, res) => {
-  console.log(`🔴🔴🔴 [TEST-ROUTE] Запрос к /api/local-worktime-report! Query: ${JSON.stringify(req.query)}`);
+  console.log(`🔴🔴🔴 [TEST-ROUTE] Запрос к /api/local-worktime-report! Method: ${req.method}, Path: ${req.path}, Query: ${JSON.stringify(req.query)}`);
+  console.log(`🔴🔴🔴 [TEST-ROUTE] Headers:`, JSON.stringify(req.headers));
   try {
     // Импортируем функцию из quickCsvReport
-    const { getLocalWorkTimeReport } = require('./routes/quickCsvReport');
+    const quickCsvReport = require('./routes/quickCsvReport');
+    console.log(`🔴🔴🔴 [TEST-ROUTE] quickCsvReport module:`, typeof quickCsvReport);
+    console.log(`🔴🔴🔴 [TEST-ROUTE] getLocalWorkTimeReport:`, typeof quickCsvReport.getLocalWorkTimeReport);
+    
+    if (!quickCsvReport.getLocalWorkTimeReport) {
+      throw new Error('getLocalWorkTimeReport не экспортируется из quickCsvReport');
+    }
     
     let { start, end, username } = req.query;
     
@@ -586,11 +593,14 @@ app.get('/api/local-worktime-report', async (req, res) => {
       end = endDate.toISOString().slice(0, 10);
     }
     
-    const report = await getLocalWorkTimeReport({ start, end, username });
+    console.log(`🔴🔴🔴 [TEST-ROUTE] Вызываем getLocalWorkTimeReport с параметрами:`, { start, end, username });
+    const report = await quickCsvReport.getLocalWorkTimeReport({ start, end, username });
+    console.log(`🔴🔴🔴 [TEST-ROUTE] Получен отчет, количество пользователей:`, report.length);
     
     res.json({ success: true, report, debug: { start, end, username, count: report.length } });
   } catch (err) {
     console.error(`❌ [TEST-ROUTE] Ошибка:`, err);
+    console.error(`❌ [TEST-ROUTE] Stack:`, err.stack);
     res.status(500).json({ success: false, error: err.message, stack: err.stack });
   }
 });
