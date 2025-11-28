@@ -463,7 +463,8 @@ async function getDbShortReport({ start, end, username }) {
 
 // API: /api/local-worktime-report?start=YYYY-MM-DD&end=YYYY-MM-DD&username=...
 // Отчет для ЛОКАЛЬНЫХ пользователей (work_time_logs + activity_logs)
-router.get('/local-worktime-report', authenticateToken, async (req, res) => {
+// ВРЕМЕННО: убрал authenticateToken для отладки
+router.get('/local-worktime-report', async (req, res) => {
   console.log(`📊 [local-worktime-report] Запрос локальных данных. Query: ${JSON.stringify(req.query)}`);
   
   try {
