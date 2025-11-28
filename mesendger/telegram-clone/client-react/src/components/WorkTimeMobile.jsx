@@ -9,6 +9,7 @@ import AppUsageMobile from './AppUsageMobile';
 import RemoteWorktimeReportModal from './Modals/RemoteWorktimeReportModal';
 import RemoteWorktimeReportMobile from './RemoteWorktimeReportMobile';
 import OneCDocumentHistoryMobile from './OneCDocumentHistoryMobile';
+import api from '../services/api';
 
 // Вынесем парсер вне функции
 function parseDate(str) {
@@ -184,8 +185,8 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
     try {
       const url = `/api/local-worktime-report?start=${localReportStartDate}&end=${localReportEndDate}`;
       console.log('📡 [WorkTimeMobile] Запрос к API:', url);
-      const res = await fetch(url);
-      const data = await res.json();
+      const res = await api.get(url);
+      const data = res.data;
       console.log('📥 [WorkTimeMobile] Ответ от API:', { success: data.success, reportLength: data.report?.length || 0, data });
       console.log('📥 [WorkTimeMobile] Полный ответ API:', JSON.stringify(data, null, 2));
       
@@ -381,8 +382,8 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
             // Используем endpoint для ЛОКАЛЬНЫХ данных
             let url = `/api/local-worktime-report?start=${startDate}&end=${endDate}`;
             if (selectedUser) url += `&username=${encodeURIComponent(selectedUser)}`;
-            const res = await fetch(url);
-            const data = await res.json();
+            const res = await api.get(url);
+            const data = res.data;
             console.log('📊 [WorkTimeMobile] Данные из local-worktime-report (локальные, автозагрузка):', data);
             if (data.report && data.report.length > 0) {
               console.log('📊 [WorkTimeMobile] Первый элемент отчёта:', JSON.stringify(data.report[0], null, 2));
@@ -434,8 +435,8 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
       // Используем endpoint для ЛОКАЛЬНЫХ данных
       let url = `/api/local-worktime-report?start=${startDate}&end=${endDate}`;
       if (selectedUser) url += `&username=${encodeURIComponent(selectedUser)}`;
-      const res = await fetch(url);
-      const data = await res.json();
+      const res = await api.get(url);
+      const data = res.data;
       console.log('📊 [WorkTimeMobile] Данные из local-worktime-report (локальные):', data);
       if (data.report && data.report.length > 0) {
         console.log('📊 [WorkTimeMobile] Первый элемент отчёта:', JSON.stringify(data.report[0], null, 2));

@@ -1,6 +1,7 @@
 const express = require('express');
 const db = require('../database');
 const router = express.Router();
+const authenticateToken = require('../middleware/authenticateToken');
 
 // Логируем при загрузке модуля - используем console.log для PM2
 console.log('🚀🚀🚀 [quickCsvReport] MODULE LOADING STARTED');
@@ -462,7 +463,7 @@ async function getDbShortReport({ start, end, username }) {
 
 // API: /api/local-worktime-report?start=YYYY-MM-DD&end=YYYY-MM-DD&username=...
 // Отчет для ЛОКАЛЬНЫХ пользователей (work_time_logs + activity_logs)
-router.get('/local-worktime-report', async (req, res) => {
+router.get('/local-worktime-report', authenticateToken, async (req, res) => {
   console.log(`📊 [local-worktime-report] Запрос локальных данных. Query: ${JSON.stringify(req.query)}`);
   
   try {

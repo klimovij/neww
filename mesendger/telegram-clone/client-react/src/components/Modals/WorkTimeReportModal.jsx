@@ -5,6 +5,7 @@ import AppUsageModal from './AppUsageModal';
 import RemoteWorktimeReportModal from './RemoteWorktimeReportModal';
 import UserWorkTimeDetailsMobile from '../UserWorkTimeDetailsMobile';
 import OneCDocumentHistoryMobile from '../OneCDocumentHistoryMobile';
+import api from '../../services/api';
 
 Modal.setAppElement('#root');
 
@@ -158,8 +159,8 @@ function WorkTimeReportModal({ isOpen, onRequestClose }) {
     setLoadingLocalReport(true);
     try {
       const url = `/api/local-worktime-report?start=${localReportStartDate}&end=${localReportEndDate}`;
-      const res = await fetch(url);
-      const data = await res.json();
+      const res = await api.get(url);
+      const data = res.data;
       
       if (data.success && Array.isArray(data.report)) {
         setLocalReportUsers(data.report);
