@@ -638,10 +638,15 @@ router.get('/activity-details', async (req, res) => {
 
 // Endpoint для очистки данных активности
 router.delete('/activity-logs/clear', authenticateToken, async (req, res) => {
-  console.log('🗑️ [activity-logs/clear] Request received to clear activity logs.');
+  console.log('🗑️ [activity-logs/clear] ========== REQUEST RECEIVED ==========');
+  console.log('🗑️ [activity-logs/clear] Method:', req.method);
+  console.log('🗑️ [activity-logs/clear] Path:', req.path);
+  console.log('🗑️ [activity-logs/clear] Body:', JSON.stringify(req.body));
+  console.log('🗑️ [activity-logs/clear] Headers:', JSON.stringify(req.headers));
   try {
     const { period, start, end } = req.body; // period: 'day', 'week', 'month' ИЛИ start/end: 'YYYY-MM-DD'
     const user = req.user; // Получаем пользователя из токена
+    console.log('🗑️ [activity-logs/clear] User from token:', user ? { username: user.username, role: user.role } : 'null');
     
     // Проверка прав: только HR или Admin могут очищать данные
     if (!user || (user.role !== 'hr' && user.role !== 'admin')) {
