@@ -130,6 +130,11 @@ app.get('/api/local-worktime-report', async (req, res) => {
 });
 
 // Логирование ВСЕХ входящих запросов (самое раннее, до всех middleware)
+// Парсинг JSON и URL-encoded (ДО логирования, чтобы body был доступен)
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+// Логирование после парсинга body
 app.use((req, res, next) => {
   if (req.path && req.path.includes('local-worktime-report')) {
     console.log(`🔴🔴🔴 [EARLY-MIDDLEWARE] ${req.method} ${req.path} ${JSON.stringify(req.query)}`);
@@ -139,15 +144,11 @@ app.use((req, res, next) => {
   if (req.method === 'DELETE' && req.path && req.path.includes('activity-logs')) {
     console.log(`🔴🔴🔴 [EARLY-MIDDLEWARE] DELETE запрос к ${req.path}`);
     console.log(`🔴🔴🔴 [EARLY-MIDDLEWARE] Method: ${req.method}, Path: ${req.path}`);
-    console.log(`🔴🔴🔴 [EARLY-MIDDLEWARE] Body:`, req.body);
+    console.log(`🔴🔴🔴 [EARLY-MIDDLEWARE] Body (после парсинга):`, JSON.stringify(req.body));
     console.log(`🔴🔴🔴 [EARLY-MIDDLEWARE] Headers:`, JSON.stringify(req.headers));
   }
   next();
 });
-
-// Парсинг JSON и URL-encoded
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Настройка CORS (один раз, до маршрутов)
 app.use(cors({
