@@ -31,9 +31,11 @@ router.get('/leaves', async (req, res) => {
 
 // Прием событий рабочего времени от PowerShell-скрипта (локальные ПК)
 router.post('/worktime', async (req, res) => {
+  console.log(`📥 [POST /api/worktime] Получен запрос от локального ПК:`, { username: req.body.username, event_type: req.body.event_type, event_time: req.body.event_time });
   try {
     const { username, event_type, event_time, event_id } = req.body;
     if (!username || !event_type || !event_time) {
+      console.error(`❌ [POST /api/worktime] Отсутствуют обязательные поля:`, { username: !!username, event_type: !!event_type, event_time: !!event_time });
       return res.status(400).json({ success: false, error: 'Missing required fields: username, event_type, event_time' });
     }
     
