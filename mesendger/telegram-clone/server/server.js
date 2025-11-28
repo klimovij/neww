@@ -609,6 +609,14 @@ try {
   app.use('/api', importWorktimeCsvRoutes);
   console.log('✅ [SERVER] importWorktimeCsvRoutes mounted');
   
+  // Проверяем, нет ли конфликта роутов в importWorktimeCsvRoutes
+  if (importWorktimeCsvRoutes.stack) {
+    console.log('🔍 [SERVER] importWorktimeCsvRoutes routes:');
+    importWorktimeCsvRoutes.stack.forEach((layer, idx) => {
+      console.log(`🔍 [SERVER] importWorktimeCsvRoutes Route ${idx}: ${layer.method || 'ALL'} ${layer.path || layer.regexp}`);
+    });
+  }
+  
   // Проверяем, что роутер действительно загружен и имеет обработчики
   console.log('🔍 [SERVER] Проверка quickCsvReportRouter:', typeof quickCsvReportRouter);
   console.log('🔍 [SERVER] Роутер stack:', quickCsvReportRouter.stack?.length || 'no stack');

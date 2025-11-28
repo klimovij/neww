@@ -465,6 +465,7 @@ async function getDbShortReport({ start, end, username }) {
 // Отчет для ЛОКАЛЬНЫХ пользователей (work_time_logs + activity_logs)
 // ВРЕМЕННО: убрал authenticateToken для отладки
 router.get('/local-worktime-report', async (req, res) => {
+  console.log(`🔴🔴🔴 [local-worktime-report] РОУТ ВЫЗВАН! Method: ${req.method}, Path: ${req.path}, Query: ${JSON.stringify(req.query)}`);
   console.log(`📊 [local-worktime-report] Запрос локальных данных. Query: ${JSON.stringify(req.query)}`);
   
   try {
