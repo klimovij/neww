@@ -89,6 +89,31 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-producti
 // ==================== ИНИЦИАЛИЗАЦИЯ EXPRESS ====================
 const app = express();
 
+// ВРЕМЕННЫЙ ТЕСТОВЫЙ РОУТ - ПЕРВЫМ, ДО ВСЕХ MIDDLEWARE И РОУТЕРОВ!
+app.get('/api/local-worktime-report', async (req, res) => {
+  console.log(`🔴🔴🔴 [TEST-ROUTE] Запрос к /api/local-worktime-report! Method: ${req.method}, Path: ${req.path}, Query: ${JSON.stringify(req.query)}`);
+  try {
+    const quickCsvReport = require('./routes/quickCsvReport');
+    let { start, end, username } = req.query;
+    
+    if (start && end) {
+      const startDate = new Date(start + 'T00:00:00');
+      startDate.setDate(startDate.getDate() - 1);
+      start = startDate.toISOString().slice(0, 10);
+      
+      const endDate = new Date(end + 'T23:59:59');
+      endDate.setDate(endDate.getDate() + 1);
+      end = endDate.toISOString().slice(0, 10);
+    }
+    
+    const report = await quickCsvReport.getLocalWorkTimeReport({ start, end, username });
+    res.json({ success: true, report, debug: { start, end, username, count: report.length } });
+  } catch (err) {
+    console.error(`❌ [TEST-ROUTE] Ошибка:`, err);
+    res.status(500).json({ success: false, error: err.message, stack: err.stack });
+  }
+});
+
 // Логирование ВСЕХ входящих запросов (самое раннее, до всех middleware)
 app.use((req, res, next) => {
   if (req.path && req.path.includes('local-worktime-report')) {
@@ -565,45 +590,6 @@ app.delete('/api/custom-emoji/:file', authenticateToken, async (req, res) => {
 
 // ==================== API МАРШРУТЫ ====================
 // --- ОТЧЁТЫ ПО РАБОЧЕМУ ВРЕМЕНИ И АКТИВНОСТИ ---
-
-// ВРЕМЕННЫЙ ТЕСТОВЫЙ РОУТ для проверки работы /api/local-worktime-report
-// Подключаем ПЕРЕД блоком try, чтобы он был доступен сразу
-app.get('/api/local-worktime-report', async (req, res) => {
-  console.log(`🔴🔴🔴 [TEST-ROUTE] Запрос к /api/local-worktime-report! Method: ${req.method}, Path: ${req.path}, Query: ${JSON.stringify(req.query)}`);
-  console.log(`🔴🔴🔴 [TEST-ROUTE] Headers:`, JSON.stringify(req.headers));
-  try {
-    // Импортируем функцию из quickCsvReport
-    const quickCsvReport = require('./routes/quickCsvReport');
-    console.log(`🔴🔴🔴 [TEST-ROUTE] quickCsvReport module:`, typeof quickCsvReport);
-    console.log(`🔴🔴🔴 [TEST-ROUTE] getLocalWorkTimeReport:`, typeof quickCsvReport.getLocalWorkTimeReport);
-    
-    if (!quickCsvReport.getLocalWorkTimeReport) {
-      throw new Error('getLocalWorkTimeReport не экспортируется из quickCsvReport');
-    }
-    
-    let { start, end, username } = req.query;
-    
-    if (start && end) {
-      const startDate = new Date(start + 'T00:00:00');
-      startDate.setDate(startDate.getDate() - 1);
-      start = startDate.toISOString().slice(0, 10);
-      
-      const endDate = new Date(end + 'T23:59:59');
-      endDate.setDate(endDate.getDate() + 1);
-      end = endDate.toISOString().slice(0, 10);
-    }
-    
-    console.log(`🔴🔴🔴 [TEST-ROUTE] Вызываем getLocalWorkTimeReport с параметрами:`, { start, end, username });
-    const report = await quickCsvReport.getLocalWorkTimeReport({ start, end, username });
-    console.log(`🔴🔴🔴 [TEST-ROUTE] Получен отчет, количество пользователей:`, report.length);
-    
-    res.json({ success: true, report, debug: { start, end, username, count: report.length } });
-  } catch (err) {
-    console.error(`❌ [TEST-ROUTE] Ошибка:`, err);
-    console.error(`❌ [TEST-ROUTE] Stack:`, err.stack);
-    res.status(500).json({ success: false, error: err.message, stack: err.stack });
-  }
-});
 
 // ПРОСТОЙ ТЕСТ - проверяем, что код выполняется
 console.log('========================================');
