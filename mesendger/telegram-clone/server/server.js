@@ -591,6 +591,9 @@ try {
     if (req.path === '/quick-db-report') {
       console.log(`🔍🔍🔍 [MIDDLEWARE] Запрос к /quick-db-report: ${req.method} ${req.path} ${JSON.stringify(req.query)}`);
     }
+    if (req.path === '/local-worktime-report') {
+      console.log(`🔍🔍🔍 [MIDDLEWARE] Запрос к /local-worktime-report: ${req.method} ${req.path} ${JSON.stringify(req.query)}`);
+    }
     next();
   });
   
