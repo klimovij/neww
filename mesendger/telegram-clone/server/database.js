@@ -2406,13 +2406,41 @@ class Database {
               console.log(`✅ Deleted ${deletedScreenshotsCount} activity screenshots`);
               
               // Также удаляем work_time_logs за тот же период (для отчета "Отчет активности локальных ПК")
+              // Используем такую же логику сравнения дат, как в getWorkTimeLogs (поддержка двух форматов)
               let worktimeQuery, worktimeParams;
               if (start && end) {
-                worktimeQuery = 'DELETE FROM work_time_logs WHERE event_time >= ? AND event_time <= ?';
-                worktimeParams = [startDate.toISOString(), endDate.toISOString()];
+                // Поддержка обоих форматов: DD.MM.YYYY и YYYY-MM-DD
+                worktimeQuery = `DELETE FROM work_time_logs WHERE (
+                  (length(event_time) >= 10 AND substr(event_time, 3, 1) = '.' AND substr(event_time, 6, 1) = '.'
+                    AND (
+                      substr(event_time, 7, 4) || '-' || substr(event_time, 4, 2) || '-' || substr(event_time, 1, 2)
+                    ) >= ?
+                    AND (
+                      substr(event_time, 7, 4) || '-' || substr(event_time, 4, 2) || '-' || substr(event_time, 1, 2)
+                    ) <= ?
+                  )
+                  OR
+                  (length(event_time) >= 10 AND substr(event_time, 5, 1) = '-' AND substr(event_time, 8, 1) = '-' 
+                    AND substr(event_time, 1, 10) >= ?
+                    AND substr(event_time, 1, 10) <= ?
+                  )
+                )`;
+                worktimeParams = [start, end, start, end];
               } else {
-                worktimeQuery = 'DELETE FROM work_time_logs WHERE event_time < ?';
-                worktimeParams = [endDate.toISOString()];
+                // Для периода используем сравнение с ISO-датой
+                const cutoffDateStr = endDate.toISOString().slice(0, 10); // YYYY-MM-DD
+                worktimeQuery = `DELETE FROM work_time_logs WHERE (
+                  (length(event_time) >= 10 AND substr(event_time, 3, 1) = '.' AND substr(event_time, 6, 1) = '.'
+                    AND (
+                      substr(event_time, 7, 4) || '-' || substr(event_time, 4, 2) || '-' || substr(event_time, 1, 2)
+                    ) < ?
+                  )
+                  OR
+                  (length(event_time) >= 10 AND substr(event_time, 5, 1) = '-' AND substr(event_time, 8, 1) = '-' 
+                    AND substr(event_time, 1, 10) < ?
+                  )
+                )`;
+                worktimeParams = [cutoffDateStr, cutoffDateStr];
               }
               
               db.run(worktimeQuery, worktimeParams, function(err) {
