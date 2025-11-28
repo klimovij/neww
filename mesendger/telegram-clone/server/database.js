@@ -2416,19 +2416,44 @@ class Database {
               console.log(`✅ Deleted ${deletedScreenshotsCount} activity screenshots`);
               
               // Также удаляем work_time_logs за тот же период (для отчета "Отчет активности локальных ПК")
-              // Используем функцию date() SQLite для нормализации всех форматов дат
+              // Используем ТУ ЖЕ логику, что и в getWorkTimeLogs для поддержки обоих форматов дат
               let worktimeQuery, worktimeParams;
               if (start && end) {
-                // Используем date() для нормализации всех форматов (DD.MM.YYYY, YYYY-MM-DD, YYYY-MM-DDTHH:MM:SS+timezone)
+                // Используем ту же логику, что и getWorkTimeLogs для поддержки DD.MM.YYYY и YYYY-MM-DD
                 console.log(`🗑️ [deleteActivityLogs] Удаление work_time_logs за период: ${start} - ${end}`);
-                worktimeQuery = `DELETE FROM work_time_logs WHERE date(event_time) >= date(?) AND date(event_time) <= date(?)`;
-                worktimeParams = [start, end];
-                console.log(`🗑️ [deleteActivityLogs] SQL запрос: ${worktimeQuery}`, `Параметры:`, worktimeParams);
+                worktimeQuery = `DELETE FROM work_time_logs WHERE (
+                  (length(event_time) >= 10 AND substr(event_time, 3, 1) = '.' AND substr(event_time, 6, 1) = '.'
+                    AND (
+                      substr(event_time, 7, 4) || '-' || substr(event_time, 4, 2) || '-' || substr(event_time, 1, 2)
+                    ) >= ?
+                      AND (
+                        substr(event_time, 7, 4) || '-' || substr(event_time, 4, 2) || '-' || substr(event_time, 1, 2)
+                      ) <= ?
+                  )
+                  OR
+                  (length(event_time) >= 10 AND substr(event_time, 5, 1) = '-' AND substr(event_time, 8, 1) = '-' 
+                    AND substr(event_time, 1, 10) >= ?
+                    AND substr(event_time, 1, 10) <= ?
+                  )
+                )`;
+                worktimeParams = [start, end, start, end];
+                console.log(`🗑️ [deleteActivityLogs] SQL запрос для work_time_logs (поддержка DD.MM.YYYY и YYYY-MM-DD)`);
+                console.log(`🗑️ [deleteActivityLogs] Параметры:`, worktimeParams);
               } else {
                 // Для периода используем сравнение с ISO-датой
                 const cutoffDateStr = endDate.toISOString().slice(0, 10); // YYYY-MM-DD
-                worktimeQuery = `DELETE FROM work_time_logs WHERE date(event_time) < date(?)`;
-                worktimeParams = [cutoffDateStr];
+                worktimeQuery = `DELETE FROM work_time_logs WHERE (
+                  (length(event_time) >= 10 AND substr(event_time, 3, 1) = '.' AND substr(event_time, 6, 1) = '.'
+                    AND (
+                      substr(event_time, 7, 4) || '-' || substr(event_time, 4, 2) || '-' || substr(event_time, 1, 2)
+                    ) < ?
+                  )
+                  OR
+                  (length(event_time) >= 10 AND substr(event_time, 5, 1) = '-' AND substr(event_time, 8, 1) = '-' 
+                    AND substr(event_time, 1, 10) < ?
+                  )
+                )`;
+                worktimeParams = [cutoffDateStr, cutoffDateStr];
               }
               
               db.run(worktimeQuery, worktimeParams, function(err) {
