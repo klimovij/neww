@@ -125,35 +125,6 @@ app.get('/api/chats/unread', async (req, res) => {
   res.json({ unreadCount: 0 }); // Пока возвращаем 0
 });
 
-// ВРЕМЕННЫЙ ТЕСТОВЫЙ РОУТ для проверки работы /api/local-worktime-report
-// Подключаем ПЕРЕД всеми роутерами, чтобы он имел приоритет
-app.get('/api/local-worktime-report', async (req, res) => {
-  console.log(`🔴🔴🔴 [TEST-ROUTE] Запрос к /api/local-worktime-report! Query: ${JSON.stringify(req.query)}`);
-  try {
-    // Импортируем функцию из quickCsvReport
-    const { getLocalWorkTimeReport } = require('./routes/quickCsvReport');
-    
-    let { start, end, username } = req.query;
-    
-    if (start && end) {
-      const startDate = new Date(start + 'T00:00:00');
-      startDate.setDate(startDate.getDate() - 1);
-      start = startDate.toISOString().slice(0, 10);
-      
-      const endDate = new Date(end + 'T23:59:59');
-      endDate.setDate(endDate.getDate() + 1);
-      end = endDate.toISOString().slice(0, 10);
-    }
-    
-    const report = await getLocalWorkTimeReport({ start, end, username });
-    
-    res.json({ success: true, report, debug: { start, end, username, count: report.length } });
-  } catch (err) {
-    console.error(`❌ [TEST-ROUTE] Ошибка:`, err);
-    res.status(500).json({ success: false, error: err.message, stack: err.stack });
-  }
-});
-
 // ==================== MIDDLEWARE ====================
 // Настройка CORS (один раз, до маршрутов)
 app.use(cors({
@@ -620,6 +591,35 @@ try {
   const onecHistoryRouter = require('./routes/onecHistory');
   const adminRouter = require('./routes/admin');
   const reportRouter = require('./routes/report');
+  
+  // ВРЕМЕННЫЙ ТЕСТОВЫЙ РОУТ для проверки работы /api/local-worktime-report
+  // Подключаем ПЕРЕД всеми роутерами, чтобы он имел приоритет
+  app.get('/api/local-worktime-report', async (req, res) => {
+    console.log(`🔴🔴🔴 [TEST-ROUTE] Запрос к /api/local-worktime-report! Query: ${JSON.stringify(req.query)}`);
+    try {
+      // Импортируем функцию из quickCsvReport
+      const { getLocalWorkTimeReport } = require('./routes/quickCsvReport');
+      
+      let { start, end, username } = req.query;
+      
+      if (start && end) {
+        const startDate = new Date(start + 'T00:00:00');
+        startDate.setDate(startDate.getDate() - 1);
+        start = startDate.toISOString().slice(0, 10);
+        
+        const endDate = new Date(end + 'T23:59:59');
+        endDate.setDate(endDate.getDate() + 1);
+        end = endDate.toISOString().slice(0, 10);
+      }
+      
+      const report = await getLocalWorkTimeReport({ start, end, username });
+      
+      res.json({ success: true, report, debug: { start, end, username, count: report.length } });
+    } catch (err) {
+      console.error(`❌ [TEST-ROUTE] Ошибка:`, err);
+      res.status(500).json({ success: false, error: err.message, stack: err.stack });
+    }
+  });
   
   // Middleware для логирования ВСЕХ запросов к /api (подключаем ДО всех роутеров)
   app.use('/api', (req, res, next) => {
