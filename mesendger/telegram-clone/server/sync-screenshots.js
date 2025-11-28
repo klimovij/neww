@@ -3,7 +3,7 @@ const path = require('path');
 const sqlite3 = require('sqlite3').verbose();
 
 // Путь к базе данных
-const dbPath = path.join(__dirname, '../../messenger.db');
+const dbPath = '/var/www/mesendger/messenger.db';
 const screenshotsDir = path.join(__dirname, 'uploads/screenshots');
 
 // Подключение к БД
