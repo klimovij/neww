@@ -729,9 +729,9 @@ class Database {
 
   async getAllUsers() {
     return new Promise((resolve, reject) => {
-      // Возвращаем пользователей без изменения last_seen
+      // Возвращаем пользователей без изменения last_seen, включая fio
       this.db.all(
-        'SELECT id, username, avatar, online, role, employee_id, last_seen, department FROM users ORDER BY username',
+        'SELECT id, username, avatar, online, role, employee_id, last_seen, department, fio FROM users ORDER BY username',
         (err, rows) => {
           if (err) reject(err);
           else resolve(rows || []);

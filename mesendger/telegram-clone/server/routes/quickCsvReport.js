@@ -159,10 +159,54 @@ async function getLocalWorkTimeReport({ start, end, username }) {
     try {
       let userRow = await db.getUserByUsername(user);
       if (!userRow) {
+        // Пробуем найти по нормализованному имени (username может быть "elena_popovich", а fio "Олена Попович")
         const allUsers = await db.getAllUsers();
-        const usersWithEmptyUsername = allUsers.filter(u => !u.username || u.username === '');
-        if (usersWithEmptyUsername.length === 1 && usersWithEmptyUsername[0].fio) {
-          userRow = usersWithEmptyUsername[0];
+        
+        // Функция нормализации для сравнения
+        const normalize = (str) => str.toLowerCase().replace(/[_-]/g, '').replace(/\s+/g, '');
+        const normalizeUsername = (username) => {
+          // Преобразуем "elena_popovich" -> "elenapopovich"
+          return normalize(username);
+        };
+        const normalizeFio = (fio) => {
+          // Преобразуем "Олена Попович" -> "olenapopovich" (транслитерация)
+          const translit = {
+            'а': 'a', 'б': 'b', 'в': 'v', 'г': 'g', 'д': 'd', 'е': 'e', 'ё': 'e',
+            'ж': 'zh', 'з': 'z', 'и': 'i', 'й': 'y', 'к': 'k', 'л': 'l', 'м': 'm',
+            'н': 'n', 'о': 'o', 'п': 'p', 'р': 'r', 'с': 's', 'т': 't', 'у': 'u',
+            'ф': 'f', 'х': 'h', 'ц': 'ts', 'ч': 'ch', 'ш': 'sh', 'щ': 'shch',
+            'ъ': '', 'ы': 'y', 'ь': '', 'э': 'e', 'ю': 'yu', 'я': 'ya'
+          };
+          let result = fio.toLowerCase();
+          for (const [ru, en] of Object.entries(translit)) {
+            result = result.replace(new RegExp(ru, 'g'), en);
+          }
+          return normalize(result);
+        };
+        
+        const normalizedUser = normalizeUsername(user);
+        for (const u of allUsers) {
+          if (u.fio) {
+            const normalizedFio = normalizeFio(u.fio);
+            // Проверяем, совпадает ли нормализованное имя
+            if (normalizedFio === normalizedUser || normalizedFio.includes(normalizedUser) || normalizedUser.includes(normalizedFio)) {
+              userRow = u;
+              break;
+            }
+          }
+          // Также проверяем по username, если он есть
+          if (u.username && normalizeUsername(u.username) === normalizedUser) {
+            userRow = u;
+            break;
+          }
+        }
+        
+        // Если не нашли, пробуем найти пользователя с пустым username
+        if (!userRow) {
+          const usersWithEmptyUsername = allUsers.filter(u => !u.username || u.username === '');
+          if (usersWithEmptyUsername.length === 1 && usersWithEmptyUsername[0].fio) {
+            userRow = usersWithEmptyUsername[0];
+          }
         }
       }
       if (userRow) {
@@ -250,10 +294,54 @@ async function getRemoteWorkTimeReport({ start, end, username }) {
     try {
       let userRow = await db.getUserByUsername(user);
       if (!userRow) {
+        // Пробуем найти по нормализованному имени (username может быть "elena_popovich", а fio "Олена Попович")
         const allUsers = await db.getAllUsers();
-        const usersWithEmptyUsername = allUsers.filter(u => !u.username || u.username === '');
-        if (usersWithEmptyUsername.length === 1 && usersWithEmptyUsername[0].fio) {
-          userRow = usersWithEmptyUsername[0];
+        
+        // Функция нормализации для сравнения
+        const normalize = (str) => str.toLowerCase().replace(/[_-]/g, '').replace(/\s+/g, '');
+        const normalizeUsername = (username) => {
+          // Преобразуем "elena_popovich" -> "elenapopovich"
+          return normalize(username);
+        };
+        const normalizeFio = (fio) => {
+          // Преобразуем "Олена Попович" -> "olenapopovich" (транслитерация)
+          const translit = {
+            'а': 'a', 'б': 'b', 'в': 'v', 'г': 'g', 'д': 'd', 'е': 'e', 'ё': 'e',
+            'ж': 'zh', 'з': 'z', 'и': 'i', 'й': 'y', 'к': 'k', 'л': 'l', 'м': 'm',
+            'н': 'n', 'о': 'o', 'п': 'p', 'р': 'r', 'с': 's', 'т': 't', 'у': 'u',
+            'ф': 'f', 'х': 'h', 'ц': 'ts', 'ч': 'ch', 'ш': 'sh', 'щ': 'shch',
+            'ъ': '', 'ы': 'y', 'ь': '', 'э': 'e', 'ю': 'yu', 'я': 'ya'
+          };
+          let result = fio.toLowerCase();
+          for (const [ru, en] of Object.entries(translit)) {
+            result = result.replace(new RegExp(ru, 'g'), en);
+          }
+          return normalize(result);
+        };
+        
+        const normalizedUser = normalizeUsername(user);
+        for (const u of allUsers) {
+          if (u.fio) {
+            const normalizedFio = normalizeFio(u.fio);
+            // Проверяем, совпадает ли нормализованное имя
+            if (normalizedFio === normalizedUser || normalizedFio.includes(normalizedUser) || normalizedUser.includes(normalizedFio)) {
+              userRow = u;
+              break;
+            }
+          }
+          // Также проверяем по username, если он есть
+          if (u.username && normalizeUsername(u.username) === normalizedUser) {
+            userRow = u;
+            break;
+          }
+        }
+        
+        // Если не нашли, пробуем найти пользователя с пустым username
+        if (!userRow) {
+          const usersWithEmptyUsername = allUsers.filter(u => !u.username || u.username === '');
+          if (usersWithEmptyUsername.length === 1 && usersWithEmptyUsername[0].fio) {
+            userRow = usersWithEmptyUsername[0];
+          }
         }
       }
       if (userRow) {
@@ -394,29 +482,54 @@ async function getDbShortReport({ start, end, username }) {
       // Сначала пробуем найти по username
       let userRow = await db.getUserByUsername(user);
       
-      // Если не найден, пробуем найти пользователей с пустым username
-      // и попытаемся сопоставить по другим признакам (например, через work_time_logs)
+      // Если не найден, пробуем найти по нормализованному имени
       if (!userRow) {
-        // Пробуем найти пользователей с пустым username - возможно, там есть нужный fio
         const allUsers = await db.getAllUsers();
-        // Ищем пользователя, у которого username пустой, но возможно fio связано
-        // Это временное решение - в идеале нужно заполнить username в таблице users
-        console.log(`[quickCsvReport] Пользователь "${user}" не найден по username. Всего пользователей: ${allUsers.length}`);
         
-        // Если есть только один пользователь с пустым username - используем его (временное решение)
-        const usersWithEmptyUsername = allUsers.filter(u => !u.username || u.username === '');
-        if (usersWithEmptyUsername.length === 1 && usersWithEmptyUsername[0].fio) {
-          console.log(`[quickCsvReport] Найден пользователь с пустым username, используем его FIO: ${usersWithEmptyUsername[0].fio}`);
-          userRow = usersWithEmptyUsername[0];
+        // Функция нормализации для сравнения
+        const normalize = (str) => str.toLowerCase().replace(/[_-]/g, '').replace(/\s+/g, '');
+        const normalizeUsername = (username) => normalize(username);
+        const normalizeFio = (fio) => {
+          const translit = {
+            'а': 'a', 'б': 'b', 'в': 'v', 'г': 'g', 'д': 'd', 'е': 'e', 'ё': 'e',
+            'ж': 'zh', 'з': 'z', 'и': 'i', 'й': 'y', 'к': 'k', 'л': 'l', 'м': 'm',
+            'н': 'n', 'о': 'o', 'п': 'p', 'р': 'r', 'с': 's', 'т': 't', 'у': 'u',
+            'ф': 'f', 'х': 'h', 'ц': 'ts', 'ч': 'ch', 'ш': 'sh', 'щ': 'shch',
+            'ъ': '', 'ы': 'y', 'ь': '', 'э': 'e', 'ю': 'yu', 'я': 'ya'
+          };
+          let result = fio.toLowerCase();
+          for (const [ru, en] of Object.entries(translit)) {
+            result = result.replace(new RegExp(ru, 'g'), en);
+          }
+          return normalize(result);
+        };
+        
+        const normalizedUser = normalizeUsername(user);
+        for (const u of allUsers) {
+          if (u.fio) {
+            const normalizedFio = normalizeFio(u.fio);
+            if (normalizedFio === normalizedUser || normalizedFio.includes(normalizedUser) || normalizedUser.includes(normalizedFio)) {
+              userRow = u;
+              break;
+            }
+          }
+          if (u.username && normalizeUsername(u.username) === normalizedUser) {
+            userRow = u;
+            break;
+          }
+        }
+        
+        // Если не нашли, пробуем найти пользователя с пустым username
+        if (!userRow) {
+          const usersWithEmptyUsername = allUsers.filter(u => !u.username || u.username === '');
+          if (usersWithEmptyUsername.length === 1 && usersWithEmptyUsername[0].fio) {
+            userRow = usersWithEmptyUsername[0];
+          }
         }
       }
       
       if (userRow) {
-        // Проверяем различные варианты поля для ФИО
         displayName = userRow.fio || userRow.full_name || userRow.name || userRow.username || user;
-        console.log(`[quickCsvReport] displayName для "${user}":`, displayName);
-      } else {
-        console.log(`[quickCsvReport] Пользователь "${user}" не найден в таблице users`);
       }
     } catch (e) {
       console.error(`[quickCsvReport] Ошибка при получении пользователя "${user}":`, e);
