@@ -4,7 +4,7 @@ module.exports = {
     {
       name: 'mesendger-server',
       script: './server/server.js',
-      cwd: '/var/www/mesendger/mesendger/telegram-clone',
+      cwd: '/var/www/mesendger',
       instances: 1,
       exec_mode: 'fork',
       env: {
