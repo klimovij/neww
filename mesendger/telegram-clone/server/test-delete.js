@@ -22,24 +22,10 @@ db.all('SELECT event_time FROM work_time_logs LIMIT 5', [], (err, rows) => {
   const start = today;
   const end = today;
   
-  // Проверяем, сколько записей будет удалено
-  const checkQuery = `SELECT COUNT(*) as count FROM work_time_logs WHERE (
-    (length(event_time) >= 10 AND substr(event_time, 3, 1) = '.' AND substr(event_time, 6, 1) = '.'
-      AND (
-        substr(event_time, 7, 4) || '-' || substr(event_time, 4, 2) || '-' || substr(event_time, 1, 2)
-      ) >= ?
-      AND (
-        substr(event_time, 7, 4) || '-' || substr(event_time, 4, 2) || '-' || substr(event_time, 1, 2)
-      ) <= ?
-    )
-    OR
-    (length(event_time) >= 10 AND substr(event_time, 5, 1) = '-' AND substr(event_time, 8, 1) = '-' 
-      AND substr(event_time, 1, 10) >= ?
-      AND substr(event_time, 1, 10) <= ?
-    )
-  )`;
+  // Проверяем, сколько записей будет удалено (используем date() как в реальном запросе)
+  const checkQuery = `SELECT COUNT(*) as count FROM work_time_logs WHERE date(event_time) >= date(?) AND date(event_time) <= date(?)`;
   
-  db.get(checkQuery, [start, end, start, end], (err, row) => {
+  db.get(checkQuery, [start, end], (err, row) => {
     if (err) {
       console.error('❌ Ошибка проверки:', err);
       db.close();
@@ -50,7 +36,7 @@ db.all('SELECT event_time FROM work_time_logs LIMIT 5', [], (err, rows) => {
     if (row.count > 0) {
       // Показываем примеры записей, которые будут удалены
       const sampleQuery = checkQuery.replace('COUNT(*) as count', '*');
-      db.all(sampleQuery + ' LIMIT 3', [start, end, start, end], (err, samples) => {
+      db.all(sampleQuery + ' LIMIT 3', [start, end], (err, samples) => {
         if (!err && samples) {
           console.log('  Примеры записей:');
           samples.forEach((s, i) => {
