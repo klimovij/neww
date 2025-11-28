@@ -236,18 +236,25 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
 
   // Удаление данных за период дат
   const handleDeleteByDateRange = async (start, end) => {
+    console.log('🗑️ [WorkTimeMobile] handleDeleteByDateRange вызван:', { start, end });
     if (!start || !end) {
       alert('Выберите период дат для удаления');
       return;
     }
     
     if (!window.confirm(`Вы уверены, что хотите удалить все данные активности за период с ${start} по ${end}? Это действие нельзя отменить.`)) {
+      console.log('🗑️ [WorkTimeMobile] Пользователь отменил удаление');
       return;
     }
     
+    console.log('🗑️ [WorkTimeMobile] Начинаем удаление данных...');
     setLoadingLocalReport(true);
     try {
       const token = localStorage.getItem('token');
+      console.log('🗑️ [WorkTimeMobile] Токен:', token ? 'есть' : 'отсутствует');
+      console.log('🗑️ [WorkTimeMobile] Отправляем DELETE запрос к /api/activity-logs/clear');
+      console.log('🗑️ [WorkTimeMobile] Body:', JSON.stringify({ start, end }));
+      
       const res = await fetch('/api/activity-logs/clear', {
         method: 'DELETE',
         headers: {
@@ -257,7 +264,10 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
         body: JSON.stringify({ start, end })
       });
       
+      console.log('🗑️ [WorkTimeMobile] Ответ получен:', { status: res.status, statusText: res.statusText, ok: res.ok });
+      
       const data = await res.json();
+      console.log('🗑️ [WorkTimeMobile] Данные ответа:', data);
       
       if (res.ok && data.success) {
         alert(`✅ ${data.message || `Удалено ${data.deletedCount || 0} записей`}`);
@@ -269,8 +279,11 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
         alert(`❌ Ошибка: ${data.error || 'Не удалось удалить данные'}`);
       }
     } catch (error) {
-      console.error('Ошибка удаления данных:', error);
-      alert('❌ Ошибка при удалении данных');
+      console.error('🗑️ [WorkTimeMobile] Ошибка удаления данных:', error);
+      console.error('🗑️ [WorkTimeMobile] Stack:', error.stack);
+      alert('❌ Ошибка при удалении данных: ' + error.message);
+    } finally {
+      setLoadingLocalReport(false);
     }
     setLoadingLocalReport(false);
   };
