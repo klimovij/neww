@@ -2405,11 +2405,31 @@ class Database {
               const deletedScreenshotsCount = this.changes; // this.changes доступен в обычной функции
               console.log(`✅ Deleted ${deletedScreenshotsCount} activity screenshots`);
               
-              db.run('COMMIT', function(commitErr) {
-                if (commitErr) return reject(commitErr);
-                const totalDeleted = deletedActivityCount + deletedScreenshotsCount;
-                console.log(`✅ Total deleted: ${totalDeleted} records (${deletedActivityCount} logs + ${deletedScreenshotsCount} screenshots)`);
-                resolve(totalDeleted);
+              // Также удаляем work_time_logs за тот же период (для отчета "Отчет активности локальных ПК")
+              let worktimeQuery, worktimeParams;
+              if (start && end) {
+                worktimeQuery = 'DELETE FROM work_time_logs WHERE event_time >= ? AND event_time <= ?';
+                worktimeParams = [startDate.toISOString(), endDate.toISOString()];
+              } else {
+                worktimeQuery = 'DELETE FROM work_time_logs WHERE event_time < ?';
+                worktimeParams = [endDate.toISOString()];
+              }
+              
+              db.run(worktimeQuery, worktimeParams, function(err) {
+                if (err) {
+                  db.run('ROLLBACK');
+                  console.error('❌ Error deleting work_time_logs:', err);
+                  return reject(err);
+                }
+                const deletedWorktimeCount = this.changes;
+                console.log(`✅ Deleted ${deletedWorktimeCount} work_time_logs`);
+                
+                db.run('COMMIT', function(commitErr) {
+                  if (commitErr) return reject(commitErr);
+                  const totalDeleted = deletedActivityCount + deletedScreenshotsCount + deletedWorktimeCount;
+                  console.log(`✅ Total deleted: ${totalDeleted} records (${deletedActivityCount} activity_logs + ${deletedScreenshotsCount} screenshots + ${deletedWorktimeCount} work_time_logs)`);
+                  resolve(totalDeleted);
+                });
               });
             });
           });
