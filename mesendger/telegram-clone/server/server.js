@@ -566,6 +566,35 @@ app.delete('/api/custom-emoji/:file', authenticateToken, async (req, res) => {
 // ==================== API МАРШРУТЫ ====================
 // --- ОТЧЁТЫ ПО РАБОЧЕМУ ВРЕМЕНИ И АКТИВНОСТИ ---
 
+// ВРЕМЕННЫЙ ТЕСТОВЫЙ РОУТ для проверки работы /api/local-worktime-report
+// Подключаем ПЕРЕД блоком try, чтобы он был доступен сразу
+app.get('/api/local-worktime-report', async (req, res) => {
+  console.log(`🔴🔴🔴 [TEST-ROUTE] Запрос к /api/local-worktime-report! Query: ${JSON.stringify(req.query)}`);
+  try {
+    // Импортируем функцию из quickCsvReport
+    const { getLocalWorkTimeReport } = require('./routes/quickCsvReport');
+    
+    let { start, end, username } = req.query;
+    
+    if (start && end) {
+      const startDate = new Date(start + 'T00:00:00');
+      startDate.setDate(startDate.getDate() - 1);
+      start = startDate.toISOString().slice(0, 10);
+      
+      const endDate = new Date(end + 'T23:59:59');
+      endDate.setDate(endDate.getDate() + 1);
+      end = endDate.toISOString().slice(0, 10);
+    }
+    
+    const report = await getLocalWorkTimeReport({ start, end, username });
+    
+    res.json({ success: true, report, debug: { start, end, username, count: report.length } });
+  } catch (err) {
+    console.error(`❌ [TEST-ROUTE] Ошибка:`, err);
+    res.status(500).json({ success: false, error: err.message, stack: err.stack });
+  }
+});
+
 // ПРОСТОЙ ТЕСТ - проверяем, что код выполняется
 console.log('========================================');
 console.log('🚀🚀🚨 [SERVER] ДО блока try - начинаем загрузку роутеров');
@@ -591,35 +620,6 @@ try {
   const onecHistoryRouter = require('./routes/onecHistory');
   const adminRouter = require('./routes/admin');
   const reportRouter = require('./routes/report');
-  
-  // ВРЕМЕННЫЙ ТЕСТОВЫЙ РОУТ для проверки работы /api/local-worktime-report
-  // Подключаем ПЕРЕД всеми роутерами, чтобы он имел приоритет
-  app.get('/api/local-worktime-report', async (req, res) => {
-    console.log(`🔴🔴🔴 [TEST-ROUTE] Запрос к /api/local-worktime-report! Query: ${JSON.stringify(req.query)}`);
-    try {
-      // Импортируем функцию из quickCsvReport
-      const { getLocalWorkTimeReport } = require('./routes/quickCsvReport');
-      
-      let { start, end, username } = req.query;
-      
-      if (start && end) {
-        const startDate = new Date(start + 'T00:00:00');
-        startDate.setDate(startDate.getDate() - 1);
-        start = startDate.toISOString().slice(0, 10);
-        
-        const endDate = new Date(end + 'T23:59:59');
-        endDate.setDate(endDate.getDate() + 1);
-        end = endDate.toISOString().slice(0, 10);
-      }
-      
-      const report = await getLocalWorkTimeReport({ start, end, username });
-      
-      res.json({ success: true, report, debug: { start, end, username, count: report.length } });
-    } catch (err) {
-      console.error(`❌ [TEST-ROUTE] Ошибка:`, err);
-      res.status(500).json({ success: false, error: err.message, stack: err.stack });
-    }
-  });
   
   // Middleware для логирования ВСЕХ запросов к /api (подключаем ДО всех роутеров)
   app.use('/api', (req, res, next) => {
