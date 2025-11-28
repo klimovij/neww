@@ -88,6 +88,16 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-producti
 
 // ==================== ИНИЦИАЛИЗАЦИЯ EXPRESS ====================
 const app = express();
+
+// Логирование ВСЕХ входящих запросов (самое раннее, до всех middleware)
+app.use((req, res, next) => {
+  if (req.path && req.path.includes('local-worktime-report')) {
+    console.log(`🔴🔴🔴 [EARLY-MIDDLEWARE] ${req.method} ${req.path} ${JSON.stringify(req.query)}`);
+    console.log(`🔴🔴🔴 [EARLY-MIDDLEWARE] Headers:`, JSON.stringify(req.headers));
+  }
+  next();
+});
+
 // Парсинг JSON и URL-encoded
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
