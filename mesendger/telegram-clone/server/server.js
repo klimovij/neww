@@ -582,20 +582,22 @@ try {
   const adminRouter = require('./routes/admin');
   const reportRouter = require('./routes/report');
   
-  // Подключаем importWorktimeCsvRoutes первым, чтобы избежать конфликта с quickCsvReportRouter
-  app.use('/api', importWorktimeCsvRoutes);
-  console.log('✅ [SERVER] importWorktimeCsvRoutes mounted');
-  
-  // Middleware для логирования ВСЕХ запросов к /api
+  // Middleware для логирования ВСЕХ запросов к /api (подключаем ДО всех роутеров)
   app.use('/api', (req, res, next) => {
+    console.log(`🌐 [API-MIDDLEWARE] ${req.method} ${req.path} ${JSON.stringify(req.query)}`);
     if (req.path === '/quick-db-report') {
       console.log(`🔍🔍🔍 [MIDDLEWARE] Запрос к /quick-db-report: ${req.method} ${req.path} ${JSON.stringify(req.query)}`);
     }
     if (req.path === '/local-worktime-report') {
       console.log(`🔍🔍🔍 [MIDDLEWARE] Запрос к /local-worktime-report: ${req.method} ${req.path} ${JSON.stringify(req.query)}`);
+      console.log(`🔍🔍🔍 [MIDDLEWARE] Headers:`, JSON.stringify(req.headers));
     }
     next();
   });
+  
+  // Подключаем importWorktimeCsvRoutes первым, чтобы избежать конфликта с quickCsvReportRouter
+  app.use('/api', importWorktimeCsvRoutes);
+  console.log('✅ [SERVER] importWorktimeCsvRoutes mounted');
   
   // Проверяем, что роутер действительно загружен и имеет обработчики
   console.log('🔍 [SERVER] Проверка quickCsvReportRouter:', typeof quickCsvReportRouter);
