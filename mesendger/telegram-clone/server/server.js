@@ -632,6 +632,17 @@ try {
   console.log('✅ [SERVER] OneC History router loaded and mounted at /api');
   app.use('/api/admin', adminRouter);
   console.log('✅ [SERVER] Admin router loaded and mounted at /api/admin');
+  
+  // Обработчик для необработанных /api запросов (для отладки)
+  app.use('/api', (req, res, next) => {
+    if (req.path === '/local-worktime-report') {
+      console.log(`🔴 [UNHANDLED] Запрос к /local-worktime-report не обработан!`);
+      console.log(`🔴 [UNHANDLED] Method: ${req.method}, Path: ${req.path}, Query: ${JSON.stringify(req.query)}`);
+      console.log(`🔴 [UNHANDLED] Headers:`, JSON.stringify(req.headers));
+    }
+    // Продолжаем обработку (Express вернет 404 если роут не найден)
+    next();
+  });
 } catch (e) {
   console.log('❌❌❌ [SERVER] ОШИБКА при загрузке роутеров:', e.message);
   console.log('❌❌❌ [SERVER] Stack:', e.stack);
