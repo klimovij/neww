@@ -90,10 +90,20 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-producti
 const app = express();
 
 // ВРЕМЕННЫЙ ТЕСТОВЫЙ РОУТ - ПЕРВЫМ, ДО ВСЕХ MIDDLEWARE И РОУТЕРОВ!
+// Этот роут дублирует функционал из quickCsvReport router для отладки
+// Основной роут находится в routes/quickCsvReport.js и должен работать через app.use('/api', quickCsvReportRouter)
 app.get('/api/local-worktime-report', async (req, res) => {
   console.log(`🔴🔴🔴 [TEST-ROUTE] Запрос к /api/local-worktime-report! Method: ${req.method}, Path: ${req.path}, Query: ${JSON.stringify(req.query)}`);
   try {
-    const quickCsvReport = require('./routes/quickCsvReport');
+    // Используем уже загруженный модуль, если он доступен
+    let quickCsvReport;
+    try {
+      quickCsvReport = require('./routes/quickCsvReport');
+    } catch (requireError) {
+      console.error(`❌ [TEST-ROUTE] Ошибка загрузки модуля:`, requireError);
+      return res.status(500).json({ success: false, error: 'Failed to load quickCsvReport module', details: requireError.message });
+    }
+    
     let { start, end, username } = req.query;
     
     if (start && end) {
@@ -106,7 +116,12 @@ app.get('/api/local-worktime-report', async (req, res) => {
       end = endDate.toISOString().slice(0, 10);
     }
     
+    if (!quickCsvReport.getLocalWorkTimeReport) {
+      return res.status(500).json({ success: false, error: 'getLocalWorkTimeReport function not found in module' });
+    }
+    
     const report = await quickCsvReport.getLocalWorkTimeReport({ start, end, username });
+    console.log(`✅ [TEST-ROUTE] Вернул ${report.length} записей`);
     res.json({ success: true, report, debug: { start, end, username, count: report.length } });
   } catch (err) {
     console.error(`❌ [TEST-ROUTE] Ошибка:`, err);
