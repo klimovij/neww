@@ -3,6 +3,14 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-producti
 
 // Middleware для проверки JWT токена
 function authenticateToken(req, res, next) {
+  // Логируем DELETE запросы для отладки
+  if (req.method === 'DELETE' && req.path.includes('activity-logs')) {
+    console.log(`🔍 [AUTH] DELETE запрос к ${req.path}`);
+    console.log(`🔍 [AUTH] Method: ${req.method}, Path: ${req.path}`);
+    console.log(`🔍 [AUTH] Headers:`, JSON.stringify(req.headers));
+    console.log(`🔍 [AUTH] Body:`, JSON.stringify(req.body));
+  }
+  
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
   console.log(`[AUTH] Authorization header:`, authHeader);

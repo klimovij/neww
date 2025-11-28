@@ -135,6 +135,13 @@ app.use((req, res, next) => {
     console.log(`🔴🔴🔴 [EARLY-MIDDLEWARE] ${req.method} ${req.path} ${JSON.stringify(req.query)}`);
     console.log(`🔴🔴🔴 [EARLY-MIDDLEWARE] Headers:`, JSON.stringify(req.headers));
   }
+  // Логируем все DELETE запросы к activity-logs
+  if (req.method === 'DELETE' && req.path && req.path.includes('activity-logs')) {
+    console.log(`🔴🔴🔴 [EARLY-MIDDLEWARE] DELETE запрос к ${req.path}`);
+    console.log(`🔴🔴🔴 [EARLY-MIDDLEWARE] Method: ${req.method}, Path: ${req.path}`);
+    console.log(`🔴🔴🔴 [EARLY-MIDDLEWARE] Body:`, req.body);
+    console.log(`🔴🔴🔴 [EARLY-MIDDLEWARE] Headers:`, JSON.stringify(req.headers));
+  }
   next();
 });
 
