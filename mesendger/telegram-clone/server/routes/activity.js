@@ -665,8 +665,11 @@ router.delete('/activity-logs/clear', authenticateToken, async (req, res) => {
     }
     
     console.log(`🗑️ [activity-logs/clear] Пользователь ${user.username} (роль: ${user.role}) очищает логи:`, { period, start, end });
+    console.log(`🗑️ [activity-logs/clear] Типы параметров:`, { period: typeof period, start: typeof start, end: typeof end });
+    console.log(`🗑️ [activity-logs/clear] Значения параметров:`, JSON.stringify({ period, start, end }));
     const deletedCount = await db.deleteActivityLogs({ period, start, end });
     console.log(`✅ [activity-logs/clear] Удалено ${deletedCount} записей активности`);
+    console.log(`🗑️ [activity-logs/clear] Результат удаления:`, { deletedCount, period, start, end });
     
     let message;
     if (period) {
