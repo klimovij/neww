@@ -652,4 +652,7 @@ router.get('/leaves-worktime-report', async (req, res) => {
   }
 });
 
+// Экспортируем функции для использования в других модулях
 module.exports = router;
+module.exports.getLocalWorkTimeReport = getLocalWorkTimeReport;
+module.exports.getRemoteWorkTimeReport = getRemoteWorkTimeReport;
