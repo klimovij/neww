@@ -15,12 +15,26 @@ db.all('SELECT event_time FROM work_time_logs LIMIT 5', [], (err, rows) => {
     console.log(`  ${i + 1}. ${row.event_time} (длина: ${row.event_time.length})`);
   });
   
-  // Тестируем удаление за сегодня
-  const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
-  console.log(`\n🗑️ Тестируем удаление за ${today}:`);
-  
-  const start = today;
-  const end = today;
+  // Проверяем, какие даты есть в базе
+  console.log('\n📅 Проверяем даты в базе:');
+  db.all('SELECT DISTINCT date(event_time) as date, COUNT(*) as count FROM work_time_logs GROUP BY date(event_time) ORDER BY date DESC LIMIT 10', [], (err, dateRows) => {
+    if (err) {
+      console.error('❌ Ошибка:', err);
+      db.close();
+      return;
+    }
+    console.log('Даты с количеством записей:');
+    dateRows.forEach(row => {
+      console.log(`  ${row.date}: ${row.count} записей`);
+    });
+    
+    if (dateRows.length > 0) {
+      // Тестируем удаление за последнюю дату
+      const testDate = dateRows[0].date;
+      console.log(`\n🗑️ Тестируем удаление за ${testDate}:`);
+      
+      const start = testDate;
+      const end = testDate;
   
   // Проверяем, сколько записей будет удалено (используем date() как в реальном запросе)
   const checkQuery = `SELECT COUNT(*) as count FROM work_time_logs WHERE date(event_time) >= date(?) AND date(event_time) <= date(?)`;
@@ -48,6 +62,7 @@ db.all('SELECT event_time FROM work_time_logs LIMIT 5', [], (err, rows) => {
     } else {
       db.close();
     }
+    });
   });
 });
 
