@@ -2329,13 +2329,16 @@ class Database {
     async deleteActivityLogs({ period, start, end }) {
       // period: 'day', 'week', 'month' (для быстрого удаления)
       // start, end: конкретные даты в формате 'YYYY-MM-DD' (для удаления по диапазону)
+      console.log(`🗑️ [deleteActivityLogs] Вызван с параметрами:`, { period, start, end });
       return new Promise((resolve, reject) => {
         let startDate, endDate;
         
         if (start && end) {
           // Удаление по конкретному диапазону дат
+          console.log(`🗑️ [deleteActivityLogs] Удаление по диапазону: ${start} - ${end}`);
           startDate = new Date(start + 'T00:00:00.000Z');
           endDate = new Date(end + 'T23:59:59.999Z');
+          console.log(`🗑️ [deleteActivityLogs] Преобразованные даты:`, { startDate: startDate.toISOString(), endDate: endDate.toISOString() });
         } else if (period) {
           // Быстрое удаление по периоду
           const now = new Date();
@@ -2410,8 +2413,10 @@ class Database {
               let worktimeQuery, worktimeParams;
               if (start && end) {
                 // Используем date() для нормализации всех форматов (DD.MM.YYYY, YYYY-MM-DD, YYYY-MM-DDTHH:MM:SS+timezone)
+                console.log(`🗑️ [deleteActivityLogs] Удаление work_time_logs за период: ${start} - ${end}`);
                 worktimeQuery = `DELETE FROM work_time_logs WHERE date(event_time) >= date(?) AND date(event_time) <= date(?)`;
                 worktimeParams = [start, end];
+                console.log(`🗑️ [deleteActivityLogs] SQL запрос: ${worktimeQuery}`, `Параметры:`, worktimeParams);
               } else {
                 // Для периода используем сравнение с ISO-датой
                 const cutoffDateStr = endDate.toISOString().slice(0, 10); // YYYY-MM-DD
@@ -2426,7 +2431,14 @@ class Database {
                   return reject(err);
                 }
                 const deletedWorktimeCount = this.changes;
-                console.log(`✅ Deleted ${deletedWorktimeCount} work_time_logs`);
+                console.log(`✅ [deleteActivityLogs] Deleted ${deletedWorktimeCount} work_time_logs`);
+                console.log(`🗑️ [deleteActivityLogs] Проверка: сколько записей осталось для периода ${start} - ${end}`);
+                // Проверяем, сколько записей осталось
+                db.get(`SELECT COUNT(*) as count FROM work_time_logs WHERE date(event_time) >= date(?) AND date(event_time) <= date(?)`, [start, end], (checkErr, checkRow) => {
+                  if (!checkErr && checkRow) {
+                    console.log(`🗑️ [deleteActivityLogs] Осталось записей в work_time_logs: ${checkRow.count}`);
+                  }
+                });
                 
                 db.run('COMMIT', function(commitErr) {
                   if (commitErr) return reject(commitErr);
