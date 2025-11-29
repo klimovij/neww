@@ -54,6 +54,32 @@ sudo -u appuser CI=false npm run build || {
     echo "⚠️ Предупреждение: npm run build не удался"
 }
 
+# Обновляем конфигурацию nginx
+echo "🌐 Обновляем конфигурацию nginx..."
+if [ -f "/var/www/mesendger/deploy/nginx.conf" ]; then
+    # Получаем IP сервера
+    EXTERNAL_IP=$(curl -s ifconfig.me 2>/dev/null || echo "35.232.108.72")
+    
+    # Заменяем placeholder на реальный IP
+    sed "s/YOUR_SERVER_IP_OR_DOMAIN/$EXTERNAL_IP/g" /var/www/mesendger/deploy/nginx.conf > /tmp/nginx-mesendger.conf
+    
+    # Копируем конфигурацию
+    sudo cp /tmp/nginx-mesendger.conf /etc/nginx/sites-available/mesendger
+    
+    # Проверяем конфигурацию
+    if sudo nginx -t 2>/dev/null; then
+        echo "✅ Конфигурация nginx валидна"
+        # Перезагружаем nginx
+        sudo systemctl reload nginx || sudo systemctl restart nginx
+        echo "✅ Nginx перезагружен"
+    else
+        echo "⚠️ Предупреждение: конфигурация nginx невалидна, пропускаем обновление"
+    fi
+    rm -f /tmp/nginx-mesendger.conf
+else
+    echo "⚠️ Предупреждение: файл nginx.conf не найден"
+fi
+
 # Перезапускаем PM2
 echo "🔄 Перезапускаем приложение через PM2..."
 cd /var/www/mesendger
