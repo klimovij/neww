@@ -19,27 +19,49 @@ function formatTime(dtStr) {
     return dtStr; // Возвращаем оригинальную строку, если не удалось распарсить
   }
   
-  // Конвертируем UTC в киевское время (+3 часа)
-  // Киевское время = UTC + 3 часа (зимой) или UTC + 2 часа (летом)
-  // Используем простой подход: добавляем 3 часа к UTC времени
-  const kievOffset = 3 * 60 * 60 * 1000; // 3 часа в миллисекундах
-  const kievTime = new Date(d.getTime() + kievOffset);
-  
-  // Форматируем дату и время
-  const dateStr = kievTime.toLocaleDateString('ru-RU', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric'
-  });
-  
-  const timeStr = kievTime.toLocaleTimeString('ru-RU', {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false
-  });
-  
-  return `${dateStr}, ${timeStr}`;
+  // Конвертируем UTC в киевское время используя Intl.DateTimeFormat с timeZone
+  // Это автоматически учитывает летнее/зимнее время
+  try {
+    const formatter = new Intl.DateTimeFormat('ru-RU', {
+      timeZone: 'Europe/Kiev',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    });
+    
+    const parts = formatter.formatToParts(d);
+    const day = parts.find(p => p.type === 'day')?.value || '';
+    const month = parts.find(p => p.type === 'month')?.value || '';
+    const year = parts.find(p => p.type === 'year')?.value || '';
+    const hour = parts.find(p => p.type === 'hour')?.value || '';
+    const minute = parts.find(p => p.type === 'minute')?.value || '';
+    const second = parts.find(p => p.type === 'second')?.value || '';
+    
+    return `${day}.${month}.${year}, ${hour}:${minute}:${second}`;
+  } catch (e) {
+    // Fallback: добавляем 3 часа вручную (зимнее время UTC+3)
+    const kievOffset = 3 * 60 * 60 * 1000; // 3 часа в миллисекундах
+    const kievTime = new Date(d.getTime() + kievOffset);
+    
+    const dateStr = kievTime.toLocaleDateString('ru-RU', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+    
+    const timeStr = kievTime.toLocaleTimeString('ru-RU', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    });
+    
+    return `${dateStr}, ${timeStr}`;
+  }
 }
 
 export default function UserWorkTimeDetailsMobile({
