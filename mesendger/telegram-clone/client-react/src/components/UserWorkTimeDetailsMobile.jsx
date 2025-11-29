@@ -3,9 +3,10 @@ import ReactDOM from 'react-dom';
 import { FaArrowLeft } from 'react-icons/fa';
 import { FiX, FiLogIn, FiLogOut, FiClock, FiGlobe, FiCamera, FiExternalLink, FiMonitor, FiPrinter, FiDownload } from 'react-icons/fi';
 
-// ВЕРСИЯ 4.0 - ФИНАЛЬНАЯ: Исправлено отображение времени для всех вкладок
+// ВЕРСИЯ 5.0 - ФИНАЛЬНАЯ ИСПРАВЛЕННАЯ: Отображение времени для всех вкладок
 // Эта функция конвертирует UTC время в киевское время (+3 часа)
-// ВАЖНО: Всегда логируем для отладки
+// ВСЕГДА ЛОГИРУЕМ для отладки
+console.log('🔧 [formatTime] Функция formatTime V5.0 загружена!');
 function formatTime(dtStr) {
   if (!dtStr) return '';
   
@@ -19,7 +20,7 @@ function formatTime(dtStr) {
   let d = new Date(fixedStr);
   
   if (isNaN(d.getTime())) {
-    console.warn('⚠️ [formatTime V4.0] Невалидный timestamp:', dtStr);
+    console.warn('⚠️ [formatTime V5.0] Невалидный timestamp:', dtStr);
     return dtStr; // Возвращаем оригинальную строку, если не удалось распарсить
   }
   
@@ -39,17 +40,24 @@ function formatTime(dtStr) {
   
   const result = `${day}.${month}.${year}, ${hour}:${minute}:${second}`;
   
-  // ЛОГИРУЕМ ВСЕГДА для отладки (первые 5 вызовов)
-  if (!window._formatTimeCallCount) window._formatTimeCallCount = 0;
+  // ЛОГИРУЕМ ВСЕГДА для отладки (первые 10 вызовов)
+  if (!window._formatTimeCallCount) {
+    window._formatTimeCallCount = 0;
+    console.log('🔧 [formatTime V5.0] Инициализация счетчика вызовов');
+  }
   window._formatTimeCallCount++;
-  if (window._formatTimeCallCount <= 5) {
-    console.log(`🕐 [formatTime V4.0] Вызов #${window._formatTimeCallCount}:`, {
+  if (window._formatTimeCallCount <= 10) {
+    const utcHour = d.getUTCHours();
+    const expectedHour = (utcHour + 3) % 24;
+    console.log(`🕐 [formatTime V5.0] Вызов #${window._formatTimeCallCount}:`, {
       input: dtStr,
       parsedUTC: d.toISOString(),
+      utcHour: utcHour,
       kievTime: kievTime.toISOString(),
       result,
       hour: hour,
-      expectedHour: String(parseInt(d.getUTCHours()) + 3).padStart(2, '0')
+      expectedHour: String(expectedHour).padStart(2, '0'),
+      match: hour === String(expectedHour).padStart(2, '0')
     });
   }
   
