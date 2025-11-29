@@ -430,8 +430,14 @@ router.get('/activity-details', async (req, res) => {
       }))
       .sort((a, b) => {
         // Сортируем по времени (новые сверху, как для приложений)
-        const timeA = new Date(a.timestamp || 0).getTime();
-        const timeB = new Date(b.timestamp || 0).getTime();
+        // Безопасная обработка дат
+        const parseDate = (ts) => {
+          if (!ts) return 0;
+          const date = new Date(ts);
+          return isNaN(date.getTime()) ? 0 : date.getTime();
+        };
+        const timeA = parseDate(a.timestamp);
+        const timeB = parseDate(b.timestamp);
         return timeB - timeA; // Убывание (новые сверху)
       });
     
@@ -493,8 +499,14 @@ router.get('/activity-details', async (req, res) => {
     const applications = allApplications
       .sort((a, b) => {
         // Сортируем по времени (новые сверху)
-        const timeA = new Date(a.timestamp || 0).getTime();
-        const timeB = new Date(b.timestamp || 0).getTime();
+        // Безопасная обработка дат
+        const parseDate = (ts) => {
+          if (!ts) return 0;
+          const date = new Date(ts);
+          return isNaN(date.getTime()) ? 0 : date.getTime();
+        };
+        const timeA = parseDate(a.timestamp);
+        const timeB = parseDate(b.timestamp);
         return timeB - timeA; // Убывание (новые сверху)
       });
     
@@ -554,9 +566,22 @@ router.get('/activity-details', async (req, res) => {
       // Если путь уже содержит имя файла, используем его
       // Иначе формируем имя из timestamp
       if (!fileName || fileName === '' || fileName === '/') {
-        const ts = new Date(shot.timestamp);
-        fileName = `screenshot_${username}_${ts.toISOString().split('T')[0]}_${ts.toISOString().split('T')[1].replace(/[:.]/g, '-').split('.')[0]}.jpg`;
-        console.log(`📸 [activity-details] Сгенерировано имя файла из timestamp:`, fileName);
+        try {
+          const ts = new Date(shot.timestamp);
+          if (isNaN(ts.getTime())) {
+            // Если timestamp невалидный, используем текущую дату
+            console.warn(`⚠️ [activity-details] Невалидный timestamp для скриншота ${shot.id}: ${shot.timestamp}`);
+            const now = new Date();
+            fileName = `screenshot_${username}_${now.toISOString().split('T')[0]}_${now.toISOString().split('T')[1].replace(/[:.]/g, '-').split('.')[0]}.jpg`;
+          } else {
+            fileName = `screenshot_${username}_${ts.toISOString().split('T')[0]}_${ts.toISOString().split('T')[1].replace(/[:.]/g, '-').split('.')[0]}.jpg`;
+          }
+          console.log(`📸 [activity-details] Сгенерировано имя файла из timestamp:`, fileName);
+        } catch (e) {
+          console.error(`❌ [activity-details] Ошибка обработки timestamp для скриншота ${shot.id}:`, e);
+          const now = new Date();
+          fileName = `screenshot_${username}_${now.toISOString().split('T')[0]}_${now.toISOString().split('T')[1].replace(/[:.]/g, '-').split('.')[0]}.jpg`;
+        }
       }
       
       // Убеждаемся, что путь правильный - удаляем все префиксы путей, оставляем только имя файла
