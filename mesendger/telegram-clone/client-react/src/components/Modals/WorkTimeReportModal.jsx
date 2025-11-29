@@ -693,7 +693,7 @@ function WorkTimeReportModal({ isOpen, onRequestClose }) {
                           <td style={{ padding: '12px 14px' }}>{row.lastLogout ? formatTime(row.lastLogout) : '—'}</td>
                           <td style={{ padding: '12px 14px' }}>{row.totalTimeStr || '—'}</td>
                           <td style={{ padding: '12px 14px' }}>
-                            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                            <div style={{ display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'flex-end' }}>
                               <button
                                 type="button"
                                 onClick={() => handleOpenLocalUserDetails(row)}
@@ -704,7 +704,8 @@ function WorkTimeReportModal({ isOpen, onRequestClose }) {
                                   background: '#2193b0',
                                   color: '#fff',
                                   fontWeight: 700,
-                                  cursor: 'pointer'
+                                  cursor: 'pointer',
+                                  whiteSpace: 'nowrap'
                                 }}
                               >
                                 Подробнее
@@ -723,7 +724,8 @@ function WorkTimeReportModal({ isOpen, onRequestClose }) {
                                   cursor: 'pointer',
                                   display: 'flex',
                                   alignItems: 'center',
-                                  gap: 6
+                                  gap: 6,
+                                  whiteSpace: 'nowrap'
                                 }}
                               >
                                 <FiTrash2 size={16} />

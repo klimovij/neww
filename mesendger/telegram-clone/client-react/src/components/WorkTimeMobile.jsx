@@ -1467,16 +1467,22 @@ function LocalWorktimeReportModalMobile({
                           justifyContent: 'space-between',
                           alignItems: 'center',
                           marginBottom: '12px',
+                          gap: '12px',
                         }}>
                           <h3 style={{
                             margin: 0,
                             color: '#ffe082',
                             fontSize: '16px',
                             fontWeight: 700,
+                            flex: 1,
+                            minWidth: 0,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
                           }}>
                             {displayName}
                           </h3>
-                          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                          <div style={{ display: 'flex', gap: '8px', flexWrap: 'nowrap', flexShrink: 0 }}>
                             <button
                               type="button"
                               onClick={() => onUserClick(row)}
