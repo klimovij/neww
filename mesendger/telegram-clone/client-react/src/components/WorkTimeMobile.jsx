@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect, useMemo, useCallback } from 'react';
 import ReactDOM from 'react-dom';
 import { FaArrowLeft } from 'react-icons/fa';
-import { FiX, FiSearch, FiCalendar, FiRefreshCw, FiMonitor, FiFileText } from 'react-icons/fi';
+import { FiX, FiSearch, FiCalendar, FiRefreshCw, FiMonitor, FiFileText, FiTrash2 } from 'react-icons/fi';
 import UserWorkTimeDetailsModal from './Modals/UserWorkTimeDetailsModal';
 import UserWorkTimeDetailsMobile from './UserWorkTimeDetailsMobile';
 import AppUsageModal from './Modals/AppUsageModal';
@@ -425,6 +425,46 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
       alert(`Ошибка загрузки деталей: ${error.message}. Попробуйте обновить страницу.`);
     }
     setLoadingLocalReport(false);
+  };
+
+  // Удаление скриншотов пользователя за период
+  const handleDeleteUserScreenshots = async (user) => {
+    const periodText = localReportStartDate === localReportEndDate 
+      ? `за ${localReportStartDate}` 
+      : `за период с ${localReportStartDate} по ${localReportEndDate}`;
+    
+    if (!window.confirm(`Вы уверены, что хотите удалить все скриншоты пользователя ${user.fio || user.username} ${periodText}? Это действие нельзя отменить. Остальные данные (логи, приложения, сайты) не будут удалены.`)) {
+      return;
+    }
+    
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('/api/activity-screenshots/delete', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          username: user.username,
+          start: localReportStartDate,
+          end: localReportEndDate
+        })
+      });
+      
+      const data = await res.json();
+      
+      if (res.ok && data.success) {
+        alert(`✅ ${data.message || `Удалено ${data.deletedCount || 0} скриншотов`}`);
+        // Обновляем отчет после удаления
+        fetchLocalReport();
+      } else {
+        alert(`❌ Ошибка: ${data.error || 'Не удалось удалить скриншоты'}`);
+      }
+    } catch (error) {
+      console.error('Ошибка удаления скриншотов:', error);
+      alert('❌ Ошибка при удалении скриншотов');
+    }
   };
 
   // Автоматически загружаем данные при открытии модалки, если дата сегодняшняя
@@ -1027,6 +1067,7 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
           formatTime={formatTime}
           onFetchReport={fetchLocalReport}
           onDeleteByDateRange={handleDeleteByDateRange}
+          onDeleteUserScreenshots={handleDeleteUserScreenshots}
           onDeleteByPeriod={handleDeleteByPeriod}
         />
       )}
@@ -1117,7 +1158,8 @@ function LocalWorktimeReportModalMobile({
   formatTime,
   onFetchReport,
   onDeleteByDateRange,
-  onDeleteByPeriod
+  onDeleteByPeriod,
+  onDeleteUserScreenshots
 }) {
   const modalRef = useRef(null);
   const touchStartX = useRef(null);
@@ -1524,22 +1566,45 @@ function LocalWorktimeReportModalMobile({
                           }}>
                             {displayName}
                           </h3>
-                          <button
-                            type="button"
-                            onClick={() => onUserClick(row)}
-                            style={{
-                              padding: '8px 16px',
-                              borderRadius: '10px',
-                              border: '2px solid rgba(33, 147, 176, 0.5)',
-                              background: 'linear-gradient(135deg, #2193b0 0%, #43e97b 100%)',
-                              color: '#fff',
-                              fontWeight: 700,
-                              fontSize: '14px',
-                              cursor: 'pointer',
-                            }}
-                          >
-                            Подробнее
-                          </button>
+                          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                            <button
+                              type="button"
+                              onClick={() => onUserClick(row)}
+                              style={{
+                                padding: '8px 16px',
+                                borderRadius: '10px',
+                                border: '2px solid rgba(33, 147, 176, 0.5)',
+                                background: 'linear-gradient(135deg, #2193b0 0%, #43e97b 100%)',
+                                color: '#fff',
+                                fontWeight: 700,
+                                fontSize: '14px',
+                                cursor: 'pointer',
+                              }}
+                            >
+                              Подробнее
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => onDeleteUserScreenshots && onDeleteUserScreenshots(row)}
+                              title="Удалить скриншоты"
+                              style={{
+                                padding: '8px 12px',
+                                borderRadius: '10px',
+                                border: '2px solid rgba(231, 76, 60, 0.5)',
+                                background: 'rgba(231, 76, 60, 0.8)',
+                                color: '#fff',
+                                fontWeight: 700,
+                                fontSize: '12px',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 6
+                              }}
+                            >
+                              <FiTrash2 size={14} />
+                              <span>Удалить скрины</span>
+                            </button>
+                          </div>
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>

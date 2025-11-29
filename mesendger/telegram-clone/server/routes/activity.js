@@ -800,6 +800,47 @@ router.delete('/activity-logs/clear', authenticateToken, async (req, res) => {
   }
 });
 
+// Endpoint для удаления только скриншотов конкретного пользователя за период
+router.delete('/activity-screenshots/delete', authenticateToken, async (req, res) => {
+  console.log('🗑️ [activity-screenshots/delete] ========== REQUEST RECEIVED ==========');
+  console.log('🗑️ [activity-screenshots/delete] Body:', JSON.stringify(req.body));
+  try {
+    const { username, start, end } = req.body;
+    const user = req.user;
+    
+    // Проверка прав: только HR или Admin могут удалять скриншоты
+    if (!user || (user.role !== 'hr' && user.role !== 'admin')) {
+      console.warn(`🚫 [activity-screenshots/delete] Пользователь ${user?.username} (роль: ${user?.role}) попытался удалить скриншоты без прав.`);
+      return res.status(403).json({ success: false, error: 'Недостаточно прав для выполнения операции' });
+    }
+    
+    // Проверяем обязательные параметры
+    if (!username || !start || !end) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Необходимо указать username, start и end (YYYY-MM-DD)' 
+      });
+    }
+    
+    console.log(`🗑️ [activity-screenshots/delete] Пользователь ${user.username} (роль: ${user.role}) удаляет скриншоты для ${username} за период ${start} - ${end}`);
+    
+    const deletedCount = await db.deleteUserScreenshots({ username, start, end });
+    console.log(`✅ [activity-screenshots/delete] Удалено ${deletedCount} скриншотов`);
+    
+    res.json({ 
+      success: true, 
+      deletedCount,
+      username,
+      start,
+      end,
+      message: `Удалено ${deletedCount} скриншотов для пользователя ${username} за период с ${start} по ${end}`
+    });
+  } catch (error) {
+    console.error('❌ [activity-screenshots/delete] Ошибка при удалении скриншотов:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 module.exports = router;
 
 

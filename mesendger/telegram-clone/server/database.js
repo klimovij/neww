@@ -2565,6 +2565,39 @@ class Database {
       });
     }
 
+    // Метод для удаления скриншотов конкретного пользователя за период
+    async deleteUserScreenshots({ username, start, end }) {
+      return new Promise((resolve, reject) => {
+        console.log(`🗑️ [deleteUserScreenshots] Удаление скриншотов для ${username}, период: ${start} - ${end}`);
+        
+        if (!username) {
+          return reject(new Error('Username обязателен'));
+        }
+        
+        if (!start || !end) {
+          return reject(new Error('Период (start и end) обязателен'));
+        }
+
+        // Используем date() для нормализации дат
+        const query = 'DELETE FROM activity_screenshots WHERE username = ? AND date(timestamp) >= date(?) AND date(timestamp) <= date(?)';
+        const params = [username, start, end];
+        
+        console.log(`🗑️ [deleteUserScreenshots] SQL запрос: ${query}`);
+        console.log(`🗑️ [deleteUserScreenshots] Параметры:`, params);
+
+        this.db.run(query, params, function(err) {
+          if (err) {
+            console.error(`❌ [deleteUserScreenshots] Ошибка удаления:`, err);
+            reject(err);
+          } else {
+            const deletedCount = this.changes;
+            console.log(`✅ [deleteUserScreenshots] Удалено ${deletedCount} скриншотов для пользователя ${username} за период ${start} - ${end}`);
+            resolve(deletedCount);
+          }
+        });
+      });
+    }
+
     // Добавление лога рабочего времени для удаленного ПК (в отдельную таблицу)
     async addRemoteWorkTimeLog({ username, event_type, event_time, event_id }) {
       return new Promise((resolve, reject) => {

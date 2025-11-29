@@ -6,6 +6,7 @@ import RemoteWorktimeReportModal from './RemoteWorktimeReportModal';
 import UserWorkTimeDetailsMobile from '../UserWorkTimeDetailsMobile';
 import OneCDocumentHistoryMobile from '../OneCDocumentHistoryMobile';
 import api from '../../services/api';
+import { FiTrash2 } from 'react-icons/fi';
 
 Modal.setAppElement('#root');
 
@@ -311,6 +312,46 @@ function WorkTimeReportModal({ isOpen, onRequestClose }) {
       console.error('Ошибка загрузки деталей:', error);
     }
     setLoadingLocalReport(false);
+  };
+
+  // Удаление скриншотов пользователя за период
+  const handleDeleteUserScreenshots = async (user) => {
+    const periodText = localReportStartDate === localReportEndDate 
+      ? `за ${localReportStartDate}` 
+      : `за период с ${localReportStartDate} по ${localReportEndDate}`;
+    
+    if (!window.confirm(`Вы уверены, что хотите удалить все скриншоты пользователя ${user.fio || user.username} ${periodText}? Это действие нельзя отменить. Остальные данные (логи, приложения, сайты) не будут удалены.`)) {
+      return;
+    }
+    
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('/api/activity-screenshots/delete', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          username: user.username,
+          start: localReportStartDate,
+          end: localReportEndDate
+        })
+      });
+      
+      const data = await res.json();
+      
+      if (res.ok && data.success) {
+        alert(`✅ ${data.message || `Удалено ${data.deletedCount || 0} скриншотов`}`);
+        // Обновляем отчет после удаления
+        fetchLocalReport();
+      } else {
+        alert(`❌ Ошибка: ${data.error || 'Не удалось удалить скриншоты'}`);
+      }
+    } catch (error) {
+      console.error('Ошибка удаления скриншотов:', error);
+      alert('❌ Ошибка при удалении скриншотов');
+    }
   };
 
   function formatTime(dtStr) {
@@ -714,21 +755,43 @@ function WorkTimeReportModal({ isOpen, onRequestClose }) {
                           <td style={{ padding: '12px 14px' }}>{row.lastLogout ? formatTime(row.lastLogout) : '—'}</td>
                           <td style={{ padding: '12px 14px' }}>{row.totalTimeStr || '—'}</td>
                           <td style={{ padding: '12px 14px' }}>
-                            <button
-                              type="button"
-                              onClick={() => handleOpenLocalUserDetails(row)}
-                              style={{
-                                padding: '6px 12px',
-                                borderRadius: 10,
-                                border: 'none',
-                                background: '#2193b0',
-                                color: '#fff',
-                                fontWeight: 700,
-                                cursor: 'pointer'
-                              }}
-                            >
-                              Подробнее
-                            </button>
+                            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                              <button
+                                type="button"
+                                onClick={() => handleOpenLocalUserDetails(row)}
+                                style={{
+                                  padding: '6px 12px',
+                                  borderRadius: 10,
+                                  border: 'none',
+                                  background: '#2193b0',
+                                  color: '#fff',
+                                  fontWeight: 700,
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                Подробнее
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteUserScreenshots(row)}
+                                title="Удалить скриншоты"
+                                style={{
+                                  padding: '6px 12px',
+                                  borderRadius: 10,
+                                  border: 'none',
+                                  background: 'rgba(231, 76, 60, 0.8)',
+                                  color: '#fff',
+                                  fontWeight: 700,
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 6
+                                }}
+                              >
+                                <FiTrash2 size={16} />
+                                <span>Удалить скрины</span>
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))}
