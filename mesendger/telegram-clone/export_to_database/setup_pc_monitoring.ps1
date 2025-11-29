@@ -55,6 +55,16 @@ if (Test-Path $activityScript) {
     Write-Host "   Скрипт активности не будет установлен" -ForegroundColor Yellow
 }
 
+# Копируем скрипт мониторинга выключения
+$shutdownMonitorScript = Join-Path $scriptDir "monitor_shutdown.ps1"
+if (Test-Path $shutdownMonitorScript) {
+    Copy-Item $shutdownMonitorScript -Destination "$targetDir\monitor_shutdown.ps1" -Force
+    Write-Host "✅ monitor_shutdown.ps1 скопирован" -ForegroundColor Green
+} else {
+    Write-Host "⚠️ Файл не найден: $shutdownMonitorScript" -ForegroundColor Yellow
+    Write-Host "   Мониторинг выключения не будет установлен" -ForegroundColor Yellow
+}
+
 # Запрашиваем username
 Write-Host "`n========================================" -ForegroundColor Cyan
 Write-Host "Настройка username" -ForegroundColor Cyan
@@ -156,6 +166,11 @@ Write-Host "   - Интервал отправки данных о сайтах:
 Write-Host "   - Интервал отправки данных о приложениях: $appsIntervalMinutes минут" -ForegroundColor Gray
 Write-Host "   - Используемый интервал для отправки: $activityIntervalMinutes минут (минимум)" -ForegroundColor Gray
 
+# Получаем SID текущего пользователя (используется для всех задач)
+$currentUser = [System.Security.Principal.WindowsIdentity]::GetCurrent()
+$userSid = $currentUser.User.Value
+Write-Host "`n   SID текущего пользователя: $userSid" -ForegroundColor Gray
+
 # Обновляем XML файлы с username
 Write-Host "`nОбновление XML файлов..." -ForegroundColor Yellow
 
@@ -163,8 +178,9 @@ Write-Host "`nОбновление XML файлов..." -ForegroundColor Yellow
 $startupXmlPath = Join-Path $scriptDir "Mesendger_PC_Startup_Monitor.xml"
 if (Test-Path $startupXmlPath) {
     $startupXml = Get-Content $startupXmlPath -Raw -Encoding UTF8
-    # Заменяем USERNAME и путь (экранируем путь для регулярного выражения)
+    # Заменяем USERNAME, путь и SID (экранируем путь для регулярного выражения)
     $startupXml = $startupXml -replace 'USERNAME', $username
+    $startupXml = $startupXml -replace 'USERSID', $userSid
     $escapedScriptDir = [regex]::Escape($scriptDir)
     $startupXml = $startupXml -replace $escapedScriptDir, $targetDir
     $startupXml | Out-File -FilePath "$targetDir\Mesendger_PC_Startup_Monitor.xml" -Encoding Unicode -Force
@@ -178,8 +194,9 @@ if (Test-Path $startupXmlPath) {
 $shutdownXmlPath = Join-Path $scriptDir "Mesendger_PC_Shutdown_Monitor.xml"
 if (Test-Path $shutdownXmlPath) {
     $shutdownXml = Get-Content $shutdownXmlPath -Raw -Encoding UTF8
-    # Заменяем USERNAME и путь (экранируем путь для регулярного выражения)
+    # Заменяем USERNAME, путь и SID (экранируем путь для регулярного выражения)
     $shutdownXml = $shutdownXml -replace 'USERNAME', $username
+    $shutdownXml = $shutdownXml -replace 'USERSID', $userSid
     $escapedScriptDir = [regex]::Escape($scriptDir)
     $shutdownXml = $shutdownXml -replace $escapedScriptDir, $targetDir
     $shutdownXml | Out-File -FilePath "$targetDir\Mesendger_PC_Shutdown_Monitor.xml" -Encoding Unicode -Force
@@ -189,14 +206,26 @@ if (Test-Path $shutdownXmlPath) {
     Write-Host "   Создайте XML файл вручную" -ForegroundColor Yellow
 }
 
+# Shutdown Monitor Background XML (новый фоновый монитор)
+$shutdownMonitorXmlPath = Join-Path $scriptDir "Mesendger_PC_Shutdown_Monitor_Background.xml"
+if (Test-Path $shutdownMonitorXmlPath) {
+    $shutdownMonitorXml = Get-Content $shutdownMonitorXmlPath -Raw -Encoding UTF8
+    # Заменяем USERNAME, путь и SID (экранируем путь для регулярного выражения)
+    $shutdownMonitorXml = $shutdownMonitorXml -replace 'USERNAME', $username
+    $shutdownMonitorXml = $shutdownMonitorXml -replace 'USERSID', $userSid
+    $escapedScriptDir = [regex]::Escape($scriptDir)
+    $shutdownMonitorXml = $shutdownMonitorXml -replace $escapedScriptDir, $targetDir
+    $shutdownMonitorXml | Out-File -FilePath "$targetDir\Mesendger_PC_Shutdown_Monitor_Background.xml" -Encoding Unicode -Force
+    Write-Host "✅ Mesendger_PC_Shutdown_Monitor_Background.xml обновлен" -ForegroundColor Green
+} else {
+    Write-Host "⚠️ XML файл не найден: $shutdownMonitorXmlPath" -ForegroundColor Yellow
+    Write-Host "   Фоновый мониторинг выключения не будет установлен" -ForegroundColor Yellow
+}
+
 # Activity XML
 $activityXmlPath = Join-Path $scriptDir "Mesendger_PC_Activity_Monitor.xml"
 if (Test-Path $activityXmlPath) {
     $activityXml = Get-Content $activityXmlPath -Raw -Encoding UTF8
-    # Получаем SID текущего пользователя
-    $currentUser = [System.Security.Principal.WindowsIdentity]::GetCurrent()
-    $userSid = $currentUser.User.Value
-    Write-Host "   SID текущего пользователя: $userSid" -ForegroundColor Gray
     # Заменяем USERNAME, путь и SID (экранируем путь для регулярного выражения)
     $activityXml = $activityXml -replace 'USERNAME', $username
     $activityXml = $activityXml -replace 'USERSID', $userSid
@@ -227,6 +256,12 @@ $activityCheck = schtasks /Query /TN Mesendger_PC_Activity_Monitor /FO CSV 2>&1
 if ($LASTEXITCODE -eq 0) {
     schtasks /Delete /TN Mesendger_PC_Activity_Monitor /F 2>&1 | Out-Null
     Write-Host "✅ Старая задача активности удалена" -ForegroundColor Green
+}
+
+$shutdownMonitorCheck = schtasks /Query /TN Mesendger_PC_Shutdown_Monitor_Background /FO CSV 2>&1
+if ($LASTEXITCODE -eq 0) {
+    schtasks /Delete /TN Mesendger_PC_Shutdown_Monitor_Background /F 2>&1 | Out-Null
+    Write-Host "✅ Старая задача фонового мониторинга выключения удалена" -ForegroundColor Green
 }
 
 # Импортируем задачи
@@ -265,6 +300,17 @@ if (Test-Path "$targetDir\Mesendger_PC_Activity_Monitor.xml") {
     Write-Host "⚠️ XML файл для активности не найден" -ForegroundColor Yellow
 }
 
+if (Test-Path "$targetDir\Mesendger_PC_Shutdown_Monitor_Background.xml") {
+    $result = schtasks /Create /TN Mesendger_PC_Shutdown_Monitor_Background /XML "$targetDir\Mesendger_PC_Shutdown_Monitor_Background.xml" /F 2>&1
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "✅ Задача фонового мониторинга выключения создана" -ForegroundColor Green
+    } else {
+        Write-Host "❌ Ошибка создания задачи фонового мониторинга выключения: $result" -ForegroundColor Red
+    }
+} else {
+    Write-Host "⚠️ XML файл для фонового мониторинга выключения не найден" -ForegroundColor Yellow
+}
+
 Write-Host "`n========================================" -ForegroundColor Cyan
 Write-Host "Установка завершена!" -ForegroundColor Green
 Write-Host "========================================`n" -ForegroundColor Cyan
@@ -274,8 +320,9 @@ Write-Host "  schtasks /Query /TN Mesendger_PC_Startup_Monitor" -ForegroundColor
 Write-Host "  schtasks /Query /TN Mesendger_PC_Shutdown_Monitor" -ForegroundColor Gray
 
 Write-Host "`n💡 Проверьте задачи в планировщике задач (taskschd.msc):" -ForegroundColor Yellow
-Write-Host "   - Mesendger_PC_Startup_Monitor - триггер: При запуске системы" -ForegroundColor Gray
-Write-Host "   - Mesendger_PC_Shutdown_Monitor - триггер: При событии (System, User32, 1074)" -ForegroundColor Gray
+Write-Host "   - Mesendger_PC_Startup_Monitor - триггер: При входе пользователя (с задержкой 30 сек)" -ForegroundColor Gray
+Write-Host "   - Mesendger_PC_Shutdown_Monitor - триггер: При событии выключения (System, User32, 1074)" -ForegroundColor Gray
+Write-Host "   - Mesendger_PC_Shutdown_Monitor_Background - триггер: При входе пользователя (фоновый монитор)" -ForegroundColor Gray
 Write-Host "   - Mesendger_PC_Activity_Monitor - триггер: При входе пользователя" -ForegroundColor Gray
 
 Write-Host "`n✅ Готово! Мониторинг настроен для пользователя: $username" -ForegroundColor Green
