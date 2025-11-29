@@ -5,23 +5,36 @@ import { FiX, FiLogIn, FiLogOut, FiClock, FiGlobe, FiCamera, FiExternalLink, FiM
 
 function formatTime(dtStr) {
   if (!dtStr) return '';
-  // Парсим время как локальное (формат YYYY-MM-DD HH:mm:ss без часового пояса)
-  // Явно создаем Date объект с локальным временем, чтобы избежать проблем с UTC
-  const match = dtStr.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2}):(\d{2})/);
-  if (match) {
-    const [_, year, month, day, hour, minute, second] = match;
-    // Создаем Date объект с локальным временем (месяцы в JS с 0, поэтому -1)
-    const d = new Date(Number(year), Number(month) - 1, Number(day), Number(hour), Number(minute), Number(second));
-    if (!isNaN(d.getTime())) {
-      return `${d.toLocaleDateString('ru-RU')}, ${d.toLocaleTimeString('ru-RU')}`;
+  
+  // Исправляем невалидный формат timestamp (например, '2025-11-28T18:52:24:.027Z' -> '2025-11-28T18:52:24.027Z')
+  let fixedStr = dtStr;
+  if (typeof fixedStr === 'string') {
+    fixedStr = fixedStr.replace(/T(\d{2}):(\d{2}):(\d{2}):\.(\d+)/, 'T$1:$2:$3.$4');
+  }
+  
+  // Парсим timestamp
+  let d = new Date(fixedStr);
+  
+  // Если timestamp в UTC (содержит Z или +00:00), конвертируем в киевское время (+3 часа)
+  if (fixedStr.includes('Z') || fixedStr.includes('+00:00') || fixedStr.match(/T\d{2}:\d{2}:\d{2}\.\d{3}Z$/)) {
+    // Timestamp в UTC - добавляем 3 часа для киевского времени
+    d = new Date(d.getTime() + 3 * 60 * 60 * 1000);
+  } else {
+    // Если формат YYYY-MM-DD HH:mm:ss без часового пояса, предполагаем что это уже локальное время
+    const match = fixedStr.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2}):(\d{2})/);
+    if (match && !fixedStr.includes('Z') && !fixedStr.includes('+') && !fixedStr.includes('-')) {
+      const [_, year, month, day, hour, minute, second] = match;
+      // Создаем Date объект с локальным временем (месяцы в JS с 0, поэтому -1)
+      d = new Date(Number(year), Number(month) - 1, Number(day), Number(hour), Number(minute), Number(second));
     }
   }
-  // Fallback на стандартный парсинг
-  const d = new Date(dtStr);
+  
   if (isNaN(d.getTime())) {
     return dtStr; // Возвращаем оригинальную строку, если не удалось распарсить
   }
-  return `${d.toLocaleDateString('ru-RU')}, ${d.toLocaleTimeString('ru-RU')}`;
+  
+  // Форматируем в киевское время (Europe/Kiev)
+  return `${d.toLocaleDateString('ru-RU', { timeZone: 'Europe/Kiev' })}, ${d.toLocaleTimeString('ru-RU', { timeZone: 'Europe/Kiev', hour: '2-digit', minute: '2-digit', second: '2-digit' })}`;
 }
 
 export default function UserWorkTimeDetailsMobile({
@@ -288,21 +301,37 @@ export default function UserWorkTimeDetailsMobile({
 
   // WebSocket для обновления данных в реальном времени (используем общий socket)
   useEffect(() => {
-    if (!open || !username || !startDate || !endDate) return;
+    if (!open || !realUsername || !startDate || !endDate) return;
 
     // Используем общий socket из SocketProvider вместо создания нового
     const socket = window.socket;
-    if (!socket || !socket.connected) return;
+    if (!socket || !socket.connected) {
+      console.log('⚠️ [UserWorkTimeDetailsMobile] Socket не подключен, пропускаем WebSocket обновления');
+      return;
+    }
 
-    // Слушаем обновления данных активности
+    console.log('🔌 [UserWorkTimeDetailsMobile] Настраиваем WebSocket обновления для:', realUsername, startDate, endDate);
+
+    // Слушаем обновления данных активности (общее обновление - перезагружаем все данные)
     const handleActivityUpdate = async (updateData) => {
+      console.log('🔄 [UserWorkTimeDetailsMobile] Получено обновление активности:', updateData);
       // Проверяем, относится ли обновление к текущему пользователю и дате
       const updateDate = updateData.date || (updateData.timestamp ? new Date(updateData.timestamp).toISOString().split('T')[0] : null);
-      const usernameForMatch = username.split(' ')[0] || username;
-      const matchesUser = updateData.username === username || updateData.username === usernameForMatch;
+      const apiUsername = realUsername || username;
+      const matchesUser = updateData.username === apiUsername || updateData.username === username;
       const matchesDate = updateDate && updateDate >= startDate && updateDate <= endDate;
       
+      console.log('🔍 [UserWorkTimeDetailsMobile] Проверка совпадения:', {
+        matchesUser,
+        matchesDate,
+        updateUsername: updateData.username,
+        currentUsername: apiUsername,
+        updateDate,
+        dateRange: `${startDate} - ${endDate}`
+      });
+      
       if (matchesUser && matchesDate) {
+        console.log('✅ [UserWorkTimeDetailsMobile] Обновление соответствует критериям, перезагружаем данные');
         // Перезагружаем данные активности
         reloadActivityData();
       }
@@ -310,25 +339,46 @@ export default function UserWorkTimeDetailsMobile({
 
     // Слушаем добавление новых скриншотов
     const handleScreenshotAdded = (screenshotData) => {
+      console.log('📸 [UserWorkTimeDetailsMobile] Получено событие добавления скриншота:', screenshotData);
       // Проверяем, относится ли скриншот к текущему пользователю и дате
       const screenshotDate = screenshotData.date || (screenshotData.timestamp ? new Date(screenshotData.timestamp).toISOString().split('T')[0] : null);
-      const usernameForMatch = username.split(' ')[0] || username;
-      const matchesUser = screenshotData.username === username || screenshotData.username === usernameForMatch;
+      const apiUsername = realUsername || username;
+      const matchesUser = screenshotData.username === apiUsername || screenshotData.username === username;
       const matchesDate = screenshotDate && screenshotDate >= startDate && screenshotDate <= endDate;
       
+      console.log('🔍 [UserWorkTimeDetailsMobile] Проверка скриншота:', {
+        matchesUser,
+        matchesDate,
+        screenshotUsername: screenshotData.username,
+        currentUsername: apiUsername,
+        screenshotDate,
+        dateRange: `${startDate} - ${endDate}`
+      });
+      
       if (matchesUser && matchesDate) {
+        console.log('✅ [UserWorkTimeDetailsMobile] Скриншот соответствует критериям, добавляем в список');
         // Добавляем новый скриншот в список
         setLocalScreenshots(prev => {
           // Проверяем, нет ли уже такого скриншота
-          const exists = prev.some(s => s.fileName === screenshotData.fileName || s.url === screenshotData.url);
-          if (exists) return prev;
+          const exists = prev.some(s => 
+            s.id === screenshotData.id || 
+            s.fileName === screenshotData.fileName || 
+            s.url === screenshotData.url ||
+            (s.file_path && screenshotData.filePath && s.file_path === screenshotData.filePath)
+          );
+          if (exists) {
+            console.log('⚠️ [UserWorkTimeDetailsMobile] Скриншот уже существует, пропускаем');
+            return prev;
+          }
           
+          console.log('✅ [UserWorkTimeDetailsMobile] Добавляем новый скриншот в список');
           return [...prev, {
-            file_path: screenshotData.filePath,
-            fileName: screenshotData.fileName,
+            id: screenshotData.id,
+            file_path: screenshotData.filePath || screenshotData.file_path,
+            fileName: screenshotData.fileName || screenshotData.file_name,
             url: screenshotData.url,
             timestamp: screenshotData.timestamp,
-            file_size: screenshotData.fileSize
+            file_size: screenshotData.fileSize || screenshotData.file_size
           }].sort((a, b) => {
             const timeA = new Date(a.timestamp || 0).getTime();
             const timeB = new Date(b.timestamp || 0).getTime();
@@ -338,16 +388,75 @@ export default function UserWorkTimeDetailsMobile({
       }
     };
 
+    // Слушаем добавление новых URL
+    const handleUrlAdded = (urlData) => {
+      console.log('🌐 [UserWorkTimeDetailsMobile] Получено событие добавления URL:', urlData);
+      const urlDate = urlData.date || (urlData.timestamp ? new Date(urlData.timestamp).toISOString().split('T')[0] : null);
+      const apiUsername = realUsername || username;
+      const matchesUser = urlData.username === apiUsername || urlData.username === username;
+      const matchesDate = urlDate && urlDate >= startDate && urlDate <= endDate;
+      
+      if (matchesUser && matchesDate) {
+        console.log('✅ [UserWorkTimeDetailsMobile] URL соответствует критериям, добавляем в список');
+        setLocalUrls(prev => {
+          const exists = prev.some(u => u.id === urlData.id || (u.url === urlData.url && u.timestamp === urlData.timestamp));
+          if (exists) return prev;
+          return [...prev, {
+            id: urlData.id,
+            url: urlData.url,
+            timestamp: urlData.timestamp,
+            windowTitle: urlData.windowTitle
+          }].sort((a, b) => {
+            const timeA = new Date(a.timestamp || 0).getTime();
+            const timeB = new Date(b.timestamp || 0).getTime();
+            return timeB - timeA;
+          });
+        });
+      }
+    };
+
+    // Слушаем добавление новых приложений
+    const handleApplicationAdded = (appData) => {
+      console.log('💻 [UserWorkTimeDetailsMobile] Получено событие добавления приложения:', appData);
+      const appDate = appData.date || (appData.timestamp ? new Date(appData.timestamp).toISOString().split('T')[0] : null);
+      const apiUsername = realUsername || username;
+      const matchesUser = appData.username === apiUsername || appData.username === username;
+      const matchesDate = appDate && appDate >= startDate && appDate <= endDate;
+      
+      if (matchesUser && matchesDate) {
+        console.log('✅ [UserWorkTimeDetailsMobile] Приложение соответствует критериям, добавляем в список');
+        setLocalApplications(prev => {
+          const exists = prev.some(a => a.id === appData.id || (a.procName === appData.procName && a.timestamp === appData.timestamp));
+          if (exists) return prev;
+          return [...prev, {
+            id: appData.id,
+            procName: appData.procName,
+            windowTitle: appData.windowTitle,
+            timestamp: appData.timestamp
+          }].sort((a, b) => {
+            const timeA = new Date(a.timestamp || 0).getTime();
+            const timeB = new Date(b.timestamp || 0).getTime();
+            return timeB - timeA;
+          });
+        });
+      }
+    };
+
     socket.on('activity_data_updated', handleActivityUpdate);
     socket.on('activity_screenshot_added', handleScreenshotAdded);
+    socket.on('activity_url_added', handleUrlAdded);
+    socket.on('activity_application_added', handleApplicationAdded);
 
     return () => {
       if (socket) {
         socket.off('activity_data_updated', handleActivityUpdate);
         socket.off('activity_screenshot_added', handleScreenshotAdded);
+        socket.off('activity_url_added', handleUrlAdded);
+        socket.off('activity_application_added', handleApplicationAdded);
+        console.log('🔌 [UserWorkTimeDetailsMobile] WebSocket обработчики отключены');
       }
     };
-  }, [open, username, startDate, endDate, reloadActivityData]);
+  }, [open, realUsername, username, startDate, endDate, reloadActivityData]);
 
   // Загружаем данные активности при открытии модалки
   useEffect(() => {

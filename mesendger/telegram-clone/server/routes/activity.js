@@ -173,6 +173,35 @@ router.post('/activity-log-batch', authenticateActivityRequest, async (req, res)
         });
         console.log(`📡 [activity-log-batch] Emitted activity_data_updated for ${update.username} on ${update.date}`);
       });
+      
+      // Отправляем отдельные события для URLs и приложений для динамического обновления счетчиков
+      sanitized.forEach(event => {
+        if (event.username && event.timestamp) {
+          const date = new Date(event.timestamp).toISOString().split('T')[0];
+          
+          // Если есть browserUrl - это URL
+          if (event.browserUrl && event.browserUrl.trim() !== '') {
+            global.io.emit('activity_url_added', {
+              username: event.username,
+              date: date,
+              timestamp: event.timestamp,
+              url: event.browserUrl,
+              windowTitle: event.windowTitle
+            });
+          }
+          
+          // Если есть procName - это приложение
+          if (event.procName && event.procName.trim() !== '') {
+            global.io.emit('activity_application_added', {
+              username: event.username,
+              date: date,
+              timestamp: event.timestamp,
+              procName: event.procName,
+              windowTitle: event.windowTitle
+            });
+          }
+        }
+      });
     }
 
     res.setHeader('Content-Type', 'application/json; charset=utf-8');

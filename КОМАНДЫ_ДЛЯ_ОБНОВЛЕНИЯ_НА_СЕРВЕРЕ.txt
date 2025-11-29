@@ -1,0 +1,54 @@
+================================================================================
+КОМАНДЫ ДЛЯ ОБНОВЛЕНИЯ КОДА НА СЕРВЕРЕ
+================================================================================
+
+Вариант 1: Через SSH в браузере (Google Cloud Console)
+-------------------------------------------------------
+
+1. Откройте: https://console.cloud.google.com/compute/instances
+2. Найдите VM: instance-20251117-204836
+3. Нажмите кнопку SSH (откроется терминал в браузере)
+4. Скопируйте и вставьте команды ниже:
+
+cd /tmp
+sudo rm -rf mesendger-god
+sudo git clone https://github.com/klimovij/neww.git mesendger-god
+sudo rsync -av --exclude 'node_modules' --exclude '.git' --exclude 'build' --exclude '*.log' --exclude '*.db*' mesendger-god/mesendger/telegram-clone/ /var/www/mesendger/
+sudo chown -R appuser:appuser /var/www/mesendger
+cd /var/www/mesendger/server
+sudo -u appuser npm install --production
+cd /var/www/mesendger/client-react
+sudo -u appuser npm install
+sudo -u appuser CI=false npm run build
+sudo -u appuser pm2 restart all
+sudo -u appuser pm2 status
+
+
+Вариант 2: Загрузка скрипта и выполнение
+-----------------------------------------
+
+1. Подключитесь к серверу через SSH
+2. Скопируйте содержимое файла UPDATE_SERVER_NOW.sh
+3. Выполните:
+
+sudo bash -c "$(cat UPDATE_SERVER_NOW.sh)"
+
+
+Вариант 3: Если у вас установлен gcloud CLI локально
+-----------------------------------------------------
+
+gcloud compute ssh instance-20251117-204836 --zone=us-central1-c --command="bash /var/www/mesendger/UPDATE_SERVER_NOW.sh"
+
+Или выполните команды напрямую (замените команды в кавычках на содержимое скрипта)
+
+
+================================================================================
+ПРОВЕРКА ПОСЛЕ ОБНОВЛЕНИЯ
+================================================================================
+
+После обновления проверьте:
+- sudo -u appuser pm2 status
+- sudo -u appuser pm2 logs --lines 50
+- Откройте в браузере: http://35.232.108.72
+- Проверьте работу эндпоинта: http://35.232.108.72/api/local-worktime-report?start=2025-01-20&end=2025-01-20
+

@@ -1,0 +1,105 @@
+================================================================================
+КОМАНДЫ ДЛЯ ИСПРАВЛЕНИЯ ПРОБЛЕМ НА СЕРВЕРЕ
+================================================================================
+
+Проблемы:
+1. Порт 5000 занят
+2. Неправильный путь в ecosystem.config.js
+
+Выполните эти команды на сервере через SSH:
+
+================================================================================
+ШАГ 1: Остановка всех процессов и освобождение порта 5000
+================================================================================
+
+sudo -u appuser pm2 stop all
+sudo -u appuser pm2 delete all
+sudo fuser -k 5000/tcp || sudo killall -9 node || true
+sleep 2
+
+================================================================================
+ШАГ 2: Обновление ecosystem.config.js с правильным путем
+================================================================================
+
+# Проверяем, где реально находятся файлы
+ls -la /var/www/mesendger/server/server.js
+ls -la /var/www/mesendger/mesendger/telegram-clone/server/server.js
+
+# Если файлы в /var/www/mesendger/server/server.js (правильный путь):
+sudo sed -i "s|/var/www/mesendger/mesendger/telegram-clone|/var/www/mesendger|g" /var/www/mesendger/deploy/ecosystem.config.js
+
+# Если файлы в /var/www/mesendger/mesendger/telegram-clone/server/server.js (неправильный путь, но нужно использовать):
+# Тогда оставляем путь как есть, но обновляем файл из Git:
+cd /tmp
+sudo rm -rf mesendger-god
+sudo git clone https://github.com/klimovij/neww.git mesendger-god
+sudo cp mesendger-god/mesendger/telegram-clone/deploy/ecosystem.config.js /var/www/mesendger/deploy/ecosystem.config.js
+
+================================================================================
+ШАГ 3: Проверка и исправление структуры каталогов (если нужно)
+================================================================================
+
+# Если файлы в неправильном месте, перемещаем их:
+if [ -d "/var/www/mesendger/mesendger/telegram-clone" ]; then
+    echo "Обнаружена неправильная структура каталогов"
+    # Проверяем, есть ли правильная структура
+    if [ ! -d "/var/www/mesendger/server" ]; then
+        echo "Перемещаем файлы в правильное место..."
+        sudo mv /var/www/mesendger/mesendger/telegram-clone/* /var/www/mesendger/
+        sudo rm -rf /var/www/mesendger/mesendger
+        sudo chown -R appuser:appuser /var/www/mesendger
+    fi
+fi
+
+================================================================================
+ШАГ 4: Обновление ecosystem.config.js из Git
+================================================================================
+
+cd /tmp
+sudo rm -rf mesendger-god
+sudo git clone https://github.com/klimovij/neww.git mesendger-god
+sudo cp mesendger-god/mesendger/telegram-clone/deploy/ecosystem.config.js /var/www/mesendger/deploy/ecosystem.config.js
+sudo chown appuser:appuser /var/www/mesendger/deploy/ecosystem.config.js
+
+# Проверяем содержимое
+cat /var/www/mesendger/deploy/ecosystem.config.js | grep cwd
+
+================================================================================
+ШАГ 5: Запуск сервера
+================================================================================
+
+cd /var/www/mesendger
+sudo -u appuser pm2 start deploy/ecosystem.config.js
+sudo -u appuser pm2 save
+sudo -u appuser pm2 status
+
+================================================================================
+ШАГ 6: Проверка логов
+================================================================================
+
+sudo -u appuser pm2 logs --lines 30
+
+================================================================================
+АЛЬТЕРНАТИВНЫЙ БЫСТРЫЙ ВАРИАНТ (если файлы в /var/www/mesendger/mesendger/telegram-clone)
+================================================================================
+
+# Просто исправляем путь в ecosystem.config.js на сервере:
+sudo sed -i 's|/var/www/mesendger/mesendger/telegram-clone|/var/www/mesendger|g' /var/www/mesendger/deploy/ecosystem.config.js
+
+# Или вручную редактируем:
+sudo nano /var/www/mesendger/deploy/ecosystem.config.js
+# Измените строку:
+# cwd: '/var/www/mesendger/mesendger/telegram-clone',
+# на:
+# cwd: '/var/www/mesendger',
+
+# Затем:
+sudo -u appuser pm2 stop all
+sudo -u appuser pm2 delete all
+sudo fuser -k 5000/tcp || true
+sleep 2
+cd /var/www/mesendger
+sudo -u appuser pm2 start deploy/ecosystem.config.js
+sudo -u appuser pm2 save
+sudo -u appuser pm2 status
+

@@ -1,0 +1,65 @@
+================================================================================
+ИСПРАВЛЕНИЕ ОШИБКИ: Cannot find module 'axios'
+================================================================================
+
+Проблема: даже после установки зависимостей модуль не находится
+Выполните на сервере:
+
+================================================================================
+ШАГ 1: Проверка наличия package.json и node_modules
+================================================================================
+
+# Проверка package.json
+ls -la /var/www/mesendger/mesendger/telegram-clone/server/package.json
+
+# Проверка node_modules
+ls -la /var/www/mesendger/mesendger/telegram-clone/server/node_modules/ | head -20
+
+# Проверка axios
+ls -la /var/www/mesendger/mesendger/telegram-clone/server/node_modules/axios
+
+================================================================================
+ШАГ 2: Полная переустановка зависимостей
+================================================================================
+
+cd /var/www/mesendger/mesendger/telegram-clone/server
+
+# Удаление старых зависимостей
+sudo rm -rf node_modules package-lock.json
+
+# Установка заново
+sudo -u appuser npm install --production
+
+# Проверка установки
+ls -la node_modules/axios
+
+================================================================================
+ШАГ 3: Если axios все еще не устанавливается
+================================================================================
+
+# Попробуйте установить axios вручную
+cd /var/www/mesendger/mesendger/telegram-clone/server
+sudo -u appuser npm install axios --production
+
+# Или полная установка всех зависимостей (без --production)
+sudo -u appuser npm install
+
+================================================================================
+ШАГ 4: Проверка package.json
+================================================================================
+
+# Убедитесь, что axios указан в dependencies
+cat /var/www/mesendger/mesendger/telegram-clone/server/package.json | grep -A 10 "dependencies"
+
+================================================================================
+ШАГ 5: Перезапуск сервера
+================================================================================
+
+sudo -u appuser pm2 delete all
+cd /var/www/mesendger
+sudo -u appuser pm2 start deploy/ecosystem.config.js
+sudo -u appuser pm2 save
+sudo -u appuser pm2 status
+
+================================================================================
+
