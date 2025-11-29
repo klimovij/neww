@@ -220,24 +220,50 @@ async function getLocalWorkTimeReport({ start, end, username }) {
     const firstLogin = sessions.find(e => e.event_type === 'login');
     const lastLogout = [...sessions].reverse().find(e => e.event_type === 'logout');
     
-    let totalHours = 0;
-    let totalMinutes = 0;
-    let totalTimeStr = '';
-    
-    if (firstLogin && lastLogout) {
-      const diffMs = new Date(lastLogout.event_time) - new Date(firstLogin.event_time);
-      totalHours = Math.floor(diffMs / 3600000);
-      totalMinutes = Math.floor((diffMs % 3600000) / 60000);
-      totalTimeStr = `${totalHours} ч ${totalMinutes} мин`;
+    // Группируем сессии по дням для правильного расчета времени за период
+    const sessionsByDate = {};
+    for (const session of sessions) {
+      const sessionDate = new Date(session.event_time).toISOString().slice(0, 10);
+      if (!sessionsByDate[sessionDate]) {
+        sessionsByDate[sessionDate] = [];
+      }
+      sessionsByDate[sessionDate].push(session);
     }
+    
+    // Рассчитываем время для каждого дня отдельно и суммируем
+    let totalMs = 0;
+    for (const [date, daySessions] of Object.entries(sessionsByDate)) {
+      daySessions.sort((a, b) => new Date(a.event_time) - new Date(b.event_time));
+      const dayFirstLogin = daySessions.find(e => e.event_type === 'login' || e.event_type === 'other');
+      const dayLastLogout = [...daySessions].reverse().find(e => e.event_type === 'logout');
+      
+      if (dayFirstLogin && dayLastLogout) {
+        const dayDiffMs = new Date(dayLastLogout.event_time) - new Date(dayFirstLogin.event_time);
+        if (dayDiffMs > 0) {
+          totalMs += dayDiffMs;
+        }
+      } else if (dayFirstLogin && !dayLastLogout) {
+        // Если есть login, но нет logout, считаем до конца дня или до последнего события
+        const lastEvent = daySessions[daySessions.length - 1];
+        if (lastEvent) {
+          const dayDiffMs = new Date(lastEvent.event_time) - new Date(dayFirstLogin.event_time);
+          if (dayDiffMs > 0) {
+            totalMs += dayDiffMs;
+          }
+        }
+      }
+    }
+    
+    const totalHours = Math.floor(totalMs / 3600000);
+    const totalMinutes = Math.floor((totalMs % 3600000) / 60000);
+    const totalTimeStr = totalMs > 0 ? `${totalHours} ч ${totalMinutes} мин` : '';
     
     report.push({
       username: user,
       fio: displayName,
       firstLogin: firstLogin ? firstLogin.event_time : '',
       lastLogout: lastLogout ? lastLogout.event_time : '',
-      totalHours: firstLogin && lastLogout ? 
-        Number(((new Date(lastLogout.event_time) - new Date(firstLogin.event_time)) / 3600000).toFixed(1)) : 0,
+      totalHours: totalMs > 0 ? Number((totalMs / 3600000).toFixed(1)) : 0,
       totalTimeStr,
       sessions: sessions || []
     });
@@ -355,24 +381,50 @@ async function getRemoteWorkTimeReport({ start, end, username }) {
     const firstLogin = sessions.find(e => e.event_type === 'login');
     const lastLogout = [...sessions].reverse().find(e => e.event_type === 'logout');
     
-    let totalHours = 0;
-    let totalMinutes = 0;
-    let totalTimeStr = '';
-    
-    if (firstLogin && lastLogout) {
-      const diffMs = new Date(lastLogout.event_time) - new Date(firstLogin.event_time);
-      totalHours = Math.floor(diffMs / 3600000);
-      totalMinutes = Math.floor((diffMs % 3600000) / 60000);
-      totalTimeStr = `${totalHours} ч ${totalMinutes} мин`;
+    // Группируем сессии по дням для правильного расчета времени за период
+    const sessionsByDate = {};
+    for (const session of sessions) {
+      const sessionDate = new Date(session.event_time).toISOString().slice(0, 10);
+      if (!sessionsByDate[sessionDate]) {
+        sessionsByDate[sessionDate] = [];
+      }
+      sessionsByDate[sessionDate].push(session);
     }
+    
+    // Рассчитываем время для каждого дня отдельно и суммируем
+    let totalMs = 0;
+    for (const [date, daySessions] of Object.entries(sessionsByDate)) {
+      daySessions.sort((a, b) => new Date(a.event_time) - new Date(b.event_time));
+      const dayFirstLogin = daySessions.find(e => e.event_type === 'login' || e.event_type === 'other');
+      const dayLastLogout = [...daySessions].reverse().find(e => e.event_type === 'logout');
+      
+      if (dayFirstLogin && dayLastLogout) {
+        const dayDiffMs = new Date(dayLastLogout.event_time) - new Date(dayFirstLogin.event_time);
+        if (dayDiffMs > 0) {
+          totalMs += dayDiffMs;
+        }
+      } else if (dayFirstLogin && !dayLastLogout) {
+        // Если есть login, но нет logout, считаем до конца дня или до последнего события
+        const lastEvent = daySessions[daySessions.length - 1];
+        if (lastEvent) {
+          const dayDiffMs = new Date(lastEvent.event_time) - new Date(dayFirstLogin.event_time);
+          if (dayDiffMs > 0) {
+            totalMs += dayDiffMs;
+          }
+        }
+      }
+    }
+    
+    const totalHours = Math.floor(totalMs / 3600000);
+    const totalMinutes = Math.floor((totalMs % 3600000) / 60000);
+    const totalTimeStr = totalMs > 0 ? `${totalHours} ч ${totalMinutes} мин` : '';
     
     report.push({
       username: user,
       fio: displayName,
       firstLogin: firstLogin ? firstLogin.event_time : '',
       lastLogout: lastLogout ? lastLogout.event_time : '',
-      totalHours: firstLogin && lastLogout ? 
-        Number(((new Date(lastLogout.event_time) - new Date(firstLogin.event_time)) / 3600000).toFixed(1)) : 0,
+      totalHours: totalMs > 0 ? Number((totalMs / 3600000).toFixed(1)) : 0,
       totalTimeStr,
       sessions: sessions || []
     });

@@ -364,6 +364,20 @@ function RemoteWorktimeReportModal({ isOpen, onRequestClose }) {
                           <span>{formatTime(user.lastLogout)}</span>
                         </div>
                       )}
+                      {user.totalTimeStr && (
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '10px',
+                          color: '#fff',
+                          fontSize: '14px',
+                          marginTop: '4px',
+                        }}>
+                          <FiClock size={18} color="#ffe082" />
+                          <span style={{ color: '#999' }}>Отработано:</span>
+                          <span style={{ color: '#ffe082', fontWeight: 600 }}>{user.totalTimeStr}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}

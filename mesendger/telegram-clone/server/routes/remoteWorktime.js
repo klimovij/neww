@@ -318,7 +318,7 @@ router.get('/remote-worktime-report', async (req, res) => {
       }
     }
     
-    // Получаем ФИО пользователей из таблицы users
+    // Получаем ФИО пользователей из таблицы users и рассчитываем время
     const report = [];
     for (const [username, userData] of userMap) {
       // Получаем информацию о пользователе из таблицы users
@@ -329,13 +329,53 @@ router.get('/remote-worktime-report', async (req, res) => {
         });
       }).catch(() => null);
       
+      // Группируем события по дням для правильного расчета времени за период
+      const eventsByDate = {};
+      for (const event of userData.events) {
+        const eventDate = new Date(event.event_time).toISOString().slice(0, 10);
+        if (!eventsByDate[eventDate]) {
+          eventsByDate[eventDate] = [];
+        }
+        eventsByDate[eventDate].push(event);
+      }
+      
+      // Рассчитываем время для каждого дня отдельно и суммируем
+      let totalMs = 0;
+      for (const [date, dayEvents] of Object.entries(eventsByDate)) {
+        dayEvents.sort((a, b) => new Date(a.event_time) - new Date(b.event_time));
+        const dayFirstLogin = dayEvents.find(e => e.event_type === 'login' || e.event_type === 'other');
+        const dayLastLogout = [...dayEvents].reverse().find(e => e.event_type === 'logout');
+        
+        if (dayFirstLogin && dayLastLogout) {
+          const dayDiffMs = new Date(dayLastLogout.event_time) - new Date(dayFirstLogin.event_time);
+          if (dayDiffMs > 0) {
+            totalMs += dayDiffMs;
+          }
+        } else if (dayFirstLogin && !dayLastLogout) {
+          // Если есть login, но нет logout, считаем до последнего события
+          const lastEvent = dayEvents[dayEvents.length - 1];
+          if (lastEvent) {
+            const dayDiffMs = new Date(lastEvent.event_time) - new Date(dayFirstLogin.event_time);
+            if (dayDiffMs > 0) {
+              totalMs += dayDiffMs;
+            }
+          }
+        }
+      }
+      
+      const totalHours = Math.floor(totalMs / 3600000);
+      const totalMinutes = Math.floor((totalMs % 3600000) / 60000);
+      const totalTimeStr = totalMs > 0 ? `${totalHours} ч ${totalMinutes} мин` : '';
+      
       report.push({
         username, // Технический username из remote_work_time_logs
         technicalUsername: username, // Сохраняем технический username отдельно
         fio: userInfo?.fio || username,
         firstLogin: userData.firstLogin,
         lastLogout: userData.lastLogout,
-        totalEvents: userData.events.length
+        totalEvents: userData.events.length,
+        totalTimeStr, // Добавляем отработанное время
+        totalHours: totalMs > 0 ? Number((totalMs / 3600000).toFixed(1)) : 0
       });
     }
     
