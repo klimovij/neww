@@ -354,11 +354,54 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
         end: localReportEndDate || '',
       });
       console.log('📡 [WorkTimeMobile] Запрос деталей:', `/api/activity-details?${detailsParams.toString()}`);
-      const detailsRes = await fetch(`/api/activity-details?${detailsParams.toString()}`);
-      const detailsData = await detailsRes.json();
+      
+      // Пытаемся загрузить данные с повторными попытками при ошибке ERR_CONTENT_LENGTH_MISMATCH
+      let detailsRes = null;
+      let detailsData = null;
+      let retryCount = 0;
+      const maxRetries = 3;
+      
+      while (retryCount < maxRetries) {
+        try {
+          detailsRes = await fetch(`/api/activity-details?${detailsParams.toString()}`);
+          
+          // Проверяем, что ответ полный
+          if (!detailsRes.ok) {
+            throw new Error(`HTTP ${detailsRes.status}: ${detailsRes.statusText}`);
+          }
+          
+          // Пытаемся прочитать JSON
+          const text = await detailsRes.text();
+          try {
+            detailsData = JSON.parse(text);
+            break; // Успешно распарсили, выходим из цикла
+          } catch (parseError) {
+            console.warn(`⚠️ [WorkTimeMobile] Ошибка парсинга JSON (попытка ${retryCount + 1}/${maxRetries}):`, parseError);
+            if (retryCount < maxRetries - 1) {
+              // Ждем перед повтором
+              await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)));
+              retryCount++;
+              continue;
+            } else {
+              throw new Error(`Не удалось распарсить ответ после ${maxRetries} попыток: ${parseError.message}`);
+            }
+          }
+        } catch (fetchError) {
+          console.warn(`⚠️ [WorkTimeMobile] Ошибка fetch (попытка ${retryCount + 1}/${maxRetries}):`, fetchError);
+          if (retryCount < maxRetries - 1) {
+            // Ждем перед повтором
+            await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)));
+            retryCount++;
+            continue;
+          } else {
+            throw fetchError;
+          }
+        }
+      }
+      
       console.log('📥 [WorkTimeMobile] Ответ деталей:', detailsData);
       
-      if (detailsRes.ok && detailsData.success) {
+      if (detailsRes && detailsRes.ok && detailsData && detailsData.success) {
         const modalData = {
           open: true,
           logs: user.sessions || [],
@@ -367,7 +410,7 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
           activityStats: userActivityStats,
           urls: detailsData.urls || [],
           applications: detailsData.applications || [],
-          screenshots: detailsData.photos || [], // API возвращает 'photos' для скриншотов
+          screenshots: detailsData.screenshots || [], // API возвращает 'screenshots'
           startDate: localReportStartDate,
           endDate: localReportEndDate
         };
@@ -375,9 +418,11 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
         setLocalReportDetailsModal(modalData);
       } else {
         console.error('❌ [WorkTimeMobile] Ошибка загрузки деталей:', detailsData);
+        alert('Не удалось загрузить детали активности. Попробуйте обновить страницу.');
       }
     } catch (error) {
       console.error('❌ [WorkTimeMobile] Ошибка загрузки деталей:', error);
+      alert(`Ошибка загрузки деталей: ${error.message}. Попробуйте обновить страницу.`);
     }
     setLoadingLocalReport(false);
   };
