@@ -15,25 +15,12 @@ function formatTime(dtStr) {
   // Парсим timestamp
   let d = new Date(fixedStr);
   
-  // Если timestamp в UTC (содержит Z или +00:00), конвертируем в киевское время (+3 часа)
-  if (fixedStr.includes('Z') || fixedStr.includes('+00:00') || fixedStr.match(/T\d{2}:\d{2}:\d{2}\.\d{3}Z$/)) {
-    // Timestamp в UTC - добавляем 3 часа для киевского времени
-    d = new Date(d.getTime() + 3 * 60 * 60 * 1000);
-  } else {
-    // Если формат YYYY-MM-DD HH:mm:ss без часового пояса, предполагаем что это уже локальное время
-    const match = fixedStr.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2}):(\d{2})/);
-    if (match && !fixedStr.includes('Z') && !fixedStr.includes('+') && !fixedStr.includes('-')) {
-      const [_, year, month, day, hour, minute, second] = match;
-      // Создаем Date объект с локальным временем (месяцы в JS с 0, поэтому -1)
-      d = new Date(Number(year), Number(month) - 1, Number(day), Number(hour), Number(minute), Number(second));
-    }
-  }
-  
   if (isNaN(d.getTime())) {
     return dtStr; // Возвращаем оригинальную строку, если не удалось распарсить
   }
   
-  // Форматируем в киевское время (Europe/Kiev)
+  // Форматируем в киевское время (Europe/Kiev) - toLocaleString автоматически конвертирует UTC в нужный часовой пояс
+  // НЕ добавляем 3 часа вручную, так как timeZone: 'Europe/Kiev' делает это автоматически
   return `${d.toLocaleDateString('ru-RU', { timeZone: 'Europe/Kiev' })}, ${d.toLocaleTimeString('ru-RU', { timeZone: 'Europe/Kiev', hour: '2-digit', minute: '2-digit', second: '2-digit' })}`;
 }
 
@@ -343,14 +330,21 @@ export default function UserWorkTimeDetailsMobile({
       // Проверяем, относится ли скриншот к текущему пользователю и дате
       const screenshotDate = screenshotData.date || (screenshotData.timestamp ? new Date(screenshotData.timestamp).toISOString().split('T')[0] : null);
       const apiUsername = realUsername || username;
-      const matchesUser = screenshotData.username === apiUsername || screenshotData.username === username;
+      // Упрощаем проверку username - сравниваем без учета регистра и пробелов
+      const screenshotUser = (screenshotData.username || '').trim();
+      const currentUser = (apiUsername || '').trim();
+      const displayUser = (username || '').trim();
+      const matchesUser = screenshotUser === currentUser || screenshotUser === displayUser || 
+                         screenshotUser.toLowerCase() === currentUser.toLowerCase() ||
+                         screenshotUser.toLowerCase() === displayUser.toLowerCase();
       const matchesDate = screenshotDate && screenshotDate >= startDate && screenshotDate <= endDate;
       
       console.log('🔍 [UserWorkTimeDetailsMobile] Проверка скриншота:', {
         matchesUser,
         matchesDate,
-        screenshotUsername: screenshotData.username,
-        currentUsername: apiUsername,
+        screenshotUsername: screenshotUser,
+        currentUsername: currentUser,
+        displayUsername: displayUser,
         screenshotDate,
         dateRange: `${startDate} - ${endDate}`
       });
@@ -359,12 +353,17 @@ export default function UserWorkTimeDetailsMobile({
         console.log('✅ [UserWorkTimeDetailsMobile] Скриншот соответствует критериям, добавляем в список');
         // Добавляем новый скриншот в список
         setLocalScreenshots(prev => {
+          const fileName = screenshotData.fileName || screenshotData.file_name;
+          const filePath = screenshotData.filePath || screenshotData.file_path;
+          const url = screenshotData.url || (fileName ? `/uploads/screenshots/${fileName}` : null);
+          
           // Проверяем, нет ли уже такого скриншота
           const exists = prev.some(s => 
             s.id === screenshotData.id || 
-            s.fileName === screenshotData.fileName || 
-            s.url === screenshotData.url ||
-            (s.file_path && screenshotData.filePath && s.file_path === screenshotData.filePath)
+            (s.fileName && fileName && s.fileName === fileName) ||
+            (s.file_name && fileName && s.file_name === fileName) ||
+            (s.url && url && s.url === url) ||
+            (s.file_path && filePath && s.file_path === filePath)
           );
           if (exists) {
             console.log('⚠️ [UserWorkTimeDetailsMobile] Скриншот уже существует, пропускаем');
@@ -374,9 +373,9 @@ export default function UserWorkTimeDetailsMobile({
           console.log('✅ [UserWorkTimeDetailsMobile] Добавляем новый скриншот в список');
           return [...prev, {
             id: screenshotData.id,
-            file_path: screenshotData.filePath || screenshotData.file_path,
-            fileName: screenshotData.fileName || screenshotData.file_name,
-            url: screenshotData.url,
+            file_path: filePath,
+            fileName: fileName,
+            url: url,
             timestamp: screenshotData.timestamp,
             file_size: screenshotData.fileSize || screenshotData.file_size
           }].sort((a, b) => {
@@ -385,6 +384,8 @@ export default function UserWorkTimeDetailsMobile({
             return timeB - timeA; // Сортируем по убыванию (новые сверху)
           });
         });
+      } else {
+        console.log('❌ [UserWorkTimeDetailsMobile] Скриншот НЕ соответствует критериям');
       }
     };
 
@@ -393,14 +394,29 @@ export default function UserWorkTimeDetailsMobile({
       console.log('🌐 [UserWorkTimeDetailsMobile] Получено событие добавления URL:', urlData);
       const urlDate = urlData.date || (urlData.timestamp ? new Date(urlData.timestamp).toISOString().split('T')[0] : null);
       const apiUsername = realUsername || username;
-      const matchesUser = urlData.username === apiUsername || urlData.username === username;
+      const urlUser = (urlData.username || '').trim();
+      const currentUser = (apiUsername || '').trim();
+      const displayUser = (username || '').trim();
+      const matchesUser = urlUser === currentUser || urlUser === displayUser || 
+                         urlUser.toLowerCase() === currentUser.toLowerCase() ||
+                         urlUser.toLowerCase() === displayUser.toLowerCase();
       const matchesDate = urlDate && urlDate >= startDate && urlDate <= endDate;
+      
+      console.log('🔍 [UserWorkTimeDetailsMobile] Проверка URL:', {
+        matchesUser,
+        matchesDate,
+        urlUsername: urlUser,
+        currentUsername: currentUser
+      });
       
       if (matchesUser && matchesDate) {
         console.log('✅ [UserWorkTimeDetailsMobile] URL соответствует критериям, добавляем в список');
         setLocalUrls(prev => {
           const exists = prev.some(u => u.id === urlData.id || (u.url === urlData.url && u.timestamp === urlData.timestamp));
-          if (exists) return prev;
+          if (exists) {
+            console.log('⚠️ [UserWorkTimeDetailsMobile] URL уже существует, пропускаем');
+            return prev;
+          }
           return [...prev, {
             id: urlData.id,
             url: urlData.url,
@@ -420,14 +436,29 @@ export default function UserWorkTimeDetailsMobile({
       console.log('💻 [UserWorkTimeDetailsMobile] Получено событие добавления приложения:', appData);
       const appDate = appData.date || (appData.timestamp ? new Date(appData.timestamp).toISOString().split('T')[0] : null);
       const apiUsername = realUsername || username;
-      const matchesUser = appData.username === apiUsername || appData.username === username;
+      const appUser = (appData.username || '').trim();
+      const currentUser = (apiUsername || '').trim();
+      const displayUser = (username || '').trim();
+      const matchesUser = appUser === currentUser || appUser === displayUser || 
+                         appUser.toLowerCase() === currentUser.toLowerCase() ||
+                         appUser.toLowerCase() === displayUser.toLowerCase();
       const matchesDate = appDate && appDate >= startDate && appDate <= endDate;
+      
+      console.log('🔍 [UserWorkTimeDetailsMobile] Проверка приложения:', {
+        matchesUser,
+        matchesDate,
+        appUsername: appUser,
+        currentUsername: currentUser
+      });
       
       if (matchesUser && matchesDate) {
         console.log('✅ [UserWorkTimeDetailsMobile] Приложение соответствует критериям, добавляем в список');
         setLocalApplications(prev => {
           const exists = prev.some(a => a.id === appData.id || (a.procName === appData.procName && a.timestamp === appData.timestamp));
-          if (exists) return prev;
+          if (exists) {
+            console.log('⚠️ [UserWorkTimeDetailsMobile] Приложение уже существует, пропускаем');
+            return prev;
+          }
           return [...prev, {
             id: appData.id,
             procName: appData.procName,
