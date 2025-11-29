@@ -19,9 +19,27 @@ function formatTime(dtStr) {
     return dtStr; // Возвращаем оригинальную строку, если не удалось распарсить
   }
   
-  // Форматируем в киевское время (Europe/Kiev) - toLocaleString автоматически конвертирует UTC в нужный часовой пояс
-  // НЕ добавляем 3 часа вручную, так как timeZone: 'Europe/Kiev' делает это автоматически
-  return `${d.toLocaleDateString('ru-RU', { timeZone: 'Europe/Kiev' })}, ${d.toLocaleTimeString('ru-RU', { timeZone: 'Europe/Kiev', hour: '2-digit', minute: '2-digit', second: '2-digit' })}`;
+  // Конвертируем UTC в киевское время (+3 часа)
+  // Киевское время = UTC + 3 часа (зимой) или UTC + 2 часа (летом)
+  // Используем простой подход: добавляем 3 часа к UTC времени
+  const kievOffset = 3 * 60 * 60 * 1000; // 3 часа в миллисекундах
+  const kievTime = new Date(d.getTime() + kievOffset);
+  
+  // Форматируем дату и время
+  const dateStr = kievTime.toLocaleDateString('ru-RU', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  });
+  
+  const timeStr = kievTime.toLocaleTimeString('ru-RU', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  });
+  
+  return `${dateStr}, ${timeStr}`;
 }
 
 export default function UserWorkTimeDetailsMobile({
