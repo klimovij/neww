@@ -373,11 +373,19 @@ router.post('/activity-screenshot', authenticateActivityRequest, (req, res, next
         date: date,
         timestamp: timestamp,
         filePath: screenshotPath,
+        file_path: screenshotPath, // Дублируем для совместимости
         fileName: fileName,
+        file_name: fileName, // Дублируем для совместимости
         url: screenshotUrl,
-        fileSize: fileSize
+        fileSize: fileSize,
+        file_size: fileSize // Дублируем для совместимости
       });
-      console.log(`📡 [activity-screenshot] Emitted activity_screenshot_added for ${username} on ${date}`);
+      console.log(`📡 [activity-screenshot] Emitted activity_screenshot_added for ${username} on ${date}`, {
+        username,
+        date,
+        url: screenshotUrl,
+        fileName
+      });
     }
 
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
