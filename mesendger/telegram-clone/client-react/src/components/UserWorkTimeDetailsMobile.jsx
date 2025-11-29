@@ -3,8 +3,9 @@ import ReactDOM from 'react-dom';
 import { FaArrowLeft } from 'react-icons/fa';
 import { FiX, FiLogIn, FiLogOut, FiClock, FiGlobe, FiCamera, FiExternalLink, FiMonitor, FiPrinter, FiDownload } from 'react-icons/fi';
 
-// ВЕРСИЯ 3.0 - Исправлено отображение времени для всех вкладок (URLs, приложения, скриншоты)
+// ВЕРСИЯ 4.0 - ФИНАЛЬНАЯ: Исправлено отображение времени для всех вкладок
 // Эта функция конвертирует UTC время в киевское время (+3 часа)
+// ВАЖНО: Всегда логируем для отладки
 function formatTime(dtStr) {
   if (!dtStr) return '';
   
@@ -18,6 +19,7 @@ function formatTime(dtStr) {
   let d = new Date(fixedStr);
   
   if (isNaN(d.getTime())) {
+    console.warn('⚠️ [formatTime V4.0] Невалидный timestamp:', dtStr);
     return dtStr; // Возвращаем оригинальную строку, если не удалось распарсить
   }
   
@@ -37,13 +39,17 @@ function formatTime(dtStr) {
   
   const result = `${day}.${month}.${year}, ${hour}:${minute}:${second}`;
   
-  // ВРЕМЕННОЕ ЛОГИРОВАНИЕ для отладки (удалить после проверки)
-  if (typeof window !== 'undefined' && window.DEBUG_TIME) {
-    console.log('🕐 [formatTime V3.0]', {
+  // ЛОГИРУЕМ ВСЕГДА для отладки (первые 5 вызовов)
+  if (!window._formatTimeCallCount) window._formatTimeCallCount = 0;
+  window._formatTimeCallCount++;
+  if (window._formatTimeCallCount <= 5) {
+    console.log(`🕐 [formatTime V4.0] Вызов #${window._formatTimeCallCount}:`, {
       input: dtStr,
-      parsed: d.toISOString(),
+      parsedUTC: d.toISOString(),
       kievTime: kievTime.toISOString(),
-      result
+      result,
+      hour: hour,
+      expectedHour: String(parseInt(d.getUTCHours()) + 3).padStart(2, '0')
     });
   }
   
