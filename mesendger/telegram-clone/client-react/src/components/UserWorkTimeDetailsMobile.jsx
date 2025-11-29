@@ -3,7 +3,8 @@ import ReactDOM from 'react-dom';
 import { FaArrowLeft } from 'react-icons/fa';
 import { FiX, FiLogIn, FiLogOut, FiClock, FiGlobe, FiCamera, FiExternalLink, FiMonitor, FiPrinter, FiDownload } from 'react-icons/fi';
 
-// ВЕРСИЯ 2.0 - Исправлено отображение времени для всех вкладок
+// ВЕРСИЯ 3.0 - Исправлено отображение времени для всех вкладок (URLs, приложения, скриншоты)
+// Эта функция конвертирует UTC время в киевское время (+3 часа)
 function formatTime(dtStr) {
   if (!dtStr) return '';
   
@@ -13,7 +14,7 @@ function formatTime(dtStr) {
     fixedStr = fixedStr.replace(/T(\d{2}):(\d{2}):(\d{2}):\.(\d+)/, 'T$1:$2:$3.$4');
   }
   
-  // Парсим timestamp (предполагаем, что это UTC)
+  // Парсим timestamp (предполагаем, что это UTC в формате ISO)
   let d = new Date(fixedStr);
   
   if (isNaN(d.getTime())) {
@@ -26,7 +27,7 @@ function formatTime(dtStr) {
   const kievTime = new Date(d.getTime() + kievOffset);
   
   // Форматируем дату и время в формате ДД.ММ.ГГГГ, ЧЧ:ММ:СС
-  // ВАЖНО: используем getUTCDate/getUTCHours и т.д., так как мы уже добавили смещение
+  // ВАЖНО: используем getUTCDate/getUTCHours и т.д., так как мы уже добавили смещение к UTC
   const day = String(kievTime.getUTCDate()).padStart(2, '0');
   const month = String(kievTime.getUTCMonth() + 1).padStart(2, '0');
   const year = kievTime.getUTCFullYear();
@@ -34,7 +35,19 @@ function formatTime(dtStr) {
   const minute = String(kievTime.getUTCMinutes()).padStart(2, '0');
   const second = String(kievTime.getUTCSeconds()).padStart(2, '0');
   
-  return `${day}.${month}.${year}, ${hour}:${minute}:${second}`;
+  const result = `${day}.${month}.${year}, ${hour}:${minute}:${second}`;
+  
+  // ВРЕМЕННОЕ ЛОГИРОВАНИЕ для отладки (удалить после проверки)
+  if (typeof window !== 'undefined' && window.DEBUG_TIME) {
+    console.log('🕐 [formatTime V3.0]', {
+      input: dtStr,
+      parsed: d.toISOString(),
+      kievTime: kievTime.toISOString(),
+      result
+    });
+  }
+  
+  return result;
 }
 
 export default function UserWorkTimeDetailsMobile({
