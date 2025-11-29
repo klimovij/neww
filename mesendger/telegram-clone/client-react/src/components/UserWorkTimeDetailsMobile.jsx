@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom';
 import { FaArrowLeft } from 'react-icons/fa';
 import { FiX, FiLogIn, FiLogOut, FiClock, FiGlobe, FiCamera, FiExternalLink, FiMonitor, FiPrinter, FiDownload } from 'react-icons/fi';
 
+// ВЕРСИЯ 2.0 - Исправлено отображение времени для всех вкладок
 function formatTime(dtStr) {
   if (!dtStr) return '';
   
@@ -25,6 +26,7 @@ function formatTime(dtStr) {
   const kievTime = new Date(d.getTime() + kievOffset);
   
   // Форматируем дату и время в формате ДД.ММ.ГГГГ, ЧЧ:ММ:СС
+  // ВАЖНО: используем getUTCDate/getUTCHours и т.д., так как мы уже добавили смещение
   const day = String(kievTime.getUTCDate()).padStart(2, '0');
   const month = String(kievTime.getUTCMonth() + 1).padStart(2, '0');
   const year = kievTime.getUTCFullYear();
