@@ -226,38 +226,6 @@ function WorkTimeReportModal({ isOpen, onRequestClose }) {
     }
   };
 
-  // Удаление данных за период (неделя/месяц)
-  const handleDeleteByPeriod = async (period) => {
-    if (!window.confirm(`Вы уверены, что хотите удалить все данные активности за ${period === 'week' ? 'последнюю неделю' : 'последний месяц'}? Это действие нельзя отменить.`)) {
-      return;
-    }
-    
-    try {
-      const token = localStorage.getItem('token');
-      const res = await fetch('/api/activity-logs/clear', {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ period })
-      });
-      
-      const data = await res.json();
-      
-      if (res.ok && data.success) {
-        alert(`✅ ${data.message || `Удалено ${data.deletedCount || 0} записей`}`);
-        // Обновляем отчет после удаления
-        fetchLocalReport();
-      } else {
-        alert(`❌ Ошибка: ${data.error || 'Не удалось удалить данные'}`);
-      }
-    } catch (error) {
-      console.error('Ошибка удаления данных:', error);
-      alert('❌ Ошибка при удалении данных');
-    }
-  };
-
   // Обработка поиска
   const handleLocalReportSearchChange = (e) => {
     const value = e.target.value;
@@ -694,36 +662,6 @@ function WorkTimeReportModal({ isOpen, onRequestClose }) {
                     }}
                   >
                     🗑️ Удалить за период
-                  </button>
-
-                  <button
-                    onClick={() => handleDeleteByPeriod('week')}
-                    style={{
-                      padding: '8px 16px',
-                      borderRadius: 8,
-                      border: '1px solid rgba(231, 76, 60, 0.5)',
-                      background: 'rgba(231, 76, 60, 0.2)',
-                      color: '#fff',
-                      cursor: 'pointer',
-                      fontWeight: 600,
-                    }}
-                  >
-                    🗑️ За неделю
-                  </button>
-
-                  <button
-                    onClick={() => handleDeleteByPeriod('month')}
-                    style={{
-                      padding: '8px 16px',
-                      borderRadius: 8,
-                      border: '1px solid rgba(231, 76, 60, 0.5)',
-                      background: 'rgba(231, 76, 60, 0.2)',
-                      color: '#fff',
-                      cursor: 'pointer',
-                      fontWeight: 600,
-                    }}
-                  >
-                    🗑️ За месяц
                   </button>
                 </div>
               </div>

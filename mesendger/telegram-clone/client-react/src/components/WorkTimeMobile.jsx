@@ -288,42 +288,6 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
     setLoadingLocalReport(false);
   };
 
-  // Удаление данных за период (неделя/месяц)
-  const handleDeleteByPeriod = async (period) => {
-    if (!window.confirm(`Вы уверены, что хотите удалить все данные активности за ${period === 'week' ? 'последнюю неделю' : 'последний месяц'}? Это действие нельзя отменить.`)) {
-      return;
-    }
-    
-    setLoadingLocalReport(true);
-    try {
-      const token = localStorage.getItem('token');
-      const res = await fetch('/api/activity-logs/clear', {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ period })
-      });
-      
-      const data = await res.json();
-      
-      if (res.ok && data.success) {
-        alert(`✅ ${data.message || `Удалено ${data.deletedCount || 0} записей`}`);
-        // Обновляем отчет после удаления
-        if (fetchLocalReport) {
-          fetchLocalReport();
-        }
-      } else {
-        alert(`❌ Ошибка: ${data.error || 'Не удалось удалить данные'}`);
-      }
-    } catch (error) {
-      console.error('Ошибка удаления данных:', error);
-      alert('❌ Ошибка при удалении данных');
-    }
-    setLoadingLocalReport(false);
-  };
-
   // Открытие деталей пользователя
   const handleOpenLocalUserDetails = async (user) => {
     console.log('🔘 [WorkTimeMobile] handleOpenLocalUserDetails вызван для пользователя:', user);
@@ -1068,7 +1032,6 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
           onFetchReport={fetchLocalReport}
           onDeleteByDateRange={handleDeleteByDateRange}
           onDeleteUserScreenshots={handleDeleteUserScreenshots}
-          onDeleteByPeriod={handleDeleteByPeriod}
         />
       )}
 
@@ -1158,7 +1121,6 @@ function LocalWorktimeReportModalMobile({
   formatTime,
   onFetchReport,
   onDeleteByDateRange,
-  onDeleteByPeriod,
   onDeleteUserScreenshots
 }) {
   const modalRef = useRef(null);
@@ -1475,58 +1437,6 @@ function LocalWorktimeReportModalMobile({
                 >
                   🗑️ Удалить за период
                 </button>
-
-                {/* Быстрые кнопки удаления */}
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button
-                    onClick={() => {
-                      if (window.confirm('Вы уверены, что хотите удалить все данные активности за последнюю неделю? Это действие нельзя отменить.')) {
-                        onDeleteByPeriod && onDeleteByPeriod('week');
-                      }
-                    }}
-                    disabled={loading}
-                    style={{
-                      flex: 1,
-                      padding: '12px',
-                      borderRadius: '12px',
-                      border: '2px solid rgba(231, 76, 60, 0.5)',
-                      background: loading
-                        ? 'rgba(231, 76, 60, 0.3)'
-                        : 'rgba(231, 76, 60, 0.2)',
-                      color: '#fff',
-                      cursor: loading ? 'not-allowed' : 'pointer',
-                      fontWeight: 600,
-                      fontSize: '14px',
-                      opacity: loading ? 0.6 : 1,
-                    }}
-                  >
-                    🗑️ За неделю
-                  </button>
-                  <button
-                    onClick={() => {
-                      if (window.confirm('Вы уверены, что хотите удалить все данные активности за последний месяц? Это действие нельзя отменить.')) {
-                        onDeleteByPeriod && onDeleteByPeriod('month');
-                      }
-                    }}
-                    disabled={loading}
-                    style={{
-                      flex: 1,
-                      padding: '12px',
-                      borderRadius: '12px',
-                      border: '2px solid rgba(231, 76, 60, 0.5)',
-                      background: loading
-                        ? 'rgba(231, 76, 60, 0.3)'
-                        : 'rgba(231, 76, 60, 0.2)',
-                      color: '#fff',
-                      cursor: loading ? 'not-allowed' : 'pointer',
-                      fontWeight: 600,
-                      fontSize: '14px',
-                      opacity: loading ? 0.6 : 1,
-                    }}
-                  >
-                    🗑️ За месяц
-                  </button>
-                </div>
               </div>
 
               {/* Таблица */}
