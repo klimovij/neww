@@ -311,6 +311,91 @@ if (Test-Path "$targetDir\Mesendger_PC_Shutdown_Monitor_Background.xml") {
     Write-Host "⚠️ XML файл для фонового мониторинга выключения не найден" -ForegroundColor Yellow
 }
 
+# Устанавливаем скрипт выключения через реестр (более надежный способ)
+Write-Host "`nНастройка скрипта выключения через реестр..." -ForegroundColor Yellow
+try {
+    # Создаем скрипт, который будет выполняться при выключении
+    $shutdownScriptContent = @"
+# Скрипт выключения через реестр
+`$SERVER_URL = "http://35.232.108.72"
+`$CONFIG_FILE = "`$env:APPDATA\mesendger\agent_config.json"
+
+# Получаем username из конфига
+`$username = `$env:USERNAME
+if (Test-Path `$CONFIG_FILE) {
+    try {
+        `$config = Get-Content `$CONFIG_FILE -Raw | ConvertFrom-Json
+        if (`$config.username) {
+            `$username = `$config.username.Trim()
+        }
+    } catch {}
+}
+
+# Отправляем событие выключения
+`$eventData = @{
+    username = `$username
+    event_type = "logout"
+    event_time = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
+    event_id = 4634
+} | ConvertTo-Json
+
+try {
+    Invoke-RestMethod -Uri "`$SERVER_URL/api/worktime" `
+        -Method POST `
+        -Headers @{"Content-Type"="application/json"} `
+        -Body `$eventData `
+        -TimeoutSec 2 `
+        -ErrorAction Stop | Out-Null
+} catch {
+    # Игнорируем ошибки при выключении
+}
+"@
+    
+    $shutdownScriptPath = "$targetDir\shutdown_via_registry.ps1"
+    $shutdownScriptContent | Out-File -FilePath $shutdownScriptPath -Encoding UTF8 -Force
+    Write-Host "✅ Скрипт выключения создан: $shutdownScriptPath" -ForegroundColor Green
+    
+    # Добавляем в реестр для выполнения при выключении
+    $regPath = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Group Policy\Scripts\Shutdown"
+    $regPath0 = "$regPath\0"
+    
+    # Создаем ключи реестра
+    if (-not (Test-Path $regPath)) {
+        New-Item -Path $regPath -Force | Out-Null
+    }
+    if (-not (Test-Path $regPath0)) {
+        New-Item -Path $regPath0 -Force | Out-Null
+    }
+    
+    # Устанавливаем скрипт
+    Set-ItemProperty -Path $regPath0 -Name "GPO-ID" -Value "LocalGPO" -Type String -Force
+    Set-ItemProperty -Path $regPath0 -Name "SOM-ID" -Value "Local" -Type String -Force
+    Set-ItemProperty -Path $regPath0 -Name "FileSysPath" -Value "C:\\Windows\\System32\\GroupPolicy\\Machine" -Type String -Force
+    Set-ItemProperty -Path $regPath0 -Name "DisplayName" -Value "Local Group Policy" -Type String -Force
+    Set-ItemProperty -Path $regPath0 -Name "GPOName" -Value "Local Group Policy" -Type String -Force
+    
+    # Создаем Scripts папку и копируем скрипт
+    $scriptsPath = "C:\Windows\System32\GroupPolicy\Machine\Scripts\Shutdown"
+    if (-not (Test-Path $scriptsPath)) {
+        New-Item -ItemType Directory -Path $scriptsPath -Force | Out-Null
+    }
+    Copy-Item $shutdownScriptPath -Destination "$scriptsPath\shutdown_via_registry.ps1" -Force
+    
+    # Создаем scripts.ini
+    $scriptsIni = @"
+[Shutdown]
+0CmdLine=shutdown_via_registry.ps1
+0Parameters=
+"@
+    $scriptsIni | Out-File -FilePath "$scriptsPath\scripts.ini" -Encoding ASCII -Force
+    
+    Write-Host "✅ Скрипт выключения установлен через реестр" -ForegroundColor Green
+    Write-Host "   Скрипт будет выполняться при выключении ПК" -ForegroundColor Gray
+} catch {
+    Write-Host "⚠️ Не удалось установить скрипт выключения через реестр: $($_.Exception.Message)" -ForegroundColor Yellow
+    Write-Host "   Используется только фоновый мониторинг" -ForegroundColor Yellow
+}
+
 Write-Host "`n========================================" -ForegroundColor Cyan
 Write-Host "Установка завершена!" -ForegroundColor Green
 Write-Host "========================================`n" -ForegroundColor Cyan

@@ -139,25 +139,47 @@ try {
         Write-Log "⚠️ EventLog подписка не создана: $($_.Exception.Message)"
     }
     
+    # Дополнительно: отслеживаем через периодическую проверку системных событий
+    $lastCheckTime = Get-Date
+    Write-Log "Дополнительный мониторинг через проверку событий включен"
+    
     # Ждем бесконечно, проверяя каждую минуту
     Write-Log "Монитор выключения работает. Ожидание события выключения..."
     while ($true) {
-        Start-Sleep -Seconds 60
+        Start-Sleep -Seconds 10
         
-        # Проверяем, что WMI подписка еще активна
-        if ($wmiEvent -and -not $wmiEvent.IsCompleted) {
-            # Подписка активна
-        } else {
-            Write-Log "⚠️ WMI подписка потеряна, перезапуск..."
-            try {
-                $wmiEvent = Register-WmiEvent -Query $query -Action {
-                    param($event)
-                    Write-Log "Событие выключения обнаружено через WMI!"
+        # Проверяем системные события выключения вручную
+        try {
+            $events = Get-WinEvent -FilterHashtable @{LogName='System'; ID=1074,1076,6008} -MaxEvents 1 -ErrorAction SilentlyContinue
+            if ($events) {
+                $event = $events[0]
+                $eventTime = $event.TimeCreated
+                if ($eventTime -gt $lastCheckTime) {
+                    Write-Log "Событие выключения обнаружено через ручную проверку: EventID=$($event.Id), Time=$eventTime"
                     Send-ShutdownEvent -username $script:monitorUsername
-                } -ErrorAction Stop
-                Write-Log "WMI подписка восстановлена"
-            } catch {
-                Write-Log "❌ Не удалось восстановить WMI подписку: $($_.Exception.Message)"
+                    $lastCheckTime = $eventTime
+                }
+            }
+        } catch {
+            # Игнорируем ошибки при проверке событий
+        }
+        
+        # Проверяем, что WMI подписка еще активна (каждую минуту)
+        if ((Get-Date).Second -lt 10) {
+            if ($wmiEvent -and -not $wmiEvent.IsCompleted) {
+                # Подписка активна
+            } else {
+                Write-Log "⚠️ WMI подписка потеряна, перезапуск..."
+                try {
+                    $wmiEvent = Register-WmiEvent -Query $query -Action {
+                        param($event)
+                        Write-Log "Событие выключения обнаружено через WMI!"
+                        Send-ShutdownEvent -username $script:monitorUsername
+                    } -ErrorAction Stop
+                    Write-Log "WMI подписка восстановлена"
+                } catch {
+                    Write-Log "❌ Не удалось восстановить WMI подписку: $($_.Exception.Message)"
+                }
             }
         }
     }
