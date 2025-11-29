@@ -3,10 +3,10 @@ import ReactDOM from 'react-dom';
 import { FaArrowLeft } from 'react-icons/fa';
 import { FiX, FiLogIn, FiLogOut, FiClock, FiGlobe, FiCamera, FiExternalLink, FiMonitor, FiPrinter, FiDownload } from 'react-icons/fi';
 
-// ВЕРСИЯ 5.0 - ФИНАЛЬНАЯ ИСПРАВЛЕННАЯ: Отображение времени для всех вкладок
+// ВЕРСИЯ 5.1 - ФИНАЛЬНАЯ ИСПРАВЛЕННАЯ: Отображение времени для всех вкладок
 // Эта функция конвертирует UTC время в киевское время (+3 часа)
 // ВСЕГДА ЛОГИРУЕМ для отладки
-console.log('🔧 [formatTime] Функция formatTime V5.0 загружена!');
+console.log('%c🔧 [formatTime] Функция formatTime V5.1 загружена! BUILD 2025-11-29', 'background: #00ff00; color: #000000; font-size: 14px; font-weight: bold; padding: 4px;');
 function formatTime(dtStr) {
   if (!dtStr) return '';
   
@@ -40,16 +40,17 @@ function formatTime(dtStr) {
   
   const result = `${day}.${month}.${year}, ${hour}:${minute}:${second}`;
   
-  // ЛОГИРУЕМ ВСЕГДА для отладки (первые 10 вызовов)
+  // ЛОГИРУЕМ ВСЕГДА для отладки (первые 20 вызовов)
   if (!window._formatTimeCallCount) {
     window._formatTimeCallCount = 0;
-    console.log('🔧 [formatTime V5.0] Инициализация счетчика вызовов');
+    console.log('%c🔧 [formatTime V5.1] Инициализация счетчика вызовов', 'background: #00ff00; color: #000000; font-weight: bold;');
   }
   window._formatTimeCallCount++;
-  if (window._formatTimeCallCount <= 10) {
+  if (window._formatTimeCallCount <= 20) {
     const utcHour = d.getUTCHours();
     const expectedHour = (utcHour + 3) % 24;
-    console.log(`🕐 [formatTime V5.0] Вызов #${window._formatTimeCallCount}:`, {
+    const match = hour === String(expectedHour).padStart(2, '0');
+    console.log(`%c🕐 [formatTime V5.1] Вызов #${window._formatTimeCallCount}`, match ? 'background: #00ff00; color: #000000; font-weight: bold;' : 'background: #ff0000; color: #ffffff; font-weight: bold;', {
       input: dtStr,
       parsedUTC: d.toISOString(),
       utcHour: utcHour,
@@ -57,7 +58,7 @@ function formatTime(dtStr) {
       result,
       hour: hour,
       expectedHour: String(expectedHour).padStart(2, '0'),
-      match: hour === String(expectedHour).padStart(2, '0')
+      match: match
     });
   }
   
