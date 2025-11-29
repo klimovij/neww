@@ -1262,7 +1262,17 @@ export default function UserWorkTimeDetailsMobile({
                         gap: '6px',
                       }}>
                         <FiClock size={14} />
-                        {formatTime(log.event_time)}
+                        {(() => {
+                          const formattedTime = formatTime(log.event_time);
+                          if (window._formatTimeCallCount && window._formatTimeCallCount <= 5) {
+                            console.log('🕐 [РЕНДЕР СОБЫТИЙ] formatTime вызван:', {
+                              input: log.event_time,
+                              output: formattedTime,
+                              eventType: log.event_type
+                            });
+                          }
+                          return formattedTime;
+                        })()}
                       </div>
                     </div>
                   </div>
@@ -1430,7 +1440,17 @@ export default function UserWorkTimeDetailsMobile({
                       gap: '6px',
                     }}>
                       <FiClock size={12} />
-                      {formatTime(item.timestamp)}
+                      {(() => {
+                        const formattedTime = formatTime(item.timestamp);
+                        if (window._formatTimeCallCount && window._formatTimeCallCount <= 5) {
+                          console.log('🕐 [РЕНДЕР URL] formatTime вызван:', {
+                            input: item.timestamp,
+                            output: formattedTime,
+                            url: item.url
+                          });
+                        }
+                        return formattedTime;
+                      })()}
                     </div>
                     </div>
                   ))}
@@ -1584,18 +1604,28 @@ export default function UserWorkTimeDetailsMobile({
                           return null;
                         }
                       })()}
-                      {app.timestamp && (
-                        <div style={{
-                          color: 'rgba(255, 255, 255, 0.5)',
-                          fontSize: '12px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                        }}>
-                          <FiClock size={12} />
-                          {formatTime(app.timestamp)}
-                        </div>
-                      )}
+                      {app.timestamp && (() => {
+                        const formattedTime = formatTime(app.timestamp);
+                        if (window._formatTimeCallCount && window._formatTimeCallCount <= 5) {
+                          console.log('🕐 [РЕНДЕР ПРИЛОЖЕНИЙ] formatTime вызван:', {
+                            input: app.timestamp,
+                            output: formattedTime,
+                            procName: app.procName
+                          });
+                        }
+                        return (
+                          <div style={{
+                            color: 'rgba(255, 255, 255, 0.5)',
+                            fontSize: '12px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                          }}>
+                            <FiClock size={12} />
+                            {formattedTime}
+                          </div>
+                        );
+                      })()}
                     </div>
                     );
                   })}
@@ -1694,7 +1724,17 @@ export default function UserWorkTimeDetailsMobile({
                         gap: '6px',
                       }}>
                         <FiClock size={12} />
-                        {formatTime(shot.timestamp)}
+                        {(() => {
+                          const formattedTime = formatTime(shot.timestamp);
+                          if (window._formatTimeCallCount && window._formatTimeCallCount <= 5) {
+                            console.log('🕐 [РЕНДЕР СКРИНШОТОВ] formatTime вызван:', {
+                              input: shot.timestamp,
+                              output: formattedTime,
+                              fileName: shot.fileName
+                            });
+                          }
+                          return formattedTime;
+                        })()}
                       </div>
                       {shot.fileSize && (
                         <div style={{
