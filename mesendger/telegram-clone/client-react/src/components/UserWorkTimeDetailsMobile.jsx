@@ -3,10 +3,10 @@ import ReactDOM from 'react-dom';
 import { FaArrowLeft } from 'react-icons/fa';
 import { FiX, FiLogIn, FiLogOut, FiClock, FiGlobe, FiCamera, FiExternalLink, FiMonitor, FiPrinter, FiDownload } from 'react-icons/fi';
 
-// ВЕРСИЯ 5.1 - ФИНАЛЬНАЯ ИСПРАВЛЕННАЯ: Отображение времени для всех вкладок
-// Эта функция конвертирует UTC время в киевское время (+3 часа)
+// ВЕРСИЯ 5.2 - ИСПРАВЛЕНО: Учитываем зимнее/летнее время для Киева
+// Эта функция конвертирует UTC время в киевское время с учетом зимнего/летнего времени
 // ВСЕГДА ЛОГИРУЕМ для отладки
-console.log('%c🔧 [formatTime] Функция formatTime V5.1 загружена! BUILD 2025-11-29', 'background: #00ff00; color: #000000; font-size: 14px; font-weight: bold; padding: 4px;');
+console.log('%c🔧 [formatTime] Функция formatTime V5.2 загружена! BUILD 2025-11-29', 'background: #00ff00; color: #000000; font-size: 14px; font-weight: bold; padding: 4px;');
 function formatTime(dtStr) {
   if (!dtStr) return '';
   
@@ -20,45 +20,60 @@ function formatTime(dtStr) {
   let d = new Date(fixedStr);
   
   if (isNaN(d.getTime())) {
-    console.warn('⚠️ [formatTime V5.0] Невалидный timestamp:', dtStr);
+    console.warn('⚠️ [formatTime V5.2] Невалидный timestamp:', dtStr);
     return dtStr; // Возвращаем оригинальную строку, если не удалось распарсить
   }
   
-  // Конвертируем UTC в киевское время: добавляем 3 часа (UTC+3)
-  // Это соответствует локальному времени ПК в Киеве
-  const kievOffset = 3 * 60 * 60 * 1000; // 3 часа в миллисекундах
+  // Используем Intl.DateTimeFormat для правильного учета зимнего/летнего времени Киева
+  // Это автоматически учитывает переход на зимнее/летнее время
+  const kievTimeStr = new Intl.DateTimeFormat('ru-RU', {
+    timeZone: 'Europe/Kiev',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  }).format(d);
+  
+  // Парсим результат обратно для получения компонентов
+  // Формат: "29.11.2025, 11:19:11"
+  const parts = kievTimeStr.match(/(\d{2})\.(\d{2})\.(\d{4}), (\d{2}):(\d{2}):(\d{2})/);
+  if (parts) {
+    const [, day, month, year, hour, minute, second] = parts;
+    return `${day}.${month}.${year}, ${hour}:${minute}:${second}`;
+  }
+  
+  // Fallback: если парсинг не удался, используем старый метод с +2 часами (зимнее время)
+  const kievOffset = 2 * 60 * 60 * 1000; // 2 часа в миллисекундах (зимнее время UTC+2)
   const kievTime = new Date(d.getTime() + kievOffset);
   
-  // Форматируем дату и время в формате ДД.ММ.ГГГГ, ЧЧ:ММ:СС
-  // ВАЖНО: используем getUTCDate/getUTCHours и т.д., так как мы уже добавили смещение к UTC
-  const day = String(kievTime.getUTCDate()).padStart(2, '0');
-  const month = String(kievTime.getUTCMonth() + 1).padStart(2, '0');
-  const year = kievTime.getUTCFullYear();
-  const hour = String(kievTime.getUTCHours()).padStart(2, '0');
-  const minute = String(kievTime.getUTCMinutes()).padStart(2, '0');
-  const second = String(kievTime.getUTCSeconds()).padStart(2, '0');
+  // Fallback: форматируем дату и время в формате ДД.ММ.ГГГГ, ЧЧ:ММ:СС
+  const fallbackDay = String(kievTime.getUTCDate()).padStart(2, '0');
+  const fallbackMonth = String(kievTime.getUTCMonth() + 1).padStart(2, '0');
+  const fallbackYear = kievTime.getUTCFullYear();
+  const fallbackHour = String(kievTime.getUTCHours()).padStart(2, '0');
+  const fallbackMinute = String(kievTime.getUTCMinutes()).padStart(2, '0');
+  const fallbackSecond = String(kievTime.getUTCSeconds()).padStart(2, '0');
   
-  const result = `${day}.${month}.${year}, ${hour}:${minute}:${second}`;
+  const result = `${fallbackDay}.${fallbackMonth}.${fallbackYear}, ${fallbackHour}:${fallbackMinute}:${fallbackSecond}`;
   
   // ЛОГИРУЕМ ВСЕГДА для отладки (первые 20 вызовов)
   if (!window._formatTimeCallCount) {
     window._formatTimeCallCount = 0;
-    console.log('%c🔧 [formatTime V5.1] Инициализация счетчика вызовов', 'background: #00ff00; color: #000000; font-weight: bold;');
+    console.log('%c🔧 [formatTime V5.2] Инициализация счетчика вызовов', 'background: #00ff00; color: #000000; font-weight: bold;');
   }
   window._formatTimeCallCount++;
   if (window._formatTimeCallCount <= 20) {
     const utcHour = d.getUTCHours();
-    const expectedHour = (utcHour + 3) % 24;
-    const match = hour === String(expectedHour).padStart(2, '0');
-    console.log(`%c🕐 [formatTime V5.1] Вызов #${window._formatTimeCallCount}`, match ? 'background: #00ff00; color: #000000; font-weight: bold;' : 'background: #ff0000; color: #ffffff; font-weight: bold;', {
+    console.log(`%c🕐 [formatTime V5.2] Вызов #${window._formatTimeCallCount}`, 'background: #00ff00; color: #000000; font-weight: bold;', {
       input: dtStr,
       parsedUTC: d.toISOString(),
       utcHour: utcHour,
-      kievTime: kievTime.toISOString(),
+      kievTimeStr: kievTimeStr,
       result,
-      hour: hour,
-      expectedHour: String(expectedHour).padStart(2, '0'),
-      match: match
+      usingIntl: !!parts
     });
   }
   
@@ -81,8 +96,8 @@ export default function UserWorkTimeDetailsMobile({
 }) {
   // КРИТИЧЕСКОЕ ЛОГИРОВАНИЕ В НАЧАЛЕ - сразу при получении props
   // ВЕРСИЯ 5.1 - ИСПРАВЛЕНО ВРЕМЯ ДЛЯ ВСЕХ ВКЛАДОК
-  console.log('%c🚨🚨🚨 КОМПОНЕНТ UserWorkTimeDetailsMobile V5.1 - BUILD 2025-11-29 🚨🚨🚨', 'background: #ff0000; color: #ffffff; font-size: 18px; font-weight: bold; padding: 8px;');
-  console.log('🚨🚨🚨 [UserWorkTimeDetailsMobile] ====== НАЧАЛО КОМПОНЕНТА V5.1 - BUILD 2025-11-29 ======');
+  console.log('%c🚨🚨🚨 КОМПОНЕНТ UserWorkTimeDetailsMobile V5.2 - BUILD 2025-11-29 🚨🚨🚨', 'background: #ff0000; color: #ffffff; font-size: 18px; font-weight: bold; padding: 8px;');
+  console.log('🚨🚨🚨 [UserWorkTimeDetailsMobile] ====== НАЧАЛО КОМПОНЕНТА V5.2 - BUILD 2025-11-29 ======');
   console.log('🚨🚨🚨 [UserWorkTimeDetailsMobile] ЕСЛИ ВЫ ВИДИТЕ ЭТОТ ЛОГ - НОВЫЙ КОД ЗАГРУЖЕН! 🚨🚨🚨');
   console.log('🔧 [UserWorkTimeDetailsMobile] Проверка formatTime:', typeof formatTime === 'function' ? '✅ Функция загружена' : '❌ Функция НЕ найдена');
   // Тестируем formatTime сразу
