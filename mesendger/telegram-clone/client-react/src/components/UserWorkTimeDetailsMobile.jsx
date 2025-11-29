@@ -6,73 +6,33 @@ import { FiX, FiLogIn, FiLogOut, FiClock, FiGlobe, FiCamera, FiExternalLink, FiM
 function formatTime(dtStr) {
   if (!dtStr) return '';
   
-  console.log('🕐 [formatTime] Входной timestamp:', dtStr);
-  
   // Исправляем невалидный формат timestamp (например, '2025-11-28T18:52:24:.027Z' -> '2025-11-28T18:52:24.027Z')
   let fixedStr = dtStr;
   if (typeof fixedStr === 'string') {
     fixedStr = fixedStr.replace(/T(\d{2}):(\d{2}):(\d{2}):\.(\d+)/, 'T$1:$2:$3.$4');
   }
   
-  // Парсим timestamp
+  // Парсим timestamp (предполагаем, что это UTC)
   let d = new Date(fixedStr);
   
   if (isNaN(d.getTime())) {
-    console.warn('⚠️ [formatTime] Невалидный timestamp:', dtStr);
     return dtStr; // Возвращаем оригинальную строку, если не удалось распарсить
   }
   
-  console.log('🕐 [formatTime] Parsed Date (UTC):', d.toISOString());
-  console.log('🕐 [formatTime] UTC время:', d.toUTCString());
+  // Конвертируем UTC в киевское время: добавляем 3 часа (UTC+3)
+  // Это соответствует локальному времени ПК в Киеве
+  const kievOffset = 3 * 60 * 60 * 1000; // 3 часа в миллисекундах
+  const kievTime = new Date(d.getTime() + kievOffset);
   
-  // Конвертируем UTC в киевское время используя Intl.DateTimeFormat с timeZone
-  // Это автоматически учитывает летнее/зимнее время
-  try {
-    const formatter = new Intl.DateTimeFormat('ru-RU', {
-      timeZone: 'Europe/Kiev',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: false
-    });
-    
-    const parts = formatter.formatToParts(d);
-    const day = parts.find(p => p.type === 'day')?.value || '';
-    const month = parts.find(p => p.type === 'month')?.value || '';
-    const year = parts.find(p => p.type === 'year')?.value || '';
-    const hour = parts.find(p => p.type === 'hour')?.value || '';
-    const minute = parts.find(p => p.type === 'minute')?.value || '';
-    const second = parts.find(p => p.type === 'second')?.value || '';
-    
-    const result = `${day}.${month}.${year}, ${hour}:${minute}:${second}`;
-    console.log('🕐 [formatTime] Результат (Киев):', result);
-    return result;
-  } catch (e) {
-    console.warn('⚠️ [formatTime] Ошибка Intl, используем fallback:', e);
-    // Fallback: добавляем 3 часа вручную (зимнее время UTC+3)
-    const kievOffset = 3 * 60 * 60 * 1000; // 3 часа в миллисекундах
-    const kievTime = new Date(d.getTime() + kievOffset);
-    
-    const dateStr = kievTime.toLocaleDateString('ru-RU', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
-    
-    const timeStr = kievTime.toLocaleTimeString('ru-RU', {
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: false
-    });
-    
-    const result = `${dateStr}, ${timeStr}`;
-    console.log('🕐 [formatTime] Fallback результат:', result);
-    return result;
-  }
+  // Форматируем дату и время в формате ДД.ММ.ГГГГ, ЧЧ:ММ:СС
+  const day = String(kievTime.getUTCDate()).padStart(2, '0');
+  const month = String(kievTime.getUTCMonth() + 1).padStart(2, '0');
+  const year = kievTime.getUTCFullYear();
+  const hour = String(kievTime.getUTCHours()).padStart(2, '0');
+  const minute = String(kievTime.getUTCMinutes()).padStart(2, '0');
+  const second = String(kievTime.getUTCSeconds()).padStart(2, '0');
+  
+  return `${day}.${month}.${year}, ${hour}:${minute}:${second}`;
 }
 
 export default function UserWorkTimeDetailsMobile({
