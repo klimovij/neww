@@ -133,6 +133,7 @@ async function getLocalWorkTimeReport({ start, end, username }) {
   }
   
   const report = [];
+  const seenFios = new Set(); // Для предотвращения дубликатов по FIO
   logMsg(`Всего локальных пользователей в userMap: ${Object.keys(userMap).length}`);
   logMsg(`Пользователи в userMap: ${Object.keys(userMap).join(', ')}`);
   logMsg(`Пользователи в activityUsers: ${Object.keys(activityUsers).join(', ')}`);
@@ -257,6 +258,14 @@ async function getLocalWorkTimeReport({ start, end, username }) {
     const totalHours = Math.floor(totalMs / 3600000);
     const totalMinutes = Math.floor((totalMs % 3600000) / 60000);
     const totalTimeStr = totalMs > 0 ? `${totalHours} ч ${totalMinutes} мин` : '';
+    
+    // Проверяем, не добавляли ли мы уже пользователя с таким FIO
+    const normalizedFio = displayName.toLowerCase().trim();
+    if (seenFios.has(normalizedFio)) {
+      logMsg(`⚠️ Пропускаем дубликат пользователя ${user} (FIO: ${displayName}) - уже добавлен`);
+      continue;
+    }
+    seenFios.add(normalizedFio);
     
     report.push({
       username: user,
