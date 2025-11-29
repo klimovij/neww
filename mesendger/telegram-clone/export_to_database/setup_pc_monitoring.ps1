@@ -163,9 +163,10 @@ Write-Host "`nОбновление XML файлов..." -ForegroundColor Yellow
 $startupXmlPath = Join-Path $scriptDir "Mesendger_PC_Startup_Monitor.xml"
 if (Test-Path $startupXmlPath) {
     $startupXml = Get-Content $startupXmlPath -Raw -Encoding UTF8
-    # Заменяем USERNAME и путь
+    # Заменяем USERNAME и путь (экранируем путь для регулярного выражения)
     $startupXml = $startupXml -replace 'USERNAME', $username
-    $startupXml = $startupXml -replace 'C:\\Users\\Ronin\\web\\pc-worktime', 'C:\pc-worktime'
+    $escapedScriptDir = [regex]::Escape($scriptDir)
+    $startupXml = $startupXml -replace $escapedScriptDir, $targetDir
     $startupXml | Out-File -FilePath "$targetDir\Mesendger_PC_Startup_Monitor.xml" -Encoding Unicode -Force
     Write-Host "✅ Mesendger_PC_Startup_Monitor.xml обновлен" -ForegroundColor Green
 } else {
@@ -177,9 +178,10 @@ if (Test-Path $startupXmlPath) {
 $shutdownXmlPath = Join-Path $scriptDir "Mesendger_PC_Shutdown_Monitor.xml"
 if (Test-Path $shutdownXmlPath) {
     $shutdownXml = Get-Content $shutdownXmlPath -Raw -Encoding UTF8
-    # Заменяем USERNAME и путь
+    # Заменяем USERNAME и путь (экранируем путь для регулярного выражения)
     $shutdownXml = $shutdownXml -replace 'USERNAME', $username
-    $shutdownXml = $shutdownXml -replace 'C:\\Users\\Ronin\\web\\pc-worktime', 'C:\pc-worktime'
+    $escapedScriptDir = [regex]::Escape($scriptDir)
+    $shutdownXml = $shutdownXml -replace $escapedScriptDir, $targetDir
     $shutdownXml | Out-File -FilePath "$targetDir\Mesendger_PC_Shutdown_Monitor.xml" -Encoding Unicode -Force
     Write-Host "✅ Mesendger_PC_Shutdown_Monitor.xml обновлен" -ForegroundColor Green
 } else {
@@ -195,10 +197,11 @@ if (Test-Path $activityXmlPath) {
     $currentUser = [System.Security.Principal.WindowsIdentity]::GetCurrent()
     $userSid = $currentUser.User.Value
     Write-Host "   SID текущего пользователя: $userSid" -ForegroundColor Gray
-    # Заменяем USERNAME, путь и SID
+    # Заменяем USERNAME, путь и SID (экранируем путь для регулярного выражения)
     $activityXml = $activityXml -replace 'USERNAME', $username
     $activityXml = $activityXml -replace 'USERSID', $userSid
-    $activityXml = $activityXml -replace 'C:\\Users\\Ronin\\web\\pc-worktime', 'C:\pc-worktime'
+    $escapedScriptDir = [regex]::Escape($scriptDir)
+    $activityXml = $activityXml -replace $escapedScriptDir, $targetDir
     $activityXml | Out-File -FilePath "$targetDir\Mesendger_PC_Activity_Monitor.xml" -Encoding Unicode -Force
     Write-Host "✅ Mesendger_PC_Activity_Monitor.xml обновлен" -ForegroundColor Green
 } else {
