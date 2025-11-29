@@ -79,10 +79,20 @@ export default function UserWorkTimeDetailsMobile({
   onOpenMobileSidebar,
 }) {
   // КРИТИЧЕСКОЕ ЛОГИРОВАНИЕ В НАЧАЛЕ - сразу при получении props
-  // ВЕРСИЯ 5.0 - ДОБАВЛЕН realUsername, УЛУЧШЕНА ОБРАБОТКА applications
-  console.log('%c🚨🚨🚨 КОМПОНЕНТ UserWorkTimeDetailsMobile V5.0 - BUILD 2025-01-20 🚨🚨🚨', 'background: #ff0000; color: #ffffff; font-size: 18px; font-weight: bold; padding: 8px;');
-  console.log('🚨🚨🚨 [UserWorkTimeDetailsMobile] ====== НАЧАЛО КОМПОНЕНТА V5.0 - BUILD 2025-01-20 ======');
+  // ВЕРСИЯ 5.1 - ИСПРАВЛЕНО ВРЕМЯ ДЛЯ ВСЕХ ВКЛАДОК
+  console.log('%c🚨🚨🚨 КОМПОНЕНТ UserWorkTimeDetailsMobile V5.1 - BUILD 2025-11-29 🚨🚨🚨', 'background: #ff0000; color: #ffffff; font-size: 18px; font-weight: bold; padding: 8px;');
+  console.log('🚨🚨🚨 [UserWorkTimeDetailsMobile] ====== НАЧАЛО КОМПОНЕНТА V5.1 - BUILD 2025-11-29 ======');
   console.log('🚨🚨🚨 [UserWorkTimeDetailsMobile] ЕСЛИ ВЫ ВИДИТЕ ЭТОТ ЛОГ - НОВЫЙ КОД ЗАГРУЖЕН! 🚨🚨🚨');
+  console.log('🔧 [UserWorkTimeDetailsMobile] Проверка formatTime:', typeof formatTime === 'function' ? '✅ Функция загружена' : '❌ Функция НЕ найдена');
+  // Тестируем formatTime сразу
+  const testTimestamp = '2025-11-29T01:45:16.444Z';
+  const testResult = formatTime(testTimestamp);
+  console.log('🔧 [UserWorkTimeDetailsMobile] Тест formatTime:', {
+    input: testTimestamp,
+    output: testResult,
+    expected: '29.11.2025, 04:45:16',
+    match: testResult === '29.11.2025, 04:45:16'
+  });
   console.log('🚨 [UserWorkTimeDetailsMobile] Все props:', {
     open,
     username, // displayName для отображения
