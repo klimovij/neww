@@ -6,6 +6,8 @@ import { FiX, FiLogIn, FiLogOut, FiClock, FiGlobe, FiCamera, FiExternalLink, FiM
 function formatTime(dtStr) {
   if (!dtStr) return '';
   
+  console.log('🕐 [formatTime] Входной timestamp:', dtStr);
+  
   // Исправляем невалидный формат timestamp (например, '2025-11-28T18:52:24:.027Z' -> '2025-11-28T18:52:24.027Z')
   let fixedStr = dtStr;
   if (typeof fixedStr === 'string') {
@@ -16,8 +18,12 @@ function formatTime(dtStr) {
   let d = new Date(fixedStr);
   
   if (isNaN(d.getTime())) {
+    console.warn('⚠️ [formatTime] Невалидный timestamp:', dtStr);
     return dtStr; // Возвращаем оригинальную строку, если не удалось распарсить
   }
+  
+  console.log('🕐 [formatTime] Parsed Date (UTC):', d.toISOString());
+  console.log('🕐 [formatTime] UTC время:', d.toUTCString());
   
   // Конвертируем UTC в киевское время используя Intl.DateTimeFormat с timeZone
   // Это автоматически учитывает летнее/зимнее время
@@ -41,8 +47,11 @@ function formatTime(dtStr) {
     const minute = parts.find(p => p.type === 'minute')?.value || '';
     const second = parts.find(p => p.type === 'second')?.value || '';
     
-    return `${day}.${month}.${year}, ${hour}:${minute}:${second}`;
+    const result = `${day}.${month}.${year}, ${hour}:${minute}:${second}`;
+    console.log('🕐 [formatTime] Результат (Киев):', result);
+    return result;
   } catch (e) {
+    console.warn('⚠️ [formatTime] Ошибка Intl, используем fallback:', e);
     // Fallback: добавляем 3 часа вручную (зимнее время UTC+3)
     const kievOffset = 3 * 60 * 60 * 1000; // 3 часа в миллисекундах
     const kievTime = new Date(d.getTime() + kievOffset);
@@ -60,7 +69,9 @@ function formatTime(dtStr) {
       hour12: false
     });
     
-    return `${dateStr}, ${timeStr}`;
+    const result = `${dateStr}, ${timeStr}`;
+    console.log('🕐 [formatTime] Fallback результат:', result);
+    return result;
   }
 }
 
