@@ -546,76 +546,105 @@ router.get('/activity-details', async (req, res) => {
       const allScreenshots = await db.getActivityScreenshots({ username });
       console.log(`📸 [activity-details] Всего скриншотов для ${username} (без фильтра по дате): ${allScreenshots.length}`);
       if (allScreenshots.length > 0) {
-        console.log(`📸 [activity-details] Примеры дат скриншотов:`, allScreenshots.slice(0, 5).map(s => ({
-          timestamp: s.timestamp,
-          date: s.timestamp ? new Date(s.timestamp).toISOString().split('T')[0] : 'N/A'
-        })));
+        console.log(`📸 [activity-details] Примеры дат скриншотов:`, allScreenshots.slice(0, 5).map(s => {
+          try {
+            if (!s.timestamp) return { timestamp: s.timestamp, date: 'N/A' };
+            const date = new Date(s.timestamp);
+            return {
+              timestamp: s.timestamp,
+              date: isNaN(date.getTime()) ? 'Invalid' : date.toISOString().split('T')[0]
+            };
+          } catch (e) {
+            return { timestamp: s.timestamp, date: 'Error' };
+          }
+        }));
       }
     }
 
     // Формируем пути для доступа к файлам
     const screenshotsWithUrl = screenshots.map(shot => {
-      // Извлекаем имя файла из полного пути
-      let fileName = path.basename(shot.file_path);
-      console.log(`📸 [activity-details] Обработка скриншота:`, {
-        id: shot.id,
-        file_path: shot.file_path,
-        basename: fileName
-      });
-      
-      // Если путь уже содержит имя файла, используем его
-      // Иначе формируем имя из timestamp
-      if (!fileName || fileName === '' || fileName === '/') {
-        try {
-          const ts = new Date(shot.timestamp);
-          if (isNaN(ts.getTime())) {
-            // Если timestamp невалидный, используем текущую дату
-            console.warn(`⚠️ [activity-details] Невалидный timestamp для скриншота ${shot.id}: ${shot.timestamp}`);
+      try {
+        // Извлекаем имя файла из полного пути
+        let fileName = path.basename(shot.file_path);
+        console.log(`📸 [activity-details] Обработка скриншота:`, {
+          id: shot.id,
+          file_path: shot.file_path,
+          basename: fileName,
+          timestamp: shot.timestamp
+        });
+        
+        // Если путь уже содержит имя файла, используем его
+        // Иначе формируем имя из timestamp
+        if (!fileName || fileName === '' || fileName === '/') {
+          try {
+            // Исправляем невалидный формат timestamp (например, '2025-11-28T18:52:24:.027Z' -> '2025-11-28T18:52:24.027Z')
+            let fixedTimestamp = shot.timestamp;
+            if (fixedTimestamp && typeof fixedTimestamp === 'string') {
+              // Исправляем формат с лишней точкой перед миллисекундами
+              fixedTimestamp = fixedTimestamp.replace(/T(\d{2}):(\d{2}):(\d{2}):\.(\d+)/, 'T$1:$2:$3.$4');
+            }
+            
+            const ts = new Date(fixedTimestamp);
+            if (isNaN(ts.getTime())) {
+              // Если timestamp невалидный, используем текущую дату
+              console.warn(`⚠️ [activity-details] Невалидный timestamp для скриншота ${shot.id}: ${shot.timestamp} (исправлен: ${fixedTimestamp})`);
+              const now = new Date();
+              fileName = `screenshot_${username}_${now.toISOString().split('T')[0]}_${now.toISOString().split('T')[1].replace(/[:.]/g, '-').split('.')[0]}.jpg`;
+            } else {
+              fileName = `screenshot_${username}_${ts.toISOString().split('T')[0]}_${ts.toISOString().split('T')[1].replace(/[:.]/g, '-').split('.')[0]}.jpg`;
+            }
+            console.log(`📸 [activity-details] Сгенерировано имя файла из timestamp:`, fileName);
+          } catch (e) {
+            console.error(`❌ [activity-details] Ошибка обработки timestamp для скриншота ${shot.id}:`, e.message);
             const now = new Date();
             fileName = `screenshot_${username}_${now.toISOString().split('T')[0]}_${now.toISOString().split('T')[1].replace(/[:.]/g, '-').split('.')[0]}.jpg`;
-          } else {
-            fileName = `screenshot_${username}_${ts.toISOString().split('T')[0]}_${ts.toISOString().split('T')[1].replace(/[:.]/g, '-').split('.')[0]}.jpg`;
           }
-          console.log(`📸 [activity-details] Сгенерировано имя файла из timestamp:`, fileName);
-        } catch (e) {
-          console.error(`❌ [activity-details] Ошибка обработки timestamp для скриншота ${shot.id}:`, e);
-          const now = new Date();
-          fileName = `screenshot_${username}_${now.toISOString().split('T')[0]}_${now.toISOString().split('T')[1].replace(/[:.]/g, '-').split('.')[0]}.jpg`;
         }
+        
+        // Убеждаемся, что путь правильный - удаляем все префиксы путей, оставляем только имя файла
+        fileName = fileName.replace(/^.*[\/\\]/, ''); // Убираем все пути перед именем файла
+        
+        // Проверяем, существует ли файл
+        const fullPath = path.join(screenshotsDir, fileName);
+        const fileExists = fs.existsSync(fullPath);
+        console.log(`📸 [activity-details] Проверка файла:`, {
+          fileName,
+          fullPath,
+          exists: fileExists
+        });
+        
+        // Формируем URL для доступа к файлу
+        const screenshotUrl = `/uploads/screenshots/${fileName}`;
+        
+        console.log(`📸 [activity-details] Screenshot mapping:`, {
+          id: shot.id,
+          file_path: shot.file_path,
+          fileName,
+          url: screenshotUrl,
+          fileExists,
+          fileSize: shot.file_size
+        });
+        
+        return {
+          id: shot.id,
+          timestamp: shot.timestamp,
+          filePath: shot.file_path,
+          fileSize: shot.file_size,
+          // URL для доступа к файлу (будет обслуживаться через статический сервер)
+          url: screenshotUrl,
+        };
+      } catch (e) {
+        console.error(`❌ [activity-details] Критическая ошибка при обработке скриншота ${shot.id}:`, e);
+        // Возвращаем минимальный объект, чтобы не сломать весь ответ
+        return {
+          id: shot.id,
+          timestamp: shot.timestamp || null,
+          filePath: shot.file_path || '',
+          fileSize: shot.file_size || 0,
+          url: '',
+          error: 'Ошибка обработки'
+        };
       }
-      
-      // Убеждаемся, что путь правильный - удаляем все префиксы путей, оставляем только имя файла
-      fileName = fileName.replace(/^.*[\/\\]/, ''); // Убираем все пути перед именем файла
-      
-      // Проверяем, существует ли файл
-      const fullPath = path.join(screenshotsDir, fileName);
-      const fileExists = fs.existsSync(fullPath);
-      console.log(`📸 [activity-details] Проверка файла:`, {
-        fileName,
-        fullPath,
-        exists: fileExists
-      });
-      
-      // Формируем URL для доступа к файлу
-      const screenshotUrl = `/uploads/screenshots/${fileName}`;
-      
-      console.log(`📸 [activity-details] Screenshot mapping:`, {
-        id: shot.id,
-        file_path: shot.file_path,
-        fileName,
-        url: screenshotUrl,
-        fileExists,
-        fileSize: shot.file_size
-      });
-      
-      return {
-        id: shot.id,
-        timestamp: shot.timestamp,
-        filePath: shot.file_path,
-        fileSize: shot.file_size,
-        // URL для доступа к файлу (будет обслуживаться через статический сервер)
-        url: screenshotUrl,
-      };
     });
 
     // ФИНАЛЬНОЕ ЛОГИРОВАНИЕ ПЕРЕД ОТПРАВКОЙ ОТВЕТА
@@ -656,8 +685,20 @@ router.get('/activity-details', async (req, res) => {
     res.json(responseData);
   } catch (error) {
     console.error('❌ Error in /activity-details:', error);
+    console.error('❌ Error stack:', error.stack);
+    console.error('❌ Error details:', {
+      message: error.message,
+      name: error.name,
+      username: req.query?.username,
+      start: req.query?.start,
+      end: req.query?.end
+    });
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ 
+      success: false, 
+      error: error.message || 'Invalid time value',
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
 
