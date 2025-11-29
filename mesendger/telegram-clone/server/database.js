@@ -2532,12 +2532,13 @@ class Database {
         const params = [username];
 
         if (start && end) {
-          // Используем datetime для правильной фильтрации с учетом времени
+          // Используем date() для нормализации дат (как в других местах)
+          // Это работает даже с невалидными форматами timestamp (например, '2025-11-28T18:52:24:.027Z')
           // Расширяем диапазон на 1 день в обе стороны для учета часовых поясов
-          query += ' AND datetime(timestamp) >= datetime(?, "-1 day") AND datetime(timestamp) <= datetime(?, "+1 day")';
+          query += ' AND date(timestamp) >= date(?, "-1 day") AND date(timestamp) <= date(?, "+1 day")';
           params.push(start);
           params.push(end);
-          console.log(`📸 [getActivityScreenshots] Фильтрация по дате: ${start} - ${end} (с расширением ±1 день)`);
+          console.log(`📸 [getActivityScreenshots] Фильтрация по дате: ${start} - ${end} (с расширением ±1 день, используем date() для нормализации)`);
         }
 
         query += ' ORDER BY timestamp DESC';
