@@ -106,21 +106,45 @@ app.get('/api/local-worktime-report', async (req, res) => {
     
     let { start, end, username } = req.query;
     
+    // Нормализуем даты
+    if (start) start = String(start).trim();
+    if (end) end = String(end).trim();
+    
+    // Проверяем, является ли это одним днем
+    let isSingleDay = false;
     if (start && end) {
-      const startDate = new Date(start + 'T00:00:00');
-      startDate.setDate(startDate.getDate() - 1);
-      start = startDate.toISOString().slice(0, 10);
+      const isSameDay = start === end;
+      let daysDiff = 0;
+      try {
+        const startDate = new Date(start + 'T00:00:00');
+        const endDate = new Date(end + 'T00:00:00');
+        daysDiff = Math.abs(Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24)));
+      } catch (e) {
+        console.log(`⚠️ [TEST-ROUTE] Ошибка при вычислении разницы дней: ${e.message}`);
+      }
       
-      const endDate = new Date(end + 'T23:59:59');
-      endDate.setDate(endDate.getDate() + 1);
-      end = endDate.toISOString().slice(0, 10);
+      if (isSameDay || daysDiff <= 1) {
+        // Один день: не расширяем диапазон, используем точную дату
+        isSingleDay = true;
+        console.log(`📅 [TEST-ROUTE] ОДИН ДЕНЬ: start=${start}, end=${end}, isSingleDay=${isSingleDay}`);
+      } else {
+        // Несколько дней: расширяем диапазон для учёта часового пояса
+        const startDate = new Date(start + 'T00:00:00');
+        startDate.setDate(startDate.getDate() - 1);
+        start = startDate.toISOString().slice(0, 10);
+        
+        const endDate = new Date(end + 'T23:59:59');
+        endDate.setDate(endDate.getDate() + 1);
+        end = endDate.toISOString().slice(0, 10);
+        console.log(`🌍 [TEST-ROUTE] Диапазон расширен: ${req.query.start}-${req.query.end} -> ${start}-${end}`);
+      }
     }
     
     if (!quickCsvReport.getLocalWorkTimeReport) {
       return res.status(500).json({ success: false, error: 'getLocalWorkTimeReport function not found in module' });
     }
     
-    const report = await quickCsvReport.getLocalWorkTimeReport({ start, end, username });
+    const report = await quickCsvReport.getLocalWorkTimeReport({ start, end, username, isSingleDay });
     console.log(`✅ [TEST-ROUTE] Вернул ${report.length} записей`);
     res.json({ success: true, report, debug: { start, end, username, count: report.length } });
   } catch (err) {
