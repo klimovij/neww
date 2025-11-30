@@ -142,12 +142,19 @@ async function getLocalWorkTimeReport({ start, end, username, isSingleDay = fals
   // НЕ фильтруем по удаленным пользователям, т.к. если пользователь есть в work_time_logs,
   // значит он работает на локальном ПК, даже если также есть в удаленных данных
   // Дополнительная фильтрация для одного дня: оставляем только данные за выбранный день
-  const allLogs = periodLogs.filter(log => {
-    if (!log.username) return false;
-    // Если это один день, дополнительно фильтруем по дате
-    if (isSingleDay && log.event_time) {
+  let allLogs = periodLogs;
+  if (isSingleDay) {
+    logMsg(`🔍 [ФИЛЬТРАЦИЯ] Начинаем фильтрацию для одного дня: start=${start}, всего логов до фильтрации: ${periodLogs.length}`);
+    allLogs = periodLogs.filter(log => {
+      if (!log.username) return false;
+      if (!log.event_time) {
+        logMsg(`⚠️ Лог без event_time, пропускаем: ${JSON.stringify(log)}`);
+        return false;
+      }
+      
       let logDate = null;
-      const eventTimeStr = String(log.event_time);
+      const eventTimeStr = String(log.event_time).trim();
+      
       // Извлекаем дату из event_time (поддержка форматов DD.MM.YYYY и YYYY-MM-DD, с запятой или без)
       if (eventTimeStr.length >= 10) {
         if (eventTimeStr[2] === '.' && eventTimeStr[5] === '.') {
@@ -156,23 +163,33 @@ async function getLocalWorkTimeReport({ start, end, username, isSingleDay = fals
           const month = eventTimeStr.substr(3, 2);
           const day = eventTimeStr.substr(0, 2);
           logDate = `${year}-${month}-${day}`;
+          logMsg(`📅 Извлечена дата из DD.MM.YYYY: ${eventTimeStr} -> ${logDate}`);
         } else if (eventTimeStr[4] === '-' && eventTimeStr[7] === '-') {
           // Формат YYYY-MM-DD
           logDate = eventTimeStr.substr(0, 10);
+          logMsg(`📅 Извлечена дата из YYYY-MM-DD: ${eventTimeStr} -> ${logDate}`);
         }
       }
+      
       // Если дата не совпадает с выбранной, исключаем
-      if (logDate && logDate !== start) {
-        logMsg(`🚫 Фильтруем лог: event_time=${eventTimeStr}, извлеченная дата=${logDate}, ожидаемая=${start}`);
-        return false;
+      if (logDate) {
+        if (logDate !== start) {
+          logMsg(`🚫 ИСКЛЮЧАЕМ лог: event_time=${eventTimeStr}, извлеченная дата=${logDate}, ожидаемая=${start}`);
+          return false;
+        } else {
+          logMsg(`✅ ВКЛЮЧАЕМ лог: event_time=${eventTimeStr}, дата=${logDate} совпадает с ${start}`);
+        }
+      } else {
+        logMsg(`⚠️ Не удалось извлечь дату из event_time: ${eventTimeStr}, пропускаем лог`);
+        return false; // Если не удалось извлечь дату, исключаем лог для одного дня
       }
-      if (!logDate) {
-        logMsg(`⚠️ Не удалось извлечь дату из event_time: ${eventTimeStr}`);
-      }
-    }
-    return true; // Включаем все логи из work_time_logs
-  });
-  logMsg(`Локальных логов из work_time_logs после фильтрации: ${allLogs.length} (было ${periodLogs.length})`);
+      
+      return true;
+    });
+    logMsg(`🔍 [ФИЛЬТРАЦИЯ] После фильтрации осталось логов: ${allLogs.length} из ${periodLogs.length}`);
+  } else {
+    logMsg(`Локальных логов из work_time_logs: ${allLogs.length}`);
+  }
   
   const userMap = {};
   for (const log of allLogs) {
