@@ -24,7 +24,7 @@ export default function PcActivityManagementModal({ open, onClose }) {
     setDiskInfoLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('/api/activity/server-disk-info', {
+      const res = await fetch('/api/server-disk-info', {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -57,7 +57,7 @@ export default function PcActivityManagementModal({ open, onClose }) {
       }
       
       // Загружаем настройки активности ПК
-      const settingsRes = await fetch('/api/activity/pc-activity-settings', {
+      const settingsRes = await fetch('/api/pc-activity-settings', {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (settingsRes.ok) {
@@ -114,7 +114,7 @@ export default function PcActivityManagementModal({ open, onClose }) {
       
       // Сохраняем настройки для каждого пользователя
       const promises = updates.map(update =>
-        fetch('/api/activity/pc-activity-settings', {
+        fetch('/api/pc-activity-settings', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -154,7 +154,7 @@ export default function PcActivityManagementModal({ open, onClose }) {
     
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('/api/activity/pc-users', {
+      const res = await fetch('/api/pc-users', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -199,7 +199,7 @@ export default function PcActivityManagementModal({ open, onClose }) {
     
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`/api/activity/pc-users/${username}/fio`, {
+      const res = await fetch(`/api/pc-users/${username}/fio`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -248,7 +248,7 @@ export default function PcActivityManagementModal({ open, onClose }) {
     
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`/api/activity/pc-users/${username}`, {
+      const res = await fetch(`/api/pc-users/${username}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -278,7 +278,7 @@ export default function PcActivityManagementModal({ open, onClose }) {
     
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`/api/activity/pc-activity-settings/${username}`, {
+      const res = await fetch(`/api/pc-activity-settings/${username}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       });
