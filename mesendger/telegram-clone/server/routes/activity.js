@@ -349,6 +349,68 @@ router.post('/activity-screenshot', authenticateActivityRequest, (req, res, next
       });
     }
 
+    // Проверяем настройки активности ПК для пользователя
+    const settings = await db.getPcActivitySettings(username);
+    
+    // Проверка 1: Блокировка скриншотов
+    if (settings.screenshots_blocked) {
+      console.log(`🚫 [activity-screenshot] Скриншоты заблокированы для пользователя ${username}`);
+      // Удаляем загруженный файл
+      try {
+        fs.unlinkSync(req.file.path);
+      } catch (unlinkErr) {
+        console.error('❌ [activity-screenshot] Ошибка удаления файла:', unlinkErr);
+      }
+      return res.json({
+        success: true,
+        message: 'Screenshot blocked by settings',
+        blocked: true
+      });
+    }
+
+    // Проверка 2: Интервал сохранения скриншотов
+    const screenshotInterval = settings.screenshot_interval_minutes || 5;
+    if (screenshotInterval > 5) {
+      // Получаем последний скриншот пользователя (без фильтра по дате, чтобы получить самый последний)
+      try {
+        const lastScreenshots = await db.getActivityScreenshots({ username });
+        if (lastScreenshots && lastScreenshots.length > 0) {
+          const lastScreenshot = lastScreenshots[0]; // Уже отсортированы по timestamp DESC
+          const lastTimestamp = new Date(lastScreenshot.timestamp);
+          const currentTimestamp = new Date(timestamp);
+          
+          // Проверяем, что timestamp валидный
+          if (!isNaN(lastTimestamp.getTime()) && !isNaN(currentTimestamp.getTime())) {
+            const diffMinutes = (currentTimestamp - lastTimestamp) / (1000 * 60);
+            
+            if (diffMinutes < screenshotInterval) {
+              console.log(`⏱️ [activity-screenshot] Скриншот пропущен из-за интервала: ${diffMinutes.toFixed(1)} мин < ${screenshotInterval} мин для ${username}`);
+              console.log(`🗑️ [activity-screenshot] Удаление файла с диска: ${req.file.path}`);
+              // Удаляем загруженный файл с диска - он не будет занимать место
+              try {
+                fs.unlinkSync(req.file.path);
+                console.log(`✅ [activity-screenshot] Файл успешно удален с диска, место освобождено`);
+              } catch (unlinkErr) {
+                console.error('❌ [activity-screenshot] Ошибка удаления файла:', unlinkErr);
+              }
+              // НЕ сохраняем запись в БД - скриншот полностью игнорируется
+              return res.json({
+                success: true,
+                message: `Screenshot skipped due to interval (${diffMinutes.toFixed(1)} min < ${screenshotInterval} min). File deleted from disk, not saved to database.`,
+                skipped: true,
+                nextAllowedIn: Math.ceil(screenshotInterval - diffMinutes)
+              });
+            }
+          } else {
+            console.warn(`⚠️ [activity-screenshot] Невалидные timestamp для проверки интервала: last=${lastScreenshot.timestamp}, current=${timestamp}`);
+          }
+        }
+      } catch (intervalCheckError) {
+        console.error('❌ [activity-screenshot] Ошибка при проверке интервала:', intervalCheckError);
+        // Продолжаем сохранение, если проверка интервала не удалась
+      }
+    }
+
     // Сохраняем информацию о скриншоте в базу данных
     const screenshotPath = req.file.path;
     const fileSize = req.file.size;
@@ -837,6 +899,313 @@ router.delete('/activity-screenshots/delete', authenticateToken, async (req, res
     });
   } catch (error) {
     console.error('❌ [activity-screenshots/delete] Ошибка при удалении скриншотов:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ==================== УПРАВЛЕНИЕ НАСТРОЙКАМИ АКТИВНОСТИ ПК ====================
+
+// Получить все настройки активности ПК
+router.get('/pc-activity-settings', authenticateToken, async (req, res) => {
+  try {
+    const user = req.user;
+    
+    // Проверка прав: только HR или Admin
+    if (!user || (user.role !== 'hr' && user.role !== 'admin')) {
+      return res.status(403).json({ success: false, error: 'Недостаточно прав для выполнения операции' });
+    }
+    
+    const settings = await db.getAllPcActivitySettings();
+    res.json({ success: true, settings });
+  } catch (error) {
+    console.error('❌ Error in /pc-activity-settings:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Получить настройки активности ПК для конкретного пользователя
+router.get('/pc-activity-settings/:username', authenticateToken, async (req, res) => {
+  try {
+    const user = req.user;
+    const { username } = req.params;
+    
+    // Проверка прав: только HR или Admin
+    if (!user || (user.role !== 'hr' && user.role !== 'admin')) {
+      return res.status(403).json({ success: false, error: 'Недостаточно прав для выполнения операции' });
+    }
+    
+    const settings = await db.getPcActivitySettings(username);
+    res.json({ success: true, settings });
+  } catch (error) {
+    console.error('❌ Error in /pc-activity-settings/:username:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Установить/обновить настройки активности ПК
+router.post('/pc-activity-settings', authenticateToken, async (req, res) => {
+  try {
+    const user = req.user;
+    const { username, screenshots_blocked, screenshot_interval_minutes } = req.body;
+    
+    // Проверка прав: только HR или Admin
+    if (!user || (user.role !== 'hr' && user.role !== 'admin')) {
+      return res.status(403).json({ success: false, error: 'Недостаточно прав для выполнения операции' });
+    }
+    
+    if (!username) {
+      return res.status(400).json({ success: false, error: 'Username обязателен' });
+    }
+    
+    // Валидация интервала
+    const interval = parseInt(screenshot_interval_minutes) || 5;
+    if (interval < 5) {
+      return res.status(400).json({ success: false, error: 'Интервал не может быть меньше 5 минут' });
+    }
+    if (![5, 15, 20, 30].includes(interval)) {
+      return res.status(400).json({ success: false, error: 'Интервал должен быть: 5, 15, 20 или 30 минут' });
+    }
+    
+    await db.setPcActivitySettings({
+      username,
+      screenshots_blocked: screenshots_blocked === true || screenshots_blocked === 1,
+      screenshot_interval_minutes: interval
+    });
+    
+    res.json({ success: true, message: 'Настройки сохранены' });
+  } catch (error) {
+    console.error('❌ Error in POST /pc-activity-settings:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Удалить настройки активности ПК для пользователя
+router.delete('/pc-activity-settings/:username', authenticateToken, async (req, res) => {
+  try {
+    const user = req.user;
+    const { username } = req.params;
+    
+    // Проверка прав: только HR или Admin
+    if (!user || (user.role !== 'hr' && user.role !== 'admin')) {
+      return res.status(403).json({ success: false, error: 'Недостаточно прав для выполнения операции' });
+    }
+    
+    await db.deletePcActivitySettings(username);
+    res.json({ success: true, message: 'Настройки удалены' });
+  } catch (error) {
+    console.error('❌ Error in DELETE /pc-activity-settings/:username:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ==================== УПРАВЛЕНИЕ ПОЛЬЗОВАТЕЛЯМИ ПК ====================
+
+// Создать или обновить пользователя (username + FIO)
+router.post('/pc-users', authenticateToken, async (req, res) => {
+  try {
+    const user = req.user;
+    const { username, fio } = req.body;
+    
+    // Проверка прав: только HR или Admin
+    if (!user || (user.role !== 'hr' && user.role !== 'admin')) {
+      return res.status(403).json({ success: false, error: 'Недостаточно прав для выполнения операции' });
+    }
+    
+    if (!username || !username.trim()) {
+      return res.status(400).json({ success: false, error: 'Username обязателен' });
+    }
+    
+    const result = await db.createOrUpdatePcUser({ 
+      username: username.trim(), 
+      fio: fio ? fio.trim() : null 
+    });
+    
+    res.json({ 
+      success: true, 
+      message: result.updated ? 'FIO обновлен' : 'Пользователь создан',
+      ...result
+    });
+  } catch (error) {
+    console.error('❌ Error in POST /pc-users:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Обновить только FIO для существующего username
+router.put('/pc-users/:username/fio', authenticateToken, async (req, res) => {
+  try {
+    const user = req.user;
+    const { username } = req.params;
+    const { fio } = req.body;
+    
+    // Проверка прав: только HR или Admin
+    if (!user || (user.role !== 'hr' && user.role !== 'admin')) {
+      return res.status(403).json({ success: false, error: 'Недостаточно прав для выполнения операции' });
+    }
+    
+    await db.updateUserFio(username, fio ? fio.trim() : null);
+    res.json({ success: true, message: 'FIO обновлен' });
+  } catch (error) {
+    console.error('❌ Error in PUT /pc-users/:username/fio:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Удалить все данные пользователя (work_time_logs, activity_logs, activity_screenshots, файлы)
+router.delete('/pc-users/:username', authenticateToken, async (req, res) => {
+  try {
+    const user = req.user;
+    const { username } = req.params;
+    
+    // Проверка прав: только HR или Admin
+    if (!user || (user.role !== 'hr' && user.role !== 'admin')) {
+      return res.status(403).json({ success: false, error: 'Недостаточно прав для выполнения операции' });
+    }
+    
+    const result = await db.deletePcUserData(username);
+    res.json({ 
+      success: true, 
+      message: 'Все данные пользователя удалены',
+      deleted: result
+    });
+  } catch (error) {
+    console.error('❌ Error in DELETE /pc-users/:username:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Получить информацию о дисковом пространстве сервера
+router.get('/server-disk-info', authenticateToken, async (req, res) => {
+  try {
+    const user = req.user;
+    
+    // Проверка прав: только HR или Admin
+    if (!user || (user.role !== 'hr' && user.role !== 'admin')) {
+      return res.status(403).json({ success: false, error: 'Недостаточно прав для выполнения операции' });
+    }
+    
+    const { exec } = require('child_process');
+    const os = require('os');
+    const platform = os.platform();
+    
+    return new Promise((resolve, reject) => {
+      let command;
+      
+      if (platform === 'win32') {
+        // Windows: используем wmic для получения информации о диске
+        command = 'wmic logicaldisk get size,freespace,caption';
+      } else {
+        // Linux/Unix: используем df -h
+        command = 'df -h /';
+      }
+      
+      exec(command, { encoding: 'utf8' }, (error, stdout, stderr) => {
+        if (error) {
+          console.error('❌ Error getting disk info:', error);
+          // Fallback: возвращаем ошибку
+          return res.status(500).json({ 
+            success: false, 
+            error: 'Не удалось получить информацию о диске',
+            diskInfo: null
+          });
+        }
+        
+        try {
+          let diskInfo;
+          
+          if (platform === 'win32') {
+            // Парсим вывод wmic для Windows
+            const lines = stdout.trim().split('\n').filter(line => line.trim());
+            // Ищем строку с данными о диске C:
+            const dataLine = lines.find(line => {
+              const trimmed = line.trim();
+              return trimmed.includes('C:') || /^\w:\s+\d+/.test(trimmed);
+            });
+            
+            if (dataLine) {
+              const parts = dataLine.trim().split(/\s+/).filter(p => p);
+              // Формат: Caption FreeSpace Size
+              // Ищем диск C: или первый диск
+              let captionIndex = -1;
+              let freeSpaceIndex = -1;
+              let sizeIndex = -1;
+              
+              // Ищем индексы в заголовке
+              const headerLine = lines[0];
+              if (headerLine) {
+                const headers = headerLine.trim().split(/\s+/);
+                captionIndex = headers.findIndex(h => h.toLowerCase().includes('caption'));
+                freeSpaceIndex = headers.findIndex(h => h.toLowerCase().includes('freespace'));
+                sizeIndex = headers.findIndex(h => h.toLowerCase().includes('size'));
+              }
+              
+              // Если не нашли в заголовке, используем позиции по умолчанию
+              if (captionIndex === -1) captionIndex = 0;
+              if (freeSpaceIndex === -1) freeSpaceIndex = 1;
+              if (sizeIndex === -1) sizeIndex = 2;
+              
+              const caption = parts[captionIndex] || 'C:';
+              const freeSpace = parseInt(parts[freeSpaceIndex]) || 0;
+              const totalSize = parseInt(parts[sizeIndex]) || 0;
+              
+              if (totalSize > 0) {
+                const totalGB = (totalSize / (1024 * 1024 * 1024)).toFixed(2);
+                const freeGB = (freeSpace / (1024 * 1024 * 1024)).toFixed(2);
+                const usedGB = ((totalSize - freeSpace) / (1024 * 1024 * 1024)).toFixed(2);
+                const percentUsed = ((totalSize - freeSpace) / totalSize * 100).toFixed(1);
+                
+                diskInfo = {
+                  drive: caption,
+                  total: `${totalGB} GB`,
+                  totalBytes: totalSize,
+                  used: `${usedGB} GB`,
+                  usedBytes: totalSize - freeSpace,
+                  free: `${freeGB} GB`,
+                  freeBytes: freeSpace,
+                  percentUsed: `${percentUsed}%`
+                };
+              } else {
+                throw new Error('Could not parse Windows disk info - invalid data');
+              }
+            } else {
+              throw new Error('Could not find disk data in Windows output');
+            }
+          } else {
+            // Парсим вывод df -h для Linux
+            const lines = stdout.trim().split('\n');
+            const dataLine = lines[1]; // Вторая строка содержит данные о корневом разделе
+            
+            if (dataLine) {
+              const parts = dataLine.trim().split(/\s+/);
+              const filesystem = parts[0];
+              const total = parts[1];
+              const used = parts[2];
+              const available = parts[3];
+              const percentUsed = parts[4];
+              
+              diskInfo = {
+                filesystem: filesystem,
+                total: total,
+                used: used,
+                free: available,
+                percentUsed: percentUsed
+              };
+            } else {
+              throw new Error('Could not parse Linux disk info');
+            }
+          }
+          
+          res.json({ success: true, diskInfo });
+          resolve();
+        } catch (parseError) {
+          console.error('❌ Error parsing disk info:', parseError);
+          res.status(500).json({ success: false, error: 'Не удалось обработать информацию о диске' });
+          resolve();
+        }
+      });
+    });
+  } catch (error) {
+    console.error('❌ Error in GET /server-disk-info:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });

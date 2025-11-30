@@ -2,6 +2,8 @@ var sqlite3 = require('sqlite3').verbose();
 var bcrypt = require('bcrypt');
 var https = require('https');
 var http = require('http');
+var fs = require('fs');
+var path = require('path');
 
 class Database {
   // Публичный метод для комментария к поздравлению
@@ -2591,6 +2593,306 @@ class Database {
       });
     }
 
+    // ==================== НАСТРОЙКИ АКТИВНОСТИ ПК ====================
+    
+    // Получить настройки активности ПК для пользователя
+    async getPcActivitySettings(username) {
+      return new Promise((resolve, reject) => {
+        this.db.get(
+          'SELECT * FROM pc_activity_settings WHERE username = ?',
+          [username],
+          (err, row) => {
+            if (err) {
+              console.error(`❌ Error getting PC activity settings for ${username}:`, err);
+              reject(err);
+            } else {
+              // Если настроек нет, возвращаем значения по умолчанию
+              resolve(row || {
+                username,
+                screenshots_blocked: 0,
+                screenshot_interval_minutes: 5
+              });
+            }
+          }
+        );
+      });
+    }
+    
+    // Получить все настройки активности ПК
+    async getAllPcActivitySettings() {
+      return new Promise((resolve, reject) => {
+        this.db.all(
+          'SELECT * FROM pc_activity_settings ORDER BY username',
+          [],
+          (err, rows) => {
+            if (err) {
+              console.error('❌ Error getting all PC activity settings:', err);
+              reject(err);
+            } else {
+              resolve(rows || []);
+            }
+          }
+        );
+      });
+    }
+    
+    // Установить/обновить настройки активности ПК для пользователя
+    async setPcActivitySettings({ username, screenshots_blocked, screenshot_interval_minutes }) {
+      return new Promise((resolve, reject) => {
+        // Проверяем, существует ли запись
+        this.db.get(
+          'SELECT id FROM pc_activity_settings WHERE username = ?',
+          [username],
+          (err, row) => {
+            if (err) {
+              console.error(`❌ Error checking PC activity settings for ${username}:`, err);
+              return reject(err);
+            }
+            
+            if (row) {
+              // Обновляем существующую запись
+              this.db.run(
+                `UPDATE pc_activity_settings 
+                 SET screenshots_blocked = ?, screenshot_interval_minutes = ?, updated_at = CURRENT_TIMESTAMP 
+                 WHERE username = ?`,
+                [screenshots_blocked ? 1 : 0, screenshot_interval_minutes || 5, username],
+                function(updateErr) {
+                  if (updateErr) {
+                    console.error(`❌ Error updating PC activity settings for ${username}:`, updateErr);
+                    reject(updateErr);
+                  } else {
+                    console.log(`✅ Updated PC activity settings for ${username}`);
+                    resolve(this.changes);
+                  }
+                }
+              );
+            } else {
+              // Создаем новую запись
+              this.db.run(
+                `INSERT INTO pc_activity_settings (username, screenshots_blocked, screenshot_interval_minutes) 
+                 VALUES (?, ?, ?)`,
+                [username, screenshots_blocked ? 1 : 0, screenshot_interval_minutes || 5],
+                function(insertErr) {
+                  if (insertErr) {
+                    console.error(`❌ Error creating PC activity settings for ${username}:`, insertErr);
+                    reject(insertErr);
+                  } else {
+                    console.log(`✅ Created PC activity settings for ${username}`);
+                    resolve(this.lastID);
+                  }
+                }
+              );
+            }
+          }
+        );
+      });
+    }
+    
+    // Удалить настройки активности ПК для пользователя
+    async deletePcActivitySettings(username) {
+      return new Promise((resolve, reject) => {
+        this.db.run(
+          'DELETE FROM pc_activity_settings WHERE username = ?',
+          [username],
+          function(err) {
+            if (err) {
+              console.error(`❌ Error deleting PC activity settings for ${username}:`, err);
+              reject(err);
+            } else {
+              console.log(`✅ Deleted PC activity settings for ${username}`);
+              resolve(this.changes);
+            }
+          }
+        );
+      });
+    }
+    
+    // ==================== УПРАВЛЕНИЕ ПОЛЬЗОВАТЕЛЯМИ ПК ====================
+    
+    // Создать или обновить пользователя (username + FIO)
+    // Если username существует - обновляет FIO, если нет - создает нового пользователя
+    async createOrUpdatePcUser({ username, fio }) {
+      return new Promise((resolve, reject) => {
+        // Проверяем, существует ли пользователь с таким username
+        this.db.get(
+          'SELECT id FROM users WHERE username = ?',
+          [username],
+          (err, row) => {
+            if (err) {
+              console.error(`❌ Error checking user ${username}:`, err);
+              return reject(err);
+            }
+            
+            if (row) {
+              // Пользователь существует - обновляем FIO
+              this.db.run(
+                'UPDATE users SET fio = ? WHERE username = ?',
+                [fio || null, username],
+                function(updateErr) {
+                  if (updateErr) {
+                    console.error(`❌ Error updating FIO for ${username}:`, updateErr);
+                    reject(updateErr);
+                  } else {
+                    console.log(`✅ Updated FIO for ${username}: ${fio}`);
+                    resolve({ updated: true, userId: row.id });
+                  }
+                }
+              );
+            } else {
+              // Пользователь не существует - создаем нового (без пароля, только для отображения в отчетах)
+              // Генерируем случайный пароль, который не будет использоваться
+              const tempPassword = require('crypto').randomBytes(32).toString('hex');
+              require('bcrypt').hash(tempPassword, 10, (hashErr, hash) => {
+                if (hashErr) {
+                  return reject(hashErr);
+                }
+                this.db.run(
+                  'INSERT INTO users (username, password, fio, role) VALUES (?, ?, ?, ?)',
+                  [username, hash, fio || null, 'user'],
+                  function(insertErr) {
+                    if (insertErr) {
+                      console.error(`❌ Error creating user ${username}:`, insertErr);
+                      reject(insertErr);
+                    } else {
+                      console.log(`✅ Created user ${username} with FIO: ${fio}`);
+                      resolve({ created: true, userId: this.lastID });
+                    }
+                  }
+                );
+              });
+            }
+          }
+        );
+      });
+    }
+    
+    // Удалить все данные пользователя (work_time_logs, activity_logs, activity_screenshots, файлы)
+    async deletePcUserData(username) {
+      return new Promise(async (resolve, reject) => {
+        try {
+          // 1. Получаем все пути к файлам скриншотов перед удалением записей
+          const screenshots = await new Promise((resolveScreenshots, rejectScreenshots) => {
+            this.db.all(
+              'SELECT file_path FROM activity_screenshots WHERE username = ?',
+              [username],
+              (err, rows) => {
+                if (err) rejectScreenshots(err);
+                else resolveScreenshots(rows || []);
+              }
+            );
+          });
+          
+          // 2. Удаляем файлы скриншотов с диска
+          // Путь к директории скриншотов (должен совпадать с routes/activity.js)
+          const screenshotsDir = path.join(__dirname, '../uploads/screenshots');
+          let deletedFilesCount = 0;
+          screenshots.forEach(screenshot => {
+            try {
+              if (screenshot.file_path) {
+                const filePath = screenshot.file_path;
+                // Если путь относительный, добавляем путь к директории скриншотов
+                const fullPath = path.isAbsolute(filePath) 
+                  ? filePath 
+                  : path.join(screenshotsDir, path.basename(filePath));
+                
+                if (fs.existsSync(fullPath)) {
+                  fs.unlinkSync(fullPath);
+                  deletedFilesCount++;
+                  console.log(`🗑️ Deleted screenshot file: ${fullPath}`);
+                }
+              }
+            } catch (fileErr) {
+              console.error(`⚠️ Error deleting screenshot file ${screenshot.file_path}:`, fileErr);
+            }
+          });
+          
+          // 3. Удаляем записи из БД
+          const deletePromises = [
+            // Удаляем из work_time_logs
+            new Promise((resolveDel, rejectDel) => {
+              this.db.run('DELETE FROM work_time_logs WHERE username = ?', [username], function(err) {
+                if (err) rejectDel(err);
+                else {
+                  console.log(`🗑️ Deleted ${this.changes} work_time_logs for ${username}`);
+                  resolveDel(this.changes);
+                }
+              });
+            }),
+            // Удаляем из activity_logs
+            new Promise((resolveDel, rejectDel) => {
+              this.db.run('DELETE FROM activity_logs WHERE username = ?', [username], function(err) {
+                if (err) rejectDel(err);
+                else {
+                  console.log(`🗑️ Deleted ${this.changes} activity_logs for ${username}`);
+                  resolveDel(this.changes);
+                }
+              });
+            }),
+            // Удаляем из activity_screenshots
+            new Promise((resolveDel, rejectDel) => {
+              this.db.run('DELETE FROM activity_screenshots WHERE username = ?', [username], function(err) {
+                if (err) rejectDel(err);
+                else {
+                  console.log(`🗑️ Deleted ${this.changes} activity_screenshots for ${username}`);
+                  resolveDel(this.changes);
+                }
+              });
+            }),
+            // Удаляем настройки активности ПК
+            new Promise((resolveDel, rejectDel) => {
+              this.db.run('DELETE FROM pc_activity_settings WHERE username = ?', [username], function(err) {
+                if (err) rejectDel(err);
+                else {
+                  console.log(`🗑️ Deleted ${this.changes} pc_activity_settings for ${username}`);
+                  resolveDel(this.changes);
+                }
+              });
+            })
+          ];
+          
+          const results = await Promise.all(deletePromises);
+          
+          const summary = {
+            deletedFiles: deletedFilesCount,
+            deletedWorkTimeLogs: results[0],
+            deletedActivityLogs: results[1],
+            deletedScreenshots: results[2],
+            deletedSettings: results[3]
+          };
+          
+          console.log(`✅ Deleted all data for user ${username}:`, summary);
+          resolve(summary);
+        } catch (error) {
+          console.error(`❌ Error deleting user data for ${username}:`, error);
+          reject(error);
+        }
+      });
+    }
+    
+    // Обновить только FIO для существующего username
+    async updateUserFio(username, fio) {
+      return new Promise((resolve, reject) => {
+        this.db.run(
+          'UPDATE users SET fio = ? WHERE username = ?',
+          [fio || null, username],
+          function(err) {
+            if (err) {
+              console.error(`❌ Error updating FIO for ${username}:`, err);
+              reject(err);
+            } else {
+              if (this.changes === 0) {
+                console.warn(`⚠️ User ${username} not found for FIO update`);
+                reject(new Error(`User ${username} not found`));
+              } else {
+                console.log(`✅ Updated FIO for ${username}: ${fio}`);
+                resolve(this.changes);
+              }
+            }
+          }
+        );
+      });
+    }
+
     // Метод для удаления скриншотов конкретного пользователя за период
     async deleteUserScreenshots({ username, start, end }) {
       return new Promise((resolve, reject) => {
@@ -2880,6 +3182,18 @@ class Database {
           file_path TEXT NOT NULL,
           file_size INTEGER DEFAULT 0,
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+      
+      // Таблица для настроек активности ПК
+      this.db.run(`
+        CREATE TABLE IF NOT EXISTS pc_activity_settings (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          username TEXT UNIQUE NOT NULL,
+          screenshots_blocked INTEGER DEFAULT 0,
+          screenshot_interval_minutes INTEGER DEFAULT 5,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )
       `);
       // Добавляем недостающие поля для старых баз

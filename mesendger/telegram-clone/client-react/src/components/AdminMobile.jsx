@@ -1,12 +1,13 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import ReactDOM from 'react-dom';
 import { FaArrowLeft } from 'react-icons/fa';
-import { FiX, FiSettings, FiAlertTriangle, FiSmile, FiFileText } from 'react-icons/fi';
+import { FiX, FiSettings, FiAlertTriangle, FiSmile, FiFileText, FiMonitor } from 'react-icons/fi';
 import { useApp } from '../context/AppContext';
 import EmojiSettingsMobile from './EmojiSettingsMobile';
 import TemplatesManagementMobile from './TemplatesManagementMobile';
 import AppTitleSettingsMobile from './AppTitleSettingsMobile';
 import UserRightsMobile from './UserRightsMobile';
+import PcActivityManagementModal from './Modals/PcActivityManagementModal';
 
 export default function AdminMobile({ 
   open, 
@@ -36,6 +37,7 @@ export default function AdminMobile({
   const [showTemplates, setShowTemplates] = useState(false);
   const [showAppTitleSettings, setShowAppTitleSettings] = useState(false);
   const [showUserRights, setShowUserRights] = useState(false);
+  const [showPcActivityManagement, setShowPcActivityManagement] = useState(false);
 
   // Load users when modal opens
   useEffect(() => {
@@ -436,7 +438,7 @@ export default function AdminMobile({
         </div>
 
         {/* Content */}
-        <div style={{ padding: '16px', flex: 1, overflowY: 'auto' }}>
+        <div style={{ padding: '16px', flex: 1, overflowY: 'auto', marginTop: '56px' }}>
           {/* Информация о хосте */}
           <div style={{
             backgroundColor: 'rgba(59, 130, 246, 0.1)',
@@ -521,28 +523,54 @@ export default function AdminMobile({
               <FiSettings size={20} /> Управление названием приложения
             </button>
             {(state.user?.role === 'admin' || state.user?.role === 'hr') && (
-              <button
-                onClick={() => {
-                  setShowUserRights(true);
-                }}
-                style={{
-                  padding:'14px 16px',
-                  borderRadius:12,
-                  border:'1px solid rgba(139,69,255,0.35)',
-                  background:'rgba(139,69,255,0.15)',
-                  color:'#c084fc',
-                  cursor:'pointer',
-                  fontWeight:600,
-                  display:'flex',
-                  alignItems:'center',
-                  gap:10,
-                  fontSize: '15px',
-                  width: '100%',
-                  justifyContent: 'center'
-                }}
-              >
-                <FiSettings size={20} /> Права пользователей
-              </button>
+              <>
+                <button
+                  onClick={() => {
+                    setShowUserRights(true);
+                  }}
+                  style={{
+                    padding:'14px 16px',
+                    borderRadius:12,
+                    border:'1px solid rgba(139,69,255,0.35)',
+                    background:'rgba(139,69,255,0.15)',
+                    color:'#c084fc',
+                    cursor:'pointer',
+                    fontWeight:600,
+                    display:'flex',
+                    alignItems:'center',
+                    gap:10,
+                    fontSize: '15px',
+                    width: '100%',
+                    justifyContent: 'center'
+                  }}
+                >
+                  <FiSettings size={20} /> Права пользователей
+                </button>
+                <button
+                  onClick={() => {
+                    setShowPcActivityManagement(true);
+                  }}
+                  style={{
+                    padding:'14px 16px',
+                    borderRadius:12,
+                    border:'1px solid rgba(34,197,94,0.45)',
+                    background:'rgba(34,197,94,0.18)',
+                    color:'#86efac',
+                    cursor:'pointer',
+                    fontWeight:700,
+                    display:'flex',
+                    alignItems:'center',
+                    gap:10,
+                    fontSize: '15px',
+                    width: '100%',
+                    justifyContent: 'center',
+                    position: 'relative',
+                    zIndex: 1
+                  }}
+                >
+                  <FiMonitor size={20} /> Управление активностью ПК
+                </button>
+              </>
             )}
             {state.user?.role === 'admin' && (
               <>
@@ -1116,6 +1144,15 @@ export default function AdminMobile({
       
     </div>,
     document.body
+      )}
+      
+      {/* PC Activity Management Modal */}
+      {showPcActivityManagement && ReactDOM.createPortal(
+        <PcActivityManagementModal
+          open={showPcActivityManagement}
+          onClose={() => setShowPcActivityManagement(false)}
+        />,
+        document.body
       )}
       
       {/* Emoji Settings Mobile Modal - рендерим через отдельный портал с высоким z-index */}
