@@ -733,6 +733,12 @@ router.get('/local-worktime-report', async (req, res) => {
     const originalEnd = end;
     let isSingleDay = false;
     
+    // Нормализуем даты (убираем пробелы, приводим к строке)
+    if (start) start = String(start).trim();
+    if (end) end = String(end).trim();
+    
+    console.log(`🔍 [local-worktime-report] Проверка: start="${start}", end="${end}", start===end: ${start === end}`);
+    
     if (start && end) {
       if (start === end) {
         // Один день: используем только дату (без времени) для точного сравнения
@@ -740,7 +746,7 @@ router.get('/local-worktime-report', async (req, res) => {
         isSingleDay = true;
         // Оставляем только дату в формате YYYY-MM-DD
         // SQL запросы будут сравнивать только дату из timestamp
-        console.log(`📅 [local-worktime-report] Один день: ${originalStart} -> ищем данные за дату: ${start}`);
+        console.log(`📅 [local-worktime-report] ОДИН ДЕНЬ ОБНАРУЖЕН: ${originalStart} -> ищем данные за дату: ${start}, isSingleDay=${isSingleDay}`);
       } else {
         // Несколько дней: расширяем диапазон для учёта часового пояса (Киев UTC+2/UTC+3)
         const startDate = new Date(start + 'T00:00:00');
