@@ -739,17 +739,30 @@ router.get('/local-worktime-report', async (req, res) => {
     
     console.log(`🔍 [local-worktime-report] ДО нормализации: originalStart="${originalStart}", originalEnd="${originalEnd}"`);
     console.log(`🔍 [local-worktime-report] ПОСЛЕ нормализации: start="${start}", end="${end}"`);
-    console.log(`🔍 [local-worktime-report] Сравнение: start === end: ${start === end}, typeof start: ${typeof start}, typeof end: ${typeof end}`);
-    console.log(`🔍 [local-worktime-report] Длины: start.length=${start?.length}, end.length=${end?.length}`);
     
     if (start && end) {
-      if (start === end) {
+      // Проверяем, является ли это одним днем
+      // Сравниваем строки напрямую
+      const isSameDay = start === end;
+      
+      // Также проверяем разницу в днях (на случай, если даты немного отличаются)
+      let daysDiff = 0;
+      try {
+        const startDate = new Date(start + 'T00:00:00');
+        const endDate = new Date(end + 'T00:00:00');
+        daysDiff = Math.abs(Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24)));
+      } catch (e) {
+        console.log(`⚠️ [local-worktime-report] Ошибка при вычислении разницы дней: ${e.message}`);
+      }
+      
+      console.log(`🔍 [local-worktime-report] Сравнение: start === end: ${isSameDay}, разница в днях: ${daysDiff}`);
+      
+      if (isSameDay || daysDiff <= 1) {
         // Один день: используем только дату (без времени) для точного сравнения
         // Это гарантирует, что будут показаны данные именно за выбранный день
         isSingleDay = true;
-        // Оставляем только дату в формате YYYY-MM-DD
-        // SQL запросы будут сравнивать только дату из timestamp
-        console.log(`📅 [local-worktime-report] ОДИН ДЕНЬ ОБНАРУЖЕН: ${originalStart} -> ищем данные за дату: ${start}, isSingleDay=${isSingleDay}`);
+        // Используем start как основную дату для фильтрации
+        console.log(`📅 [local-worktime-report] ОДИН ДЕНЬ ОБНАРУЖЕН: ${originalStart} -> ищем данные за дату: ${start}, isSingleDay=${isSingleDay}, daysDiff=${daysDiff}`);
       } else {
         // Несколько дней: расширяем диапазон для учёта часового пояса (Киев UTC+2/UTC+3)
         const startDate = new Date(start + 'T00:00:00');
