@@ -1181,14 +1181,17 @@ router.get('/server-disk-info', authenticateToken, async (req, res) => {
               const total = parts[1];
               const used = parts[2];
               const available = parts[3];
-              const percentUsed = parts[4];
+              const percentUsedStr = parts[4] || '0%';
+              // Парсим процент, убирая символ %
+              const percentUsed = parseFloat(percentUsedStr.replace('%', '')) || 0;
               
               diskInfo = {
                 filesystem: filesystem,
                 total: total,
                 used: used,
                 free: available,
-                percentUsed: percentUsed
+                percent: percentUsed,
+                percentUsed: `${percentUsed}%`
               };
             } else {
               throw new Error('Could not parse Linux disk info');

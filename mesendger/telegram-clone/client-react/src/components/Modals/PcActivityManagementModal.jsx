@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
-import { FiX, FiMonitor, FiSave, FiTrash2, FiUserPlus, FiEdit2, FiUser, FiHardDrive } from 'react-icons/fi';
+import { FiX, FiMonitor, FiSave, FiTrash2, FiUserPlus, FiEdit2, FiUser, FiHardDrive, FiRefreshCw } from 'react-icons/fi';
 
 export default function PcActivityManagementModal({ open, onClose }) {
   const [users, setUsers] = useState([]);
@@ -259,6 +259,7 @@ export default function PcActivityManagementModal({ open, onClose }) {
         setSuccess(`Все данные пользователя ${username} удалены`);
         setTimeout(() => setSuccess(''), 3000);
         await loadData(); // Перезагружаем список пользователей
+        await loadDiskInfo(); // Обновляем данные диска
       } else {
         setError(data.error || 'Не удалось удалить данные пользователя');
       }
@@ -383,11 +384,35 @@ export default function PcActivityManagementModal({ open, onClose }) {
               marginBottom: '20px'
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-              <FiHardDrive size={20} color="#93c5fd" />
-              <h3 style={{ margin: 0, color: '#93c5fd', fontSize: '16px', fontWeight: 700 }}>
-                Дисковое пространство сервера
-              </h3>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <FiHardDrive size={20} color="#93c5fd" />
+                <h3 style={{ margin: 0, color: '#93c5fd', fontSize: '16px', fontWeight: 700 }}>
+                  Дисковое пространство сервера
+                </h3>
+              </div>
+              <button
+                onClick={loadDiskInfo}
+                disabled={diskInfoLoading}
+                style={{
+                  padding: '6px 10px',
+                  borderRadius: '6px',
+                  border: '1px solid rgba(147, 197, 253, 0.5)',
+                  background: 'rgba(147, 197, 253, 0.2)',
+                  color: '#93c5fd',
+                  cursor: diskInfoLoading ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  opacity: diskInfoLoading ? 0.5 : 1
+                }}
+                title="Обновить данные диска"
+              >
+                <FiRefreshCw size={14} style={{ animation: diskInfoLoading ? 'spin 1s linear infinite' : 'none' }} />
+                Обновить
+              </button>
             </div>
             {diskInfoLoading ? (
               <div style={{ color: '#999', fontSize: '14px' }}>Загрузка...</div>
@@ -410,12 +435,12 @@ export default function PcActivityManagementModal({ open, onClose }) {
                     <span style={{ color: '#fff', fontSize: '14px' }}>Заполнено:</span>
                     <span 
                       style={{ 
-                        color: parseFloat(diskInfo.percentUsed) > 80 ? '#fecaca' : parseFloat(diskInfo.percentUsed) > 60 ? '#fbbf24' : '#86efac',
+                        color: (diskInfo.percent || parseFloat(diskInfo.percentUsed?.replace('%', '') || 0)) > 80 ? '#fecaca' : (diskInfo.percent || parseFloat(diskInfo.percentUsed?.replace('%', '') || 0)) > 60 ? '#fbbf24' : '#86efac',
                         fontSize: '14px',
                         fontWeight: 700
                       }}
                     >
-                      {diskInfo.percentUsed}
+                      {diskInfo.percentUsed || `${diskInfo.percent || 0}%`}
                     </span>
                   </div>
                   {/* Прогресс-бар */}
@@ -430,11 +455,11 @@ export default function PcActivityManagementModal({ open, onClose }) {
                   >
                     <div
                       style={{
-                        width: diskInfo.percentUsed,
+                        width: `${diskInfo.percent || parseFloat(diskInfo.percentUsed?.replace('%', '') || 0)}%`,
                         height: '100%',
-                        background: parseFloat(diskInfo.percentUsed) > 80 
+                        background: (diskInfo.percent || parseFloat(diskInfo.percentUsed?.replace('%', '') || 0)) > 80 
                           ? 'linear-gradient(90deg, #ef4444 0%, #dc2626 100%)'
-                          : parseFloat(diskInfo.percentUsed) > 60
+                          : (diskInfo.percent || parseFloat(diskInfo.percentUsed?.replace('%', '') || 0)) > 60
                           ? 'linear-gradient(90deg, #fbbf24 0%, #f59e0b 100%)'
                           : 'linear-gradient(90deg, #22c55e 0%, #16a34a 100%)',
                         transition: 'width 0.3s ease'
