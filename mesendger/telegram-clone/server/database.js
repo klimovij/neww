@@ -2200,28 +2200,20 @@ class Database {
         let params = [];
         if (start && end) {
           if (isSingleDay) {
-            // Для одного дня: сравниваем полные даты с временем (YYYY-MM-DD HH:MM:SS)
-            // start и end уже в формате 'YYYY-MM-DD HH:MM:SS'
+            // Для одного дня: сравниваем только дату (без времени) для точного совпадения
+            // Это гарантирует, что будут показаны данные именно за выбранный день
             query += ` AND (
-              (length(event_time) >= 19 AND substr(event_time, 5, 1) = '-' AND substr(event_time, 8, 1) = '-' 
-                AND substr(event_time, 11, 1) = ' ' 
-                AND datetime(substr(event_time, 1, 19)) >= datetime(?)
-                AND datetime(substr(event_time, 1, 19)) <= datetime(?)
+              (length(event_time) >= 10 AND substr(event_time, 3, 1) = '.' AND substr(event_time, 6, 1) = '.'
+                AND (
+                  substr(event_time, 7, 4) || '-' || substr(event_time, 4, 2) || '-' || substr(event_time, 1, 2)
+                ) = ?
               )
               OR
-              (length(event_time) >= 19 AND substr(event_time, 3, 1) = '.' AND substr(event_time, 6, 1) = '.'
-                AND substr(event_time, 11, 1) = ' '
-                AND datetime(
-                  substr(event_time, 7, 4) || '-' || substr(event_time, 4, 2) || '-' || substr(event_time, 1, 2) || 
-                  ' ' || substr(event_time, 11, 8)
-                ) >= datetime(?)
-                AND datetime(
-                  substr(event_time, 7, 4) || '-' || substr(event_time, 4, 2) || '-' || substr(event_time, 1, 2) || 
-                  ' ' || substr(event_time, 11, 8)
-                ) <= datetime(?)
+              (length(event_time) >= 10 AND substr(event_time, 5, 1) = '-' AND substr(event_time, 8, 1) = '-' 
+                AND substr(event_time, 1, 10) = ?
               )
             )`;
-            params.push(start, end, start, end);
+            params.push(start, start);
           } else {
             // Для диапазона: сравниваем только даты (без времени) для обоих форматов
             query += ` AND (
@@ -2514,10 +2506,10 @@ class Database {
 
         if (start && end) {
           if (isSingleDay) {
-            // Для одного дня: сравниваем полные даты с временем (YYYY-MM-DD HH:MM:SS)
-            // start и end уже в формате 'YYYY-MM-DD HH:MM:SS'
-            query += ' AND datetime(timestamp) >= datetime(?) AND datetime(timestamp) <= datetime(?)';
-            params.push(start, end);
+            // Для одного дня: сравниваем только дату (без времени) для точного совпадения
+            // Это гарантирует, что будут показаны данные именно за выбранный день
+            query += ' AND date(timestamp) = ?';
+            params.push(start);
           } else {
             // Для диапазона: сравниваем только даты (без времени)
             query += ' AND date(timestamp) >= ? AND date(timestamp) <= ?';

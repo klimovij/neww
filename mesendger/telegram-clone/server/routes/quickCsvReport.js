@@ -652,12 +652,12 @@ router.get('/local-worktime-report', async (req, res) => {
     
     if (start && end) {
       if (start === end) {
-        // Один день: используем точное время 00:00:00 - 23:59:59
+        // Один день: используем только дату (без времени) для точного сравнения
+        // Это гарантирует, что будут показаны данные именно за выбранный день
         isSingleDay = true;
-        // Формат для SQLite: 'YYYY-MM-DD HH:MM:SS'
-        start = start + ' 00:00:00';
-        end = end + ' 23:59:59';
-        console.log(`📅 [local-worktime-report] Один день: ${originalStart} -> ${start} - ${end}`);
+        // Оставляем только дату в формате YYYY-MM-DD
+        // SQL запросы будут сравнивать только дату из timestamp
+        console.log(`📅 [local-worktime-report] Один день: ${originalStart} (данные за весь день)`);
       } else {
         // Несколько дней: расширяем диапазон для учёта часового пояса (Киев UTC+2/UTC+3)
         const startDate = new Date(start + 'T00:00:00');
