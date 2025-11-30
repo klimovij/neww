@@ -58,8 +58,33 @@ async function getLocalWorkTimeReport({ start, end, username, isSingleDay = fals
   logMsg(`work_time_logs (локальные): ${periodLogs?.length || 0} записей`);
   
   // Также получаем пользователей из activity_logs (от агента активности)
-  const activityLogs = await db.getActivityLogsBetween({ start, end, isSingleDay });
+  let activityLogs = await db.getActivityLogsBetween({ start, end, isSingleDay });
   logMsg(`activity_logs (локальные): ${activityLogs?.length || 0} записей`);
+  
+  // Дополнительная фильтрация для одного дня: оставляем только данные за выбранный день
+  if (isSingleDay && activityLogs.length > 0) {
+    const filteredActivityLogs = activityLogs.filter(log => {
+      if (!log.timestamp) return false;
+      // Извлекаем дату из timestamp
+      let logDate = null;
+      if (typeof log.timestamp === 'string') {
+        if (log.timestamp.length >= 10 && log.timestamp[4] === '-' && log.timestamp[7] === '-') {
+          // Формат YYYY-MM-DD
+          logDate = log.timestamp.substr(0, 10);
+        } else {
+          try {
+            logDate = new Date(log.timestamp).toISOString().slice(0, 10);
+          } catch (e) {
+            return false;
+          }
+        }
+      }
+      // Если дата не совпадает с выбранной, исключаем
+      return logDate === start;
+    });
+    logMsg(`activity_logs после фильтрации для одного дня: ${filteredActivityLogs.length} записей (было ${activityLogs.length})`);
+    activityLogs = filteredActivityLogs;
+  }
   
   // Получаем список удаленных пользователей для информации
   // НО НЕ исключаем их, если они есть в локальных данных (work_time_logs)
@@ -110,11 +135,31 @@ async function getLocalWorkTimeReport({ start, end, username, isSingleDay = fals
   // Включаем ВСЕ логи из work_time_logs (это локальная таблица)
   // НЕ фильтруем по удаленным пользователям, т.к. если пользователь есть в work_time_logs,
   // значит он работает на локальном ПК, даже если также есть в удаленных данных
+  // Дополнительная фильтрация для одного дня: оставляем только данные за выбранный день
   const allLogs = periodLogs.filter(log => {
     if (!log.username) return false;
+    // Если это один день, дополнительно фильтруем по дате
+    if (isSingleDay && log.event_time) {
+      let logDate = null;
+      // Извлекаем дату из event_time
+      if (log.event_time.length >= 10 && log.event_time[2] === '.' && log.event_time[5] === '.') {
+        // Формат DD.MM.YYYY
+        const year = log.event_time.substr(6, 4);
+        const month = log.event_time.substr(3, 2);
+        const day = log.event_time.substr(0, 2);
+        logDate = `${year}-${month}-${day}`;
+      } else if (log.event_time.length >= 10 && log.event_time[4] === '-' && log.event_time[7] === '-') {
+        // Формат YYYY-MM-DD
+        logDate = log.event_time.substr(0, 10);
+      }
+      // Если дата не совпадает с выбранной, исключаем
+      if (logDate && logDate !== start) {
+        return false;
+      }
+    }
     return true; // Включаем все логи из work_time_logs
   });
-  logMsg(`Локальных логов из work_time_logs: ${allLogs.length}`);
+  logMsg(`Локальных логов из work_time_logs после фильтрации: ${allLogs.length}`);
   
   const userMap = {};
   for (const log of allLogs) {
