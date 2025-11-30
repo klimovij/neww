@@ -52,10 +52,17 @@ async function getLocalWorkTimeReport({ start, end, username, isSingleDay = fals
   
   logMsg(`=== НАЧАЛО getLocalWorkTimeReport (ЛОКАЛЬНЫЕ данные) ===`);
   logMsg(`Запрос данных: start=${start}, end=${end}, username=${username || 'all'}, isSingleDay=${isSingleDay}`);
+  logMsg(`🔍 [DEBUG] isSingleDay=${isSingleDay}, start=${start}, end=${end}, start===end: ${start === end}`);
   
   // ТОЛЬКО локальные данные: work_time_logs (от агента включения/выключения)
   const periodLogs = await db.getWorkTimeLogs({ start, end, username, isSingleDay });
   logMsg(`work_time_logs (локальные): ${periodLogs?.length || 0} записей`);
+  if (isSingleDay && periodLogs.length > 0) {
+    logMsg(`🔍 [DEBUG] Первые 3 записи из work_time_logs для проверки:`);
+    periodLogs.slice(0, 3).forEach((log, idx) => {
+      logMsg(`  [${idx + 1}] username=${log.username}, event_time=${log.event_time}, event_type=${log.event_type}`);
+    });
+  }
   
   // Также получаем пользователей из activity_logs (от агента активности)
   let activityLogs = await db.getActivityLogsBetween({ start, end, isSingleDay });
@@ -143,6 +150,7 @@ async function getLocalWorkTimeReport({ start, end, username, isSingleDay = fals
   // значит он работает на локальном ПК, даже если также есть в удаленных данных
   // Дополнительная фильтрация для одного дня: оставляем только данные за выбранный день
   let allLogs = periodLogs;
+  logMsg(`🔍 [DEBUG] Перед фильтрацией: isSingleDay=${isSingleDay}, periodLogs.length=${periodLogs.length}, start=${start}`);
   if (isSingleDay) {
     logMsg(`🔍 [ФИЛЬТРАЦИЯ] Начинаем фильтрацию для одного дня: start=${start}, всего логов до фильтрации: ${periodLogs.length}`);
     allLogs = periodLogs.filter(log => {
