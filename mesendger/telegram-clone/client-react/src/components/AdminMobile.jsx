@@ -548,7 +548,9 @@ export default function AdminMobile({
                 </button>
                 <button
                   onClick={() => {
+                    console.log('🔵 [AdminMobile] Кнопка "Управление активностью ПК" нажата');
                     setShowPcActivityManagement(true);
+                    console.log('🔵 [AdminMobile] showPcActivityManagement установлен в true');
                   }}
                   style={{
                     padding:'14px 16px',
@@ -1147,13 +1149,10 @@ export default function AdminMobile({
       )}
       
       {/* PC Activity Management Modal */}
-      {showPcActivityManagement && ReactDOM.createPortal(
-        <PcActivityManagementModal
-          open={showPcActivityManagement}
-          onClose={() => setShowPcActivityManagement(false)}
-        />,
-        document.body
-      )}
+      <PcActivityManagementModal
+        open={showPcActivityManagement}
+        onClose={() => setShowPcActivityManagement(false)}
+      />
       
       {/* Emoji Settings Mobile Modal - рендерим через отдельный портал с высоким z-index */}
       {showEmojiSettings && ReactDOM.createPortal(
