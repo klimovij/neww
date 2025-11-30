@@ -2194,31 +2194,53 @@ class Database {
       }
     }
 
-    async getWorkTimeLogs({ start, end, username }) {
+    async getWorkTimeLogs({ start, end, username, isSingleDay = false }) {
       return new Promise((resolve, reject) => {
         let query = 'SELECT * FROM work_time_logs WHERE 1=1';
         let params = [];
         if (start && end) {
-          // Сравниваем только даты (без времени) для обоих форматов
-          query += ` AND (
-            (length(event_time) >= 10 AND substr(event_time, 3, 1) = '.' AND substr(event_time, 6, 1) = '.'
-              AND (
-                substr(event_time, 7, 4) || '-' || substr(event_time, 4, 2) || '-' || substr(event_time, 1, 2)
-              ) >= ?
-              AND (
-                substr(event_time, 7, 4) || '-' || substr(event_time, 4, 2) || '-' || substr(event_time, 1, 2)
-              ) <= ?
-            )
-            OR
-            (length(event_time) >= 10 AND substr(event_time, 5, 1) = '-' AND substr(event_time, 8, 1) = '-' 
-              AND substr(event_time, 1, 10) >= ?
-              AND substr(event_time, 1, 10) <= ?
-            )
-          )`;
-          params.push(start);
-          params.push(end);
-          params.push(start);
-          params.push(end);
+          if (isSingleDay) {
+            // Для одного дня: сравниваем полные даты с временем (YYYY-MM-DD HH:MM:SS)
+            // start и end уже в формате 'YYYY-MM-DD HH:MM:SS'
+            query += ` AND (
+              (length(event_time) >= 19 AND substr(event_time, 5, 1) = '-' AND substr(event_time, 8, 1) = '-' 
+                AND substr(event_time, 11, 1) = ' ' 
+                AND datetime(substr(event_time, 1, 19)) >= datetime(?)
+                AND datetime(substr(event_time, 1, 19)) <= datetime(?)
+              )
+              OR
+              (length(event_time) >= 19 AND substr(event_time, 3, 1) = '.' AND substr(event_time, 6, 1) = '.'
+                AND substr(event_time, 11, 1) = ' '
+                AND datetime(
+                  substr(event_time, 7, 4) || '-' || substr(event_time, 4, 2) || '-' || substr(event_time, 1, 2) || 
+                  ' ' || substr(event_time, 11, 8)
+                ) >= datetime(?)
+                AND datetime(
+                  substr(event_time, 7, 4) || '-' || substr(event_time, 4, 2) || '-' || substr(event_time, 1, 2) || 
+                  ' ' || substr(event_time, 11, 8)
+                ) <= datetime(?)
+              )
+            )`;
+            params.push(start, end, start, end);
+          } else {
+            // Для диапазона: сравниваем только даты (без времени) для обоих форматов
+            query += ` AND (
+              (length(event_time) >= 10 AND substr(event_time, 3, 1) = '.' AND substr(event_time, 6, 1) = '.'
+                AND (
+                  substr(event_time, 7, 4) || '-' || substr(event_time, 4, 2) || '-' || substr(event_time, 1, 2)
+                ) >= ?
+                AND (
+                  substr(event_time, 7, 4) || '-' || substr(event_time, 4, 2) || '-' || substr(event_time, 1, 2)
+                ) <= ?
+              )
+              OR
+              (length(event_time) >= 10 AND substr(event_time, 5, 1) = '-' AND substr(event_time, 8, 1) = '-' 
+                AND substr(event_time, 1, 10) >= ?
+                AND substr(event_time, 1, 10) <= ?
+              )
+            )`;
+            params.push(start, end, start, end);
+          }
         }
         if (username) {
           query += ' AND username = ?';
@@ -2485,16 +2507,22 @@ class Database {
       });
     }
 
-    async getActivityLogsBetween({ start, end }) {
+    async getActivityLogsBetween({ start, end, isSingleDay = false }) {
       return new Promise((resolve, reject) => {
         let query = 'SELECT * FROM activity_logs WHERE 1=1';
         const params = [];
 
         if (start && end) {
-          query +=
-            ' AND date(timestamp) >= ? AND date(timestamp) <= ?';
-          params.push(start);
-          params.push(end);
+          if (isSingleDay) {
+            // Для одного дня: сравниваем полные даты с временем (YYYY-MM-DD HH:MM:SS)
+            // start и end уже в формате 'YYYY-MM-DD HH:MM:SS'
+            query += ' AND datetime(timestamp) >= datetime(?) AND datetime(timestamp) <= datetime(?)';
+            params.push(start, end);
+          } else {
+            // Для диапазона: сравниваем только даты (без времени)
+            query += ' AND date(timestamp) >= ? AND date(timestamp) <= ?';
+            params.push(start, end);
+          }
         }
 
         this.db.all(query, params, (err, rows) => {

@@ -30,7 +30,7 @@ router.post('/import-worktime-json', async (req, res) => {
 });
 
 // Генерация отчёта для ЛОКАЛЬНЫХ пользователей: work_time_logs + activity_logs
-async function getLocalWorkTimeReport({ start, end, username }) {
+async function getLocalWorkTimeReport({ start, end, username, isSingleDay = false }) {
   const fs = require('fs');
   const path = require('path');
   const logFiles = [
@@ -51,14 +51,14 @@ async function getLocalWorkTimeReport({ start, end, username }) {
   };
   
   logMsg(`=== НАЧАЛО getLocalWorkTimeReport (ЛОКАЛЬНЫЕ данные) ===`);
-  logMsg(`Запрос данных: start=${start}, end=${end}, username=${username || 'all'}`);
+  logMsg(`Запрос данных: start=${start}, end=${end}, username=${username || 'all'}, isSingleDay=${isSingleDay}`);
   
   // ТОЛЬКО локальные данные: work_time_logs (от агента включения/выключения)
-  const periodLogs = await db.getWorkTimeLogs({ start, end, username });
+  const periodLogs = await db.getWorkTimeLogs({ start, end, username, isSingleDay });
   logMsg(`work_time_logs (локальные): ${periodLogs?.length || 0} записей`);
   
   // Также получаем пользователей из activity_logs (от агента активности)
-  const activityLogs = await db.getActivityLogsBetween({ start, end });
+  const activityLogs = await db.getActivityLogsBetween({ start, end, isSingleDay });
   logMsg(`activity_logs (локальные): ${activityLogs?.length || 0} записей`);
   
   // Получаем список удаленных пользователей для информации
@@ -645,23 +645,34 @@ router.get('/local-worktime-report', async (req, res) => {
   try {
     let { start, end, username } = req.query;
     
-    // Расширяем диапазон дат для учёта часового пояса (Киев UTC+2/UTC+3)
+    // Если start === end, используем точный день (00:00:00 - 23:59:59) без расширения
     const originalStart = start;
     const originalEnd = end;
+    let isSingleDay = false;
     
     if (start && end) {
-      const startDate = new Date(start + 'T00:00:00');
-      startDate.setDate(startDate.getDate() - 1);
-      start = startDate.toISOString().slice(0, 10);
-      
-      const endDate = new Date(end + 'T23:59:59');
-      endDate.setDate(endDate.getDate() + 1);
-      end = endDate.toISOString().slice(0, 10);
-      
-      console.log(`🌍 [local-worktime-report] Расширение: ${originalStart}-${originalEnd} -> ${start}-${end}`);
+      if (start === end) {
+        // Один день: используем точное время 00:00:00 - 23:59:59
+        isSingleDay = true;
+        // Формат для SQLite: 'YYYY-MM-DD HH:MM:SS'
+        start = start + ' 00:00:00';
+        end = end + ' 23:59:59';
+        console.log(`📅 [local-worktime-report] Один день: ${originalStart} -> ${start} - ${end}`);
+      } else {
+        // Несколько дней: расширяем диапазон для учёта часового пояса (Киев UTC+2/UTC+3)
+        const startDate = new Date(start + 'T00:00:00');
+        startDate.setDate(startDate.getDate() - 1);
+        start = startDate.toISOString().slice(0, 10);
+        
+        const endDate = new Date(end + 'T23:59:59');
+        endDate.setDate(endDate.getDate() + 1);
+        end = endDate.toISOString().slice(0, 10);
+        
+        console.log(`🌍 [local-worktime-report] Расширение: ${originalStart}-${originalEnd} -> ${start}-${end}`);
+      }
     }
     
-    const report = await getLocalWorkTimeReport({ start, end, username });
+    const report = await getLocalWorkTimeReport({ start, end, username, isSingleDay });
     console.log(`✅ [local-worktime-report] Вернул ${report.length} локальных пользователей`);
     if (report.length === 0) {
       console.log(`⚠️ [local-worktime-report] Нет данных для периода ${start} - ${end}`);
