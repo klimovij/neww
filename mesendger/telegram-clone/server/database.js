@@ -2486,13 +2486,16 @@ class Database {
                 }
                 const deletedWorktimeCount = this.changes;
                 console.log(`✅ [deleteActivityLogs] Deleted ${deletedWorktimeCount} work_time_logs`);
-                console.log(`🗑️ [deleteActivityLogs] Проверка: сколько записей осталось для периода ${start} - ${end}`);
-                // Проверяем, сколько записей осталось
-                db.get(`SELECT COUNT(*) as count FROM work_time_logs WHERE date(event_time) >= date(?) AND date(event_time) <= date(?)`, [start, end], (checkErr, checkRow) => {
-                  if (!checkErr && checkRow) {
-                    console.log(`🗑️ [deleteActivityLogs] Осталось записей в work_time_logs: ${checkRow.count}`);
-                  }
-                });
+                
+                // Проверяем, сколько записей осталось (только если передан диапазон дат)
+                if (start && end) {
+                  console.log(`🗑️ [deleteActivityLogs] Проверка: сколько записей осталось для периода ${start} - ${end}`);
+                  db.get(`SELECT COUNT(*) as count FROM work_time_logs WHERE date(event_time) >= date(?) AND date(event_time) <= date(?)`, [start, end], (checkErr, checkRow) => {
+                    if (!checkErr && checkRow) {
+                      console.log(`🗑️ [deleteActivityLogs] Осталось записей в work_time_logs: ${checkRow.count}`);
+                    }
+                  });
+                }
                 
                 db.run('COMMIT', function(commitErr) {
                   if (commitErr) return reject(commitErr);
