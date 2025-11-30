@@ -737,7 +737,10 @@ router.get('/local-worktime-report', async (req, res) => {
     if (start) start = String(start).trim();
     if (end) end = String(end).trim();
     
-    console.log(`🔍 [local-worktime-report] Проверка: start="${start}", end="${end}", start===end: ${start === end}`);
+    console.log(`🔍 [local-worktime-report] ДО нормализации: originalStart="${originalStart}", originalEnd="${originalEnd}"`);
+    console.log(`🔍 [local-worktime-report] ПОСЛЕ нормализации: start="${start}", end="${end}"`);
+    console.log(`🔍 [local-worktime-report] Сравнение: start === end: ${start === end}, typeof start: ${typeof start}, typeof end: ${typeof end}`);
+    console.log(`🔍 [local-worktime-report] Длины: start.length=${start?.length}, end.length=${end?.length}`);
     
     if (start && end) {
       if (start === end) {
