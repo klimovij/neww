@@ -657,7 +657,7 @@ router.get('/local-worktime-report', async (req, res) => {
         isSingleDay = true;
         // Оставляем только дату в формате YYYY-MM-DD
         // SQL запросы будут сравнивать только дату из timestamp
-        console.log(`📅 [local-worktime-report] Один день: ${originalStart} (данные за весь день)`);
+        console.log(`📅 [local-worktime-report] Один день: ${originalStart} -> ищем данные за дату: ${start}`);
       } else {
         // Несколько дней: расширяем диапазон для учёта часового пояса (Киев UTC+2/UTC+3)
         const startDate = new Date(start + 'T00:00:00');
