@@ -715,21 +715,20 @@ function WorkTimeReportModal({ isOpen, onRequestClose }) {
                                 onClick={() => handleDeleteUserScreenshots(row)}
                                 title="Удалить скриншоты"
                                 style={{
-                                  padding: '6px 12px',
+                                  padding: '8px',
                                   borderRadius: 10,
                                   border: 'none',
                                   background: 'rgba(231, 76, 60, 0.8)',
                                   color: '#fff',
-                                  fontWeight: 700,
                                   cursor: 'pointer',
                                   display: 'flex',
                                   alignItems: 'center',
-                                  gap: 6,
-                                  whiteSpace: 'nowrap'
+                                  justifyContent: 'center',
+                                  minWidth: '36px',
+                                  minHeight: '36px',
                                 }}
                               >
                                 <FiTrash2 size={16} />
-                                <span>Удалить скрины</span>
                               </button>
                             </div>
                           </td>

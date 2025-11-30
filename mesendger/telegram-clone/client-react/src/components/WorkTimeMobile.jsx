@@ -1478,7 +1478,7 @@ function LocalWorktimeReportModalMobile({
                             fontWeight: 700,
                             flex: '1 1 auto',
                             minWidth: 0,
-                            maxWidth: 'calc(100% - 200px)',
+                            maxWidth: 'calc(100% - 150px)',
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
                             whiteSpace: 'nowrap',
@@ -1519,22 +1519,20 @@ function LocalWorktimeReportModalMobile({
                               onClick={() => onDeleteUserScreenshots && onDeleteUserScreenshots(row)}
                               title="Удалить скриншоты"
                               style={{
-                                padding: '6px 10px',
+                                padding: '8px',
                                 borderRadius: '10px',
                                 border: '2px solid rgba(231, 76, 60, 0.5)',
                                 background: 'rgba(231, 76, 60, 0.8)',
                                 color: '#fff',
-                                fontWeight: 700,
-                                fontSize: '11px',
                                 cursor: 'pointer',
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: 4,
-                                whiteSpace: 'nowrap',
+                                justifyContent: 'center',
+                                minWidth: '36px',
+                                minHeight: '36px',
                               }}
                             >
-                              <FiTrash2 size={12} />
-                              <span>Удалить скрины</span>
+                              <FiTrash2 size={16} />
                             </button>
                           </div>
                         </div>
