@@ -1460,11 +1460,14 @@ function LocalWorktimeReportModalMobile({
                           borderRadius: '12px',
                           padding: '16px',
                           border: '1px solid rgba(255, 224, 130, 0.2)',
+                          width: '100%',
+                          boxSizing: 'border-box',
                         }}
                       >
                         <div style={{
                           display: 'flex',
                           alignItems: 'center',
+                          justifyContent: 'space-between',
                           marginBottom: '12px',
                           gap: '12px',
                           width: '100%',
@@ -1474,15 +1477,16 @@ function LocalWorktimeReportModalMobile({
                             color: '#ffe082',
                             fontSize: '16px',
                             fontWeight: 700,
-                            flex: 1,
+                            flex: '1 1 auto',
                             minWidth: 0,
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
                             whiteSpace: 'nowrap',
+                            marginRight: '12px',
                           }}>
                             {displayName}
                           </h3>
-                          <div style={{ display: 'flex', gap: '8px', flexWrap: 'nowrap', flexShrink: 0, marginLeft: 'auto' }}>
+                          <div style={{ display: 'flex', gap: '8px', flexWrap: 'nowrap', flexShrink: 0 }}>
                             <button
                               type="button"
                               onClick={() => onUserClick(row)}
