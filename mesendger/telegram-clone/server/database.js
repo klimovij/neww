@@ -2204,6 +2204,7 @@ class Database {
             // Это гарантирует, что будут показаны данные именно за выбранный день
             // Поддерживаем оба формата: DD.MM.YYYY и YYYY-MM-DD
             // Важно: для формата DD.MM.YYYY извлекаем дату и конвертируем в YYYY-MM-DD
+            // Также учитываем формат с запятой: "28.11.2025, 18:06:27"
             query += ` AND (
               (length(event_time) >= 10 AND substr(event_time, 3, 1) = '.' AND substr(event_time, 6, 1) = '.'
                 AND (
@@ -2217,7 +2218,7 @@ class Database {
                 AND substr(event_time, 1, 10) = ?
               )
             )`;
-            console.log(`🔍 [getWorkTimeLogs] Один день: ищем дату ${start}`);
+            console.log(`🔍 [getWorkTimeLogs] Один день: ищем ТОЧНО дату ${start}, исключаем все остальные даты`);
             params.push(start, start);
           } else {
             // Для диапазона: сравниваем только даты (без времени) для обоих форматов
