@@ -8,6 +8,7 @@ $SERVER_URL = "http://35.232.108.72"
 $API_KEY = "BsKFpZmdp6ocPKUD6g6YxTgMSTZEaPZXkbddxsifERA="
 $LOG_FILE = "$env:APPDATA\mesendger\pc_startup.log"
 $CONFIG_FILE = "$env:APPDATA\mesendger\agent_config.json"
+$PENDING_SHUTDOWN_FILE = "$env:APPDATA\mesendger\pending_shutdown.json"
 
 # Создаём директории
 $logDir = Split-Path -Parent $LOG_FILE
@@ -98,9 +99,78 @@ function Get-Username {
     }
 }
 
+# Функция отправки отложенных данных о выключении
+function Send-PendingShutdown {
+    if (-not (Test-Path $PENDING_SHUTDOWN_FILE)) {
+        return $false
+    }
+    
+    try {
+        Write-Log "Обнаружен файл с отложенными данными о выключении. Чтение..."
+        $pendingData = Get-Content $PENDING_SHUTDOWN_FILE -Raw | ConvertFrom-Json
+        
+        if (-not $pendingData -or -not $pendingData.username -or -not $pendingData.event_time) {
+            Write-Log "⚠️ Файл с отложенными данными поврежден или пуст"
+            Remove-Item -Path $PENDING_SHUTDOWN_FILE -Force -ErrorAction SilentlyContinue
+            return $false
+        }
+        
+        Write-Log "Отправка отложенных данных о выключении: username=$($pendingData.username), event_time=$($pendingData.event_time)"
+        
+        $jsonData = $pendingData | ConvertTo-Json -Depth 10
+        $headers = @{
+            "Content-Type" = "application/json"
+        }
+        
+        $url = "$SERVER_URL/api/worktime"
+        
+        try {
+            $response = Invoke-RestMethod -Uri $url `
+                -Method POST `
+                -Headers $headers `
+                -Body $jsonData `
+                -TimeoutSec 10 `
+                -ErrorAction Stop
+            
+            if ($response) {
+                $responseJson = $response | ConvertTo-Json -Compress
+                Write-Log "✅ Отложенные данные о выключении успешно отправлены: $responseJson"
+            } else {
+                Write-Log "✅ Отложенные данные о выключении успешно отправлены (пустой ответ)"
+            }
+            
+            # Удаляем файл после успешной отправки
+            Remove-Item -Path $PENDING_SHUTDOWN_FILE -Force -ErrorAction SilentlyContinue
+            Write-Log "Файл с отложенными данными удален"
+            return $true
+        } catch {
+            $errorMsg = $_.Exception.Message
+            Write-Log "❌ Ошибка отправки отложенных данных о выключении: $errorMsg"
+            
+            # Оставляем файл для следующей попытки
+            Write-Log "Файл с отложенными данными оставлен для следующей попытки"
+            return $false
+        }
+    } catch {
+        Write-Log "❌ Ошибка чтения файла с отложенными данными: $($_.Exception.Message)"
+        # Удаляем поврежденный файл
+        Remove-Item -Path $PENDING_SHUTDOWN_FILE -Force -ErrorAction SilentlyContinue
+        return $false
+    }
+}
+
 try {
     Write-Log "=== PC STARTUP SCRIPT STARTED ==="
     Write-Log "PowerShell version: $($PSVersionTable.PSVersion)"
+    
+    # Сначала проверяем и отправляем отложенные данные о выключении (если есть)
+    Write-Log "Проверка наличия отложенных данных о выключении..."
+    $pendingSent = Send-PendingShutdown
+    if ($pendingSent) {
+        Write-Log "✅ Отложенные данные о выключении обработаны"
+    } else {
+        Write-Log "Отложенных данных о выключении не найдено или они уже были отправлены"
+    }
     
     # Получаем username сотрудника (из параметров, конфига или запроса)
     $username = Get-Username $args

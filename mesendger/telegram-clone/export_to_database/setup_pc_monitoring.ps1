@@ -27,6 +27,7 @@ Write-Host "✅ Папка создана" -ForegroundColor Green
 Write-Host "`nКопирование скриптов..." -ForegroundColor Yellow
 $startupScript = Join-Path $scriptDir "send_pc_startup.ps1"
 $shutdownScript = Join-Path $scriptDir "send_pc_shutdown.ps1"
+$shutdownScriptWithFallback = Join-Path $scriptDir "send_pc_shutdown_with_fallback.ps1"
 $activityScript = Join-Path $scriptDir "send_activity.ps1"
 
 if (Test-Path $startupScript) {
@@ -38,13 +39,19 @@ if (Test-Path $startupScript) {
     exit 1
 }
 
+# Копируем старый скрипт выключения (для совместимости)
 if (Test-Path $shutdownScript) {
     Copy-Item $shutdownScript -Destination "$targetDir\send_pc_shutdown.ps1" -Force
-    Write-Host "✅ send_pc_shutdown.ps1 скопирован" -ForegroundColor Green
+    Write-Host "✅ send_pc_shutdown.ps1 скопирован (старая версия, для совместимости)" -ForegroundColor Green
+}
+
+# Копируем новый скрипт выключения с резервным сохранением (основной)
+if (Test-Path $shutdownScriptWithFallback) {
+    Copy-Item $shutdownScriptWithFallback -Destination "$targetDir\send_pc_shutdown_with_fallback.ps1" -Force
+    Write-Host "✅ send_pc_shutdown_with_fallback.ps1 скопирован (новая версия с резервным сохранением)" -ForegroundColor Green
 } else {
-    Write-Host "❌ Файл не найден: $shutdownScript" -ForegroundColor Red
-    Read-Host "Press Enter to exit"
-    exit 1
+    Write-Host "⚠️ Файл не найден: $shutdownScriptWithFallback" -ForegroundColor Yellow
+    Write-Host "   Будет использоваться старая версия send_pc_shutdown.ps1" -ForegroundColor Yellow
 }
 
 if (Test-Path $activityScript) {
@@ -406,7 +413,11 @@ Write-Host "  schtasks /Query /TN Mesendger_PC_Shutdown_Monitor" -ForegroundColo
 
 Write-Host "`n💡 Проверьте задачи в планировщике задач (taskschd.msc):" -ForegroundColor Yellow
 Write-Host "   - Mesendger_PC_Startup_Monitor - триггер: При входе пользователя (с задержкой 30 сек)" -ForegroundColor Gray
-Write-Host "   - Mesendger_PC_Shutdown_Monitor - триггер: При событии выключения (System, User32, 1074)" -ForegroundColor Gray
+Write-Host "     * Отправляет данные о включении ПК" -ForegroundColor DarkGray
+Write-Host "     * Автоматически отправляет сохраненные данные о выключении (если были)" -ForegroundColor DarkGray
+Write-Host "   - Mesendger_PC_Shutdown_Monitor - триггер: При событии выключения (System, EventID 1074/1076/6008)" -ForegroundColor Gray
+Write-Host "     * Использует новый скрипт send_pc_shutdown_with_fallback.ps1" -ForegroundColor DarkGray
+Write-Host "     * Сохраняет данные в файл при ошибке отправки" -ForegroundColor DarkGray
 Write-Host "   - Mesendger_PC_Shutdown_Monitor_Background - триггер: При входе пользователя (фоновый монитор)" -ForegroundColor Gray
 Write-Host "   - Mesendger_PC_Activity_Monitor - триггер: При входе пользователя" -ForegroundColor Gray
 

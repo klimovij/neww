@@ -42,7 +42,13 @@ router.post('/worktime', async (req, res) => {
     // Определяем event_id если не указан
     let finalEventId = event_id;
     if (!finalEventId) {
-      finalEventId = event_type === 'logout' ? 4634 : 4624;
+      if (event_type === 'shutdown') {
+        finalEventId = 1074; // Windows Event ID для выключения системы
+      } else if (event_type === 'logout') {
+        finalEventId = 4634; // Windows Event ID для выхода
+      } else {
+        finalEventId = 4624; // Windows Event ID для входа
+      }
     }
     
     // Конвертируем ISO формат даты (2025-11-26T14:53:13.419Z) в YYYY-MM-DD HH:mm:ss

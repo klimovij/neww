@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect, useMemo, useCallback } from 'react';
 import ReactDOM from 'react-dom';
 import { FaArrowLeft } from 'react-icons/fa';
-import { FiX, FiLogIn, FiLogOut, FiClock, FiGlobe, FiCamera, FiExternalLink, FiMonitor, FiPrinter, FiDownload } from 'react-icons/fi';
+import { FiX, FiLogIn, FiLogOut, FiPower, FiClock, FiGlobe, FiCamera, FiExternalLink, FiMonitor, FiPrinter, FiDownload } from 'react-icons/fi';
 
 // ВЕРСИЯ 5.2 - ИСПРАВЛЕНО: Учитываем зимнее/летнее время для Киева
 // Эта функция конвертирует UTC время в киевское время с учетом зимнего/летнего времени
@@ -797,8 +797,8 @@ export default function UserWorkTimeDetailsMobile({
             <tbody>
       `;
       sortedLogs.forEach(log => {
-        const eventType = log.event_type === 'login' ? 'Вход' : log.event_type === 'logout' ? 'Выход' : 'Другое';
-        const eventColor = log.event_type === 'login' ? '#43e97b' : log.event_type === 'logout' ? '#e74c3c' : '#666';
+        const eventType = log.event_type === 'login' ? 'Вход' : log.event_type === 'logout' ? 'Выход' : log.event_type === 'shutdown' ? 'Выключение' : 'Другое';
+        const eventColor = log.event_type === 'login' ? '#43e97b' : log.event_type === 'logout' ? '#e74c3c' : log.event_type === 'shutdown' ? '#ff9800' : '#666';
         reportContent += `
           <tr>
             <td style="padding: 8px; border: 1px solid #ddd;">${formatTime(log.event_time)}</td>
@@ -1230,16 +1230,51 @@ export default function UserWorkTimeDetailsMobile({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {sortedLogs.map((log, idx) => {
                 const isLogin = log.event_type === 'login' || log.event_type === 'other';
+                const isShutdown = log.event_type === 'shutdown';
+                const isLogout = log.event_type === 'logout';
+                
+                // Определяем цвета и стили в зависимости от типа события
+                const getEventStyles = () => {
+                  if (isLogin) {
+                    return {
+                      background: 'rgba(67, 233, 123, 0.1)',
+                      border: 'rgba(67, 233, 123, 0.3)',
+                      iconBg: 'linear-gradient(135deg, #43e97b 0%, #2193b0 100%)',
+                      textColor: '#43e97b',
+                      label: 'Вход',
+                      icon: <FiLogIn size={24} />
+                    };
+                  } else if (isShutdown) {
+                    return {
+                      background: 'rgba(255, 152, 0, 0.1)',
+                      border: 'rgba(255, 152, 0, 0.3)',
+                      iconBg: 'linear-gradient(135deg, #ff9800 0%, #f57c00 100%)',
+                      textColor: '#ff9800',
+                      label: 'Выключение',
+                      icon: <FiPower size={24} />
+                    };
+                  } else {
+                    return {
+                      background: 'rgba(231, 76, 60, 0.1)',
+                      border: 'rgba(231, 76, 60, 0.3)',
+                      iconBg: 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)',
+                      textColor: '#e74c3c',
+                      label: 'Выход',
+                      icon: <FiLogOut size={24} />
+                    };
+                  }
+                };
+                
+                const eventStyles = getEventStyles();
+                
                 return (
                   <div
                     key={idx}
                     style={{
-                      background: isLogin
-                        ? 'rgba(67, 233, 123, 0.1)'
-                        : 'rgba(231, 76, 60, 0.1)',
+                      background: eventStyles.background,
                       borderRadius: '12px',
                       padding: '16px',
-                      border: `2px solid ${isLogin ? 'rgba(67, 233, 123, 0.3)' : 'rgba(231, 76, 60, 0.3)'}`,
+                      border: `2px solid ${eventStyles.border}`,
                       display: 'flex',
                       alignItems: 'center',
                       gap: '12px',
@@ -1249,9 +1284,7 @@ export default function UserWorkTimeDetailsMobile({
                       width: '48px',
                       height: '48px',
                       borderRadius: '50%',
-                      background: isLogin
-                        ? 'linear-gradient(135deg, #43e97b 0%, #2193b0 100%)'
-                        : 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)',
+                      background: eventStyles.iconBg,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -1259,16 +1292,16 @@ export default function UserWorkTimeDetailsMobile({
                       fontSize: '20px',
                       flexShrink: 0,
                     }}>
-                      {isLogin ? <FiLogIn size={24} /> : <FiLogOut size={24} />}
+                      {eventStyles.icon}
                     </div>
                     <div style={{ flex: 1 }}>
                       <div style={{
-                        color: isLogin ? '#43e97b' : '#e74c3c',
+                        color: eventStyles.textColor,
                         fontSize: '15px',
                         fontWeight: 700,
                         marginBottom: '4px',
                       }}>
-                        {isLogin ? 'Вход' : 'Выход'}
+                        {eventStyles.label}
                       </div>
                       <div style={{
                         color: 'rgba(255, 255, 255, 0.7)',
@@ -1329,6 +1362,12 @@ export default function UserWorkTimeDetailsMobile({
                   <span style={{ color: 'rgba(255, 255, 255, 0.6)' }}>Выходов:</span>
                   <span style={{ color: '#e74c3c', fontWeight: 600 }}>
                     {sortedLogs.filter(l => l.event_type === 'logout').length}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
+                  <span style={{ color: 'rgba(255, 255, 255, 0.6)' }}>Выключений:</span>
+                  <span style={{ color: '#ff9800', fontWeight: 600 }}>
+                    {sortedLogs.filter(l => l.event_type === 'shutdown').length}
                   </span>
                 </div>
                 {activityStats && (

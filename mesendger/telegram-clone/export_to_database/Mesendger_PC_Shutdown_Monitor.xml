@@ -8,13 +8,13 @@
   <Triggers>
     <EventTrigger>
       <Enabled>true</Enabled>
-      <Subscription>&lt;QueryList&gt;&lt;Query Id="0" Path="System"&gt;&lt;Select Path="System"&gt;*[System[Provider[@Name='Microsoft-Windows-Kernel-General'] and (EventID=13 or EventID=12)]]&lt;/Select&gt;&lt;/Query&gt;&lt;/QueryList&gt;</Subscription>
+      <Subscription>&lt;QueryList&gt;&lt;Query Id="0" Path="System"&gt;&lt;Select Path="System"&gt;*[System[Provider[@Name='Microsoft-Windows-Kernel-General'] and (EventID=1074 or EventID=1076 or EventID=6008)]]&lt;/Select&gt;&lt;/Query&gt;&lt;/QueryList&gt;</Subscription>
     </EventTrigger>
   </Triggers>
   <Actions Context="Author">
     <Exec>
       <Command>C:\WINDOWS\System32\WindowsPowerShell\v1.0\powershell.exe</Command>
-      <Arguments>-ExecutionPolicy Bypass -WindowStyle Hidden -NoProfile -Command "$job = Start-Job -ScriptBlock { &amp; 'C:\pc-worktime\send_pc_shutdown.ps1' 'USERNAME' }; Wait-Job -Job $job -Timeout 3; Remove-Job -Job $job -Force"</Arguments>
+      <Arguments>-ExecutionPolicy Bypass -WindowStyle Hidden -NoProfile -Command "$job = Start-Job -ScriptBlock { &amp; 'C:\pc-worktime\send_pc_shutdown_with_fallback.ps1' 'USERNAME' }; Wait-Job -Job $job -Timeout 5; Remove-Job -Job $job -Force"</Arguments>
     </Exec>
   </Actions>
   <Principals>
