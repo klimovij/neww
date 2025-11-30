@@ -1469,41 +1469,47 @@ function LocalWorktimeReportModalMobile({
                           alignItems: 'center',
                           marginBottom: '12px',
                           width: '100%',
-                          gap: '12px',
+                          position: 'relative',
                         }}>
                           <h3 style={{
                             margin: 0,
                             color: '#ffe082',
                             fontSize: '16px',
                             fontWeight: 700,
-                            flex: '1 1 0%',
+                            flex: '1 1 auto',
                             minWidth: 0,
+                            maxWidth: 'calc(100% - 200px)',
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
                             whiteSpace: 'nowrap',
+                            paddingRight: '12px',
                           }}>
                             {displayName}
                           </h3>
                           <div style={{ 
                             display: 'flex', 
-                            gap: '8px', 
+                            gap: '6px', 
                             flexWrap: 'nowrap', 
                             flexShrink: 0,
                             flexGrow: 0,
                             alignItems: 'center',
+                            position: 'absolute',
+                            right: 0,
+                            top: 0,
                           }}>
                             <button
                               type="button"
                               onClick={() => onUserClick(row)}
                               style={{
-                                padding: '8px 16px',
+                                padding: '6px 12px',
                                 borderRadius: '10px',
                                 border: '2px solid rgba(33, 147, 176, 0.5)',
                                 background: 'linear-gradient(135deg, #2193b0 0%, #43e97b 100%)',
                                 color: '#fff',
                                 fontWeight: 700,
-                                fontSize: '14px',
+                                fontSize: '12px',
                                 cursor: 'pointer',
+                                whiteSpace: 'nowrap',
                               }}
                             >
                               Подробнее
@@ -1513,20 +1519,21 @@ function LocalWorktimeReportModalMobile({
                               onClick={() => onDeleteUserScreenshots && onDeleteUserScreenshots(row)}
                               title="Удалить скриншоты"
                               style={{
-                                padding: '8px 12px',
+                                padding: '6px 10px',
                                 borderRadius: '10px',
                                 border: '2px solid rgba(231, 76, 60, 0.5)',
                                 background: 'rgba(231, 76, 60, 0.8)',
                                 color: '#fff',
                                 fontWeight: 700,
-                                fontSize: '12px',
+                                fontSize: '11px',
                                 cursor: 'pointer',
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: 6
+                                gap: 4,
+                                whiteSpace: 'nowrap',
                               }}
                             >
-                              <FiTrash2 size={14} />
+                              <FiTrash2 size={12} />
                               <span>Удалить скрины</span>
                             </button>
                           </div>
