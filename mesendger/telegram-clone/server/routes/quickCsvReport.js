@@ -67,19 +67,25 @@ async function getLocalWorkTimeReport({ start, end, username, isSingleDay = fals
       if (!log.timestamp) return false;
       // Извлекаем дату из timestamp
       let logDate = null;
-      if (typeof log.timestamp === 'string') {
-        if (log.timestamp.length >= 10 && log.timestamp[4] === '-' && log.timestamp[7] === '-') {
+      const timestampStr = String(log.timestamp);
+      if (timestampStr.length >= 10) {
+        if (timestampStr[4] === '-' && timestampStr[7] === '-') {
           // Формат YYYY-MM-DD
-          logDate = log.timestamp.substr(0, 10);
+          logDate = timestampStr.substr(0, 10);
         } else {
           try {
-            logDate = new Date(log.timestamp).toISOString().slice(0, 10);
+            logDate = new Date(timestampStr).toISOString().slice(0, 10);
           } catch (e) {
+            logMsg(`⚠️ Не удалось распарсить timestamp: ${timestampStr}`);
             return false;
           }
         }
       }
       // Если дата не совпадает с выбранной, исключаем
+      if (logDate && logDate !== start) {
+        logMsg(`🚫 Фильтруем activity_log: timestamp=${timestampStr}, извлеченная дата=${logDate}, ожидаемая=${start}`);
+        return false;
+      }
       return logDate === start;
     });
     logMsg(`activity_logs после фильтрации для одного дня: ${filteredActivityLogs.length} записей (было ${activityLogs.length})`);
@@ -141,25 +147,32 @@ async function getLocalWorkTimeReport({ start, end, username, isSingleDay = fals
     // Если это один день, дополнительно фильтруем по дате
     if (isSingleDay && log.event_time) {
       let logDate = null;
-      // Извлекаем дату из event_time
-      if (log.event_time.length >= 10 && log.event_time[2] === '.' && log.event_time[5] === '.') {
-        // Формат DD.MM.YYYY
-        const year = log.event_time.substr(6, 4);
-        const month = log.event_time.substr(3, 2);
-        const day = log.event_time.substr(0, 2);
-        logDate = `${year}-${month}-${day}`;
-      } else if (log.event_time.length >= 10 && log.event_time[4] === '-' && log.event_time[7] === '-') {
-        // Формат YYYY-MM-DD
-        logDate = log.event_time.substr(0, 10);
+      const eventTimeStr = String(log.event_time);
+      // Извлекаем дату из event_time (поддержка форматов DD.MM.YYYY и YYYY-MM-DD, с запятой или без)
+      if (eventTimeStr.length >= 10) {
+        if (eventTimeStr[2] === '.' && eventTimeStr[5] === '.') {
+          // Формат DD.MM.YYYY (может быть с запятой: "28.11.2025, 18:06:27")
+          const year = eventTimeStr.substr(6, 4);
+          const month = eventTimeStr.substr(3, 2);
+          const day = eventTimeStr.substr(0, 2);
+          logDate = `${year}-${month}-${day}`;
+        } else if (eventTimeStr[4] === '-' && eventTimeStr[7] === '-') {
+          // Формат YYYY-MM-DD
+          logDate = eventTimeStr.substr(0, 10);
+        }
       }
       // Если дата не совпадает с выбранной, исключаем
       if (logDate && logDate !== start) {
+        logMsg(`🚫 Фильтруем лог: event_time=${eventTimeStr}, извлеченная дата=${logDate}, ожидаемая=${start}`);
         return false;
+      }
+      if (!logDate) {
+        logMsg(`⚠️ Не удалось извлечь дату из event_time: ${eventTimeStr}`);
       }
     }
     return true; // Включаем все логи из work_time_logs
   });
-  logMsg(`Локальных логов из work_time_logs после фильтрации: ${allLogs.length}`);
+  logMsg(`Локальных логов из work_time_logs после фильтрации: ${allLogs.length} (было ${periodLogs.length})`);
   
   const userMap = {};
   for (const log of allLogs) {
