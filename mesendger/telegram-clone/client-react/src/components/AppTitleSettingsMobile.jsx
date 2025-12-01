@@ -329,9 +329,13 @@ export default function AppTitleSettingsMobile({ open, onClose, onOpenMobileSide
         if (familyMatch && familyMatch[1]) {
           // Декодируем URL и очищаем название
           const fontName = decodeURIComponent(familyMatch[1]).replace(/\+/g, ' ').split(':')[0];
-          // Обновляем также название шрифта
+          // Обновляем также название шрифта и fontFamily
           setTimeout(() => {
-            setSettings(prev => ({ ...prev, customFontName: fontName }));
+            setSettings(prev => ({ 
+              ...prev, 
+              customFontName: fontName,
+              fontFamily: `'${fontName}', sans-serif`
+            }));
           }, 0);
         }
       }
@@ -1128,6 +1132,16 @@ export default function AppTitleSettingsMobile({ open, onClose, onOpenMobileSide
                 <option value="'Comic Sans MS', cursive">Comic Sans MS</option>
                 <option value="'Roboto', sans-serif">Roboto</option>
                 <option value="'Open Sans', sans-serif">Open Sans</option>
+                
+                {/* Кастомный шрифт - если добавлен */}
+                {settings.customFontName && (
+                  <>
+                    <option disabled>──────────</option>
+                    <option value={`'${settings.customFontName}', sans-serif`}>
+                      {settings.customFontName} ⭐ (Кастомный)
+                    </option>
+                  </>
+                )}
               </select>
               
               <div style={{ marginTop: '12px' }}>
