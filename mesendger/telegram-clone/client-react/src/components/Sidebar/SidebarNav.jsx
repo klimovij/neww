@@ -1215,10 +1215,17 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar, 
                   const style = {
                     fontSize: appTitleSettings.fontSize || '2em',
                     fontFamily: appTitleSettings.customFontName ? `"${appTitleSettings.customFontName}", ${appTitleSettings.fontFamily}` : appTitleSettings.fontFamily,
-                    fontWeight: appTitleSettings.fontWeight || 'normal',
-                    fontStyle: appTitleSettings.fontStyle || 'normal',
-                    marginTop: 2,
+                    marginTop: 2
                   };
+                  
+                  // Применяем fontWeight и fontStyle только если они явно заданы (не 'normal')
+                  // Это позволяет шрифтам использовать свой естественный стиль (например, Shrikhand)
+                  if (appTitleSettings.fontWeight && appTitleSettings.fontWeight !== 'normal') {
+                    style.fontWeight = appTitleSettings.fontWeight;
+                  }
+                  if (appTitleSettings.fontStyle && appTitleSettings.fontStyle !== 'normal') {
+                    style.fontStyle = appTitleSettings.fontStyle;
+                  }
 
                   // Применяем градиент (если не используется градиентная анимация)
                   const effectType = appTitleSettings.effectType || 'neon';

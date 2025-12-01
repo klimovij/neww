@@ -858,7 +858,7 @@ export default function AppTitleSettingsModal({ open, onClose }) {
             {/* Font Weight */}
             <div style={{ marginTop: '16px' }}>
               <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, color: '#e2e8f0' }}>
-                Насыщенность шрифта
+                Насыщенность шрифта (опционально)
               </label>
               <select
                 value={settings.fontWeight || 'normal'}
@@ -873,22 +873,26 @@ export default function AppTitleSettingsModal({ open, onClose }) {
                   fontSize: '1em'
                 }}
               >
+                <option value="normal">По умолчанию (естественный стиль шрифта)</option>
                 <option value="100">Тонкий (100)</option>
                 <option value="200">Очень лёгкий (200)</option>
                 <option value="300">Лёгкий (300)</option>
-                <option value="normal">Обычный (400)</option>
+                <option value="400">Обычный (400)</option>
                 <option value="500">Средний (500)</option>
                 <option value="600">Полужирный (600)</option>
                 <option value="bold">Жирный (700)</option>
                 <option value="800">Очень жирный (800)</option>
                 <option value="900">Сверхжирный (900)</option>
               </select>
+              <div style={{ fontSize: '0.85em', color: '#9ca3af', marginTop: '4px' }}>
+                Оставьте "По умолчанию", чтобы шрифт выглядел как в Google Fonts
+              </div>
             </div>
             
             {/* Font Style */}
             <div style={{ marginTop: '16px' }}>
               <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, color: '#e2e8f0' }}>
-                Стиль шрифта
+                Стиль шрифта (опционально)
               </label>
               <select
                 value={settings.fontStyle || 'normal'}
@@ -903,12 +907,12 @@ export default function AppTitleSettingsModal({ open, onClose }) {
                   fontSize: '1em'
                 }}
               >
-                <option value="normal">Обычный</option>
+                <option value="normal">По умолчанию (естественный стиль шрифта)</option>
                 <option value="italic">Курсив (Italic)</option>
                 <option value="oblique">Наклонный (Oblique)</option>
               </select>
               <div style={{ fontSize: '0.85em', color: '#9ca3af', marginTop: '4px' }}>
-                Если шрифт выглядит наклонным на ПК, но не на телефоне - измените на "Обычный"
+                Оставьте "По умолчанию", чтобы шрифт выглядел как в Google Fonts
               </div>
             </div>
           </div>
