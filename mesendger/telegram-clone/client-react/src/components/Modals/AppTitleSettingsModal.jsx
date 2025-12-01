@@ -233,6 +233,29 @@ export default function AppTitleSettingsModal({ open, onClose }) {
       processedValue = isNaN(numValue) ? 0 : numValue;
     }
     
+    // Обработка customFontUrl - извлекаем URL из HTML если вставлен код
+    if (key === 'customFontUrl' && value) {
+      // Проверяем, содержит ли значение HTML теги
+      if (value.includes('<link') || value.includes('href=')) {
+        // Извлекаем URL из href атрибута
+        const hrefMatch = value.match(/href=["']([^"']+)["']/);
+        if (hrefMatch && hrefMatch[1]) {
+          processedValue = hrefMatch[1];
+        }
+        
+        // Пытаемся извлечь название шрифта из family параметра
+        const familyMatch = value.match(/family=([^&:"'<>]+)/);
+        if (familyMatch && familyMatch[1]) {
+          // Декодируем URL и очищаем название
+          const fontName = decodeURIComponent(familyMatch[1]).replace(/\+/g, ' ').split(':')[0];
+          // Обновляем также название шрифта
+          setTimeout(() => {
+            setSettings(prev => ({ ...prev, customFontName: fontName }));
+          }, 0);
+        }
+      }
+    }
+    
     const newSettings = { ...settings, [key]: processedValue };
     setSettings(newSettings);
     setHasChanges(true);
@@ -282,6 +305,80 @@ export default function AppTitleSettingsModal({ open, onClose }) {
         } catch (error) {
           console.error('Ошибка при сжатии изображения снеговика:', error);
           alert('Ошибка при обработке изображения. Попробуйте другое изображение.');
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Обработка загрузки файла шрифта
+  const handleFontFileUpload = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      // Проверяем формат файла
+      const validExtensions = ['.ttf', '.woff', '.woff2', '.otf'];
+      const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+      
+      if (!validExtensions.includes(fileExtension)) {
+        alert('Неподдерживаемый формат файла. Поддерживаются: TTF, WOFF, WOFF2, OTF');
+        return;
+      }
+      
+      // Проверяем размер файла (максимум 2MB для шрифтов)
+      const maxSize = 2 * 1024 * 1024; // 2MB
+      if (file.size > maxSize) {
+        alert('Файл шрифта слишком большой. Максимальный размер: 2MB');
+        return;
+      }
+      
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        try {
+          // Получаем base64 данные шрифта
+          const fontData = reader.result;
+          
+          // Определяем формат для @font-face
+          let fontFormat = 'truetype';
+          if (fileExtension === '.woff') fontFormat = 'woff';
+          if (fileExtension === '.woff2') fontFormat = 'woff2';
+          if (fileExtension === '.otf') fontFormat = 'opentype';
+          
+          // Получаем название шрифта из имени файла
+          const fontName = file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
+          
+          // Создаем @font-face правило
+          const fontFaceRule = `
+            @font-face {
+              font-family: '${fontName}';
+              src: url('${fontData}') format('${fontFormat}');
+              font-weight: normal;
+              font-style: normal;
+            }
+          `;
+          
+          // Добавляем стиль в документ
+          let styleElement = document.getElementById('custom-uploaded-font');
+          if (!styleElement) {
+            styleElement = document.createElement('style');
+            styleElement.id = 'custom-uploaded-font';
+            document.head.appendChild(styleElement);
+          }
+          styleElement.textContent = fontFaceRule;
+          
+          // Сохраняем данные шрифта и имя
+          const newSettings = {
+            ...settings,
+            customFontUrl: fontData, // Сохраняем base64 данные
+            customFontName: fontName,
+            fontFamily: `'${fontName}', sans-serif`
+          };
+          setSettings(newSettings);
+          setHasChanges(true);
+          
+          alert(`Шрифт "${fontName}" успешно загружен!`);
+        } catch (error) {
+          console.error('Ошибка при загрузке шрифта:', error);
+          alert('Ошибка при обработке файла шрифта. Попробуйте другой файл.');
         }
       };
       reader.readAsDataURL(file);
@@ -642,13 +739,25 @@ export default function AppTitleSettingsModal({ open, onClose }) {
                 Загрузить шрифт из интернета (опционально)
               </label>
               <div style={{ fontSize: '0.85em', color: '#9ca3af', marginBottom: '8px' }}>
-                Например, для Google Fonts: https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap
+                Вставьте код Google Fonts или укажите прямой URL:<br/>
+                <code style={{ background: '#1a202c', padding: '2px 6px', borderRadius: '4px', fontSize: '0.9em', display: 'inline-block', marginTop: '4px' }}>
+                  &lt;link href="https://fonts.googleapis.com/..." rel="stylesheet"&gt;
+                </code>
               </div>
               <input
                 type="text"
                 value={settings.customFontUrl || ''}
                 onChange={(e) => handleChange('customFontUrl', e.target.value)}
-                placeholder="URL шрифта (CSS файл)"
+                onPaste={(e) => {
+                  // Даем React обработать вставку через handleChange
+                  setTimeout(() => {
+                    const pastedText = e.target.value;
+                    if (pastedText.includes('<link') || pastedText.includes('href=')) {
+                      handleChange('customFontUrl', pastedText);
+                    }
+                  }, 10);
+                }}
+                placeholder="Вставьте код <link> или URL шрифта"
                 style={{
                   width: '100%',
                   padding: '12px',
@@ -672,11 +781,75 @@ export default function AppTitleSettingsModal({ open, onClose }) {
                   border: '1px solid #2f3440',
                   background: '#0e1420',
                   color: '#fff',
-                  fontSize: '1em'
+                  fontSize: '1em',
+                  marginBottom: '12px'
                 }}
               />
-              <div style={{ fontSize: '0.85em', color: '#9ca3af', marginTop: '4px' }}>
-                Укажите название шрифта точно так, как оно указано в CSS файле
+              
+              {/* Разделитель ИЛИ */}
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                margin: '16px 0',
+                gap: '12px'
+              }}>
+                <div style={{ flex: 1, height: '1px', background: '#2f3440' }}></div>
+                <span style={{ color: '#9ca3af', fontSize: '0.9em', fontWeight: 600 }}>ИЛИ</span>
+                <div style={{ flex: 1, height: '1px', background: '#2f3440' }}></div>
+              </div>
+              
+              {/* Загрузка файла шрифта */}
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, color: '#e2e8f0', fontSize: '0.95em' }}>
+                Загрузить файл шрифта с компьютера
+              </label>
+              <div style={{ fontSize: '0.85em', color: '#9ca3af', marginBottom: '8px' }}>
+                Поддерживаемые форматы: TTF, WOFF, WOFF2, OTF (макс. 2MB)
+              </div>
+              <input
+                type="file"
+                accept=".ttf,.woff,.woff2,.otf"
+                onChange={handleFontFileUpload}
+                style={{ display: 'none' }}
+                id="font-file-upload"
+              />
+              <button
+                type="button"
+                onClick={() => document.getElementById('font-file-upload').click()}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  borderRadius: '8px',
+                  border: '2px dashed #2f3440',
+                  background: '#1a202c',
+                  color: '#a3e635',
+                  fontSize: '1em',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.borderColor = '#a3e635';
+                  e.target.style.background = '#0e1420';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.borderColor = '#2f3440';
+                  e.target.style.background = '#1a202c';
+                }}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="17 8 12 3 7 8"></polyline>
+                  <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+                Выбрать файл шрифта
+              </button>
+              
+              <div style={{ fontSize: '0.85em', color: '#9ca3af', marginTop: '8px' }}>
+                После загрузки файла шрифт автоматически применится к названию
               </div>
             </div>
           </div>
