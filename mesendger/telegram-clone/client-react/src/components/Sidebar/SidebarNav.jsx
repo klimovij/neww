@@ -17,7 +17,7 @@ import WorkTimeMobile from '../WorkTimeMobile';
 import LeavesWorktimeMobile from '../LeavesWorktimeMobile';
 import AdminMobile from '../AdminMobile';
 import { FaCalendarAlt, FaTasks, FaNewspaper, FaComments, FaUserCircle, FaBars } from 'react-icons/fa';
-import { FiSettings, FiAlertTriangle, FiSmile, FiFileText, FiX } from 'react-icons/fi';
+import { FiSettings, FiAlertTriangle, FiSmile, FiFileText, FiX, FiMonitor } from 'react-icons/fi';
 import { Badge } from '../../styles/GlobalStyles';
 import { useApp } from '../../context/AppContext';
 import ChatList from './ChatList';
@@ -39,6 +39,7 @@ import TodoModal from '../Modals/TodoModal';
 import EmployeeRatingModal from '../Rating/EmployeeRatingModal';
 import AppTitleSettingsModal from '../Modals/AppTitleSettingsModal';
 import AppTitleSettingsMobile from '../AppTitleSettingsMobile';
+import FrontendSettingsModal from '../Modals/FrontendSettingsModal';
 
 const navs = [
   { key: 'all-leaves', label: 'Общий календарь', icon: <FaUserCircle />, color: '#b2bec3', event: 'show-all-leaves', tip: 'Календарь всех сотрудников' },
@@ -246,6 +247,7 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar, 
   const [showTodoModal, setShowTodoModal] = useState(false);
   const [showRatingModal, setShowRatingModal] = useState(false);
   const [showAppTitleSettingsModal, setShowAppTitleSettingsModal] = useState(false);
+  const [showFrontendSettingsModal, setShowFrontendSettingsModal] = useState(false);
   const [portalKey, setPortalKey] = useState(0);
   const { state, dispatch } = useApp();
   const [showLeavesWorktimeButton, setShowLeavesWorktimeButton] = useState(false);
@@ -562,6 +564,7 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar, 
       showEmojiSettingsModal ||
       showTemplatesModal ||
       showAppTitleSettingsModal ||
+      showFrontendSettingsModal ||
       showUserRightsModal ||
       showTodoModal ||
       showRatingModal;
@@ -587,6 +590,7 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar, 
     showEmojiSettingsModal,
     showTemplatesModal,
     showAppTitleSettingsModal,
+    showFrontendSettingsModal,
     showUserRightsModal,
     showTodoModal,
     showRatingModal,
@@ -2161,6 +2165,26 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar, 
             >
               <FiSettings size={18} /> Управление названием приложения
             </button>
+            {state.user?.role === 'admin' && (
+              <button
+                onClick={() => setShowFrontendSettingsModal(true)}
+                style={{
+                  padding:'12px 16px',
+                  borderRadius:12,
+                  border:'1px solid rgba(96,165,250,0.45)',
+                  background:'rgba(96,165,250,0.18)',
+                  color:'#60a5fa',
+                  cursor:'pointer',
+                  fontWeight:700,
+                  display:'inline-flex',
+                  alignItems:'center',
+                  gap:8
+                }}
+                title="Настройки фронтенда"
+              >
+                <FiMonitor size={18} /> Фронтенд
+              </button>
+            )}
             {(state.user?.role === 'admin' || state.user?.role === 'hr') && (
               <button
                 onClick={() => setShowUserRightsModal(true)}
@@ -2607,6 +2631,14 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar, 
           onClose={() => setShowAppTitleSettingsModal(false)} 
         />,
         showAppTitleSettingsModal
+      )}
+      {createSafePortal(
+        <FrontendSettingsModal 
+          key={`frontend-settings-${portalKey}`} 
+          open={showFrontendSettingsModal} 
+          onClose={() => setShowFrontendSettingsModal(false)} 
+        />,
+        showFrontendSettingsModal
       )}
       {createSafePortal(
         <div 

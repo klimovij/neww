@@ -1,4 +1,4 @@
-param(
+﻿param(
     [Parameter(Mandatory = $true)]
     [string]$StartDate,  # format: YYYY-MM-DD or DD.MM.YYYY
     

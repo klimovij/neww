@@ -8,6 +8,7 @@ import TemplatesManagementMobile from './TemplatesManagementMobile';
 import AppTitleSettingsMobile from './AppTitleSettingsMobile';
 import UserRightsMobile from './UserRightsMobile';
 import PcActivityManagementModal from './Modals/PcActivityManagementModal';
+import FrontendSettingsModal from './Modals/FrontendSettingsModal';
 
 export default function AdminMobile({ 
   open, 
@@ -36,6 +37,7 @@ export default function AdminMobile({
   const [showEmojiSettings, setShowEmojiSettings] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
   const [showAppTitleSettings, setShowAppTitleSettings] = useState(false);
+  const [showFrontendSettings, setShowFrontendSettings] = useState(false);
   const [showUserRights, setShowUserRights] = useState(false);
   const [showPcActivityManagement, setShowPcActivityManagement] = useState(false);
 
@@ -522,6 +524,30 @@ export default function AdminMobile({
             >
               <FiSettings size={20} /> Управление названием приложения
             </button>
+            {state.user?.role === 'admin' && (
+              <button
+                onClick={() => {
+                  setShowFrontendSettings(true);
+                }}
+                style={{
+                  padding:'14px 16px',
+                  borderRadius:12,
+                  border:'1px solid rgba(96,165,250,0.45)',
+                  background:'rgba(96,165,250,0.18)',
+                  color:'#60a5fa',
+                  cursor:'pointer',
+                  fontWeight:700,
+                  display:'flex',
+                  alignItems:'center',
+                  gap:10,
+                  fontSize: '15px',
+                  width: '100%',
+                  justifyContent: 'center'
+                }}
+              >
+                <FiMonitor size={20} /> Фронтенд
+              </button>
+            )}
             {(state.user?.role === 'admin' || state.user?.role === 'hr') && (
               <>
                 <button
@@ -1180,6 +1206,15 @@ export default function AdminMobile({
           open={showAppTitleSettings}
           onClose={() => setShowAppTitleSettings(false)}
           onOpenMobileSidebar={onOpenMobileSidebar}
+        />,
+        document.body
+      )}
+      
+      {/* Frontend Settings Modal - рендерим через отдельный портал с высоким z-index */}
+      {showFrontendSettings && ReactDOM.createPortal(
+        <FrontendSettingsModal
+          open={showFrontendSettings}
+          onClose={() => setShowFrontendSettings(false)}
         />,
         document.body
       )}

@@ -12,7 +12,7 @@
 
 PowerShell → перейти в папку export_to_database:
 
-.\export_remote_worktime_range.ps1 -StartDate 2025-11-01 -EndDate 2025-11-28
+.\export_remote_worktime_range.ps1 -StartDate 2025-11-01 -EndDate 2025-11-23
 
 ИЛИ (формат DD.MM.YYYY):
 

@@ -3,6 +3,8 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
+import { initializeFrontendSettings } from './utils/frontendSettings';
+
 // Глобальная переменная для звука уведомлений чата
 // Пробуем разные пути в зависимости от окружения
 if (process.env.NODE_ENV === 'production') {
@@ -13,6 +15,9 @@ if (process.env.NODE_ENV === 'production') {
   window.MESSAGE_SOUND_URL = '/message2.mp3';
 }
 // Если файл не найден, функция notificationSound.js попробует альтернативный путь
+
+// Инициализируем настройки фронтенда (применяем сохраненные CSS переменные)
+initializeFrontendSettings();
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(

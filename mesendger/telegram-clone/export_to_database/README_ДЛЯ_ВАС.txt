@@ -75,10 +75,7 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
 .\export_remote_worktime.ps1
 
 # Отправить данные за конкретную дату
-.\export_remote_worktime.ps1 -Date 2025-11-30
-
-# 🆕 НОВОЕ! Отправить данные за ПЕРИОД (с 1 по 28 ноября)
-.\export_remote_worktime_range.ps1 -StartDate 2025-11-01 -EndDate 2025-11-28
+.\export_remote_worktime.ps1 -Date 2025-11-29
 
 Ожидаемый результат:
 ✅ Found database: ...
@@ -87,12 +84,6 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
 🚀 Sending to server...
 ✅ Server response: { "success": true, "imported": 25 }
 🎉 Successfully imported 25 events!
-
-💡 СОВЕТ: Если нужно загрузить данные за несколько дней сразу,
-используйте export_remote_worktime_range.ps1 - он обработает
-все дни автоматически и покажет статистику!
-
-📖 Инструкция: ЭКСПОРТ_ЗА_ПЕРИОД.md
 
 
 ШАГ 7: Проверьте задачу в планировщике

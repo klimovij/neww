@@ -1,3 +1,15 @@
+:root {
+  /* Настройки фронтенда (могут быть изменены через модалку настроек) */
+  --main-background: #111827;
+  --main-background-image: none;
+  --main-background-image-opacity: 1;
+  --modal-background: #1f2937;
+  --sidebar-button-background: rgba(59, 130, 246, 0.1);
+  --sidebar-text-color: #ffffff;
+  --sidebar-text-size: 14px;
+  --sidebar-font-family: Inter, system-ui, -apple-system, sans-serif;
+}
+
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
@@ -11,6 +23,24 @@ body {
   margin: 0;
   padding: 0;
   font-family: 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji', 'Segoe UI', 'Arial', sans-serif;
-  background: #f9f9f9;
+  background: var(--main-background);
   min-height: 100vh;
+  position: relative;
+}
+
+/* Применяем фоновое изображение если задано */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: var(--main-background-image);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  opacity: var(--main-background-image-opacity);
+  pointer-events: none;
+  z-index: -1;
 }
