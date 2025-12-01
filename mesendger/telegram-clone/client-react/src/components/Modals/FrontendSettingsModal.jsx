@@ -153,24 +153,52 @@ export default function FrontendSettingsModal({ open, onClose }) {
   };
 
   const handleReset = () => {
-    if (!window.confirm('Вы уверены, что хотите сбросить все настройки к значениям по умолчанию?')) {
+    if (!window.confirm('⚠️ Вы уверены, что хотите сбросить ВСЕ настройки к значениям по умолчанию?\n\nЭто действие нельзя отменить!')) {
       return;
     }
     
-    setSettings(DEFAULT_SETTINGS);
-    localStorage.removeItem('frontendSettings');
-    
-    // Очищаем CSS переменные
-    document.documentElement.style.removeProperty('--main-background');
-    document.documentElement.style.removeProperty('--main-background-image');
-    document.documentElement.style.removeProperty('--main-background-image-opacity');
-    document.documentElement.style.removeProperty('--modal-background');
-    document.documentElement.style.removeProperty('--sidebar-button-background');
-    document.documentElement.style.removeProperty('--sidebar-text-color');
-    document.documentElement.style.removeProperty('--sidebar-text-size');
-    document.documentElement.style.removeProperty('--sidebar-font-family');
-    
-    setHasChanges(false);
+    try {
+      // Удаляем все сохраненные настройки
+      localStorage.removeItem('frontendSettings');
+      
+      // Очищаем ВСЕ CSS переменные
+      document.documentElement.style.removeProperty('--main-background');
+      document.documentElement.style.removeProperty('--main-background-image');
+      document.documentElement.style.removeProperty('--main-background-image-opacity');
+      document.documentElement.style.removeProperty('--modal-background');
+      document.documentElement.style.removeProperty('--modal-background-image');
+      document.documentElement.style.removeProperty('--modal-background-image-opacity');
+      document.documentElement.style.removeProperty('--sidebar-button-background');
+      document.documentElement.style.removeProperty('--sidebar-button-background-opacity');
+      document.documentElement.style.removeProperty('--sidebar-text-color');
+      document.documentElement.style.removeProperty('--sidebar-text-size');
+      document.documentElement.style.removeProperty('--sidebar-font-family');
+      
+      // Применяем дефолтные настройки
+      setSettings(DEFAULT_SETTINGS);
+      
+      // Применяем дефолтные значения к DOM
+      document.documentElement.style.setProperty('--main-background', DEFAULT_SETTINGS.mainBackground);
+      document.documentElement.style.setProperty('--main-background-image', 'none');
+      document.documentElement.style.setProperty('--modal-background', DEFAULT_SETTINGS.modalBackground);
+      document.documentElement.style.setProperty('--modal-background-image', 'none');
+      document.documentElement.style.setProperty('--sidebar-button-background', DEFAULT_SETTINGS.sidebarButtonBackground);
+      document.documentElement.style.setProperty('--sidebar-button-background-opacity', DEFAULT_SETTINGS.sidebarButtonBackgroundImageOpacity);
+      document.documentElement.style.setProperty('--sidebar-text-color', DEFAULT_SETTINGS.sidebarTextColor);
+      document.documentElement.style.setProperty('--sidebar-text-size', DEFAULT_SETTINGS.sidebarTextSize);
+      document.documentElement.style.setProperty('--sidebar-font-family', DEFAULT_SETTINGS.sidebarFontFamily);
+      
+      setHasChanges(false);
+      
+      // Уведомление и перезагрузка страницы для полного обновления
+      alert('✅ Настройки сброшены к дефолтным значениям!\n\nСтраница будет перезагружена.');
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
+    } catch (error) {
+      console.error('Ошибка сброса настроек:', error);
+      alert('❌ Ошибка при сбросе настроек');
+    }
   };
 
   if (!open) return null;
@@ -845,10 +873,22 @@ export default function FrontendSettingsModal({ open, onClose }) {
               color: '#ef4444',
               cursor: 'pointer',
               fontWeight: 600,
-              fontSize: '14px'
+              fontSize: '14px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              transition: 'all 0.2s'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.background = 'rgba(239, 68, 68, 0.2)';
+              e.target.style.borderColor = 'rgba(239, 68, 68, 0.7)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.background = 'rgba(239, 68, 68, 0.1)';
+              e.target.style.borderColor = 'rgba(239, 68, 68, 0.5)';
             }}
           >
-            Сбросить
+            ⚠️ Сбросить к дефолту
           </button>
 
           <div style={{ display: 'flex', gap: '12px' }}>
