@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { FiX, FiMonitor, FiImage, FiType, FiChevronDown, FiChevronUp } from 'react-icons/fi';
-import api from '../../utils/axiosConfig';
 
 const DEFAULT_SETTINGS = {
   // Основной фон
