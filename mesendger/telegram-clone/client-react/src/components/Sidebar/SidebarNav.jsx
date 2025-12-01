@@ -1269,7 +1269,7 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar, 
                 <span className="neon-issa-plus issa-plus-festive" style={(() => {
                   const style = {
                     fontSize: appTitleSettings.fontSize || '2em',
-                    fontFamily: appTitleSettings.customFontName ? `"${appTitleSettings.customFontName}", ${appTitleSettings.fontFamily}` : appTitleSettings.fontFamily,
+                    fontFamily: appTitleSettings.fontFamily, // Используем напрямую - он уже содержит правильное значение
                     marginTop: 2
                   };
                   

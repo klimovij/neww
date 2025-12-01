@@ -772,22 +772,48 @@ export default function AppTitleSettingsMobile({ open, onClose, onOpenMobileSide
   };
 
   useEffect(() => {
-    if (settings.customFontUrl) {
-      const existingLink = document.querySelector(`link[data-custom-font="${settings.customFontUrl}"]`);
-      if (!existingLink) {
-        const link = document.createElement('link');
-        link.rel = 'stylesheet';
-        link.href = settings.customFontUrl;
-        link.setAttribute('data-custom-font', settings.customFontUrl);
-        document.head.appendChild(link);
+    if (settings.customFontUrl && settings.customFontName) {
+      if (settings.customFontUrl.startsWith('data:')) {
+        // Это загруженный файл шрифта (base64), создаем @font-face
+        let styleElement = document.getElementById('custom-font-face-preview-mobile');
+        if (!styleElement) {
+          styleElement = document.createElement('style');
+          styleElement.id = 'custom-font-face-preview-mobile';
+          document.head.appendChild(styleElement);
+        }
+        
+        // Определяем формат шрифта из MIME типа
+        let fontFormat = 'truetype';
+        if (settings.customFontUrl.includes('font/woff2')) fontFormat = 'woff2';
+        else if (settings.customFontUrl.includes('font/woff')) fontFormat = 'woff';
+        else if (settings.customFontUrl.includes('font/otf')) fontFormat = 'opentype';
+        
+        styleElement.textContent = `
+          @font-face {
+            font-family: '${settings.customFontName}';
+            src: url('${settings.customFontUrl}') format('${fontFormat}');
+            font-weight: normal;
+            font-style: normal;
+          }
+        `;
+      } else {
+        // Это URL Google Fonts, создаем <link>
+        const existingLink = document.querySelector(`link[data-custom-font="${settings.customFontUrl}"]`);
+        if (!existingLink) {
+          const link = document.createElement('link');
+          link.rel = 'stylesheet';
+          link.href = settings.customFontUrl;
+          link.setAttribute('data-custom-font', settings.customFontUrl);
+          document.head.appendChild(link);
+        }
       }
     }
-  }, [settings.customFontUrl]);
+  }, [settings.customFontUrl, settings.customFontName]);
 
   const getPreviewStyle = () => {
     const style = {
       fontSize: settings.fontSize || '2em',
-      fontFamily: settings.customFontName ? `"${settings.customFontName}", ${settings.fontFamily}` : settings.fontFamily,
+      fontFamily: settings.fontFamily, // Используем напрямую - он уже содержит правильное значение
       marginTop: 2,
     };
 
@@ -1109,7 +1135,10 @@ export default function AppTitleSettingsMobile({ open, onClose, onOpenMobileSide
               </label>
               <select
                 value={settings.fontFamily}
-                onChange={(e) => handleChange('fontFamily', e.target.value)}
+                onChange={(e) => {
+                  const selectedFont = e.target.value;
+                  handleChange('fontFamily', selectedFont);
+                }}
                 style={{
                   width: '100%',
                   padding: '12px',
