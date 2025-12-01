@@ -22,14 +22,62 @@ const DEFAULT_SETTINGS = {
   sidebarFontFamily: 'Inter, system-ui, -apple-system, sans-serif',
 };
 
-// Функция для загрузки изображения и конвертации в Base64
-const loadImageAsBase64 = (file) => {
+// Функция для сжатия изображения и конвертации в Base64
+const loadImageAsBase64 = (file, maxWidth = 1920, maxHeight = 1080, quality = 0.8) => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = (e) => resolve(e.target.result);
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        // Вычисляем новые размеры с сохранением пропорций
+        let width = img.width;
+        let height = img.height;
+        
+        if (width > maxWidth) {
+          height = (height * maxWidth) / width;
+          width = maxWidth;
+        }
+        
+        if (height > maxHeight) {
+          width = (width * maxHeight) / height;
+          height = maxHeight;
+        }
+        
+        // Создаем canvas для сжатия
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        // Конвертируем в Base64 с сжатием
+        const compressedBase64 = canvas.toDataURL('image/jpeg', quality);
+        
+        // Проверяем размер (примерно, Base64 примерно на 33% больше оригинала)
+        const sizeInMB = (compressedBase64.length * 0.75) / (1024 * 1024);
+        console.log(`📦 Изображение сжато: ${img.width}x${img.height} → ${width}x${height}, размер: ${sizeInMB.toFixed(2)} MB`);
+        
+        resolve(compressedBase64);
+      };
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
     reader.onerror = reject;
     reader.readAsDataURL(file);
   });
+};
+
+// Функция для проверки доступного места в localStorage
+const checkLocalStorageSize = () => {
+  let total = 0;
+  for (let key in localStorage) {
+    if (localStorage.hasOwnProperty(key)) {
+      total += localStorage[key].length + key.length;
+    }
+  }
+  const totalMB = (total * 2) / (1024 * 1024); // UTF-16, каждый символ = 2 байта
+  return { totalMB, percentUsed: (totalMB / 5) * 100 }; // Предполагаем лимит 5MB
 };
 
 export default function FrontendSettingsModal({ open, onClose }) {
@@ -117,21 +165,39 @@ export default function FrontendSettingsModal({ open, onClose }) {
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      alert('Размер файла не должен превышать 5 МБ');
+      alert('⚠️ Размер файла не должен превышать 5 МБ\n\nИспользуйте изображение меньшего размера или сожмите его перед загрузкой.');
       return;
     }
 
     try {
       const base64 = await loadImageAsBase64(file);
       handleChange('mainBackgroundImage', base64);
+      
+      // Проверяем размер localStorage после загрузки
+      const storageInfo = checkLocalStorageSize();
+      if (storageInfo.percentUsed > 80) {
+        alert(
+          `⚠️ ВНИМАНИЕ: Память браузера заполнена на ${storageInfo.percentUsed.toFixed(0)}%\n\n` +
+          `Используется: ${storageInfo.totalMB.toFixed(2)} MB из ~5 MB\n\n` +
+          `💡 Рекомендация:\n` +
+          `- Удалите ненужные изображения\n` +
+          `- Или используйте изображения меньшего размера\n\n` +
+          `⚠️ При превышении лимита настройки не сохранятся!`
+        );
+      }
     } catch (error) {
       console.error('Ошибка загрузки изображения:', error);
-      alert('Ошибка загрузки изображения');
+      alert('❌ Ошибка загрузки изображения: ' + error.message);
     }
   };
 
   const handleSave = () => {
     try {
+      // Проверяем размер перед сохранением
+      const storageInfo = checkLocalStorageSize();
+      console.log(`📊 localStorage используется: ${storageInfo.totalMB.toFixed(2)} MB (${storageInfo.percentUsed.toFixed(1)}%)`);
+      
+      // Пытаемся сохранить
       localStorage.setItem('frontendSettings', JSON.stringify(settings));
       
       // Применяем настройки глобально
@@ -166,7 +232,29 @@ export default function FrontendSettingsModal({ open, onClose }) {
       alert('✅ Настройки сохранены!');
     } catch (error) {
       console.error('Ошибка сохранения:', error);
-      alert('❌ Ошибка сохранения настроек');
+      
+      if (error.name === 'QuotaExceededError') {
+        const hasImages = settings.mainBackgroundImage || settings.modalBackgroundImage || settings.sidebarButtonBackgroundImage;
+        
+        if (hasImages) {
+          alert(
+            '❌ ОШИБКА: Недостаточно места!\n\n' +
+            '🖼️ Загруженные изображения слишком большие для сохранения в браузере.\n\n' +
+            '💡 РЕШЕНИЕ:\n' +
+            '1. Удалите некоторые изображения (нажмите 🗑️)\n' +
+            '2. Или используйте изображения меньшего размера\n' +
+            '3. Или используйте только цвета без изображений\n\n' +
+            '⚠️ Настройки НЕ СОХРАНЕНЫ!'
+          );
+        } else {
+          alert(
+            '❌ ОШИБКА: Недостаточно места в браузере!\n\n' +
+            'localStorage заполнен. Очистите данные браузера или используйте режим инкогнито.'
+          );
+        }
+      } else {
+        alert('❌ Ошибка сохранения настроек: ' + error.message);
+      }
     }
   };
 
@@ -443,15 +531,28 @@ export default function FrontendSettingsModal({ open, onClose }) {
                         return;
                       }
                       if (file.size > 5 * 1024 * 1024) {
-                        alert('Размер файла не должен превышать 5 МБ');
+                        alert('⚠️ Размер файла не должен превышать 5 МБ\n\nИспользуйте изображение меньшего размера или сожмите его перед загрузкой.');
                         return;
                       }
                       try {
                         const base64 = await loadImageAsBase64(file);
                         handleChange('modalBackgroundImage', base64);
+                        
+                        // Проверяем размер localStorage после загрузки
+                        const storageInfo = checkLocalStorageSize();
+                        if (storageInfo.percentUsed > 80) {
+                          alert(
+                            `⚠️ ВНИМАНИЕ: Память браузера заполнена на ${storageInfo.percentUsed.toFixed(0)}%\n\n` +
+                            `Используется: ${storageInfo.totalMB.toFixed(2)} MB из ~5 MB\n\n` +
+                            `💡 Рекомендация:\n` +
+                            `- Удалите ненужные изображения\n` +
+                            `- Или используйте изображения меньшего размера\n\n` +
+                            `⚠️ При превышении лимита настройки не сохранятся!`
+                          );
+                        }
                       } catch (error) {
                         console.error('Ошибка загрузки изображения:', error);
-                        alert('Ошибка загрузки изображения');
+                        alert('❌ Ошибка загрузки изображения: ' + error.message);
                       }
                     }}
                     style={{ display: 'none' }}
@@ -563,15 +664,28 @@ export default function FrontendSettingsModal({ open, onClose }) {
                         return;
                       }
                       if (file.size > 5 * 1024 * 1024) {
-                        alert('Размер файла не должен превышать 5 МБ');
+                        alert('⚠️ Размер файла не должен превышать 5 МБ\n\nИспользуйте изображение меньшего размера или сожмите его перед загрузкой.');
                         return;
                       }
                       try {
                         const base64 = await loadImageAsBase64(file);
                         handleChange('sidebarButtonBackgroundImage', base64);
+                        
+                        // Проверяем размер localStorage после загрузки
+                        const storageInfo = checkLocalStorageSize();
+                        if (storageInfo.percentUsed > 80) {
+                          alert(
+                            `⚠️ ВНИМАНИЕ: Память браузера заполнена на ${storageInfo.percentUsed.toFixed(0)}%\n\n` +
+                            `Используется: ${storageInfo.totalMB.toFixed(2)} MB из ~5 MB\n\n` +
+                            `💡 Рекомендация:\n` +
+                            `- Удалите ненужные изображения\n` +
+                            `- Или используйте изображения меньшего размера\n\n` +
+                            `⚠️ При превышении лимита настройки не сохранятся!`
+                          );
+                        }
                       } catch (error) {
                         console.error('Ошибка загрузки изображения:', error);
-                        alert('Ошибка загрузки изображения');
+                        alert('❌ Ошибка загрузки изображения: ' + error.message);
                       }
                     }}
                     style={{ display: 'none' }}
