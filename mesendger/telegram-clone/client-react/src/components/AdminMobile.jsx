@@ -524,30 +524,28 @@ export default function AdminMobile({
             >
               <FiSettings size={20} /> Управление названием приложения
             </button>
-            {state.user?.role === 'admin' && (
-              <button
-                onClick={() => {
-                  setShowFrontendSettings(true);
-                }}
-                style={{
-                  padding:'14px 16px',
-                  borderRadius:12,
-                  border:'1px solid rgba(96,165,250,0.45)',
-                  background:'rgba(96,165,250,0.18)',
-                  color:'#60a5fa',
-                  cursor:'pointer',
-                  fontWeight:700,
-                  display:'flex',
-                  alignItems:'center',
-                  gap:10,
-                  fontSize: '15px',
-                  width: '100%',
-                  justifyContent: 'center'
-                }}
-              >
-                <FiMonitor size={20} /> Фронтенд
-              </button>
-            )}
+            <button
+              onClick={() => {
+                setShowFrontendSettings(true);
+              }}
+              style={{
+                padding:'14px 16px',
+                borderRadius:12,
+                border:'1px solid rgba(96,165,250,0.45)',
+                background:'rgba(96,165,250,0.18)',
+                color:'#60a5fa',
+                cursor:'pointer',
+                fontWeight:700,
+                display:'flex',
+                alignItems:'center',
+                gap:10,
+                fontSize: '15px',
+                width: '100%',
+                justifyContent: 'center'
+              }}
+            >
+              <FiMonitor size={20} /> Фронтенд
+            </button>
             {(state.user?.role === 'admin' || state.user?.role === 'hr') && (
               <>
                 <button

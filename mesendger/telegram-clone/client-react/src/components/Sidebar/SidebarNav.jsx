@@ -2165,26 +2165,24 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar, 
             >
               <FiSettings size={18} /> Управление названием приложения
             </button>
-            {state.user?.role === 'admin' && (
-              <button
-                onClick={() => setShowFrontendSettingsModal(true)}
-                style={{
-                  padding:'12px 16px',
-                  borderRadius:12,
-                  border:'1px solid rgba(96,165,250,0.45)',
-                  background:'rgba(96,165,250,0.18)',
-                  color:'#60a5fa',
-                  cursor:'pointer',
-                  fontWeight:700,
-                  display:'inline-flex',
-                  alignItems:'center',
-                  gap:8
-                }}
-                title="Настройки фронтенда"
-              >
-                <FiMonitor size={18} /> Фронтенд
-              </button>
-            )}
+            <button
+              onClick={() => setShowFrontendSettingsModal(true)}
+              style={{
+                padding:'12px 16px',
+                borderRadius:12,
+                border:'1px solid rgba(96,165,250,0.45)',
+                background:'rgba(96,165,250,0.18)',
+                color:'#60a5fa',
+                cursor:'pointer',
+                fontWeight:700,
+                display:'inline-flex',
+                alignItems:'center',
+                gap:8
+              }}
+              title="Настройки фронтенда"
+            >
+              <FiMonitor size={18} /> Фронтенд
+            </button>
             {(state.user?.role === 'admin' || state.user?.role === 'hr') && (
               <button
                 onClick={() => setShowUserRightsModal(true)}
