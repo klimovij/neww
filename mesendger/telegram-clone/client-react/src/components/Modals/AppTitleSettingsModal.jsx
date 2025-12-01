@@ -480,11 +480,37 @@ export default function AppTitleSettingsModal({ open, onClose }) {
         }
       }
       
-      // console.log('Saving settings:', settingsToSave);
+      // Сохраняем локально
       setAppTitleSettings(settingsToSave);
-      setHasChanges(false);
-      alert('Настройки названия приложения сохранены!');
-      onClose();
+      
+      // Сохраняем на сервер для синхронизации между всеми пользователями
+      try {
+        const response = await fetch('/api/sidebar-settings', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          },
+          body: JSON.stringify({ settings: settingsToSave })
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok && result.success) {
+          console.log('✅ Настройки сохранены на сервер и будут синхронизированы со всеми пользователями');
+          setHasChanges(false);
+          alert('Настройки названия приложения сохранены и синхронизированы!');
+          onClose();
+        } else {
+          throw new Error(result.error || 'Ошибка сохранения на сервер');
+        }
+      } catch (serverError) {
+        console.error('Ошибка сохранения на сервер:', serverError);
+        // Даже если сервер не ответил, настройки сохранены локально
+        setHasChanges(false);
+        alert('Настройки сохранены локально.\nДля синхронизации между устройствами требуются права администратора.');
+        onClose();
+      }
     } catch (error) {
       console.error('Ошибка при сохранении:', error);
       alert('Ошибка при сохранении настроек. Попробуйте еще раз или удалите изображения.');

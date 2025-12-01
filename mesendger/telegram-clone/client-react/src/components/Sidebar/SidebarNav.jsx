@@ -123,12 +123,41 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar, 
     const settings = getAppTitleSettings();
     setAppTitleSettings(settings);
     
-    // Загрузка кастомного шрифта, если указан URL
-    if (settings.customFontUrl) {
-      const link = document.createElement('link');
-      link.rel = 'stylesheet';
-      link.href = settings.customFontUrl;
-      document.head.appendChild(link);
+    // Загрузка кастомного шрифта, если указан URL или base64
+    if (settings.customFontUrl && settings.customFontName) {
+      if (settings.customFontUrl.startsWith('data:')) {
+        // Это загруженный файл шрифта (base64), создаем @font-face
+        let styleElement = document.getElementById('custom-font-face');
+        if (!styleElement) {
+          styleElement = document.createElement('style');
+          styleElement.id = 'custom-font-face';
+          document.head.appendChild(styleElement);
+        }
+        
+        // Определяем формат шрифта из MIME типа
+        let fontFormat = 'truetype';
+        if (settings.customFontUrl.includes('font/woff2')) fontFormat = 'woff2';
+        else if (settings.customFontUrl.includes('font/woff')) fontFormat = 'woff';
+        else if (settings.customFontUrl.includes('font/otf')) fontFormat = 'opentype';
+        
+        styleElement.textContent = `
+          @font-face {
+            font-family: '${settings.customFontName}';
+            src: url('${settings.customFontUrl}') format('${fontFormat}');
+            font-weight: normal;
+            font-style: normal;
+          }
+        `;
+      } else {
+        // Это URL Google Fonts, создаем <link>
+        const existingLink = document.querySelector(`link[href="${settings.customFontUrl}"]`);
+        if (!existingLink) {
+          const link = document.createElement('link');
+          link.rel = 'stylesheet';
+          link.href = settings.customFontUrl;
+          document.head.appendChild(link);
+        }
+      }
     }
     
     const handler = () => {
@@ -136,13 +165,39 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar, 
       setAppTitleSettings(newSettings);
       
       // Загрузка нового кастомного шрифта, если изменился URL
-      if (newSettings.customFontUrl) {
-        const existingLink = document.querySelector(`link[href="${newSettings.customFontUrl}"]`);
-        if (!existingLink) {
-          const link = document.createElement('link');
-          link.rel = 'stylesheet';
-          link.href = newSettings.customFontUrl;
-          document.head.appendChild(link);
+      if (newSettings.customFontUrl && newSettings.customFontName) {
+        if (newSettings.customFontUrl.startsWith('data:')) {
+          // Это загруженный файл шрифта (base64), создаем @font-face
+          let styleElement = document.getElementById('custom-font-face');
+          if (!styleElement) {
+            styleElement = document.createElement('style');
+            styleElement.id = 'custom-font-face';
+            document.head.appendChild(styleElement);
+          }
+          
+          // Определяем формат шрифта из MIME типа
+          let fontFormat = 'truetype';
+          if (newSettings.customFontUrl.includes('font/woff2')) fontFormat = 'woff2';
+          else if (newSettings.customFontUrl.includes('font/woff')) fontFormat = 'woff';
+          else if (newSettings.customFontUrl.includes('font/otf')) fontFormat = 'opentype';
+          
+          styleElement.textContent = `
+            @font-face {
+              font-family: '${newSettings.customFontName}';
+              src: url('${newSettings.customFontUrl}') format('${fontFormat}');
+              font-weight: normal;
+              font-style: normal;
+            }
+          `;
+        } else {
+          // Это URL Google Fonts, создаем <link>
+          const existingLink = document.querySelector(`link[href="${newSettings.customFontUrl}"]`);
+          if (!existingLink) {
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = newSettings.customFontUrl;
+            document.head.appendChild(link);
+          }
         }
       }
     };
