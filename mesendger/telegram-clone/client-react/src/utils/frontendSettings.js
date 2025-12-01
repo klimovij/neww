@@ -117,9 +117,20 @@ export const initializeFrontendSettings = async () => {
   // Слушаем WebSocket для синхронизации с другими устройствами
   if (window.socket) {
     window.socket.on('frontend-settings-updated', (updatedSettings) => {
-      console.log('📡 Получены обновленные настройки фронтенда через WebSocket (глобальная синхронизация)');
-      localStorage.setItem('frontendSettings', JSON.stringify(updatedSettings));
-      applyFrontendSettings(updatedSettings);
+      if (updatedSettings === null) {
+        // Сброс настроек к дефолтным
+        console.log('📡 Получен сброс настроек через WebSocket (глобальная синхронизация)');
+        localStorage.removeItem('frontendSettings');
+        applyFrontendSettings(DEFAULT_SETTINGS);
+        // Перезагружаем страницу для полного сброса
+        setTimeout(() => {
+          window.location.reload();
+        }, 500);
+      } else {
+        console.log('📡 Получены обновленные настройки фронтенда через WebSocket (глобальная синхронизация)');
+        localStorage.setItem('frontendSettings', JSON.stringify(updatedSettings));
+        applyFrontendSettings(updatedSettings);
+      }
     });
   }
 };

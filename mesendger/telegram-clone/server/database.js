@@ -5602,6 +5602,25 @@ class Database {
     });
   }
 
+  // Удалить настройки фронтенда (сброс к дефолтным)
+  async deleteFrontendSettings() {
+    return new Promise((resolve, reject) => {
+      this.db.run(
+        'DELETE FROM app_frontend_settings',
+        [],
+        function(err) {
+          if (err) {
+            console.error('Error deleting frontend settings:', err);
+            reject(err);
+          } else {
+            console.log('✅ Frontend settings deleted from database');
+            resolve(true);
+          }
+        }
+      );
+    });
+  }
+
   // ==================== ПРЕСЕТЫ ФРОНТЕНДА ====================
   // Создать новый пресет
   async createFrontendPreset(name, description, settings, userId) {

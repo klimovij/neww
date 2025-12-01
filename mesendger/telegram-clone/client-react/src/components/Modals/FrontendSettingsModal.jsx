@@ -177,10 +177,21 @@ export default function FrontendSettingsModal({ open, onClose }) {
   // WebSocket listener для синхронизации настроек и пресетов
   useEffect(() => {
     const handleFrontendSettingsUpdate = (updatedSettings) => {
-      console.log('📡 Получены обновленные настройки фронтенда через WebSocket');
-      setSettings(updatedSettings);
-      // Сохраняем в localStorage
-      localStorage.setItem('frontendSettings', JSON.stringify(updatedSettings));
+      if (updatedSettings === null) {
+        // Сброс настроек к дефолтным
+        console.log('📡 Получен сброс настроек через WebSocket');
+        localStorage.removeItem('frontendSettings');
+        setSettings(DEFAULT_SETTINGS);
+        // Перезагружаем страницу для полного сброса
+        setTimeout(() => {
+          window.location.reload();
+        }, 500);
+      } else {
+        console.log('📡 Получены обновленные настройки фронтенда через WebSocket');
+        setSettings(updatedSettings);
+        // Сохраняем в localStorage
+        localStorage.setItem('frontendSettings', JSON.stringify(updatedSettings));
+      }
     };
     
     const handlePresetsUpdate = (updatedPresets) => {
@@ -463,13 +474,28 @@ export default function FrontendSettingsModal({ open, onClose }) {
     }
   };
 
-  const handleReset = () => {
+  const handleReset = async () => {
     if (!window.confirm('⚠️ Вы уверены, что хотите сбросить ВСЕ настройки к значениям по умолчанию?\n\nЭто действие нельзя отменить!')) {
       return;
     }
     
     try {
-      // Удаляем все сохраненные настройки
+      // Удаляем настройки с сервера
+      const response = await fetch('/api/frontend-settings', {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Ошибка удаления настроек с сервера');
+      }
+
+      console.log('✅ Настройки удалены с сервера');
+      
+      // Удаляем все сохраненные настройки из localStorage
       localStorage.removeItem('frontendSettings');
       
       // Очищаем ВСЕ CSS переменные
@@ -509,7 +535,7 @@ export default function FrontendSettingsModal({ open, onClose }) {
       }, 500);
     } catch (error) {
       console.error('Ошибка сброса настроек:', error);
-      alert('❌ Ошибка при сбросе настроек');
+      alert(`❌ Ошибка при сбросе настроек: ${error.message}`);
     }
   };
 

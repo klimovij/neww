@@ -3990,6 +3990,29 @@ app.post('/api/frontend-settings', authenticateToken, async (req, res) => {
   }
 });
 
+// Удалить настройки фронтенда (сброс к дефолтным, только для админов)
+app.delete('/api/frontend-settings', authenticateToken, async (req, res) => {
+  try {
+    // Проверяем права доступа - только админы могут удалять настройки
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, error: 'Нет прав доступа. Только администраторы могут сбрасывать настройки фронтенда.' });
+    }
+
+    await db.deleteFrontendSettings();
+    console.log('🗑️ Frontend settings deleted, broadcasting reset to all clients');
+    
+    // Отправляем пустые настройки всем подключенным клиентам (сброс)
+    if (io) {
+      io.emit('frontend-settings-updated', null);
+    }
+
+    res.json({ success: true, message: 'Настройки фронтенда удалены' });
+  } catch (error) {
+    console.error('❌ Error deleting frontend settings:', error);
+    res.status(500).json({ success: false, error: 'Ошибка удаления настроек фронтенда' });
+  }
+});
+
 // ==================== ПРЕСЕТЫ ФРОНТЕНДА ====================
 // Получить все пресеты
 app.get('/api/frontend-presets', authenticateToken, async (req, res) => {
