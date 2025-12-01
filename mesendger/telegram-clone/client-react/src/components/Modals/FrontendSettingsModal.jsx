@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiX, FiMonitor, FiImage, FiType } from 'react-icons/fi';
+import { FiX, FiMonitor, FiImage, FiType, FiChevronDown, FiChevronUp } from 'react-icons/fi';
 
 const DEFAULT_SETTINGS = {
   // Основной фон
@@ -35,6 +35,21 @@ const loadImageAsBase64 = (file) => {
 export default function FrontendSettingsModal({ open, onClose }) {
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
   const [hasChanges, setHasChanges] = useState(false);
+  
+  // Состояния для сворачивания/разворачивания блоков
+  const [expandedSections, setExpandedSections] = useState({
+    mainBackground: true,
+    modalBackground: true,
+    sidebarStyles: true
+  });
+  
+  // Переключение видимости секции
+  const toggleSection = (section) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
 
   // Загрузка настроек при открытии
   useEffect(() => {
@@ -276,7 +291,12 @@ export default function FrontendSettingsModal({ open, onClose }) {
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '24px' }}>
             
             {/* Основной фон */}
-            <Section title="Основной фон" icon={<FiImage size={18} />}>
+            <Section 
+              title="Основной фон" 
+              icon={<FiImage size={18} />}
+              expanded={expandedSections.mainBackground}
+              onToggle={() => toggleSection('mainBackground')}
+            >
               <SettingRow label="Цвет фона">
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                   <input
@@ -373,7 +393,12 @@ export default function FrontendSettingsModal({ open, onClose }) {
             </Section>
 
             {/* Фон модалок */}
-            <Section title="Фон модальных окон" icon={<FiMonitor size={18} />}>
+            <Section 
+              title="Фон модальных окон" 
+              icon={<FiMonitor size={18} />}
+              expanded={expandedSections.modalBackground}
+              onToggle={() => toggleSection('modalBackground')}
+            >
               <SettingRow label="Цвет фона модалок">
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                   <input
@@ -488,7 +513,12 @@ export default function FrontendSettingsModal({ open, onClose }) {
             </Section>
 
             {/* Стили сайдбара */}
-            <Section title="Стили сайдбара" icon={<FiType size={18} />}>
+            <Section 
+              title="Стили сайдбара" 
+              icon={<FiType size={18} />}
+              expanded={expandedSections.sidebarStyles}
+              onToggle={() => toggleSection('sidebarStyles')}
+            >
               <SettingRow label="Цвет фона кнопок">
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                   <input
@@ -1020,23 +1050,74 @@ export default function FrontendSettingsModal({ open, onClose }) {
 }
 
 // Вспомогательные компоненты
-function Section({ title, icon, children }) {
+function Section({ title, icon, children, expanded = true, onToggle }) {
   return (
     <div
       style={{
         background: 'rgba(31, 41, 55, 0.5)',
         border: '1px solid rgba(75, 85, 99, 0.3)',
         borderRadius: '12px',
-        padding: '16px'
+        padding: '16px',
+        transition: 'all 0.3s ease'
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+      <div 
+        style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '8px', 
+          marginBottom: expanded ? '16px' : '0',
+          cursor: 'pointer',
+          transition: 'margin 0.3s ease'
+        }}
+        onClick={onToggle}
+      >
         <span style={{ color: '#60a5fa' }}>{icon}</span>
-        <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: '#e5e7eb' }}>{title}</h3>
+        <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: '#e5e7eb', flex: 1 }}>{title}</h3>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggle && onToggle();
+          }}
+          style={{
+            background: 'transparent',
+            border: 'none',
+            color: '#60a5fa',
+            cursor: 'pointer',
+            padding: '4px',
+            display: 'flex',
+            alignItems: 'center',
+            transition: 'transform 0.3s ease',
+            transform: expanded ? 'rotate(0deg)' : 'rotate(180deg)'
+          }}
+        >
+          <FiChevronUp size={20} />
+        </button>
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-        {children}
-      </div>
+      {expanded && (
+        <div 
+          style={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            gap: '14px',
+            animation: 'slideDown 0.3s ease'
+          }}
+        >
+          {children}
+        </div>
+      )}
+      <style>{`
+        @keyframes slideDown {
+          from {
+            opacity: 0;
+            max-height: 0;
+          }
+          to {
+            opacity: 1;
+            max-height: 1000px;
+          }
+        }
+      `}</style>
     </div>
   );
 }
@@ -1051,4 +1132,5 @@ function SettingRow({ label, children }) {
     </div>
   );
 }
+
 
