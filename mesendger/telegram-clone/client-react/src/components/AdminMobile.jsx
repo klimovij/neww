@@ -323,6 +323,8 @@ export default function AdminMobile({
 
   if (!open) return null;
 
+  console.log('🔴 [AdminMobile] Компонент рендерится! showFrontendSettings:', showFrontendSettings);
+
   const filteredUsers = adminUsers
     .filter(u => !adminFilter || (u?.Name || '').toLowerCase().includes(adminFilter.toLowerCase()))
     .filter(u => {
@@ -504,6 +506,7 @@ export default function AdminMobile({
             </button>
             <button
               onClick={() => {
+                console.log('🟡 [AdminMobile] Кнопка "Управление названием приложения" нажата');
                 setShowAppTitleSettings(true);
               }}
               style={{
@@ -524,8 +527,10 @@ export default function AdminMobile({
             >
               <FiSettings size={20} /> Управление названием приложения
             </button>
+            {console.log('🟢 [AdminMobile] Рендер кнопки Фронтенд, showFrontendSettings:', showFrontendSettings)}
             <button
               onClick={() => {
+                console.log('🔵 [AdminMobile] Кнопка Фронтенд нажата!');
                 setShowFrontendSettings(true);
               }}
               style={{
