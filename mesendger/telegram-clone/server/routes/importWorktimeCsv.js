@@ -20,6 +20,20 @@ function convertDateFormat(dateStr) {
     // Убираем кавычки и лишние пробелы
     const cleanDate = dateStr.replace(/^"|"$/g, '').trim();
     
+    // Проверяем ISO 8601 формат: 2025-11-02T18:36:44+00:00 или 2025-11-02T18:36:44Z
+    if (cleanDate.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}$/) || 
+        cleanDate.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/)) {
+      // Конвертируем ISO 8601 в YYYY-MM-DD HH:mm:ss
+      const date = new Date(cleanDate);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const hour = String(date.getHours()).padStart(2, '0');
+      const minute = String(date.getMinutes()).padStart(2, '0');
+      const second = String(date.getSeconds()).padStart(2, '0');
+      return `${year}-${month}-${day} ${hour}:${minute}:${second}`;
+    }
+    
     // Проверяем формат DD.MM.YYYY HH:mm:ss
     const match = cleanDate.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})\s+(\d{1,2}):(\d{1,2}):(\d{1,2})$/);
     if (match) {
