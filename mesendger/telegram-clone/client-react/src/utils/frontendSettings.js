@@ -17,6 +17,7 @@ const DEFAULT_SETTINGS = {
   sidebarButtonBackgroundImageOpacity: 0.1,
   sidebarTextColor: '#ffffff',
   sidebarTextSize: '14px',
+  sidebarTextAlign: 'left',
   sidebarFontFamily: 'Inter, system-ui, -apple-system, sans-serif',
 };
 
@@ -65,6 +66,7 @@ export const applyFrontendSettings = (settings = null) => {
   document.documentElement.style.setProperty('--sidebar-button-background-opacity', activeSettings.sidebarButtonBackgroundImageOpacity || 0.1);
   document.documentElement.style.setProperty('--sidebar-text-color', activeSettings.sidebarTextColor);
   document.documentElement.style.setProperty('--sidebar-text-size', activeSettings.sidebarTextSize);
+  document.documentElement.style.setProperty('--sidebar-text-align', activeSettings.sidebarTextAlign || 'left');
   document.documentElement.style.setProperty('--sidebar-font-family', activeSettings.sidebarFontFamily);
 };
 

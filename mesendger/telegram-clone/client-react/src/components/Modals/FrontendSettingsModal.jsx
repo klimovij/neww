@@ -18,6 +18,7 @@ const DEFAULT_SETTINGS = {
   sidebarButtonBackgroundImageOpacity: 0.1,
   sidebarTextColor: '#ffffff',
   sidebarTextSize: '14px',
+  sidebarTextAlign: 'left',
   sidebarFontFamily: 'Inter, system-ui, -apple-system, sans-serif',
 };
 
@@ -82,6 +83,7 @@ export default function FrontendSettingsModal({ open, onClose }) {
     document.documentElement.style.setProperty('--sidebar-button-background-opacity', settings.sidebarButtonBackgroundImageOpacity);
     document.documentElement.style.setProperty('--sidebar-text-color', settings.sidebarTextColor);
     document.documentElement.style.setProperty('--sidebar-text-size', settings.sidebarTextSize);
+    document.documentElement.style.setProperty('--sidebar-text-align', settings.sidebarTextAlign);
     document.documentElement.style.setProperty('--sidebar-font-family', settings.sidebarFontFamily);
   }, [open, settings]);
 
@@ -142,6 +144,7 @@ export default function FrontendSettingsModal({ open, onClose }) {
       document.documentElement.style.setProperty('--sidebar-button-background-opacity', settings.sidebarButtonBackgroundImageOpacity);
       document.documentElement.style.setProperty('--sidebar-text-color', settings.sidebarTextColor);
       document.documentElement.style.setProperty('--sidebar-text-size', settings.sidebarTextSize);
+      document.documentElement.style.setProperty('--sidebar-text-align', settings.sidebarTextAlign);
       document.documentElement.style.setProperty('--sidebar-font-family', settings.sidebarFontFamily);
       
       setHasChanges(false);
@@ -186,6 +189,7 @@ export default function FrontendSettingsModal({ open, onClose }) {
       document.documentElement.style.setProperty('--sidebar-button-background-opacity', DEFAULT_SETTINGS.sidebarButtonBackgroundImageOpacity);
       document.documentElement.style.setProperty('--sidebar-text-color', DEFAULT_SETTINGS.sidebarTextColor);
       document.documentElement.style.setProperty('--sidebar-text-size', DEFAULT_SETTINGS.sidebarTextSize);
+      document.documentElement.style.setProperty('--sidebar-text-align', DEFAULT_SETTINGS.sidebarTextAlign);
       document.documentElement.style.setProperty('--sidebar-font-family', DEFAULT_SETTINGS.sidebarFontFamily);
       
       setHasChanges(false);
@@ -658,6 +662,86 @@ export default function FrontendSettingsModal({ open, onClose }) {
                 </div>
               </SettingRow>
 
+              <SettingRow label="Выравнивание текста">
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button
+                    onClick={() => handleChange('sidebarTextAlign', 'left')}
+                    style={{
+                      flex: 1,
+                      padding: '10px',
+                      borderRadius: '8px',
+                      border: settings.sidebarTextAlign === 'left' 
+                        ? '2px solid #3b82f6' 
+                        : '1px solid rgba(75, 85, 99, 0.5)',
+                      background: settings.sidebarTextAlign === 'left'
+                        ? 'rgba(59, 130, 246, 0.15)'
+                        : '#111827',
+                      color: settings.sidebarTextAlign === 'left' ? '#60a5fa' : '#9ca3af',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      fontWeight: settings.sidebarTextAlign === 'left' ? 600 : 400,
+                      transition: 'all 0.2s',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px'
+                    }}
+                  >
+                    ← Слева
+                  </button>
+                  <button
+                    onClick={() => handleChange('sidebarTextAlign', 'center')}
+                    style={{
+                      flex: 1,
+                      padding: '10px',
+                      borderRadius: '8px',
+                      border: settings.sidebarTextAlign === 'center' 
+                        ? '2px solid #3b82f6' 
+                        : '1px solid rgba(75, 85, 99, 0.5)',
+                      background: settings.sidebarTextAlign === 'center'
+                        ? 'rgba(59, 130, 246, 0.15)'
+                        : '#111827',
+                      color: settings.sidebarTextAlign === 'center' ? '#60a5fa' : '#9ca3af',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      fontWeight: settings.sidebarTextAlign === 'center' ? 600 : 400,
+                      transition: 'all 0.2s',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px'
+                    }}
+                  >
+                    ↔ По центру
+                  </button>
+                  <button
+                    onClick={() => handleChange('sidebarTextAlign', 'right')}
+                    style={{
+                      flex: 1,
+                      padding: '10px',
+                      borderRadius: '8px',
+                      border: settings.sidebarTextAlign === 'right' 
+                        ? '2px solid #3b82f6' 
+                        : '1px solid rgba(75, 85, 99, 0.5)',
+                      background: settings.sidebarTextAlign === 'right'
+                        ? 'rgba(59, 130, 246, 0.15)'
+                        : '#111827',
+                      color: settings.sidebarTextAlign === 'right' ? '#60a5fa' : '#9ca3af',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      fontWeight: settings.sidebarTextAlign === 'right' ? 600 : 400,
+                      transition: 'all 0.2s',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px'
+                    }}
+                  >
+                    Справа →
+                  </button>
+                </div>
+              </SettingRow>
+
               <SettingRow label="Шрифт">
                 <select
                   value={settings.sidebarFontFamily}
@@ -753,6 +837,11 @@ export default function FrontendSettingsModal({ open, onClose }) {
                       fontWeight: 500,
                       display: 'flex',
                       alignItems: 'center',
+                      justifyContent: settings.sidebarTextAlign === 'center' 
+                        ? 'center' 
+                        : settings.sidebarTextAlign === 'right' 
+                          ? 'flex-end' 
+                          : 'flex-start',
                       gap: '8px',
                       position: 'relative',
                       overflow: 'hidden'

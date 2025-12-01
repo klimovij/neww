@@ -99,6 +99,28 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar, 
   const [active, setActive] = useState('chats');
   const [socketConnected, setSocketConnected] = useState(() => window.socket?.connected ?? false);
   const [appTitleSettings, setAppTitleSettings] = useState(getAppTitleSettings());
+  const [sidebarTextAlign, setSidebarTextAlign] = useState('left');
+  
+  // Отслеживание изменений CSS переменной для выравнивания текста
+  useEffect(() => {
+    const updateTextAlign = () => {
+      const align = getComputedStyle(document.documentElement).getPropertyValue('--sidebar-text-align').trim() || 'left';
+      setSidebarTextAlign(align);
+    };
+    
+    updateTextAlign();
+    
+    // Слушаем изменения в localStorage (когда настройки меняются)
+    window.addEventListener('storage', updateTextAlign);
+    
+    // Проверяем каждые 500ms (на случай если настройки изменились в той же вкладке)
+    const interval = setInterval(updateTextAlign, 500);
+    
+    return () => {
+      window.removeEventListener('storage', updateTextAlign);
+      clearInterval(interval);
+    };
+  }, []);
   
   // Отладка: проверяем, что hideTitle передается правильно
   React.useEffect(() => {
@@ -1509,6 +1531,7 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar, 
                   return (
                     <button
                       key={n.key}
+                      className={`sidebar-nav-button ${sidebarTextAlign === 'center' ? 'text-align-center' : sidebarTextAlign === 'right' ? 'text-align-right' : ''}`}
                       style={{
                         width:'100%',
                         padding:12,
@@ -1836,6 +1859,7 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar, 
           return (
             <button
               key={n.key}
+              className={`sidebar-nav-button ${sidebarTextAlign === 'center' ? 'text-align-center' : sidebarTextAlign === 'right' ? 'text-align-right' : ''}`}
               style={{
                 width:'100%',
                 padding:10,

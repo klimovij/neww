@@ -4,9 +4,13 @@
   --main-background-image: none;
   --main-background-image-opacity: 1;
   --modal-background: #1f2937;
+  --modal-background-image: none;
+  --modal-background-image-opacity: 1;
   --sidebar-button-background: rgba(59, 130, 246, 0.1);
+  --sidebar-button-background-opacity: 0.1;
   --sidebar-text-color: #ffffff;
   --sidebar-text-size: 14px;
+  --sidebar-text-align: left;
   --sidebar-font-family: Inter, system-ui, -apple-system, sans-serif;
 }
 
@@ -43,4 +47,17 @@ body::before {
   opacity: var(--main-background-image-opacity);
   pointer-events: none;
   z-index: -1;
+}
+
+/* Стили для кнопок сайдбара с поддержкой выравнивания */
+.sidebar-nav-button {
+  justify-content: flex-start !important;
+}
+
+.sidebar-nav-button.text-align-center {
+  justify-content: center !important;
+}
+
+.sidebar-nav-button.text-align-right {
+  justify-content: flex-end !important;
 }
