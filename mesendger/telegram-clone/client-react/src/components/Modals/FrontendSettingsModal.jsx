@@ -162,7 +162,7 @@ export default function FrontendSettingsModal({ open, onClose }) {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        zIndex: 10000,
+        zIndex: 200003,
         padding: '20px'
       }}
       onClick={onClose}
