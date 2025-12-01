@@ -3990,6 +3990,73 @@ app.post('/api/frontend-settings', authenticateToken, async (req, res) => {
   }
 });
 
+// ==================== ПРЕСЕТЫ ФРОНТЕНДА ====================
+// Получить все пресеты
+app.get('/api/frontend-presets', authenticateToken, async (req, res) => {
+  try {
+    const presets = await db.getFrontendPresets();
+    console.log(`📡 GET /api/frontend-presets - Retrieved ${presets.length} presets`);
+    res.json({ success: true, presets });
+  } catch (error) {
+    console.error('❌ Error loading frontend presets:', error);
+    res.status(500).json({ success: false, error: 'Ошибка загрузки пресетов' });
+  }
+});
+
+// Создать новый пресет (только для админов)
+app.post('/api/frontend-presets', authenticateToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, error: 'Нет прав доступа. Только администраторы могут создавать пресеты.' });
+    }
+
+    const { name, description, settings } = req.body;
+    if (!name || !settings) {
+      return res.status(400).json({ success: false, error: 'Название и настройки обязательны' });
+    }
+
+    const id = await db.createFrontendPreset(name, description, settings, req.user.id);
+    
+    // Уведомляем всех клиентов о новом пресете
+    if (io) {
+      const presets = await db.getFrontendPresets();
+      io.emit('frontend-presets-updated', presets);
+    }
+
+    res.json({ success: true, id, message: 'Пресет сохранен' });
+  } catch (error) {
+    console.error('❌ Error creating frontend preset:', error);
+    if (error.message && error.message.includes('UNIQUE constraint failed')) {
+      res.status(400).json({ success: false, error: 'Пресет с таким именем уже существует' });
+    } else {
+      res.status(500).json({ success: false, error: 'Ошибка создания пресета' });
+    }
+  }
+});
+
+// Удалить пресет (только для админов)
+app.delete('/api/frontend-presets/:id', authenticateToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, error: 'Нет прав доступа. Только администраторы могут удалять пресеты.' });
+    }
+
+    const { id } = req.params;
+    const changes = await db.deleteFrontendPreset(id);
+    
+    // Уведомляем всех клиентов об удалении
+    if (io) {
+      const presets = await db.getFrontendPresets();
+      io.emit('frontend-presets-updated', presets);
+    }
+
+    res.json({ success: true, changes, message: 'Пресет удален' });
+  } catch (error) {
+    console.error('❌ Error deleting frontend preset:', error);
+    res.status(500).json({ success: false, error: 'Ошибка удаления пресета' });
+  }
+});
+
 // Назначить департамент пользователю (top-level)
 app.post('/api/users/:id/department', authenticateToken, async (req, res) => {
   try {

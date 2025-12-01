@@ -3284,6 +3284,19 @@ class Database {
         )
       `);
 
+      // Таблица пресетов настроек фронтенда
+      this.db.run(`
+        CREATE TABLE IF NOT EXISTS frontend_presets (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL UNIQUE,
+          description TEXT,
+          settings TEXT NOT NULL,
+          created_by INTEGER,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (created_by) REFERENCES users (id)
+        )
+      `);
+
       // Таблица задач
       this.db.run(`
         CREATE TABLE IF NOT EXISTS tasks (
@@ -5583,6 +5596,82 @@ class Database {
             reject(err);
           } else {
             resolve(this.lastID);
+          }
+        }
+      );
+    });
+  }
+
+  // ==================== ПРЕСЕТЫ ФРОНТЕНДА ====================
+  // Создать новый пресет
+  async createFrontendPreset(name, description, settings, userId) {
+    return new Promise((resolve, reject) => {
+      const settingsJson = JSON.stringify(settings);
+      this.db.run(
+        'INSERT INTO frontend_presets (name, description, settings, created_by, created_at) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)',
+        [name, description || null, settingsJson, userId || null],
+        function(err) {
+          if (err) {
+            console.error('Error creating frontend preset:', err);
+            reject(err);
+          } else {
+            resolve(this.lastID);
+          }
+        }
+      );
+    });
+  }
+
+  // Получить все пресеты
+  async getFrontendPresets() {
+    return new Promise((resolve, reject) => {
+      this.db.all(
+        'SELECT id, name, description, settings, created_by, created_at FROM frontend_presets ORDER BY created_at DESC',
+        [],
+        (err, rows) => {
+          if (err) {
+            console.error('Error getting frontend presets:', err);
+            if (err.message && err.message.includes('no such table')) {
+              console.warn('Table frontend_presets does not exist yet, returning empty array');
+              resolve([]);
+              return;
+            }
+            reject(err);
+          } else {
+            const presets = rows.map(row => {
+              try {
+                return {
+                  id: row.id,
+                  name: row.name,
+                  description: row.description,
+                  settings: JSON.parse(row.settings),
+                  created_by: row.created_by,
+                  created_at: row.created_at
+                };
+              } catch (parseError) {
+                console.error('Error parsing preset settings:', parseError);
+                return null;
+              }
+            }).filter(p => p !== null);
+            resolve(presets);
+          }
+        }
+      );
+    });
+  }
+
+  // Удалить пресет
+  async deleteFrontendPreset(id) {
+    return new Promise((resolve, reject) => {
+      this.db.run(
+        'DELETE FROM frontend_presets WHERE id = ?',
+        [id],
+        function(err) {
+          if (err) {
+            console.error('Error deleting frontend preset:', err);
+            reject(err);
+          } else {
+            resolve(this.changes);
           }
         }
       );

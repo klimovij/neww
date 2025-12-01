@@ -86,6 +86,7 @@ export default function FrontendSettingsModal({ open, onClose }) {
   
   // Состояния для сворачивания/разворачивания блоков
   const [expandedSections, setExpandedSections] = useState({
+    presets: true,
     mainBackground: true,
     modalBackground: true,
     sidebarStyles: true
@@ -98,6 +99,12 @@ export default function FrontendSettingsModal({ open, onClose }) {
       [section]: !prev[section]
     }));
   };
+
+  // Состояния для пресетов
+  const [presets, setPresets] = useState([]);
+  const [presetName, setPresetName] = useState('');
+  const [presetDescription, setPresetDescription] = useState('');
+  const [showPresetDialog, setShowPresetDialog] = useState(false);
 
   // Загрузка настроек при открытии
   useEffect(() => {
@@ -139,11 +146,35 @@ export default function FrontendSettingsModal({ open, onClose }) {
       };
       
       loadFromServer();
+      
+      // Загружаем список пресетов
+      const loadPresets = async () => {
+        try {
+          const response = await fetch('/api/frontend-presets', {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+          });
+          
+          if (response.ok) {
+            const result = await response.json();
+            if (result.success && result.presets) {
+              console.log(`📥 Загружено ${result.presets.length} пресетов`);
+              setPresets(result.presets);
+            }
+          }
+        } catch (error) {
+          console.warn('⚠️ Не удалось загрузить пресеты:', error);
+        }
+      };
+      
+      loadPresets();
       setHasChanges(false);
     }
   }, [open]);
 
-  // WebSocket listener для синхронизации настроек
+  // WebSocket listener для синхронизации настроек и пресетов
   useEffect(() => {
     const handleFrontendSettingsUpdate = (updatedSettings) => {
       console.log('📡 Получены обновленные настройки фронтенда через WebSocket');
@@ -152,11 +183,18 @@ export default function FrontendSettingsModal({ open, onClose }) {
       localStorage.setItem('frontendSettings', JSON.stringify(updatedSettings));
     };
     
+    const handlePresetsUpdate = (updatedPresets) => {
+      console.log('📡 Получены обновленные пресеты через WebSocket');
+      setPresets(updatedPresets);
+    };
+    
     if (window.socket) {
       window.socket.on('frontend-settings-updated', handleFrontendSettingsUpdate);
+      window.socket.on('frontend-presets-updated', handlePresetsUpdate);
       
       return () => {
         window.socket.off('frontend-settings-updated', handleFrontendSettingsUpdate);
+        window.socket.off('frontend-presets-updated', handlePresetsUpdate);
       };
     }
   }, []);
@@ -330,6 +368,101 @@ export default function FrontendSettingsModal({ open, onClose }) {
     }
   };
 
+  // Сохранить текущие настройки как пресет
+  const handleSavePreset = async () => {
+    if (!presetName.trim()) {
+      alert('⚠️ Введите название пресета!');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/frontend-presets', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          name: presetName.trim(),
+          description: presetDescription.trim() || null,
+          settings: settings
+        })
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        console.log('✅ Пресет сохранен:', presetName);
+        alert(`✅ Пресет "${presetName}" сохранен!`);
+        
+        // Обновляем список пресетов
+        const presetsResponse = await fetch('/api/frontend-presets', {
+          method: 'GET',
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        
+        if (presetsResponse.ok) {
+          const presetsResult = await presetsResponse.json();
+          if (presetsResult.success) {
+            setPresets(presetsResult.presets);
+          }
+        }
+        
+        // Очищаем форму
+        setPresetName('');
+        setPresetDescription('');
+        setShowPresetDialog(false);
+      } else {
+        alert(`❌ Ошибка: ${result.error || 'Не удалось сохранить пресет'}`);
+      }
+    } catch (error) {
+      console.error('Ошибка сохранения пресета:', error);
+      alert('❌ Ошибка сохранения пресета');
+    }
+  };
+
+  // Применить пресет
+  const handleApplyPreset = (preset) => {
+    if (!window.confirm(`Применить пресет "${preset.name}"?\n\nТекущие несохраненные изменения будут потеряны.`)) {
+      return;
+    }
+    
+    setSettings(preset.settings);
+    setHasChanges(true);
+    alert(`✅ Пресет "${preset.name}" применен!\n\nНе забудьте нажать "Сохранить" для применения изменений.`);
+  };
+
+  // Удалить пресет
+  const handleDeletePreset = async (preset) => {
+    if (!window.confirm(`⚠️ Удалить пресет "${preset.name}"?\n\nЭто действие нельзя отменить!`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/frontend-presets/${preset.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        console.log('✅ Пресет удален:', preset.name);
+        alert(`✅ Пресет "${preset.name}" удален!`);
+        
+        // Обновляем список пресетов
+        setPresets(presets.filter(p => p.id !== preset.id));
+      } else {
+        alert(`❌ Ошибка: ${result.error || 'Не удалось удалить пресет'}`);
+      }
+    } catch (error) {
+      console.error('Ошибка удаления пресета:', error);
+      alert('❌ Ошибка удаления пресета');
+    }
+  };
+
   const handleReset = () => {
     if (!window.confirm('⚠️ Вы уверены, что хотите сбросить ВСЕ настройки к значениям по умолчанию?\n\nЭто действие нельзя отменить!')) {
       return;
@@ -449,6 +582,189 @@ export default function FrontendSettingsModal({ open, onClose }) {
         <div style={{ flex: 1, overflow: 'auto', padding: '24px', display: 'flex', gap: '24px' }}>
           {/* Левая колонка - настройки */}
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            
+            {/* Пресеты */}
+            <Section 
+              title="🎨 Пресеты (темы)" 
+              icon={<FiType size={18} />}
+              expanded={expandedSections.presets}
+              onToggle={() => toggleSection('presets')}
+            >
+              {/* Кнопка создания пресета */}
+              <button
+                onClick={() => setShowPresetDialog(!showPresetDialog)}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(59, 130, 246, 0.5)',
+                  background: 'rgba(59, 130, 246, 0.1)',
+                  color: '#60a5fa',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  fontSize: '14px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px'
+                }}
+              >
+                💾 Сохранить текущие настройки как пресет
+              </button>
+
+              {/* Диалог создания пресета */}
+              {showPresetDialog && (
+                <div style={{
+                  padding: '16px',
+                  borderRadius: '8px',
+                  background: '#111827',
+                  border: '1px solid rgba(75, 85, 99, 0.5)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px'
+                }}>
+                  <input
+                    type="text"
+                    placeholder="Название (например: Темная тема)"
+                    value={presetName}
+                    onChange={(e) => setPresetName(e.target.value)}
+                    style={{
+                      padding: '10px 12px',
+                      borderRadius: '6px',
+                      border: '1px solid rgba(75, 85, 99, 0.5)',
+                      background: '#1f2937',
+                      color: '#fff',
+                      fontSize: '14px'
+                    }}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Описание (опционально)"
+                    value={presetDescription}
+                    onChange={(e) => setPresetDescription(e.target.value)}
+                    style={{
+                      padding: '10px 12px',
+                      borderRadius: '6px',
+                      border: '1px solid rgba(75, 85, 99, 0.5)',
+                      background: '#1f2937',
+                      color: '#fff',
+                      fontSize: '14px'
+                    }}
+                  />
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button
+                      onClick={handleSavePreset}
+                      style={{
+                        flex: 1,
+                        padding: '10px',
+                        borderRadius: '6px',
+                        border: 'none',
+                        background: '#10b981',
+                        color: '#fff',
+                        cursor: 'pointer',
+                        fontWeight: 600,
+                        fontSize: '14px'
+                      }}
+                    >
+                      ✅ Сохранить
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowPresetDialog(false);
+                        setPresetName('');
+                        setPresetDescription('');
+                      }}
+                      style={{
+                        flex: 1,
+                        padding: '10px',
+                        borderRadius: '6px',
+                        border: '1px solid rgba(75, 85, 99, 0.5)',
+                        background: 'transparent',
+                        color: '#9ca3af',
+                        cursor: 'pointer',
+                        fontWeight: 600,
+                        fontSize: '14px'
+                      }}
+                    >
+                      Отмена
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Список пресетов */}
+              {presets.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
+                  <div style={{ fontSize: '13px', fontWeight: 600, color: '#9ca3af', marginBottom: '4px' }}>
+                    Сохраненные пресеты:
+                  </div>
+                  {presets.map((preset) => (
+                    <div
+                      key={preset.id}
+                      style={{
+                        padding: '12px',
+                        borderRadius: '8px',
+                        background: '#111827',
+                        border: '1px solid rgba(75, 85, 99, 0.5)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px'
+                      }}
+                    >
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: 600, color: '#e5e7eb', fontSize: '14px' }}>
+                          {preset.name}
+                        </div>
+                        {preset.description && (
+                          <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '4px' }}>
+                            {preset.description}
+                          </div>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => handleApplyPreset(preset)}
+                        style={{
+                          padding: '8px 16px',
+                          borderRadius: '6px',
+                          border: 'none',
+                          background: '#10b981',
+                          color: '#fff',
+                          cursor: 'pointer',
+                          fontWeight: 600,
+                          fontSize: '13px'
+                        }}
+                      >
+                        ✅ Применить
+                      </button>
+                      <button
+                        onClick={() => handleDeletePreset(preset)}
+                        style={{
+                          padding: '8px 12px',
+                          borderRadius: '6px',
+                          border: '1px solid rgba(239, 68, 68, 0.5)',
+                          background: 'rgba(239, 68, 68, 0.1)',
+                          color: '#ef4444',
+                          cursor: 'pointer',
+                          fontSize: '13px'
+                        }}
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={{
+                  padding: '16px',
+                  textAlign: 'center',
+                  color: '#6b7280',
+                  fontSize: '13px',
+                  fontStyle: 'italic'
+                }}>
+                  Пока нет сохраненных пресетов
+                </div>
+              )}
+            </Section>
             
             {/* Основной фон */}
             <Section 
