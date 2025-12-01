@@ -270,6 +270,12 @@ export const Modal = styled.div`
 `;
 
 export const ModalContent = styled.div`
+  background: var(--modal-background, #1f2937) !important;
+  background-image: var(--modal-background-image, none);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  position: relative;
   background: white;
   padding: 2rem;
   border-radius: 10px;

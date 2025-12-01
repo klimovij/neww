@@ -61,3 +61,42 @@ body::before {
 .sidebar-nav-button.text-align-right {
   justify-content: flex-end !important;
 }
+
+/* Глобальные стили для всех модальных окон с поддержкой кастомных фонов */
+.modal,
+div[style*="background: linear-gradient(135deg, #232931"],
+div[style*="background: #232931"],
+div[style*="backgroundColor: '#1f2937'"],
+div[style*="background: 'linear-gradient(135deg, #232931"],
+div[style*="background:'#1f2937'"] {
+  background: var(--modal-background, #1f2937) !important;
+  position: relative;
+}
+
+/* Применяем изображение фона для модалок */
+.modal::before,
+div[style*="background: linear-gradient(135deg, #232931"]::before,
+div[style*="background: #232931"]::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: var(--modal-background-image, none);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  opacity: var(--modal-background-image-opacity, 1);
+  pointer-events: none;
+  z-index: 0;
+  border-radius: inherit;
+}
+
+/* Обеспечиваем что контент модалок поверх фона */
+.modal > *,
+div[style*="background: linear-gradient(135deg, #232931"] > *,
+div[style*="background: #232931"] > * {
+  position: relative;
+  z-index: 1;
+}

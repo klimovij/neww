@@ -394,7 +394,11 @@ function WorkTimeReportModal({ isOpen, onRequestClose }) {
     >
       <div onClick={onRequestClose} style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}>
         <div onClick={e => e.stopPropagation()} style={{
-          background: 'linear-gradient(135deg, #232931 0%, #181c22 100%)',
+          background: 'var(--modal-background, linear-gradient(135deg, #232931 0%, #181c22 100%))',
+          backgroundImage: 'var(--modal-background-image, none)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
           borderRadius: 28,
           width: '100%',
           minWidth: '600px',
@@ -410,6 +414,21 @@ function WorkTimeReportModal({ isOpen, onRequestClose }) {
           overflowY: 'auto',
           overflowX: 'hidden'
         }}>
+          {/* Overlay для прозрачности изображения */}
+          <div style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'var(--modal-background, #232931)',
+            opacity: 'calc(1 - var(--modal-background-image-opacity, 1))',
+            pointerEvents: 'none',
+            zIndex: 0,
+            borderRadius: 28
+          }} />
+          
+          <div style={{ position: 'relative', zIndex: 1, width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
           <button onClick={onRequestClose} aria-label="Close modal" style={{
             position: 'absolute', top: 16, right: 16, fontSize: 28, background: 'transparent', border: 'none',
             cursor: 'pointer', color: '#fff', fontWeight: 'bold', width: 36, height: 36, borderRadius: '50%'
@@ -764,6 +783,7 @@ function WorkTimeReportModal({ isOpen, onRequestClose }) {
               endDate={localReportDetailsModal.endDate}
             />
           )}
+          </div> {/* Закрытие wrapper div с z-index: 1 */}
         </div>
       </div>
     </Modal>

@@ -143,12 +143,17 @@ function RemoteWorktimeReportModal({ isOpen, onRequestClose }) {
           margin: 'auto',
           borderRadius: '16px',
           border: '2px solid rgba(67, 233, 123, 0.3)',
-          background: 'linear-gradient(135deg, rgba(20, 20, 20, 0.98) 0%, rgba(30, 30, 30, 0.98) 100%)',
+          background: 'var(--modal-background, linear-gradient(135deg, rgba(20, 20, 20, 0.98) 0%, rgba(30, 30, 30, 0.98) 100%))',
+          backgroundImage: 'var(--modal-background-image, none)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
           padding: 0,
           color: '#fff',
           overflow: 'hidden',
           display: 'flex',
           flexDirection: 'column',
+          position: 'relative',
         },
         overlay: {
           backgroundColor: 'rgba(0, 0, 0, 0.85)',
@@ -156,6 +161,21 @@ function RemoteWorktimeReportModal({ isOpen, onRequestClose }) {
         },
       }}
     >
+      {/* Overlay для прозрачности изображения */}
+      <div style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: 'var(--modal-background, #1a1a1a)',
+        opacity: 'calc(1 - var(--modal-background-image-opacity, 1))',
+        pointerEvents: 'none',
+        zIndex: 0,
+        borderRadius: '16px'
+      }} />
+      
+      <div style={{ position: 'relative', zIndex: 1, width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
       {/* Заголовок */}
       <div style={{
         padding: '20px 24px',
@@ -461,6 +481,7 @@ function RemoteWorktimeReportModal({ isOpen, onRequestClose }) {
           </>
         )}
       </div>
+      </div> {/* Закрытие wrapper div с z-index: 1 */}
     </Modal>
   );
 }

@@ -355,7 +355,11 @@ export default function AdminMobile({
         ref={modalRef}
         onClick={e => e.stopPropagation()}
         style={{
-          background: 'linear-gradient(135deg, #232931 0%, #181c22 100%)',
+          background: 'var(--modal-background, linear-gradient(135deg, #232931 0%, #181c22 100%))',
+          backgroundImage: 'var(--modal-background-image, none)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
           width: '100%',
           height: '100%',
           display: 'flex',
@@ -365,6 +369,20 @@ export default function AdminMobile({
           overflow: 'hidden'
         }}
       >
+        {/* Overlay для прозрачности изображения */}
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'var(--modal-background, #232931)',
+          opacity: 'calc(1 - var(--modal-background-image-opacity, 1))',
+          pointerEvents: 'none',
+          zIndex: 0
+        }} />
+        
+        <div style={{ position: 'relative', zIndex: 1, width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
         {/* Header */}
         <div
           style={{
@@ -1171,6 +1189,7 @@ export default function AdminMobile({
           </div>,
           document.body
         )}
+        </div> {/* Закрытие wrapper div с z-index: 1 */}
       </div>
       
     </div>,
