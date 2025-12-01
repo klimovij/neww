@@ -2109,6 +2109,7 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar, 
               <strong>Хост:</strong> <span style={{color:'#b2ffb2', fontWeight:700}}>{adminHost || '...'}</span>
             </div>
             <div style={{ display:'flex', gap:12, flexWrap:'wrap', alignItems:'center', marginBottom:16 }}>
+              {console.log('🟢 Рендер кнопок модалки Управление, role:', state.user?.role)}
               {state.user?.role === 'admin' && (
                 <button
                   onClick={() => setShowEmojiSettingsModal(true)}
@@ -2166,7 +2167,10 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar, 
               <FiSettings size={18} /> Управление названием приложения
             </button>
             <button
-              onClick={() => setShowFrontendSettingsModal(true)}
+              onClick={() => {
+                console.log('🔵 Кнопка Фронтенд нажата!');
+                setShowFrontendSettingsModal(true);
+              }}
               style={{
                 padding:'12px 16px',
                 borderRadius:12,
@@ -2177,7 +2181,8 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar, 
                 fontWeight:700,
                 display:'inline-flex',
                 alignItems:'center',
-                gap:8
+                gap:8,
+                position: 'relative'
               }}
               title="Настройки фронтенда"
             >
