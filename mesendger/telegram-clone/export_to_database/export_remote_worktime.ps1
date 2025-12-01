@@ -1,4 +1,4 @@
-param(
+﻿param(
     [Parameter(Mandatory = $false)]
     [string]$Date  # format: YYYY-MM-DD or DD.MM.YYYY (если не указан - берет вчерашний день)
 )
