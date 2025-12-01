@@ -1,0 +1,13 @@
+Пароль Issa2025
+Инструкция:
+добавить файл анидеск в папку C:\Users\User\web\AnyDesk.exe
+Выполнить скрипт от имени администратора:
+
+разрешить вносить изменнения в павершел
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+
+Запустить скрипт
+$Action = New-ScheduledTaskAction -Execute "C:\Users\User\web\AnyDesk.exe"
+$Trigger = New-ScheduledTaskTrigger -AtLogOn
+$Principal = New-ScheduledTaskPrincipal -UserId "$env:USERNAME" -RunLevel Highest
+Register-ScheduledTask -TaskName "AnyDeskAdminRun" -Action $Action -Trigger $Trigger -Principal $Principal -Force

@@ -1279,13 +1279,6 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar, 
                   <span className="issa-plus-text">
                     <span className="issa-plus-word">
                       {appTitleSettings.text}
-                      {isWinterSeason && (
-                        <span className="issa-plus-last">
-                          <span className="santa-hat">
-                            <span className="santa-hat__pom" />
-                          </span>
-                        </span>
-                      )}
                     </span>
                   </span>
                 </span>
@@ -1419,40 +1412,6 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar, 
                   align-items: flex-start;
                   gap: 2px;
                   white-space: nowrap;
-                }
-                .issa-plus-last {
-                  position: relative;
-                  display: inline-block;
-                  padding-right: 2px;
-                }
-                .santa-hat {
-                  position: absolute;
-                  top: -12px;
-                  left: -4px;
-                  width: 24px;
-                  height: 20px;
-                  background: #ff0000;
-                  border-radius: 50% 50% 0 0;
-                  transform: rotate(-15deg);
-                }
-                .santa-hat::before {
-                  content: '';
-                  position: absolute;
-                  top: -8px;
-                  left: 8px;
-                  width: 8px;
-                  height: 8px;
-                  background: #fff;
-                  border-radius: 50%;
-                }
-                .santa-hat__pom {
-                  position: absolute;
-                  top: -10px;
-                  left: 10px;
-                  width: 6px;
-                  height: 6px;
-                  background: #fff;
-                  border-radius: 50%;
                 }
               `}</style>
             </div>

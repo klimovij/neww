@@ -99,25 +99,55 @@ function Get-Username {
     }
 }
 
-# Функция отправки отложенных данных о выключении
-function Send-PendingShutdown {
-    if (-not (Test-Path $PENDING_SHUTDOWN_FILE)) {
-        return $false
-    }
-    
+# Функция получения времени последнего выключения из журнала Windows
+function Get-LastShutdownTime {
     try {
-        Write-Log "Обнаружен файл с отложенными данными о выключении. Чтение..."
-        $pendingData = Get-Content $PENDING_SHUTDOWN_FILE -Raw | ConvertFrom-Json
+        # Ищем последнее событие завершения работы Event Log service (6006)
+        # Это ПОСЛЕДНЕЕ событие перед выключением системы - самое точное!
+        $shutdownEvent = Get-WinEvent -FilterHashtable @{LogName='System'; ID=6006} -MaxEvents 1 -ErrorAction SilentlyContinue | Select-Object -First 1
         
-        if (-not $pendingData -or -not $pendingData.username -or -not $pendingData.event_time) {
-            Write-Log "⚠️ Файл с отложенными данными поврежден или пуст"
-            Remove-Item -Path $PENDING_SHUTDOWN_FILE -Force -ErrorAction SilentlyContinue
-            return $false
+        if ($shutdownEvent -and $shutdownEvent.TimeCreated) {
+            $shutdownTime = $shutdownEvent.TimeCreated.ToString("yyyy-MM-dd HH:mm:ss")
+            Write-Log "✅ Найдено время последнего выключения из журнала (EventID 6006): $shutdownTime"
+            return $shutdownTime
         }
         
-        Write-Log "Отправка отложенных данных о выключении: username=$($pendingData.username), event_time=$($pendingData.event_time)"
+        # Если событие 6006 не найдено, пытаемся найти 1074 (инициирование выключения)
+        $shutdownEvent = Get-WinEvent -FilterHashtable @{LogName='System'; ID=1074} -MaxEvents 1 -ErrorAction SilentlyContinue | Select-Object -First 1
         
-        $jsonData = $pendingData | ConvertTo-Json -Depth 10
+        if ($shutdownEvent -and $shutdownEvent.TimeCreated) {
+            $shutdownTime = $shutdownEvent.TimeCreated.ToString("yyyy-MM-dd HH:mm:ss")
+            Write-Log "✅ Найдено время инициирования выключения из журнала (EventID 1074): $shutdownTime"
+            return $shutdownTime
+        }
+        
+        Write-Log "⚠️ Не удалось найти событие выключения в журнале"
+        return $null
+    } catch {
+        Write-Log "❌ Ошибка чтения журнала событий: $($_.Exception.Message)"
+        return $null
+    }
+}
+
+# Функция отправки отложенных данных о выключении
+function Send-PendingShutdown {
+    param([string]$Username)
+    
+    # СНАЧАЛА пытаемся получить время из журнала Windows (более надежно!)
+    $shutdownTime = Get-LastShutdownTime
+    
+    if ($shutdownTime) {
+        # Формируем данные о выключении с временем из журнала
+        $shutdownData = @{
+            username = $Username
+            event_type = "logout"
+            event_time = $shutdownTime
+            event_id = 4634
+        }
+        
+        Write-Log "Отправка данных о выключении из журнала: username=$Username, event_time=$shutdownTime"
+        
+        $jsonData = $shutdownData | ConvertTo-Json -Depth 10
         $headers = @{
             "Content-Type" = "application/json"
         }
@@ -134,47 +164,91 @@ function Send-PendingShutdown {
             
             if ($response) {
                 $responseJson = $response | ConvertTo-Json -Compress
-                Write-Log "✅ Отложенные данные о выключении успешно отправлены: $responseJson"
+                Write-Log "✅ Данные о выключении успешно отправлены: $responseJson"
             } else {
-                Write-Log "✅ Отложенные данные о выключении успешно отправлены (пустой ответ)"
+                Write-Log "✅ Данные о выключении успешно отправлены (пустой ответ)"
             }
             
-            # Удаляем файл после успешной отправки
-            Remove-Item -Path $PENDING_SHUTDOWN_FILE -Force -ErrorAction SilentlyContinue
-            Write-Log "Файл с отложенными данными удален"
             return $true
         } catch {
             $errorMsg = $_.Exception.Message
-            Write-Log "❌ Ошибка отправки отложенных данных о выключении: $errorMsg"
-            
-            # Оставляем файл для следующей попытки
-            Write-Log "Файл с отложенными данными оставлен для следующей попытки"
+            Write-Log "❌ Ошибка отправки данных о выключении: $errorMsg"
             return $false
         }
-    } catch {
-        Write-Log "❌ Ошибка чтения файла с отложенными данными: $($_.Exception.Message)"
-        # Удаляем поврежденный файл
-        Remove-Item -Path $PENDING_SHUTDOWN_FILE -Force -ErrorAction SilentlyContinue
-        return $false
     }
+    
+    # Если не удалось получить из журнала, пытаемся прочитать из файла
+    if (Test-Path $PENDING_SHUTDOWN_FILE) {
+        try {
+            Write-Log "Обнаружен файл с отложенными данными о выключении. Чтение..."
+            $pendingData = Get-Content $PENDING_SHUTDOWN_FILE -Raw | ConvertFrom-Json
+            
+            if (-not $pendingData -or -not $pendingData.username -or -not $pendingData.event_time) {
+                Write-Log "⚠️ Файл с отложенными данными поврежден или пуст"
+                Remove-Item -Path $PENDING_SHUTDOWN_FILE -Force -ErrorAction SilentlyContinue
+                return $false
+            }
+            
+            Write-Log "Отправка отложенных данных из файла: username=$($pendingData.username), event_time=$($pendingData.event_time)"
+            
+            $jsonData = $pendingData | ConvertTo-Json -Depth 10
+            $headers = @{
+                "Content-Type" = "application/json"
+            }
+            
+            $url = "$SERVER_URL/api/worktime"
+            
+            try {
+                $response = Invoke-RestMethod -Uri $url `
+                    -Method POST `
+                    -Headers $headers `
+                    -Body $jsonData `
+                    -TimeoutSec 10 `
+                    -ErrorAction Stop
+                
+                if ($response) {
+                    $responseJson = $response | ConvertTo-Json -Compress
+                    Write-Log "✅ Отложенные данные о выключении из файла успешно отправлены: $responseJson"
+                } else {
+                    Write-Log "✅ Отложенные данные о выключении из файла успешно отправлены (пустой ответ)"
+                }
+                
+                # Удаляем файл после успешной отправки
+                Remove-Item -Path $PENDING_SHUTDOWN_FILE -Force -ErrorAction SilentlyContinue
+                Write-Log "Файл с отложенными данными удален"
+                return $true
+            } catch {
+                $errorMsg = $_.Exception.Message
+                Write-Log "❌ Ошибка отправки отложенных данных из файла: $errorMsg"
+                return $false
+            }
+        } catch {
+            Write-Log "❌ Ошибка чтения файла с отложенными данными: $($_.Exception.Message)"
+            Remove-Item -Path $PENDING_SHUTDOWN_FILE -Force -ErrorAction SilentlyContinue
+            return $false
+        }
+    }
+    
+    Write-Log "⚠️ Нет данных о выключении (ни в журнале, ни в файле)"
+    return $false
 }
 
 try {
     Write-Log "=== PC STARTUP SCRIPT STARTED ==="
     Write-Log "PowerShell version: $($PSVersionTable.PSVersion)"
     
-    # Сначала проверяем и отправляем отложенные данные о выключении (если есть)
-    Write-Log "Проверка наличия отложенных данных о выключении..."
-    $pendingSent = Send-PendingShutdown
-    if ($pendingSent) {
-        Write-Log "✅ Отложенные данные о выключении обработаны"
-    } else {
-        Write-Log "Отложенных данных о выключении не найдено или они уже были отправлены"
-    }
-    
-    # Получаем username сотрудника (из параметров, конфига или запроса)
+    # Получаем username сотрудника СНАЧАЛА (нужен для отправки данных выключения)
     $username = Get-Username $args
     Write-Log "Username: $username (будет отображаться ФИО из базы на сервере)"
+    
+    # Сначала проверяем и отправляем данные о выключении из журнала Windows
+    Write-Log "Проверка данных о последнем выключении..."
+    $pendingSent = Send-PendingShutdown -Username $username
+    if ($pendingSent) {
+        Write-Log "✅ Данные о выключении обработаны и отправлены"
+    } else {
+        Write-Log "⚠️ Не удалось получить или отправить данные о выключении"
+    }
     
     # Получаем текущее локальное время и конвертируем в формат YYYY-MM-DD HH:mm:ss
     # Используем локальное время, чтобы оно правильно отображалось в модалке

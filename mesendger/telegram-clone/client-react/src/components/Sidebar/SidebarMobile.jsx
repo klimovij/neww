@@ -1238,41 +1238,6 @@ export default function SidebarMobile({ open, onClose, onOpen, showNav = true, o
         .issa-plus-festive { position: relative; }
         .issa-plus-text { position: relative; display: inline-flex; align-items: center; gap: 10px; }
         .issa-plus-word { position: relative; display: inline-flex; align-items: flex-start; gap: 2px; white-space: nowrap; }
-        .issa-plus-last { position: relative; display: inline-block; padding-right: 2px; }
-        .santa-hat { position: absolute; top: -12px; left: -4px; width: 24px; height: 18px; transform: rotate(-15deg); }
-        .santa-hat::before {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: 0;
-          width: 0;
-          height: 0;
-          border-left: 12px solid transparent;
-          border-right: 12px solid transparent;
-          border-bottom: 20px solid #ff4d6d;
-          filter: drop-shadow(0 0 4px rgba(255,77,109,0.4));
-        }
-        .santa-hat::after {
-          content: '';
-          position: absolute;
-          bottom: -2px;
-          left: -5px;
-          width: 28px;
-          height: 8px;
-          background: #fff;
-          border-radius: 9px;
-          box-shadow: 0 0 6px rgba(255,255,255,0.4);
-        }
-        .santa-hat__pom {
-          position: absolute;
-          bottom: -8px;
-          right: -7px;
-          width: 10px;
-          height: 10px;
-          background: #fff;
-          border-radius: 50%;
-          box-shadow: 0 0 5px rgba(255,255,255,0.45);
-        }
         @keyframes snowFall {
           0% { 
             transform: translate3d(var(--snow-x, 40px), 0, 0) rotate(0deg); 
