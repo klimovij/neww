@@ -1215,6 +1215,8 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar, 
                   const style = {
                     fontSize: appTitleSettings.fontSize || '2em',
                     fontFamily: appTitleSettings.customFontName ? `"${appTitleSettings.customFontName}", ${appTitleSettings.fontFamily}` : appTitleSettings.fontFamily,
+                    fontWeight: appTitleSettings.fontWeight || 'normal',
+                    fontStyle: appTitleSettings.fontStyle || 'normal',
                     marginTop: 2,
                   };
 

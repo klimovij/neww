@@ -7,6 +7,8 @@ const DEFAULT_SETTINGS = {
   text: 'Issa Plus',
   fontSize: '2em',
   fontFamily: 'Arial, sans-serif',
+  fontWeight: 'normal', // normal, bold, 100-900
+  fontStyle: 'normal', // normal, italic, oblique
   customFontUrl: '',
   customFontName: '',
   color: '#43e97b',
@@ -850,6 +852,63 @@ export default function AppTitleSettingsModal({ open, onClose }) {
               
               <div style={{ fontSize: '0.85em', color: '#9ca3af', marginTop: '8px' }}>
                 После загрузки файла шрифт автоматически применится к названию
+              </div>
+            </div>
+            
+            {/* Font Weight */}
+            <div style={{ marginTop: '16px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, color: '#e2e8f0' }}>
+                Насыщенность шрифта
+              </label>
+              <select
+                value={settings.fontWeight || 'normal'}
+                onChange={(e) => handleChange('fontWeight', e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  borderRadius: '8px',
+                  border: '1px solid #2f3440',
+                  background: '#0e1420',
+                  color: '#fff',
+                  fontSize: '1em'
+                }}
+              >
+                <option value="100">Тонкий (100)</option>
+                <option value="200">Очень лёгкий (200)</option>
+                <option value="300">Лёгкий (300)</option>
+                <option value="normal">Обычный (400)</option>
+                <option value="500">Средний (500)</option>
+                <option value="600">Полужирный (600)</option>
+                <option value="bold">Жирный (700)</option>
+                <option value="800">Очень жирный (800)</option>
+                <option value="900">Сверхжирный (900)</option>
+              </select>
+            </div>
+            
+            {/* Font Style */}
+            <div style={{ marginTop: '16px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, color: '#e2e8f0' }}>
+                Стиль шрифта
+              </label>
+              <select
+                value={settings.fontStyle || 'normal'}
+                onChange={(e) => handleChange('fontStyle', e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  borderRadius: '8px',
+                  border: '1px solid #2f3440',
+                  background: '#0e1420',
+                  color: '#fff',
+                  fontSize: '1em'
+                }}
+              >
+                <option value="normal">Обычный</option>
+                <option value="italic">Курсив (Italic)</option>
+                <option value="oblique">Наклонный (Oblique)</option>
+              </select>
+              <div style={{ fontSize: '0.85em', color: '#9ca3af', marginTop: '4px' }}>
+                Если шрифт выглядит наклонным на ПК, но не на телефоне - измените на "Обычный"
               </div>
             </div>
           </div>
