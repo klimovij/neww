@@ -9,9 +9,13 @@ const DEFAULT_SETTINGS = {
   
   // Фон модалок
   modalBackground: '#1f2937',
+  modalBackgroundImage: '',
+  modalBackgroundImageOpacity: 1,
   
   // Сайдбар
-  sidebarButtonBackground: 'rgba(59, 130, 246, 0.1)',
+  sidebarButtonBackground: '#3b82f6',
+  sidebarButtonBackgroundImage: '',
+  sidebarButtonBackgroundImageOpacity: 0.1,
   sidebarTextColor: '#ffffff',
   sidebarTextSize: '14px',
   sidebarFontFamily: 'Inter, system-ui, -apple-system, sans-serif',
@@ -63,9 +67,19 @@ export default function FrontendSettingsModal({ open, onClose }) {
     
     // Применяем фон модалок
     document.documentElement.style.setProperty('--modal-background', settings.modalBackground);
+    if (settings.modalBackgroundImage) {
+      document.documentElement.style.setProperty('--modal-background-image', `url(${settings.modalBackgroundImage})`);
+      document.documentElement.style.setProperty('--modal-background-image-opacity', settings.modalBackgroundImageOpacity);
+    } else {
+      document.documentElement.style.setProperty('--modal-background-image', 'none');
+    }
     
     // Применяем стили сайдбара
-    document.documentElement.style.setProperty('--sidebar-button-background', settings.sidebarButtonBackground);
+    const buttonBg = settings.sidebarButtonBackgroundImage 
+      ? `url(${settings.sidebarButtonBackgroundImage})`
+      : settings.sidebarButtonBackground;
+    document.documentElement.style.setProperty('--sidebar-button-background', buttonBg);
+    document.documentElement.style.setProperty('--sidebar-button-background-opacity', settings.sidebarButtonBackgroundImageOpacity);
     document.documentElement.style.setProperty('--sidebar-text-color', settings.sidebarTextColor);
     document.documentElement.style.setProperty('--sidebar-text-size', settings.sidebarTextSize);
     document.documentElement.style.setProperty('--sidebar-font-family', settings.sidebarFontFamily);
@@ -114,7 +128,18 @@ export default function FrontendSettingsModal({ open, onClose }) {
       }
       
       document.documentElement.style.setProperty('--modal-background', settings.modalBackground);
-      document.documentElement.style.setProperty('--sidebar-button-background', settings.sidebarButtonBackground);
+      if (settings.modalBackgroundImage) {
+        document.documentElement.style.setProperty('--modal-background-image', `url(${settings.modalBackgroundImage})`);
+        document.documentElement.style.setProperty('--modal-background-image-opacity', settings.modalBackgroundImageOpacity);
+      } else {
+        document.documentElement.style.setProperty('--modal-background-image', 'none');
+      }
+      
+      const buttonBg = settings.sidebarButtonBackgroundImage 
+        ? `url(${settings.sidebarButtonBackgroundImage})`
+        : settings.sidebarButtonBackground;
+      document.documentElement.style.setProperty('--sidebar-button-background', buttonBg);
+      document.documentElement.style.setProperty('--sidebar-button-background-opacity', settings.sidebarButtonBackgroundImageOpacity);
       document.documentElement.style.setProperty('--sidebar-text-color', settings.sidebarTextColor);
       document.documentElement.style.setProperty('--sidebar-text-size', settings.sidebarTextSize);
       document.documentElement.style.setProperty('--sidebar-font-family', settings.sidebarFontFamily);
@@ -347,27 +372,203 @@ export default function FrontendSettingsModal({ open, onClose }) {
                   />
                 </div>
               </SettingRow>
+
+              <SettingRow label="Изображение фона">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={async (e) => {
+                      const file = e.target.files[0];
+                      if (!file) return;
+                      if (!file.type.startsWith('image/')) {
+                        alert('Пожалуйста, выберите изображение');
+                        return;
+                      }
+                      if (file.size > 5 * 1024 * 1024) {
+                        alert('Размер файла не должен превышать 5 МБ');
+                        return;
+                      }
+                      try {
+                        const base64 = await loadImageAsBase64(file);
+                        handleChange('modalBackgroundImage', base64);
+                      } catch (error) {
+                        console.error('Ошибка загрузки изображения:', error);
+                        alert('Ошибка загрузки изображения');
+                      }
+                    }}
+                    style={{ display: 'none' }}
+                    id="modal-bg-image-upload"
+                  />
+                  <label
+                    htmlFor="modal-bg-image-upload"
+                    style={{
+                      padding: '10px 16px',
+                      borderRadius: '8px',
+                      border: '1px solid rgba(59, 130, 246, 0.5)',
+                      background: 'rgba(59, 130, 246, 0.1)',
+                      color: '#60a5fa',
+                      cursor: 'pointer',
+                      textAlign: 'center',
+                      fontSize: '14px',
+                      fontWeight: 600
+                    }}
+                  >
+                    📁 Выбрать изображение
+                  </label>
+                  {settings.modalBackgroundImage && (
+                    <button
+                      onClick={() => handleChange('modalBackgroundImage', '')}
+                      style={{
+                        padding: '8px 12px',
+                        borderRadius: '6px',
+                        border: '1px solid rgba(239, 68, 68, 0.5)',
+                        background: 'rgba(239, 68, 68, 0.1)',
+                        color: '#ef4444',
+                        cursor: 'pointer',
+                        fontSize: '13px'
+                      }}
+                    >
+                      🗑️ Удалить изображение
+                    </button>
+                  )}
+                </div>
+              </SettingRow>
+
+              {settings.modalBackgroundImage && (
+                <SettingRow label="Прозрачность изображения">
+                  <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.1"
+                      value={settings.modalBackgroundImageOpacity}
+                      onChange={(e) => handleChange('modalBackgroundImageOpacity', parseFloat(e.target.value))}
+                      style={{ flex: 1 }}
+                    />
+                    <span style={{ color: '#9ca3af', fontSize: '14px', minWidth: '40px' }}>
+                      {Math.round(settings.modalBackgroundImageOpacity * 100)}%
+                    </span>
+                  </div>
+                </SettingRow>
+              )}
             </Section>
 
             {/* Стили сайдбара */}
             <Section title="Стили сайдбара" icon={<FiType size={18} />}>
-              <SettingRow label="Фон кнопок">
-                <input
-                  type="text"
-                  value={settings.sidebarButtonBackground}
-                  onChange={(e) => handleChange('sidebarButtonBackground', e.target.value)}
-                  placeholder="rgba(59, 130, 246, 0.1)"
-                  style={{
-                    width: '100%',
-                    padding: '8px 12px',
-                    borderRadius: '6px',
-                    border: '1px solid rgba(75, 85, 99, 0.5)',
-                    background: '#111827',
-                    color: '#fff',
-                    fontSize: '14px'
-                  }}
-                />
+              <SettingRow label="Цвет фона кнопок">
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <input
+                    type="color"
+                    value={settings.sidebarButtonBackground}
+                    onChange={(e) => handleChange('sidebarButtonBackground', e.target.value)}
+                    style={{
+                      width: '60px',
+                      height: '36px',
+                      border: '1px solid rgba(75, 85, 99, 0.5)',
+                      borderRadius: '6px',
+                      cursor: 'pointer'
+                    }}
+                  />
+                  <input
+                    type="text"
+                    value={settings.sidebarButtonBackground}
+                    onChange={(e) => handleChange('sidebarButtonBackground', e.target.value)}
+                    style={{
+                      flex: 1,
+                      padding: '8px 12px',
+                      borderRadius: '6px',
+                      border: '1px solid rgba(75, 85, 99, 0.5)',
+                      background: '#111827',
+                      color: '#fff',
+                      fontSize: '14px'
+                    }}
+                  />
+                </div>
               </SettingRow>
+
+              <SettingRow label="Изображение фона кнопок">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={async (e) => {
+                      const file = e.target.files[0];
+                      if (!file) return;
+                      if (!file.type.startsWith('image/')) {
+                        alert('Пожалуйста, выберите изображение');
+                        return;
+                      }
+                      if (file.size > 5 * 1024 * 1024) {
+                        alert('Размер файла не должен превышать 5 МБ');
+                        return;
+                      }
+                      try {
+                        const base64 = await loadImageAsBase64(file);
+                        handleChange('sidebarButtonBackgroundImage', base64);
+                      } catch (error) {
+                        console.error('Ошибка загрузки изображения:', error);
+                        alert('Ошибка загрузки изображения');
+                      }
+                    }}
+                    style={{ display: 'none' }}
+                    id="sidebar-button-bg-image-upload"
+                  />
+                  <label
+                    htmlFor="sidebar-button-bg-image-upload"
+                    style={{
+                      padding: '10px 16px',
+                      borderRadius: '8px',
+                      border: '1px solid rgba(59, 130, 246, 0.5)',
+                      background: 'rgba(59, 130, 246, 0.1)',
+                      color: '#60a5fa',
+                      cursor: 'pointer',
+                      textAlign: 'center',
+                      fontSize: '14px',
+                      fontWeight: 600
+                    }}
+                  >
+                    📁 Выбрать изображение
+                  </label>
+                  {settings.sidebarButtonBackgroundImage && (
+                    <button
+                      onClick={() => handleChange('sidebarButtonBackgroundImage', '')}
+                      style={{
+                        padding: '8px 12px',
+                        borderRadius: '6px',
+                        border: '1px solid rgba(239, 68, 68, 0.5)',
+                        background: 'rgba(239, 68, 68, 0.1)',
+                        color: '#ef4444',
+                        cursor: 'pointer',
+                        fontSize: '13px'
+                      }}
+                    >
+                      🗑️ Удалить изображение
+                    </button>
+                  )}
+                </div>
+              </SettingRow>
+
+              {settings.sidebarButtonBackgroundImage && (
+                <SettingRow label="Прозрачность изображения кнопок">
+                  <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.1"
+                      value={settings.sidebarButtonBackgroundImageOpacity}
+                      onChange={(e) => handleChange('sidebarButtonBackgroundImageOpacity', parseFloat(e.target.value))}
+                      style={{ flex: 1 }}
+                    />
+                    <span style={{ color: '#9ca3af', fontSize: '14px', minWidth: '40px' }}>
+                      {Math.round(settings.sidebarButtonBackgroundImageOpacity * 100)}%
+                    </span>
+                  </div>
+                </SettingRow>
+              )}
+
 
               <SettingRow label="Цвет текста">
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -512,6 +713,9 @@ export default function FrontendSettingsModal({ open, onClose }) {
                     key={i}
                     style={{
                       background: settings.sidebarButtonBackground,
+                      backgroundImage: settings.sidebarButtonBackgroundImage ? `url(${settings.sidebarButtonBackgroundImage})` : 'none',
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
                       padding: '12px 16px',
                       borderRadius: '8px',
                       marginBottom: '8px',
@@ -521,17 +725,36 @@ export default function FrontendSettingsModal({ open, onClose }) {
                       fontWeight: 500,
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '8px'
+                      gap: '8px',
+                      position: 'relative',
+                      overflow: 'hidden'
                     }}
                   >
+                    {/* Overlay для прозрачности изображения кнопки */}
+                    {settings.sidebarButtonBackgroundImage && (
+                      <div
+                        style={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          background: settings.sidebarButtonBackground,
+                          opacity: 1 - settings.sidebarButtonBackgroundImageOpacity,
+                          pointerEvents: 'none'
+                        }}
+                      />
+                    )}
                     <div style={{ 
                       width: '8px', 
                       height: '8px', 
                       borderRadius: '50%', 
                       background: settings.sidebarTextColor,
-                      opacity: 0.5
+                      opacity: 0.5,
+                      position: 'relative',
+                      zIndex: 1
                     }} />
-                    {text}
+                    <span style={{ position: 'relative', zIndex: 1 }}>{text}</span>
                   </div>
                 ))}
               </div>
@@ -540,39 +763,62 @@ export default function FrontendSettingsModal({ open, onClose }) {
               <div
                 style={{
                   background: settings.modalBackground,
+                  backgroundImage: settings.modalBackgroundImage ? `url(${settings.modalBackgroundImage})` : 'none',
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
                   borderRadius: '12px',
                   padding: '16px',
-                  boxShadow: '0 4px 20px rgba(0,0,0,0.4)'
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
+                  position: 'relative',
+                  overflow: 'hidden'
                 }}
               >
-                <div style={{ 
-                  fontSize: '14px', 
-                  fontWeight: 600, 
-                  color: '#9ca3af',
-                  marginBottom: '8px'
-                }}>
-                  Превью модального окна
-                </div>
-                <div style={{ 
-                  fontSize: '12px', 
-                  color: '#6b7280',
-                  lineHeight: 1.6
-                }}>
-                  Здесь отображается, как будут выглядеть модальные окна с выбранным фоном.
-                </div>
-                <div
-                  style={{
-                    marginTop: '12px',
-                    padding: '8px 12px',
-                    background: 'rgba(59, 130, 246, 0.1)',
-                    border: '1px solid rgba(59, 130, 246, 0.3)',
-                    borderRadius: '6px',
-                    color: '#60a5fa',
-                    fontSize: '12px',
-                    textAlign: 'center'
-                  }}
-                >
-                  Пример кнопки
+                {/* Overlay для прозрачности изображения модалки */}
+                {settings.modalBackgroundImage && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      background: settings.modalBackground,
+                      opacity: 1 - settings.modalBackgroundImageOpacity,
+                      pointerEvents: 'none'
+                    }}
+                  />
+                )}
+                
+                <div style={{ position: 'relative', zIndex: 1 }}>
+                  <div style={{ 
+                    fontSize: '14px', 
+                    fontWeight: 600, 
+                    color: '#9ca3af',
+                    marginBottom: '8px'
+                  }}>
+                    Превью модального окна
+                  </div>
+                  <div style={{ 
+                    fontSize: '12px', 
+                    color: '#6b7280',
+                    lineHeight: 1.6
+                  }}>
+                    Здесь отображается, как будут выглядеть модальные окна с выбранным фоном.
+                  </div>
+                  <div
+                    style={{
+                      marginTop: '12px',
+                      padding: '8px 12px',
+                      background: 'rgba(59, 130, 246, 0.1)',
+                      border: '1px solid rgba(59, 130, 246, 0.3)',
+                      borderRadius: '6px',
+                      color: '#60a5fa',
+                      fontSize: '12px',
+                      textAlign: 'center'
+                    }}
+                  >
+                    Пример кнопки
+                  </div>
                 </div>
               </div>
             </div>

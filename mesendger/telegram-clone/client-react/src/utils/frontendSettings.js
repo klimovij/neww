@@ -8,9 +8,13 @@ const DEFAULT_SETTINGS = {
   
   // Фон модалок
   modalBackground: '#1f2937',
+  modalBackgroundImage: '',
+  modalBackgroundImageOpacity: 1,
   
   // Сайдбар
-  sidebarButtonBackground: 'rgba(59, 130, 246, 0.1)',
+  sidebarButtonBackground: '#3b82f6',
+  sidebarButtonBackgroundImage: '',
+  sidebarButtonBackgroundImageOpacity: 0.1,
   sidebarTextColor: '#ffffff',
   sidebarTextSize: '14px',
   sidebarFontFamily: 'Inter, system-ui, -apple-system, sans-serif',
@@ -46,9 +50,19 @@ export const applyFrontendSettings = (settings = null) => {
   
   // Применяем фон модалок
   document.documentElement.style.setProperty('--modal-background', activeSettings.modalBackground);
+  if (activeSettings.modalBackgroundImage) {
+    document.documentElement.style.setProperty('--modal-background-image', `url(${activeSettings.modalBackgroundImage})`);
+    document.documentElement.style.setProperty('--modal-background-image-opacity', activeSettings.modalBackgroundImageOpacity);
+  } else {
+    document.documentElement.style.setProperty('--modal-background-image', 'none');
+  }
   
   // Применяем стили сайдбара
-  document.documentElement.style.setProperty('--sidebar-button-background', activeSettings.sidebarButtonBackground);
+  const buttonBg = activeSettings.sidebarButtonBackgroundImage 
+    ? `url(${activeSettings.sidebarButtonBackgroundImage})`
+    : activeSettings.sidebarButtonBackground;
+  document.documentElement.style.setProperty('--sidebar-button-background', buttonBg);
+  document.documentElement.style.setProperty('--sidebar-button-background-opacity', activeSettings.sidebarButtonBackgroundImageOpacity || 0.1);
   document.documentElement.style.setProperty('--sidebar-text-color', activeSettings.sidebarTextColor);
   document.documentElement.style.setProperty('--sidebar-text-size', activeSettings.sidebarTextSize);
   document.documentElement.style.setProperty('--sidebar-font-family', activeSettings.sidebarFontFamily);
