@@ -3273,6 +3273,17 @@ class Database {
         )
       `);
 
+      // Таблица настроек фронтенда (цвета, шрифты, фоны - глобальные для всех)
+      this.db.run(`
+        CREATE TABLE IF NOT EXISTS app_frontend_settings (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          settings TEXT NOT NULL,
+          updated_by INTEGER,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (updated_by) REFERENCES users (id)
+        )
+      `);
+
       // Таблица задач
       this.db.run(`
         CREATE TABLE IF NOT EXISTS tasks (
@@ -5501,6 +5512,74 @@ class Database {
         function(err) {
           if (err) {
             console.error('Error saving sidebar settings:', err);
+            reject(err);
+          } else {
+            resolve(this.lastID);
+          }
+        }
+      );
+    });
+  }
+
+  // ==================== НАСТРОЙКИ ФРОНТЕНДА ====================
+  // Получить текущие настройки фронтенда (цвета, шрифты, фоны)
+  async getFrontendSettings() {
+    return new Promise((resolve, reject) => {
+      this.db.get(
+        'SELECT settings, updated_at, updated_by FROM app_frontend_settings ORDER BY updated_at DESC LIMIT 1',
+        [],
+        (err, row) => {
+          if (err) {
+            console.error('Error getting frontend settings:', err);
+            if (err.message && err.message.includes('no such table')) {
+              console.warn('Table app_frontend_settings does not exist yet, returning null');
+              resolve(null);
+              return;
+            }
+            reject(err);
+          } else if (row && row.settings) {
+            try {
+              const settingsStr = String(row.settings).trim();
+              if (!settingsStr || settingsStr === 'null' || settingsStr === 'undefined') {
+                console.warn('Frontend settings is empty or null, returning null');
+                resolve(null);
+                return;
+              }
+              
+              let settings = JSON.parse(settingsStr);
+              if (typeof settings === 'string') {
+                try {
+                  settings = JSON.parse(settings);
+                } catch (doubleParseErr) {
+                  console.error('Double parse error for frontend settings:', doubleParseErr);
+                  resolve(null);
+                  return;
+                }
+              }
+              
+              resolve(settings);
+            } catch (parseError) {
+              console.error('Error parsing frontend settings:', parseError);
+              resolve(null);
+            }
+          } else {
+            resolve(null);
+          }
+        }
+      );
+    });
+  }
+
+  // Сохранить настройки фронтенда
+  async saveFrontendSettings(settings, userId) {
+    return new Promise((resolve, reject) => {
+      const settingsJson = JSON.stringify(settings);
+      this.db.run(
+        'INSERT INTO app_frontend_settings (settings, updated_by, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP)',
+        [settingsJson, userId || null],
+        function(err) {
+          if (err) {
+            console.error('Error saving frontend settings:', err);
             reject(err);
           } else {
             resolve(this.lastID);

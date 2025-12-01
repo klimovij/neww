@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FiX, FiMonitor, FiImage, FiType, FiChevronDown, FiChevronUp } from 'react-icons/fi';
+import api from '../../utils/axiosConfig';
 
 const DEFAULT_SETTINGS = {
   // Основной фон
@@ -102,17 +103,64 @@ export default function FrontendSettingsModal({ open, onClose }) {
   // Загрузка настроек при открытии
   useEffect(() => {
     if (open) {
-      const saved = localStorage.getItem('frontendSettings');
-      if (saved) {
+      // Сначала пытаемся загрузить с сервера
+      const loadFromServer = async () => {
         try {
-          setSettings(JSON.parse(saved));
+          const response = await fetch('/api/frontend-settings', {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+          });
+          
+          if (response.ok) {
+            const result = await response.json();
+            if (result.success && result.settings) {
+              console.log('📥 Настройки фронтенда загружены с сервера');
+              setSettings(result.settings);
+              // Сохраняем в localStorage для оффлайн доступа
+              localStorage.setItem('frontendSettings', JSON.stringify(result.settings));
+              return;
+            }
+          }
         } catch (error) {
-          console.error('Ошибка загрузки настроек:', error);
+          console.warn('⚠️ Не удалось загрузить настройки с сервера, используем локальные:', error);
         }
-      }
+        
+        // Fallback: загружаем из localStorage
+        const saved = localStorage.getItem('frontendSettings');
+        if (saved) {
+          try {
+            setSettings(JSON.parse(saved));
+            console.log('📥 Настройки фронтенда загружены из localStorage');
+          } catch (error) {
+            console.error('Ошибка загрузки настроек из localStorage:', error);
+          }
+        }
+      };
+      
+      loadFromServer();
       setHasChanges(false);
     }
   }, [open]);
+
+  // WebSocket listener для синхронизации настроек
+  useEffect(() => {
+    const handleFrontendSettingsUpdate = (updatedSettings) => {
+      console.log('📡 Получены обновленные настройки фронтенда через WebSocket');
+      setSettings(updatedSettings);
+      // Сохраняем в localStorage
+      localStorage.setItem('frontendSettings', JSON.stringify(updatedSettings));
+    };
+    
+    if (window.socket) {
+      window.socket.on('frontend-settings-updated', handleFrontendSettingsUpdate);
+      
+      return () => {
+        window.socket.off('frontend-settings-updated', handleFrontendSettingsUpdate);
+      };
+    }
+  }, []);
 
   // Применение настроек к DOM
   useEffect(() => {
@@ -191,13 +239,13 @@ export default function FrontendSettingsModal({ open, onClose }) {
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     try {
       // Проверяем размер перед сохранением
       const storageInfo = checkLocalStorageSize();
       console.log(`📊 localStorage используется: ${storageInfo.totalMB.toFixed(2)} MB (${storageInfo.percentUsed.toFixed(1)}%)`);
       
-      // Пытаемся сохранить
+      // Пытаемся сохранить локально
       localStorage.setItem('frontendSettings', JSON.stringify(settings));
       
       // Применяем настройки глобально
@@ -228,8 +276,33 @@ export default function FrontendSettingsModal({ open, onClose }) {
       document.documentElement.style.setProperty('--sidebar-text-align', settings.sidebarTextAlign);
       document.documentElement.style.setProperty('--sidebar-font-family', settings.sidebarFontFamily);
       
-      setHasChanges(false);
-      alert('✅ Настройки сохранены!');
+      // Сохраняем на сервер для синхронизации между всеми устройствами
+      try {
+        const response = await fetch('/api/frontend-settings', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          },
+          body: JSON.stringify({ settings })
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok && result.success) {
+          console.log('✅ Настройки фронтенда сохранены на сервер и синхронизированы со всеми устройствами');
+          setHasChanges(false);
+          alert('✅ Настройки сохранены и синхронизированы со всеми устройствами!');
+        } else {
+          console.warn('⚠️ Настройки применены локально, но не удалось синхронизировать с сервером:', result.error);
+          setHasChanges(false);
+          alert('✅ Настройки сохранены локально!\n\n⚠️ Синхронизация с сервером не удалась. Настройки будут применены только на этом устройстве.');
+        }
+      } catch (syncError) {
+        console.error('⚠️ Ошибка синхронизации с сервером:', syncError);
+        setHasChanges(false);
+        alert('✅ Настройки сохранены локально!\n\n⚠️ Синхронизация с сервером не удалась. Настройки будут применены только на этом устройстве.');
+      }
     } catch (error) {
       console.error('Ошибка сохранения:', error);
       

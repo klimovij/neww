@@ -3929,6 +3929,67 @@ app.post('/api/sidebar-settings', authenticateToken, async (req, res) => {
   }
 });
 
+// ==================== НАСТРОЙКИ ФРОНТЕНДА ====================
+// Получить настройки фронтенда (цвета, шрифты, фоны)
+app.get('/api/frontend-settings', authenticateToken, async (req, res) => {
+  try {
+    const settingsData = await db.getFrontendSettings();
+    console.log('📡 GET /api/frontend-settings - Settings retrieved:', settingsData ? 'Found' : 'Not found');
+    
+    if (settingsData && typeof settingsData === 'object') {
+      try {
+        const { updated_at, updated_by, ...settings } = settingsData;
+        res.json({ success: true, settings });
+      } catch (parseError) {
+        console.error('❌ Error processing frontend settings:', parseError);
+        res.json({ success: true, settings: null });
+      }
+    } else {
+      res.json({ success: true, settings: null });
+    }
+  } catch (error) {
+    console.error('❌ Error loading frontend settings:', error);
+    res.json({ success: true, settings: null });
+  }
+});
+
+// Сохранить настройки фронтенда (только для админов)
+app.post('/api/frontend-settings', authenticateToken, async (req, res) => {
+  try {
+    // Проверяем права доступа - только админы могут изменять настройки
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, error: 'Нет прав доступа. Только администраторы могут изменять настройки фронтенда.' });
+    }
+
+    const settings = req.body.settings;
+    if (!settings) {
+      return res.status(400).json({ success: false, error: 'Настройки не предоставлены' });
+    }
+
+    const id = await db.saveFrontendSettings(settings, req.user.id);
+    
+    let settingsToEmit = settings;
+    if (typeof settingsToEmit === 'string') {
+      try {
+        settingsToEmit = JSON.parse(settingsToEmit);
+      } catch (e) {
+        console.error('Error parsing settings string:', e);
+      }
+    }
+
+    // Отправляем обновленные настройки всем подключенным клиентам
+    if (io) {
+      console.log('📡 Broadcasting frontend-settings-updated to all clients');
+      io.emit('frontend-settings-updated', settingsToEmit);
+    }
+
+    res.json({ success: true, id, message: 'Настройки фронтенда сохранены' });
+  } catch (error) {
+    console.error('❌ Error saving frontend settings:', error);
+    res.status(500).json({ success: false, error: 'Ошибка сохранения настроек фронтенда' });
+  }
+});
+
 // Назначить департамент пользователю (top-level)
 app.post('/api/users/:id/department', authenticateToken, async (req, res) => {
   try {

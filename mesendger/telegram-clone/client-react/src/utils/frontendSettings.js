@@ -70,10 +70,42 @@ export const applyFrontendSettings = (settings = null) => {
   document.documentElement.style.setProperty('--sidebar-font-family', activeSettings.sidebarFontFamily);
 };
 
+// Сохранение настроек в localStorage
+export const saveFrontendSettings = (settings) => {
+  try {
+    localStorage.setItem('frontendSettings', JSON.stringify(settings));
+    // Отправляем событие для синхронизации между вкладками
+    window.dispatchEvent(new Event('storage'));
+  } catch (error) {
+    console.error('Ошибка сохранения настроек фронтенда:', error);
+  }
+};
+
 // Инициализация при старте приложения
-export const initializeFrontendSettings = () => {
-  // Применяем сохраненные настройки
+export const initializeFrontendSettings = async () => {
+  // Сначала применяем локальные настройки
   applyFrontendSettings();
+  
+  // Затем пытаемся загрузить с сервера
+  try {
+    const response = await fetch('/api/frontend-settings', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    });
+    
+    if (response.ok) {
+      const result = await response.json();
+      if (result.success && result.settings) {
+        console.log('📥 Настройки фронтенда загружены с сервера при запуске');
+        localStorage.setItem('frontendSettings', JSON.stringify(result.settings));
+        applyFrontendSettings(result.settings);
+      }
+    }
+  } catch (error) {
+    console.warn('⚠️ Не удалось загрузить настройки фронтенда с сервера, используем локальные:', error);
+  }
   
   // Слушаем изменения в localStorage (для синхронизации между вкладками)
   window.addEventListener('storage', (e) => {
@@ -81,5 +113,14 @@ export const initializeFrontendSettings = () => {
       applyFrontendSettings();
     }
   });
+  
+  // Слушаем WebSocket для синхронизации с другими устройствами
+  if (window.socket) {
+    window.socket.on('frontend-settings-updated', (updatedSettings) => {
+      console.log('📡 Получены обновленные настройки фронтенда через WebSocket (глобальная синхронизация)');
+      localStorage.setItem('frontendSettings', JSON.stringify(updatedSettings));
+      applyFrontendSettings(updatedSettings);
+    });
+  }
 };
 
