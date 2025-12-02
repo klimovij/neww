@@ -65,10 +65,9 @@ export const applyFrontendSettings = (settings = null) => {
     modalIds.forEach(modalId => {
       const modalSettings = activeSettings.modals[modalId];
       if (modalSettings) {
-        // Цвет фона
+        // Фон модалки
         document.documentElement.style.setProperty(`--modal-${modalId}-background`, modalSettings.background);
         
-        // Изображение фона
         if (modalSettings.backgroundImage) {
           document.documentElement.style.setProperty(`--modal-${modalId}-background-image`, `url(${modalSettings.backgroundImage})`);
           document.documentElement.style.setProperty(`--modal-${modalId}-background-image-opacity`, modalSettings.backgroundImageOpacity);
@@ -76,6 +75,19 @@ export const applyFrontendSettings = (settings = null) => {
           document.documentElement.style.setProperty(`--modal-${modalId}-background-image`, 'none');
           document.documentElement.style.setProperty(`--modal-${modalId}-background-image-opacity`, '1');
         }
+        
+        // Стили кнопок
+        const buttonBg = modalSettings.buttonBackgroundImage 
+          ? `url(${modalSettings.buttonBackgroundImage})`
+          : modalSettings.buttonBackground;
+        document.documentElement.style.setProperty(`--modal-${modalId}-button-background`, buttonBg);
+        document.documentElement.style.setProperty(`--modal-${modalId}-button-background-opacity`, modalSettings.buttonBackgroundImageOpacity || 0.1);
+        
+        // Стили текста
+        document.documentElement.style.setProperty(`--modal-${modalId}-text-color`, modalSettings.textColor);
+        document.documentElement.style.setProperty(`--modal-${modalId}-text-size`, modalSettings.textSize);
+        document.documentElement.style.setProperty(`--modal-${modalId}-text-align`, modalSettings.textAlign);
+        document.documentElement.style.setProperty(`--modal-${modalId}-font-family`, modalSettings.fontFamily);
       }
     });
   }

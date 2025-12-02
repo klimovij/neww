@@ -43,51 +43,121 @@ const DEFAULT_SETTINGS = {
       background: '#1f2937',
       backgroundImage: '',
       backgroundImageOpacity: 1,
+      buttonBackground: '#3b82f6',
+      buttonBackgroundImage: '',
+      buttonBackgroundImageOpacity: 0.1,
+      textColor: '#ffffff',
+      textSize: '14px',
+      textAlign: 'left',
+      fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
     },
     chats: {
       background: '#1f2937',
       backgroundImage: '',
       backgroundImageOpacity: 1,
+      buttonBackground: '#3b82f6',
+      buttonBackgroundImage: '',
+      buttonBackgroundImageOpacity: 0.1,
+      textColor: '#ffffff',
+      textSize: '14px',
+      textAlign: 'left',
+      fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
     },
     leaves: {
       background: '#1f2937',
       backgroundImage: '',
       backgroundImageOpacity: 1,
+      buttonBackground: '#3b82f6',
+      buttonBackgroundImage: '',
+      buttonBackgroundImageOpacity: 0.1,
+      textColor: '#ffffff',
+      textSize: '14px',
+      textAlign: 'left',
+      fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
     },
     tasks: {
       background: '#1f2937',
       backgroundImage: '',
       backgroundImageOpacity: 1,
+      buttonBackground: '#3b82f6',
+      buttonBackgroundImage: '',
+      buttonBackgroundImageOpacity: 0.1,
+      textColor: '#ffffff',
+      textSize: '14px',
+      textAlign: 'left',
+      fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
     },
     todo: {
       background: '#1f2937',
       backgroundImage: '',
       backgroundImageOpacity: 1,
+      buttonBackground: '#3b82f6',
+      buttonBackgroundImage: '',
+      buttonBackgroundImageOpacity: 0.1,
+      textColor: '#ffffff',
+      textSize: '14px',
+      textAlign: 'left',
+      fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
     },
     news: {
       background: '#1f2937',
       backgroundImage: '',
       backgroundImageOpacity: 1,
+      buttonBackground: '#3b82f6',
+      buttonBackgroundImage: '',
+      buttonBackgroundImageOpacity: 0.1,
+      textColor: '#ffffff',
+      textSize: '14px',
+      textAlign: 'left',
+      fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
     },
     employees: {
       background: '#1f2937',
       backgroundImage: '',
       backgroundImageOpacity: 1,
+      buttonBackground: '#3b82f6',
+      buttonBackgroundImage: '',
+      buttonBackgroundImageOpacity: 0.1,
+      textColor: '#ffffff',
+      textSize: '14px',
+      textAlign: 'left',
+      fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
     },
     monitoring: {
       background: '#1f2937',
       backgroundImage: '',
       backgroundImageOpacity: 1,
+      buttonBackground: '#3b82f6',
+      buttonBackgroundImage: '',
+      buttonBackgroundImageOpacity: 0.1,
+      textColor: '#ffffff',
+      textSize: '14px',
+      textAlign: 'left',
+      fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
     },
     worktime: {
       background: '#1f2937',
       backgroundImage: '',
       backgroundImageOpacity: 1,
+      buttonBackground: '#3b82f6',
+      buttonBackgroundImage: '',
+      buttonBackgroundImageOpacity: 0.1,
+      textColor: '#ffffff',
+      textSize: '14px',
+      textAlign: 'left',
+      fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
     },
     management: {
       background: '#1f2937',
       backgroundImage: '',
       backgroundImageOpacity: 1,
+      buttonBackground: '#3b82f6',
+      buttonBackgroundImage: '',
+      buttonBackgroundImageOpacity: 0.1,
+      textColor: '#ffffff',
+      textSize: '14px',
+      textAlign: 'left',
+      fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
     },
   }
 };
@@ -116,6 +186,26 @@ const ModalSettingsSection = ({ modalId, modalName, modalIcon: Icon, settings, o
     }
   };
 
+  const handleButtonImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const base64 = await loadImageAsBase64(file);
+      const updatedModals = {
+        ...settings.modals,
+        [modalId]: {
+          ...modalSettings,
+          buttonBackgroundImage: base64
+        }
+      };
+      onSettingsChange({ ...settings, modals: updatedModals });
+    } catch (error) {
+      console.error('Ошибка загрузки изображения кнопки:', error);
+      alert(`❌ ${error.message}`);
+    }
+  };
+
   const updateModalSetting = (key, value) => {
     const updatedModals = {
       ...settings.modals,
@@ -131,6 +221,7 @@ const ModalSettingsSection = ({ modalId, modalName, modalIcon: Icon, settings, o
     <>
       {/* Левая колонка - настройки */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '24px' }}>
+        
         {/* Фон модалки */}
         <div style={{ 
           background: '#111827', 
@@ -146,7 +237,6 @@ const ModalSettingsSection = ({ modalId, modalName, modalIcon: Icon, settings, o
           </div>
           
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {/* Цвет фона */}
             <div>
               <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500, color: '#d1d5db' }}>
                 Цвет фона
@@ -166,7 +256,6 @@ const ModalSettingsSection = ({ modalId, modalName, modalIcon: Icon, settings, o
               />
             </div>
 
-            {/* Загрузка изображения */}
             <div>
               <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500, color: '#d1d5db' }}>
                 Изображение фона
@@ -206,7 +295,6 @@ const ModalSettingsSection = ({ modalId, modalName, modalIcon: Icon, settings, o
               )}
             </div>
 
-            {/* Прозрачность изображения */}
             {modalSettings.backgroundImage && (
               <div>
                 <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500, color: '#d1d5db' }}>
@@ -228,10 +316,208 @@ const ModalSettingsSection = ({ modalId, modalName, modalIcon: Icon, settings, o
             )}
           </div>
         </div>
+
+        {/* Стили кнопок */}
+        <div style={{ 
+          background: '#111827', 
+          padding: '20px', 
+          borderRadius: '12px',
+          border: '1px solid rgba(75, 85, 99, 0.3)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+            <FiImage size={18} color="#60a5fa" />
+            <h3 style={{ margin: 0, fontSize: '1.1em', fontWeight: 600, color: '#60a5fa' }}>
+              Стили кнопок в "{modalName}"
+            </h3>
+          </div>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div>
+              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500, color: '#d1d5db' }}>
+                Цвет фона кнопок
+              </label>
+              <input
+                type="color"
+                value={modalSettings.buttonBackground}
+                onChange={(e) => updateModalSetting('buttonBackground', e.target.value)}
+                style={{
+                  width: '100%',
+                  height: '50px',
+                  border: '1px solid rgba(75, 85, 99, 0.5)',
+                  borderRadius: '8px',
+                  cursor: 'pointer'
+                }}
+              />
+            </div>
+
+            <div>
+              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500, color: '#d1d5db' }}>
+                Изображение фона кнопок
+              </label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleButtonImageUpload}
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  border: '1px solid rgba(75, 85, 99, 0.5)',
+                  borderRadius: '8px',
+                  backgroundColor: '#1f2937',
+                  color: '#d1d5db',
+                  cursor: 'pointer',
+                  fontSize: '14px'
+                }}
+              />
+              {modalSettings.buttonBackgroundImage && (
+                <button
+                  onClick={() => updateModalSetting('buttonBackgroundImage', '')}
+                  style={{
+                    marginTop: '8px',
+                    padding: '6px 12px',
+                    borderRadius: '6px',
+                    border: '1px solid rgba(239, 68, 68, 0.5)',
+                    background: 'rgba(239, 68, 68, 0.1)',
+                    color: '#ef4444',
+                    cursor: 'pointer',
+                    fontSize: '12px',
+                    fontWeight: 500
+                  }}
+                >
+                  Удалить изображение
+                </button>
+              )}
+            </div>
+
+            {modalSettings.buttonBackgroundImage && (
+              <div>
+                <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500, color: '#d1d5db' }}>
+                  Прозрачность изображения: {Math.round(modalSettings.buttonBackgroundImageOpacity * 100)}%
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value={modalSettings.buttonBackgroundImageOpacity}
+                  onChange={(e) => updateModalSetting('buttonBackgroundImageOpacity', parseFloat(e.target.value))}
+                  style={{
+                    width: '100%',
+                    cursor: 'pointer'
+                  }}
+                />
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Стили текста */}
+        <div style={{ 
+          background: '#111827', 
+          padding: '20px', 
+          borderRadius: '12px',
+          border: '1px solid rgba(75, 85, 99, 0.3)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+            <FiType size={18} color="#60a5fa" />
+            <h3 style={{ margin: 0, fontSize: '1.1em', fontWeight: 600, color: '#60a5fa' }}>
+              Стили текста в "{modalName}"
+            </h3>
+          </div>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div>
+              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500, color: '#d1d5db' }}>
+                Цвет текста
+              </label>
+              <input
+                type="color"
+                value={modalSettings.textColor}
+                onChange={(e) => updateModalSetting('textColor', e.target.value)}
+                style={{
+                  width: '100%',
+                  height: '50px',
+                  border: '1px solid rgba(75, 85, 99, 0.5)',
+                  borderRadius: '8px',
+                  cursor: 'pointer'
+                }}
+              />
+            </div>
+
+            <div>
+              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500, color: '#d1d5db' }}>
+                Размер текста: {modalSettings.textSize}
+              </label>
+              <input
+                type="range"
+                min="10"
+                max="24"
+                step="1"
+                value={parseInt(modalSettings.textSize)}
+                onChange={(e) => updateModalSetting('textSize', `${e.target.value}px`)}
+                style={{
+                  width: '100%',
+                  cursor: 'pointer'
+                }}
+              />
+            </div>
+
+            <div>
+              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500, color: '#d1d5db' }}>
+                Выравнивание текста
+              </label>
+              <select
+                value={modalSettings.textAlign}
+                onChange={(e) => updateModalSetting('textAlign', e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  border: '1px solid rgba(75, 85, 99, 0.5)',
+                  borderRadius: '8px',
+                  backgroundColor: '#1f2937',
+                  color: '#d1d5db',
+                  fontSize: '14px',
+                  cursor: 'pointer'
+                }}
+              >
+                <option value="left">Слева</option>
+                <option value="center">По центру</option>
+                <option value="right">Справа</option>
+              </select>
+            </div>
+
+            <div>
+              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500, color: '#d1d5db' }}>
+                Шрифт
+              </label>
+              <select
+                value={modalSettings.fontFamily}
+                onChange={(e) => updateModalSetting('fontFamily', e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  border: '1px solid rgba(75, 85, 99, 0.5)',
+                  borderRadius: '8px',
+                  backgroundColor: '#1f2937',
+                  color: '#d1d5db',
+                  fontSize: '14px',
+                  cursor: 'pointer'
+                }}
+              >
+                <option value="Inter, system-ui, -apple-system, sans-serif">Inter</option>
+                <option value="Arial, sans-serif">Arial</option>
+                <option value="Georgia, serif">Georgia</option>
+                <option value="'Courier New', monospace">Courier New</option>
+                <option value="'Times New Roman', serif">Times New Roman</option>
+                <option value="Verdana, sans-serif">Verdana</option>
+              </select>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Правая колонка - превью */}
-      <div style={{ flex: '0 0 350px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <div style={{ flex: '0 0 400px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
         <div style={{
           background: '#111827',
           padding: '20px',
@@ -242,7 +528,7 @@ const ModalSettingsSection = ({ modalId, modalName, modalIcon: Icon, settings, o
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
             <FiMonitor size={18} color="#60a5fa" />
             <h3 style={{ margin: 0, fontSize: '1.1em', fontWeight: 600, color: '#60a5fa' }}>
-              Превью
+              Превью "{modalName}"
             </h3>
           </div>
 
@@ -254,14 +540,14 @@ const ModalSettingsSection = ({ modalId, modalName, modalIcon: Icon, settings, o
               backgroundSize: 'cover',
               backgroundPosition: 'center',
               borderRadius: '12px',
-              padding: '20px',
+              padding: '24px',
               boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
               position: 'relative',
               overflow: 'hidden',
-              minHeight: '250px'
+              minHeight: '400px'
             }}
           >
-            {/* Overlay для прозрачности изображения */}
+            {/* Overlay для прозрачности изображения фона */}
             {modalSettings.backgroundImage && (
               <div
                 style={{
@@ -279,11 +565,12 @@ const ModalSettingsSection = ({ modalId, modalName, modalIcon: Icon, settings, o
             )}
             
             <div style={{ position: 'relative', zIndex: 1 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+              {/* Заголовок модалки */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
                 <Icon size={32} color="#60a5fa" />
                 <div>
                   <div style={{ 
-                    fontSize: '18px', 
+                    fontSize: '20px', 
                     fontWeight: 700, 
                     color: '#f3f4f6',
                     marginBottom: '4px'
@@ -299,28 +586,62 @@ const ModalSettingsSection = ({ modalId, modalName, modalIcon: Icon, settings, o
                 </div>
               </div>
               
+              {/* Примеры текста */}
               <div style={{ 
-                fontSize: '14px', 
-                color: '#d1d5db',
+                fontSize: modalSettings.textSize,
+                color: modalSettings.textColor,
+                fontFamily: modalSettings.fontFamily,
+                textAlign: modalSettings.textAlign,
                 lineHeight: 1.6,
-                marginBottom: '16px'
+                marginBottom: '20px',
+                padding: '12px',
+                background: 'rgba(0,0,0,0.2)',
+                borderRadius: '8px'
               }}>
-                Здесь отображается, как будет выглядеть модальное окно "{modalName}" с выбранным фоном и настройками.
+                Пример текста в модалке "{modalName}". Здесь показывается выбранный шрифт, размер и выравнивание текста.
               </div>
               
-              <div
-                style={{
-                  padding: '10px 16px',
-                  background: 'rgba(59, 130, 246, 0.15)',
-                  border: '1px solid rgba(59, 130, 246, 0.4)',
-                  borderRadius: '8px',
-                  color: '#60a5fa',
-                  fontSize: '14px',
-                  fontWeight: 500,
-                  textAlign: 'center'
-                }}
-              >
-                Пример кнопки
+              {/* Примеры кнопок */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {['Кнопка 1', 'Кнопка 2', 'Кнопка 3'].map((label, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      padding: '12px 20px',
+                      background: modalSettings.buttonBackground,
+                      backgroundImage: modalSettings.buttonBackgroundImage ? `url(${modalSettings.buttonBackgroundImage})` : 'none',
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                      border: '1px solid rgba(59, 130, 246, 0.4)',
+                      borderRadius: '8px',
+                      color: modalSettings.textColor,
+                      fontSize: modalSettings.textSize,
+                      fontFamily: modalSettings.fontFamily,
+                      fontWeight: 500,
+                      textAlign: modalSettings.textAlign,
+                      position: 'relative',
+                      overflow: 'hidden',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {/* Overlay для прозрачности изображения кнопки */}
+                    {modalSettings.buttonBackgroundImage && (
+                      <div
+                        style={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          background: modalSettings.buttonBackground,
+                          opacity: 1 - modalSettings.buttonBackgroundImageOpacity,
+                          pointerEvents: 'none'
+                        }}
+                      />
+                    )}
+                    <span style={{ position: 'relative', zIndex: 1 }}>{label}</span>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
