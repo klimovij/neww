@@ -47,7 +47,9 @@ const DEFAULT_SETTINGS = {
       buttonBackgroundImage: '',
       buttonBackgroundImageOpacity: 0.1,
       buttonTextColor: '#ffffff',
+      iconButtonBackground: 'rgba(67, 233, 123, 0.15)',
       borderColor: 'rgba(67, 233, 123, 0.2)',
+      inputBackground: '#2d3748',
       inputTextColor: '#ffffff',
       headerIconColor: '#43e97b',
       textColor: '#ffffff',
@@ -430,6 +432,24 @@ const ModalSettingsSection = ({ modalId, modalName, modalIcon: Icon, settings, o
                 }}
               />
             </div>
+
+            <div>
+              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500, color: '#d1d5db' }}>
+                Фон иконок-кнопок (стрелка назад, крестик, стрелки календаря)
+              </label>
+              <input
+                type="color"
+                value={modalSettings.iconButtonBackground || '#1a5c3a'}
+                onChange={(e) => updateModalSetting('iconButtonBackground', e.target.value)}
+                style={{
+                  width: '100%',
+                  height: '50px',
+                  border: '1px solid rgba(75, 85, 99, 0.5)',
+                  borderRadius: '8px',
+                  cursor: 'pointer'
+                }}
+              />
+            </div>
           </div>
         </div>
 
@@ -448,6 +468,24 @@ const ModalSettingsSection = ({ modalId, modalName, modalIcon: Icon, settings, o
           </div>
           
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div>
+              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500, color: '#d1d5db' }}>
+                Фон полей ввода
+              </label>
+              <input
+                type="color"
+                value={modalSettings.inputBackground || '#2d3748'}
+                onChange={(e) => updateModalSetting('inputBackground', e.target.value)}
+                style={{
+                  width: '100%',
+                  height: '50px',
+                  border: '1px solid rgba(75, 85, 99, 0.5)',
+                  borderRadius: '8px',
+                  cursor: 'pointer'
+                }}
+              />
+            </div>
+
             <div>
               <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500, color: '#d1d5db' }}>
                 Цвет рамок полей

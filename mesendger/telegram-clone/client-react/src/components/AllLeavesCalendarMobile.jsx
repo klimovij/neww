@@ -383,7 +383,7 @@ export default function AllLeavesCalendarMobile({ open, onClose, token, onOpenMo
                   onClose();
                 }}
                 style={{
-                  background: 'rgba(67,233,123,0.15)',
+                  background: 'var(--modal-calendar-icon-button-background, rgba(67,233,123,0.15))',
                   border: '1px solid var(--modal-calendar-header-icon-color, #43e97b)',
                   borderRadius: '50%',
                   width: 44,
@@ -418,7 +418,7 @@ export default function AllLeavesCalendarMobile({ open, onClose, token, onOpenMo
                   onClose();
                 }}
                 style={{
-                  background: 'rgba(67,233,123,0.15)',
+                  background: 'var(--modal-calendar-icon-button-background, rgba(67,233,123,0.15))',
                   border: '1px solid var(--modal-calendar-header-icon-color, #43e97b)',
                   borderRadius: '50%',
                   width: 44,
@@ -532,7 +532,7 @@ export default function AllLeavesCalendarMobile({ open, onClose, token, onOpenMo
                         borderRadius: '10px',
                         fontSize: '1em',
                         border: '1px solid var(--modal-calendar-border-color, #43e97b)',
-                        background: '#2d3748',
+                        background: 'var(--modal-calendar-input-background, #2d3748)',
                         color: 'var(--modal-calendar-input-text-color, #fff)'
                       }}
                     >
@@ -554,7 +554,7 @@ export default function AllLeavesCalendarMobile({ open, onClose, token, onOpenMo
                         borderRadius: '10px',
                         fontSize: '1em',
                         border: '1px solid var(--modal-calendar-border-color, #43e97b)',
-                        background: '#2d3748',
+                        background: 'var(--modal-calendar-input-background, #2d3748)',
                         color: 'var(--modal-calendar-input-text-color, #fff)'
                       }}
                     >
@@ -584,7 +584,7 @@ export default function AllLeavesCalendarMobile({ open, onClose, token, onOpenMo
                         borderRadius: '10px',
                         fontSize: '1em',
                         border: '1px solid var(--modal-calendar-border-color, #43e97b)',
-                        background: '#2d3748',
+                        background: 'var(--modal-calendar-input-background, #2d3748)',
                         color: 'var(--modal-calendar-input-text-color, #fff)',
                         boxSizing: 'border-box'
                       }}
@@ -731,7 +731,7 @@ export default function AllLeavesCalendarMobile({ open, onClose, token, onOpenMo
                       borderRadius: '10px',
                       fontSize: '1em',
                       border: '1px solid var(--modal-calendar-border-color, #43e97b)',
-                      background: '#2d3748',
+                      background: 'var(--modal-calendar-input-background, #2d3748)',
                       color: 'var(--modal-calendar-input-text-color, #fff)'
                     }}
                   >
@@ -767,7 +767,7 @@ export default function AllLeavesCalendarMobile({ open, onClose, token, onOpenMo
                     <button
                       onClick={() => handleMonthChange('prev')}
                       style={{
-                        background: 'rgba(67,233,123,0.2)',
+                        background: 'var(--modal-calendar-icon-button-background, rgba(67,233,123,0.15))',
                         border: '1px solid var(--modal-calendar-border-color, #43e97b)',
                         borderRadius: '50%',
                         width: 44,
@@ -793,7 +793,7 @@ export default function AllLeavesCalendarMobile({ open, onClose, token, onOpenMo
                     <button
                       onClick={() => handleMonthChange('next')}
                       style={{
-                        background: 'rgba(67,233,123,0.2)',
+                        background: 'var(--modal-calendar-icon-button-background, rgba(67,233,123,0.15))',
                         border: '1px solid var(--modal-calendar-border-color, #43e97b)',
                         borderRadius: '50%',
                         width: 44,
