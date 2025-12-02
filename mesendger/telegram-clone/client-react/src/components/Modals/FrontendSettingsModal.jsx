@@ -1652,8 +1652,10 @@ export default function FrontendSettingsModal({ open, onClose }) {
     }
     
     setSettings(preset.settings);
+    // Применяем CSS переменные сразу для мгновенного отображения на всех устройствах
+    applyFrontendSettings(preset.settings);
     setHasChanges(true);
-    alert(`✅ Пресет "${preset.name}" применен!\n\nНе забудьте нажать "Сохранить" для применения изменений.`);
+    alert(`✅ Пресет "${preset.name}" применен!\n\nНе забудьте нажать "Сохранить" для сохранения изменений.`);
   };
 
   // Удалить пресет
@@ -1711,33 +1713,11 @@ export default function FrontendSettingsModal({ open, onClose }) {
       // Удаляем все сохраненные настройки из localStorage
       localStorage.removeItem('frontendSettings');
       
-      // Очищаем ВСЕ CSS переменные
-      document.documentElement.style.removeProperty('--main-background');
-      document.documentElement.style.removeProperty('--main-background-image');
-      document.documentElement.style.removeProperty('--main-background-image-opacity');
-      document.documentElement.style.removeProperty('--modal-background');
-      document.documentElement.style.removeProperty('--modal-background-image');
-      document.documentElement.style.removeProperty('--modal-background-image-opacity');
-      document.documentElement.style.removeProperty('--sidebar-button-background');
-      document.documentElement.style.removeProperty('--sidebar-button-background-opacity');
-      document.documentElement.style.removeProperty('--sidebar-text-color');
-      document.documentElement.style.removeProperty('--sidebar-text-size');
-      document.documentElement.style.removeProperty('--sidebar-font-family');
-      
       // Применяем дефолтные настройки
       setSettings(DEFAULT_SETTINGS);
       
-      // Применяем дефолтные значения к DOM
-      document.documentElement.style.setProperty('--main-background', DEFAULT_SETTINGS.mainBackground);
-      document.documentElement.style.setProperty('--main-background-image', 'none');
-      document.documentElement.style.setProperty('--modal-background', DEFAULT_SETTINGS.modalBackground);
-      document.documentElement.style.setProperty('--modal-background-image', 'none');
-      document.documentElement.style.setProperty('--sidebar-button-background', DEFAULT_SETTINGS.sidebarButtonBackground);
-      document.documentElement.style.setProperty('--sidebar-button-background-opacity', DEFAULT_SETTINGS.sidebarButtonBackgroundImageOpacity);
-      document.documentElement.style.setProperty('--sidebar-text-color', DEFAULT_SETTINGS.sidebarTextColor);
-      document.documentElement.style.setProperty('--sidebar-text-size', DEFAULT_SETTINGS.sidebarTextSize);
-      document.documentElement.style.setProperty('--sidebar-text-align', DEFAULT_SETTINGS.sidebarTextAlign);
-      document.documentElement.style.setProperty('--sidebar-font-family', DEFAULT_SETTINGS.sidebarFontFamily);
+      // Применяем дефолтные CSS переменные для всех модалок (включая мобильные)
+      applyFrontendSettings(DEFAULT_SETTINGS);
       
       setHasChanges(false);
       
