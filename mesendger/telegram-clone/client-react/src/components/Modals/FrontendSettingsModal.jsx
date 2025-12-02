@@ -87,6 +87,19 @@ const DEFAULT_SETTINGS = {
       buttonBackground: '#3b82f6',
       buttonBackgroundImage: '',
       buttonBackgroundImageOpacity: 0.1,
+      buttonTextColor: '#ffffff',
+      buttonNormalBackground: 'rgba(33, 147, 176, 0.15)',
+      iconButtonBackground: 'rgba(33, 147, 176, 0.2)',
+      borderColor: 'rgba(33, 147, 176, 0.3)',
+      inputBackground: 'rgba(255, 255, 255, 0.92)',
+      inputTextColor: '#333333',
+      headerBackground: 'rgba(35, 41, 49, 0.95)',
+      headerIconColor: '#ffffff',
+      titleColor: '#43e97b',
+      formBackground: 'rgba(44, 62, 80, 0.22)',
+      cardBackground: 'linear-gradient(135deg, rgba(255,255,255,0.93) 0%, rgba(33,147,176,0.13) 100%)',
+      cardTextColor: '#2193b0',
+      cardReasonColor: '#636e72',
       textColor: '#ffffff',
       textSize: '14px',
       textAlign: 'left',
@@ -588,227 +601,398 @@ const ModalSettingsSection = ({ modalId, modalName, modalIcon: Icon, settings, o
           </div>
         </div>
 
-        {/* Стили блока фильтров */}
-        <div style={{ 
-          background: '#111827', 
-          padding: '20px', 
-          borderRadius: '12px',
-          border: '1px solid rgba(75, 85, 99, 0.3)'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-            <FiImage size={18} color="#fbbf24" />
-            <h3 style={{ margin: 0, fontSize: '1.1em', fontWeight: 600, color: '#fbbf24' }}>
-              Стили блока "Показать фильтры"
-            </h3>
-          </div>
-          
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div>
-              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500, color: '#d1d5db' }}>
-                Фон блока фильтров
-              </label>
-              <input
-                type="color"
-                value={modalSettings.filterBlockBackground || '#1a3d2e'}
-                onChange={(e) => updateModalSetting('filterBlockBackground', e.target.value)}
-                style={{
-                  width: '100%',
-                  height: '50px',
-                  border: '1px solid rgba(75, 85, 99, 0.5)',
-                  borderRadius: '8px',
-                  cursor: 'pointer'
-                }}
-              />
+        {/* Стили блока фильтров - только для календаря */}
+        {modalId === 'calendar' && (
+          <div style={{ 
+            background: '#111827', 
+            padding: '20px', 
+            borderRadius: '12px',
+            border: '1px solid rgba(75, 85, 99, 0.3)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+              <FiImage size={18} color="#fbbf24" />
+              <h3 style={{ margin: 0, fontSize: '1.1em', fontWeight: 600, color: '#fbbf24' }}>
+                Стили блока "Показать фильтры"
+              </h3>
             </div>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500, color: '#d1d5db' }}>
+                  Фон блока фильтров
+                </label>
+                <input
+                  type="color"
+                  value={modalSettings.filterBlockBackground || '#1a3d2e'}
+                  onChange={(e) => updateModalSetting('filterBlockBackground', e.target.value)}
+                  style={{
+                    width: '100%',
+                    height: '50px',
+                    border: '1px solid rgba(75, 85, 99, 0.5)',
+                    borderRadius: '8px',
+                    cursor: 'pointer'
+                  }}
+                />
+              </div>
 
-            <div>
-              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500, color: '#d1d5db' }}>
-                Фоновое изображение блока фильтров (URL)
-              </label>
-              <input
-                type="text"
-                value={modalSettings.filterBlockBackgroundImage || ''}
-                onChange={(e) => updateModalSetting('filterBlockBackgroundImage', e.target.value)}
-                placeholder="https://example.com/image.jpg"
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  border: '1px solid rgba(75, 85, 99, 0.5)',
-                  borderRadius: '8px',
-                  background: '#1f2937',
-                  color: '#fff',
-                  boxSizing: 'border-box'
-                }}
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Стили блока навигации (стрелки влево-вправо) */}
-        <div style={{ 
-          background: '#111827', 
-          padding: '20px', 
-          borderRadius: '12px',
-          border: '1px solid rgba(75, 85, 99, 0.3)'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-            <FiImage size={18} color="#a855f7" />
-            <h3 style={{ margin: 0, fontSize: '1.1em', fontWeight: 600, color: '#a855f7' }}>
-              Стили блока навигации по месяцам
-            </h3>
-          </div>
-          
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div>
-              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500, color: '#d1d5db' }}>
-                Фон блока со стрелками
-              </label>
-              <input
-                type="color"
-                value={modalSettings.navBlockBackground || '#1a3d2e'}
-                onChange={(e) => updateModalSetting('navBlockBackground', e.target.value)}
-                style={{
-                  width: '100%',
-                  height: '50px',
-                  border: '1px solid rgba(75, 85, 99, 0.5)',
-                  borderRadius: '8px',
-                  cursor: 'pointer'
-                }}
-              />
-            </div>
-
-            <div>
-              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500, color: '#d1d5db' }}>
-                Фоновое изображение блока навигации (URL)
-              </label>
-              <input
-                type="text"
-                value={modalSettings.navBlockBackgroundImage || ''}
-                onChange={(e) => updateModalSetting('navBlockBackgroundImage', e.target.value)}
-                placeholder="https://example.com/image.jpg"
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  border: '1px solid rgba(75, 85, 99, 0.5)',
-                  borderRadius: '8px',
-                  background: '#1f2937',
-                  color: '#fff',
-                  boxSizing: 'border-box'
-                }}
-              />
+              <div>
+                <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500, color: '#d1d5db' }}>
+                  Фоновое изображение блока фильтров (URL)
+                </label>
+                <input
+                  type="text"
+                  value={modalSettings.filterBlockBackgroundImage || ''}
+                  onChange={(e) => updateModalSetting('filterBlockBackgroundImage', e.target.value)}
+                  placeholder="https://example.com/image.jpg"
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    border: '1px solid rgba(75, 85, 99, 0.5)',
+                    borderRadius: '8px',
+                    background: '#1f2937',
+                    color: '#fff',
+                    boxSizing: 'border-box'
+                  }}
+                />
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
-        {/* Стили сетки календаря */}
-        <div style={{ 
-          background: '#111827', 
-          padding: '20px', 
-          borderRadius: '12px',
-          border: '1px solid rgba(75, 85, 99, 0.3)'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-            <FiLayout size={18} color="#22d3ee" />
-            <h3 style={{ margin: 0, fontSize: '1.1em', fontWeight: 600, color: '#22d3ee' }}>
-              Стили сетки календаря
-            </h3>
-          </div>
-          
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div>
-              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500, color: '#d1d5db' }}>
-                Фон сетки календаря
-              </label>
-              <input
-                type="color"
-                value={modalSettings.calendarGridBackground || '#222a35'}
-                onChange={(e) => updateModalSetting('calendarGridBackground', e.target.value)}
-                style={{
-                  width: '100%',
-                  height: '50px',
-                  border: '1px solid rgba(75, 85, 99, 0.5)',
-                  borderRadius: '8px',
-                  cursor: 'pointer'
-                }}
-              />
+        {/* Стили блока навигации (стрелки влево-вправо) - только для календаря */}
+        {modalId === 'calendar' && (
+          <div style={{ 
+            background: '#111827', 
+            padding: '20px', 
+            borderRadius: '12px',
+            border: '1px solid rgba(75, 85, 99, 0.3)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+              <FiImage size={18} color="#a855f7" />
+              <h3 style={{ margin: 0, fontSize: '1.1em', fontWeight: 600, color: '#a855f7' }}>
+                Стили блока навигации по месяцам
+              </h3>
             </div>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500, color: '#d1d5db' }}>
+                  Фон блока со стрелками
+                </label>
+                <input
+                  type="color"
+                  value={modalSettings.navBlockBackground || '#1a3d2e'}
+                  onChange={(e) => updateModalSetting('navBlockBackground', e.target.value)}
+                  style={{
+                    width: '100%',
+                    height: '50px',
+                    border: '1px solid rgba(75, 85, 99, 0.5)',
+                    borderRadius: '8px',
+                    cursor: 'pointer'
+                  }}
+                />
+              </div>
 
-            <div>
-              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500, color: '#d1d5db' }}>
-                Фоновое изображение сетки календаря (URL)
-              </label>
-              <input
-                type="text"
-                value={modalSettings.calendarGridBackgroundImage || ''}
-                onChange={(e) => updateModalSetting('calendarGridBackgroundImage', e.target.value)}
-                placeholder="https://example.com/image.jpg"
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  border: '1px solid rgba(75, 85, 99, 0.5)',
-                  borderRadius: '8px',
-                  background: '#1f2937',
-                  color: '#fff',
-                  boxSizing: 'border-box'
-                }}
-              />
-            </div>
-
-            <div>
-              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500, color: '#d1d5db' }}>
-                Фон ячеек календаря
-              </label>
-              <input
-                type="color"
-                value={modalSettings.calendarCellBackground || '#1a3d2e'}
-                onChange={(e) => updateModalSetting('calendarCellBackground', e.target.value)}
-                style={{
-                  width: '100%',
-                  height: '50px',
-                  border: '1px solid rgba(75, 85, 99, 0.5)',
-                  borderRadius: '8px',
-                  cursor: 'pointer'
-                }}
-              />
-            </div>
-
-            <div>
-              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500, color: '#d1d5db' }}>
-                Цвет чисел (дней)
-              </label>
-              <input
-                type="color"
-                value={modalSettings.calendarCellTextColor || '#ffffff'}
-                onChange={(e) => updateModalSetting('calendarCellTextColor', e.target.value)}
-                style={{
-                  width: '100%',
-                  height: '50px',
-                  border: '1px solid rgba(75, 85, 99, 0.5)',
-                  borderRadius: '8px',
-                  cursor: 'pointer'
-                }}
-              />
-            </div>
-
-            <div>
-              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500, color: '#d1d5db' }}>
-                Цвет дней недели
-              </label>
-              <input
-                type="color"
-                value={modalSettings.calendarWeekdayColor || '#43e97b'}
-                onChange={(e) => updateModalSetting('calendarWeekdayColor', e.target.value)}
-                style={{
-                  width: '100%',
-                  height: '50px',
-                  border: '1px solid rgba(75, 85, 99, 0.5)',
-                  borderRadius: '8px',
-                  cursor: 'pointer'
-                }}
-              />
+              <div>
+                <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500, color: '#d1d5db' }}>
+                  Фоновое изображение блока навигации (URL)
+                </label>
+                <input
+                  type="text"
+                  value={modalSettings.navBlockBackgroundImage || ''}
+                  onChange={(e) => updateModalSetting('navBlockBackgroundImage', e.target.value)}
+                  placeholder="https://example.com/image.jpg"
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    border: '1px solid rgba(75, 85, 99, 0.5)',
+                    borderRadius: '8px',
+                    background: '#1f2937',
+                    color: '#fff',
+                    boxSizing: 'border-box'
+                  }}
+                />
+              </div>
             </div>
           </div>
-        </div>
+        )}
+
+        {/* Стили сетки календаря - только для календаря */}
+        {modalId === 'calendar' && (
+          <div style={{ 
+            background: '#111827', 
+            padding: '20px', 
+            borderRadius: '12px',
+            border: '1px solid rgba(75, 85, 99, 0.3)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+              <FiLayout size={18} color="#22d3ee" />
+              <h3 style={{ margin: 0, fontSize: '1.1em', fontWeight: 600, color: '#22d3ee' }}>
+                Стили сетки календаря
+              </h3>
+            </div>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500, color: '#d1d5db' }}>
+                  Фон сетки календаря
+                </label>
+                <input
+                  type="color"
+                  value={modalSettings.calendarGridBackground || '#222a35'}
+                  onChange={(e) => updateModalSetting('calendarGridBackground', e.target.value)}
+                  style={{
+                    width: '100%',
+                    height: '50px',
+                    border: '1px solid rgba(75, 85, 99, 0.5)',
+                    borderRadius: '8px',
+                    cursor: 'pointer'
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500, color: '#d1d5db' }}>
+                  Фоновое изображение сетки календаря (URL)
+                </label>
+                <input
+                  type="text"
+                  value={modalSettings.calendarGridBackgroundImage || ''}
+                  onChange={(e) => updateModalSetting('calendarGridBackgroundImage', e.target.value)}
+                  placeholder="https://example.com/image.jpg"
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    border: '1px solid rgba(75, 85, 99, 0.5)',
+                    borderRadius: '8px',
+                    background: '#1f2937',
+                    color: '#fff',
+                    boxSizing: 'border-box'
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500, color: '#d1d5db' }}>
+                  Фон ячеек календаря
+                </label>
+                <input
+                  type="color"
+                  value={modalSettings.calendarCellBackground || '#1a3d2e'}
+                  onChange={(e) => updateModalSetting('calendarCellBackground', e.target.value)}
+                  style={{
+                    width: '100%',
+                    height: '50px',
+                    border: '1px solid rgba(75, 85, 99, 0.5)',
+                    borderRadius: '8px',
+                    cursor: 'pointer'
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500, color: '#d1d5db' }}>
+                  Цвет чисел (дней)
+                </label>
+                <input
+                  type="color"
+                  value={modalSettings.calendarCellTextColor || '#ffffff'}
+                  onChange={(e) => updateModalSetting('calendarCellTextColor', e.target.value)}
+                  style={{
+                    width: '100%',
+                    height: '50px',
+                    border: '1px solid rgba(75, 85, 99, 0.5)',
+                    borderRadius: '8px',
+                    cursor: 'pointer'
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500, color: '#d1d5db' }}>
+                  Цвет дней недели
+                </label>
+                <input
+                  type="color"
+                  value={modalSettings.calendarWeekdayColor || '#43e97b'}
+                  onChange={(e) => updateModalSetting('calendarWeekdayColor', e.target.value)}
+                  style={{
+                    width: '100%',
+                    height: '50px',
+                    border: '1px solid rgba(75, 85, 99, 0.5)',
+                    borderRadius: '8px',
+                    cursor: 'pointer'
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Стили заголовка - только для отгулов */}
+        {modalId === 'leaves' && (
+          <div style={{ 
+            background: '#111827', 
+            padding: '20px', 
+            borderRadius: '12px',
+            border: '1px solid rgba(75, 85, 99, 0.3)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+              <FiType size={18} color="#fbbf24" />
+              <h3 style={{ margin: 0, fontSize: '1.1em', fontWeight: 600, color: '#fbbf24' }}>
+                Стили заголовка и хедера
+              </h3>
+            </div>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500, color: '#d1d5db' }}>
+                  Фон заголовка (хедер)
+                </label>
+                <input
+                  type="color"
+                  value={modalSettings.headerBackground || '#232931'}
+                  onChange={(e) => updateModalSetting('headerBackground', e.target.value)}
+                  style={{
+                    width: '100%',
+                    height: '50px',
+                    border: '1px solid rgba(75, 85, 99, 0.5)',
+                    borderRadius: '8px',
+                    cursor: 'pointer'
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500, color: '#d1d5db' }}>
+                  Цвет заголовка "Заявка на отгулы"
+                </label>
+                <input
+                  type="color"
+                  value={modalSettings.titleColor || '#43e97b'}
+                  onChange={(e) => updateModalSetting('titleColor', e.target.value)}
+                  style={{
+                    width: '100%',
+                    height: '50px',
+                    border: '1px solid rgba(75, 85, 99, 0.5)',
+                    borderRadius: '8px',
+                    cursor: 'pointer'
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Стили формы - только для отгулов */}
+        {modalId === 'leaves' && (
+          <div style={{ 
+            background: '#111827', 
+            padding: '20px', 
+            borderRadius: '12px',
+            border: '1px solid rgba(75, 85, 99, 0.3)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+              <FiLayout size={18} color="#a855f7" />
+              <h3 style={{ margin: 0, fontSize: '1.1em', fontWeight: 600, color: '#a855f7' }}>
+                Стили формы заявки
+              </h3>
+            </div>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500, color: '#d1d5db' }}>
+                  Фон формы
+                </label>
+                <input
+                  type="color"
+                  value={modalSettings.formBackground || '#2c3e50'}
+                  onChange={(e) => updateModalSetting('formBackground', e.target.value)}
+                  style={{
+                    width: '100%',
+                    height: '50px',
+                    border: '1px solid rgba(75, 85, 99, 0.5)',
+                    borderRadius: '8px',
+                    cursor: 'pointer'
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Стили карточек - только для отгулов */}
+        {modalId === 'leaves' && (
+          <div style={{ 
+            background: '#111827', 
+            padding: '20px', 
+            borderRadius: '12px',
+            border: '1px solid rgba(75, 85, 99, 0.3)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+              <FiLayout size={18} color="#22d3ee" />
+              <h3 style={{ margin: 0, fontSize: '1.1em', fontWeight: 600, color: '#22d3ee' }}>
+                Стили карточек заявок
+              </h3>
+            </div>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500, color: '#d1d5db' }}>
+                  Фон карточки
+                </label>
+                <input
+                  type="color"
+                  value={modalSettings.cardBackground || '#ffffff'}
+                  onChange={(e) => updateModalSetting('cardBackground', e.target.value)}
+                  style={{
+                    width: '100%',
+                    height: '50px',
+                    border: '1px solid rgba(75, 85, 99, 0.5)',
+                    borderRadius: '8px',
+                    cursor: 'pointer'
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500, color: '#d1d5db' }}>
+                  Цвет дат в карточке
+                </label>
+                <input
+                  type="color"
+                  value={modalSettings.cardTextColor || '#2193b0'}
+                  onChange={(e) => updateModalSetting('cardTextColor', e.target.value)}
+                  style={{
+                    width: '100%',
+                    height: '50px',
+                    border: '1px solid rgba(75, 85, 99, 0.5)',
+                    borderRadius: '8px',
+                    cursor: 'pointer'
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500, color: '#d1d5db' }}>
+                  Цвет причины в карточке
+                </label>
+                <input
+                  type="color"
+                  value={modalSettings.cardReasonColor || '#636e72'}
+                  onChange={(e) => updateModalSetting('cardReasonColor', e.target.value)}
+                  style={{
+                    width: '100%',
+                    height: '50px',
+                    border: '1px solid rgba(75, 85, 99, 0.5)',
+                    borderRadius: '8px',
+                    cursor: 'pointer'
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Стили текста */}
         <div style={{ 

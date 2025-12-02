@@ -115,6 +115,14 @@ export const applyFrontendSettings = (settings = null) => {
         document.documentElement.style.setProperty(`--modal-${modalId}-calendar-cell-text-color`, modalSettings.calendarCellTextColor || '#ffffff');
         document.documentElement.style.setProperty(`--modal-${modalId}-calendar-weekday-color`, modalSettings.calendarWeekdayColor || '#43e97b');
         
+        // Стили для модалки Отгулы (leaves)
+        document.documentElement.style.setProperty(`--modal-${modalId}-header-background`, modalSettings.headerBackground || 'rgba(35, 41, 49, 0.95)');
+        document.documentElement.style.setProperty(`--modal-${modalId}-title-color`, modalSettings.titleColor || '#43e97b');
+        document.documentElement.style.setProperty(`--modal-${modalId}-form-background`, modalSettings.formBackground || 'rgba(44, 62, 80, 0.22)');
+        document.documentElement.style.setProperty(`--modal-${modalId}-card-background`, modalSettings.cardBackground || '#ffffff');
+        document.documentElement.style.setProperty(`--modal-${modalId}-card-text-color`, modalSettings.cardTextColor || '#2193b0');
+        document.documentElement.style.setProperty(`--modal-${modalId}-card-reason-color`, modalSettings.cardReasonColor || '#636e72');
+        
         // Стили текста
         document.documentElement.style.setProperty(`--modal-${modalId}-text-color`, modalSettings.textColor);
         document.documentElement.style.setProperty(`--modal-${modalId}-text-size`, modalSettings.textSize);

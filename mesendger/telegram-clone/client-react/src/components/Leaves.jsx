@@ -22,12 +22,12 @@ const Wrapper = styled.div`
   &::before { display: ${p => p.$full ? 'none' : 'block'}; content: ''; position: absolute; inset: 0; pointer-events: none; background: url('https://www.transparenttextures.com/patterns/noise.png'); opacity: 0.13; z-index: 1; }
 `;
 const Title = styled.h2`
-  color: #43e97b;
+  color: var(--modal-leaves-title-color, #43e97b);
   font-size: 2.2em;
   font-weight: 900;
   margin-bottom: 28px;
   letter-spacing: 0.01em;
-  text-shadow: 0 0 22px #43e97b, 0 0 32px #43e97b44, 0 0 2px #fff, 0 0 24px #43e97b88;
+  text-shadow: 0 0 22px var(--modal-leaves-title-color, #43e97b), 0 0 32px rgba(67, 233, 123, 0.27), 0 0 2px #fff, 0 0 24px rgba(67, 233, 123, 0.53);
   text-align: center;
   animation: titlePop 0.7s cubic-bezier(.4,0,.2,1);
   @keyframes titlePop {
@@ -41,29 +41,31 @@ const Form = styled.form`
   margin-bottom: 32px;
   flex-wrap: wrap;
   justify-content: center;
-  background: rgba(44,62,80,0.22);
+  background: var(--modal-leaves-form-background, rgba(44,62,80,0.22));
   border-radius: 18px;
-  box-shadow: 0 2px 12px #43e97b22, 0 0 0 2px #2193b044;
+  box-shadow: 0 2px 12px rgba(67, 233, 123, 0.13), 0 0 0 2px rgba(33, 147, 176, 0.27);
   padding: 18px 12px 10px 12px;
-  border: 1.5px solid #43e97b44;
+  border: 1.5px solid var(--modal-leaves-border-color, rgba(67, 233, 123, 0.27));
 `;
 const Input = styled.input`
   padding: 10px 14px;
   border-radius: 10px;
-  border: 1.5px solid #2193b0;
+  border: 1.5px solid var(--modal-leaves-border-color, #2193b0);
   font-size: 1.08rem;
-  background: rgba(255,255,255,0.92);
+  background: var(--modal-leaves-input-background, rgba(255,255,255,0.92));
+  color: var(--modal-leaves-input-text-color, #333);
   transition: border .2s, box-shadow .2s;
-  &:focus { border: 2px solid #43e97b; outline: none; box-shadow: 0 0 8px #43e97b55; }
+  &:focus { border: 2px solid var(--modal-leaves-title-color, #43e97b); outline: none; box-shadow: 0 0 8px rgba(67, 233, 123, 0.33); }
 `;
 const Select = styled.select`
   padding: 10px 14px;
   border-radius: 10px;
-  border: 1.5px solid #2193b0;
+  border: 1.5px solid var(--modal-leaves-border-color, #2193b0);
   font-size: 1.08rem;
-  background: rgba(255,255,255,0.92);
+  background: var(--modal-leaves-input-background, rgba(255,255,255,0.92));
+  color: var(--modal-leaves-input-text-color, #333);
   transition: border .2s, box-shadow .2s;
-  &:focus { border: 2px solid #43e97b; outline: none; box-shadow: 0 0 8px #43e97b55; }
+  &:focus { border: 2px solid var(--modal-leaves-title-color, #43e97b); outline: none; box-shadow: 0 0 8px rgba(67, 233, 123, 0.33); }
 `;
 const Button = styled.button`
   background: linear-gradient(135deg, #6dd5ed 0%, #2193b0 100%);
@@ -94,9 +96,9 @@ const CardList = styled.ul`
   z-index: 2;
 `;
 const Card = styled.li`
-  background: linear-gradient(135deg, rgba(255,255,255,0.93) 0%, rgba(33,147,176,0.13) 100%);
+  background: var(--modal-leaves-card-background, linear-gradient(135deg, rgba(255,255,255,0.93) 0%, rgba(33,147,176,0.13) 100%));
   border-radius: 18px;
-  box-shadow: 0 2px 16px #43e97b33, 0 0 0 2px #2193b044;
+  box-shadow: 0 2px 16px rgba(67, 233, 123, 0.2), 0 0 0 2px rgba(33, 147, 176, 0.27);
   margin-bottom: 18px;
   padding: 20px 22px;
   display: flex;
@@ -104,11 +106,11 @@ const Card = styled.li`
   justify-content: space-between;
   font-size: 1.13em;
   transition: box-shadow .22s, transform .18s;
-  border-left: 7px solid #43e97b;
+  border-left: 7px solid var(--modal-leaves-title-color, #43e97b);
   position: relative;
   overflow: hidden;
   &:hover {
-    box-shadow: 0 4px 32px #43e97b55, 0 0 32px #2193b055;
+    box-shadow: 0 4px 32px rgba(67, 233, 123, 0.33), 0 0 32px rgba(33, 147, 176, 0.33);
     transform: scale(1.025);
   }
 `;
@@ -117,12 +119,12 @@ const CardInfo = styled.div`
   flex-direction: column;
 `;
 const CardDates = styled.span`
-  color: #2193b0;
+  color: var(--modal-leaves-card-text-color, #2193b0);
   font-weight: 700;
   font-size: 1.08em;
 `;
 const CardReason = styled.span`
-  color: #636e72;
+  color: var(--modal-leaves-card-reason-color, #636e72);
   font-size: 1em;
   margin-top: 2px;
 `;

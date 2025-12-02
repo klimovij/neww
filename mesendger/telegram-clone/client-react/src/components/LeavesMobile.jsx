@@ -92,22 +92,22 @@ export default function LeavesMobile({ open, onClose, token, onOpenMobileSidebar
             left: 0,
             right: 0,
             height: '56px',
-            backgroundColor: 'rgba(35, 41, 49, 0.95)',
+            backgroundColor: 'var(--modal-leaves-header-background, rgba(35, 41, 49, 0.95))',
             backdropFilter: 'blur(10px)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
             padding: '0 16px',
             zIndex: 10001,
-            borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+            borderBottom: '1px solid var(--modal-leaves-border-color, rgba(255, 255, 255, 0.1))',
           }}
         >
           <button
             onClick={handleClose}
             style={{
-              background: 'transparent',
-              border: 'none',
-              color: '#fff',
+              background: 'var(--modal-leaves-icon-button-background, rgba(33, 147, 176, 0.2))',
+              border: '1px solid var(--modal-leaves-border-color, rgba(33, 147, 176, 0.3))',
+              color: 'var(--modal-leaves-header-icon-color, #fff)',
               fontSize: '24px',
               cursor: 'pointer',
               padding: '8px',
@@ -117,8 +117,6 @@ export default function LeavesMobile({ open, onClose, token, onOpenMobileSidebar
               borderRadius: '8px',
               transition: 'background-color 0.2s',
             }}
-            onMouseEnter={(e) => e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.1)'}
-            onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
             title="Назад"
           >
             <FaArrowLeft />
@@ -126,7 +124,7 @@ export default function LeavesMobile({ open, onClose, token, onOpenMobileSidebar
           
           <h2
             style={{
-              color: '#fff',
+              color: 'var(--modal-leaves-header-icon-color, #fff)',
               fontSize: '18px',
               fontWeight: 700,
               margin: 0,
@@ -140,9 +138,9 @@ export default function LeavesMobile({ open, onClose, token, onOpenMobileSidebar
           <button
             onClick={handleClose}
             style={{
-              background: 'transparent',
-              border: 'none',
-              color: '#fff',
+              background: 'var(--modal-leaves-icon-button-background, rgba(33, 147, 176, 0.2))',
+              border: '1px solid var(--modal-leaves-border-color, rgba(33, 147, 176, 0.3))',
+              color: 'var(--modal-leaves-header-icon-color, #fff)',
               fontSize: '24px',
               cursor: 'pointer',
               padding: '8px',
@@ -152,8 +150,6 @@ export default function LeavesMobile({ open, onClose, token, onOpenMobileSidebar
               borderRadius: '8px',
               transition: 'background-color 0.2s',
             }}
-            onMouseEnter={(e) => e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.1)'}
-            onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
             title="Закрыть"
           >
             <FiX />
