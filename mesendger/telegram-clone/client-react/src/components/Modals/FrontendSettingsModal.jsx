@@ -1,5 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { FiX, FiMonitor, FiImage, FiType, FiChevronDown, FiChevronUp } from 'react-icons/fi';
+import { FiX, FiMonitor, FiImage, FiType, FiChevronDown, FiChevronUp, FiMenu, FiCalendar, FiMessageSquare, FiUmbrella, FiCheckSquare, FiList, FiFileText, FiUsers, FiClock, FiActivity, FiSettings } from 'react-icons/fi';
+
+// Список вкладок
+const TABS = [
+  { id: 'main-menu', name: 'Главное меню', icon: FiMenu },
+  { id: 'calendar', name: 'Общий календарь', icon: FiCalendar },
+  { id: 'chats', name: 'Чаты', icon: FiMessageSquare },
+  { id: 'leaves', name: 'Отгулы', icon: FiUmbrella },
+  { id: 'tasks', name: 'Задачи', icon: FiCheckSquare },
+  { id: 'todo', name: 'Список дел', icon: FiList },
+  { id: 'news', name: 'Новости', icon: FiFileText },
+  { id: 'employees', name: 'Сотрудники компании', icon: FiUsers },
+  { id: 'monitoring', name: 'Мониторинг времени', icon: FiClock },
+  { id: 'worktime', name: 'Отработка отгулов', icon: FiActivity },
+  { id: 'management', name: 'Управление', icon: FiSettings },
+];
 
 const DEFAULT_SETTINGS = {
   // Основной фон
@@ -83,6 +98,7 @@ const checkLocalStorageSize = () => {
 export default function FrontendSettingsModal({ open, onClose }) {
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
   const [hasChanges, setHasChanges] = useState(false);
+  const [activeTab, setActiveTab] = useState('main-menu'); // Активная вкладка
   
   // Состояния для сворачивания/разворачивания блоков
   const [expandedSections, setExpandedSections] = useState({
@@ -604,8 +620,60 @@ export default function FrontendSettingsModal({ open, onClose }) {
           </button>
         </div>
 
+        {/* Вкладки */}
+        <div style={{ 
+          display: 'flex', 
+          overflowX: 'auto', 
+          borderBottom: '1px solid rgba(75, 85, 99, 0.3)',
+          backgroundColor: '#111827'
+        }}>
+          {TABS.map(tab => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                style={{
+                  padding: '12px 20px',
+                  border: 'none',
+                  background: isActive ? '#1f2937' : 'transparent',
+                  color: isActive ? '#60a5fa' : '#9ca3af',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: isActive ? 600 : 400,
+                  borderBottom: isActive ? '2px solid #60a5fa' : '2px solid transparent',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  whiteSpace: 'nowrap',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => {
+                  if (!isActive) {
+                    e.currentTarget.style.background = '#0f1419';
+                    e.currentTarget.style.color = '#d1d5db';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isActive) {
+                    e.currentTarget.style.background = 'transparent';
+                    e.currentTarget.style.color = '#9ca3af';
+                  }
+                }}
+              >
+                <Icon size={16} />
+                {tab.name}
+              </button>
+            );
+          })}
+        </div>
+
         {/* Контент */}
         <div style={{ flex: 1, overflow: 'auto', padding: '24px', display: 'flex', gap: '24px' }}>
+          {/* Вкладка: Главное меню */}
+          {activeTab === 'main-menu' && (
+            <>
           {/* Левая колонка - настройки */}
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '24px' }}>
             
@@ -1498,6 +1566,209 @@ export default function FrontendSettingsModal({ open, onClose }) {
               </div>
             </div>
           </div>
+            </>
+          )}
+
+          {/* Вкладки для других модалок */}
+          {activeTab === 'calendar' && (
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              width: '100%',
+              height: '100%',
+              color: '#9ca3af',
+              fontSize: '16px'
+            }}>
+              <div style={{ textAlign: 'center' }}>
+                <FiCalendar size={48} style={{ marginBottom: '16px', color: '#60a5fa' }} />
+                <div style={{ fontSize: '18px', fontWeight: 600, marginBottom: '8px', color: '#d1d5db' }}>
+                  Настройки "Общий календарь"
+                </div>
+                <div>Здесь будут настройки стилей для модалки "Общий календарь"</div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'chats' && (
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              width: '100%',
+              height: '100%',
+              color: '#9ca3af',
+              fontSize: '16px'
+            }}>
+              <div style={{ textAlign: 'center' }}>
+                <FiMessageSquare size={48} style={{ marginBottom: '16px', color: '#60a5fa' }} />
+                <div style={{ fontSize: '18px', fontWeight: 600, marginBottom: '8px', color: '#d1d5db' }}>
+                  Настройки "Чаты"
+                </div>
+                <div>Здесь будут настройки стилей для модалки "Чаты"</div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'leaves' && (
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              width: '100%',
+              height: '100%',
+              color: '#9ca3af',
+              fontSize: '16px'
+            }}>
+              <div style={{ textAlign: 'center' }}>
+                <FiUmbrella size={48} style={{ marginBottom: '16px', color: '#60a5fa' }} />
+                <div style={{ fontSize: '18px', fontWeight: 600, marginBottom: '8px', color: '#d1d5db' }}>
+                  Настройки "Отгулы"
+                </div>
+                <div>Здесь будут настройки стилей для модалки "Отгулы"</div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'tasks' && (
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              width: '100%',
+              height: '100%',
+              color: '#9ca3af',
+              fontSize: '16px'
+            }}>
+              <div style={{ textAlign: 'center' }}>
+                <FiCheckSquare size={48} style={{ marginBottom: '16px', color: '#60a5fa' }} />
+                <div style={{ fontSize: '18px', fontWeight: 600, marginBottom: '8px', color: '#d1d5db' }}>
+                  Настройки "Задачи"
+                </div>
+                <div>Здесь будут настройки стилей для модалки "Задачи"</div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'todo' && (
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              width: '100%',
+              height: '100%',
+              color: '#9ca3af',
+              fontSize: '16px'
+            }}>
+              <div style={{ textAlign: 'center' }}>
+                <FiList size={48} style={{ marginBottom: '16px', color: '#60a5fa' }} />
+                <div style={{ fontSize: '18px', fontWeight: 600, marginBottom: '8px', color: '#d1d5db' }}>
+                  Настройки "Список дел"
+                </div>
+                <div>Здесь будут настройки стилей для модалки "Список дел"</div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'news' && (
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              width: '100%',
+              height: '100%',
+              color: '#9ca3af',
+              fontSize: '16px'
+            }}>
+              <div style={{ textAlign: 'center' }}>
+                <FiFileText size={48} style={{ marginBottom: '16px', color: '#60a5fa' }} />
+                <div style={{ fontSize: '18px', fontWeight: 600, marginBottom: '8px', color: '#d1d5db' }}>
+                  Настройки "Новости"
+                </div>
+                <div>Здесь будут настройки стилей для модалки "Новости"</div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'employees' && (
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              width: '100%',
+              height: '100%',
+              color: '#9ca3af',
+              fontSize: '16px'
+            }}>
+              <div style={{ textAlign: 'center' }}>
+                <FiUsers size={48} style={{ marginBottom: '16px', color: '#60a5fa' }} />
+                <div style={{ fontSize: '18px', fontWeight: 600, marginBottom: '8px', color: '#d1d5db' }}>
+                  Настройки "Сотрудники компании"
+                </div>
+                <div>Здесь будут настройки стилей для модалки "Сотрудники компании"</div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'monitoring' && (
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              width: '100%',
+              height: '100%',
+              color: '#9ca3af',
+              fontSize: '16px'
+            }}>
+              <div style={{ textAlign: 'center' }}>
+                <FiClock size={48} style={{ marginBottom: '16px', color: '#60a5fa' }} />
+                <div style={{ fontSize: '18px', fontWeight: 600, marginBottom: '8px', color: '#d1d5db' }}>
+                  Настройки "Мониторинг времени"
+                </div>
+                <div>Здесь будут настройки стилей для модалки "Мониторинг времени"</div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'worktime' && (
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              width: '100%',
+              height: '100%',
+              color: '#9ca3af',
+              fontSize: '16px'
+            }}>
+              <div style={{ textAlign: 'center' }}>
+                <FiActivity size={48} style={{ marginBottom: '16px', color: '#60a5fa' }} />
+                <div style={{ fontSize: '18px', fontWeight: 600, marginBottom: '8px', color: '#d1d5db' }}>
+                  Настройки "Отработка отгулов"
+                </div>
+                <div>Здесь будут настройки стилей для модалки "Отработка отгулов"</div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'management' && (
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              width: '100%',
+              height: '100%',
+              color: '#9ca3af',
+              fontSize: '16px'
+            }}>
+              <div style={{ textAlign: 'center' }}>
+                <FiSettings size={48} style={{ marginBottom: '16px', color: '#60a5fa' }} />
+                <div style={{ fontSize: '18px', fontWeight: 600, marginBottom: '8px', color: '#d1d5db' }}>
+                  Настройки "Управление"
+                </div>
+                <div>Здесь будут настройки стилей для модалки "Управление"</div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Футер с кнопками */}

@@ -175,10 +175,10 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar, 
         // Это URL Google Fonts, создаем <link>
         const existingLink = document.querySelector(`link[href="${settings.customFontUrl}"]`);
         if (!existingLink) {
-          const link = document.createElement('link');
-          link.rel = 'stylesheet';
-          link.href = settings.customFontUrl;
-          document.head.appendChild(link);
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = settings.customFontUrl;
+      document.head.appendChild(link);
         }
       }
     }
@@ -214,12 +214,12 @@ export default function SidebarNav({ onCloseMobileSidebar, onOpenMobileSidebar, 
           `;
         } else {
           // Это URL Google Fonts, создаем <link>
-          const existingLink = document.querySelector(`link[href="${newSettings.customFontUrl}"]`);
-          if (!existingLink) {
-            const link = document.createElement('link');
-            link.rel = 'stylesheet';
-            link.href = newSettings.customFontUrl;
-            document.head.appendChild(link);
+        const existingLink = document.querySelector(`link[href="${newSettings.customFontUrl}"]`);
+        if (!existingLink) {
+          const link = document.createElement('link');
+          link.rel = 'stylesheet';
+          link.href = newSettings.customFontUrl;
+          document.head.appendChild(link);
           }
         }
       }
