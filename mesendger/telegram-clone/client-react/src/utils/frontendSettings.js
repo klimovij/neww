@@ -83,6 +83,7 @@ export const applyFrontendSettings = (settings = null) => {
         document.documentElement.style.setProperty(`--modal-${modalId}-button-background`, buttonBg);
         document.documentElement.style.setProperty(`--modal-${modalId}-button-background-opacity`, modalSettings.buttonBackgroundImageOpacity || 0.1);
         document.documentElement.style.setProperty(`--modal-${modalId}-button-text-color`, modalSettings.buttonTextColor || '#ffffff');
+        document.documentElement.style.setProperty(`--modal-${modalId}-button-normal-background`, modalSettings.buttonNormalBackground || 'rgba(67, 233, 123, 0.1)');
         document.documentElement.style.setProperty(`--modal-${modalId}-icon-button-background`, modalSettings.iconButtonBackground || 'rgba(67, 233, 123, 0.15)');
         
         // Стили полей ввода

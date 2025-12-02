@@ -47,6 +47,7 @@ const DEFAULT_SETTINGS = {
       buttonBackgroundImage: '',
       buttonBackgroundImageOpacity: 0.1,
       buttonTextColor: '#ffffff',
+      buttonNormalBackground: 'rgba(67, 233, 123, 0.1)',
       iconButtonBackground: 'rgba(67, 233, 123, 0.15)',
       borderColor: 'rgba(67, 233, 123, 0.2)',
       inputBackground: '#2d3748',
@@ -433,6 +434,24 @@ const ModalSettingsSection = ({ modalId, modalName, modalIcon: Icon, settings, o
                 type="color"
                 value={modalSettings.buttonTextColor || '#ffffff'}
                 onChange={(e) => updateModalSetting('buttonTextColor', e.target.value)}
+                style={{
+                  width: '100%',
+                  height: '50px',
+                  border: '1px solid rgba(75, 85, 99, 0.5)',
+                  borderRadius: '8px',
+                  cursor: 'pointer'
+                }}
+              />
+            </div>
+
+            <div>
+              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500, color: '#d1d5db' }}>
+                Фон кнопок (обычное состояние)
+              </label>
+              <input
+                type="color"
+                value={modalSettings.buttonNormalBackground || '#1a5c3a'}
+                onChange={(e) => updateModalSetting('buttonNormalBackground', e.target.value)}
                 style={{
                   width: '100%',
                   height: '50px',
