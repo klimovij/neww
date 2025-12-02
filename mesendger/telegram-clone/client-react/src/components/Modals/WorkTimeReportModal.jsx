@@ -393,7 +393,9 @@ function WorkTimeReportModal({ isOpen, onRequestClose }) {
       ariaHideApp={false}
     >
       <div onClick={onRequestClose} style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}>
-        <div onClick={e => e.stopPropagation()} style={{
+        <div
+          data-modal-id="monitoring"
+          onClick={e => e.stopPropagation()} style={{
           background: 'var(--modal-background, linear-gradient(135deg, #232931 0%, #181c22 100%))',
           backgroundImage: 'var(--modal-background-image, none)',
           backgroundSize: 'cover',

@@ -100,3 +100,84 @@ div[style*="background: #232931"] > * {
   position: relative;
   z-index: 1;
 }
+
+/* Индивидуальные стили для каждой модалки через data-modal-id */
+[data-modal-id="calendar"] {
+  background: var(--modal-calendar-background, #1f2937) !important;
+  background-image: var(--modal-calendar-background-image, none) !important;
+  background-size: cover !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+}
+
+[data-modal-id="chats"] {
+  background: var(--modal-chats-background, #1f2937) !important;
+  background-image: var(--modal-chats-background-image, none) !important;
+  background-size: cover !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+}
+
+[data-modal-id="leaves"] {
+  background: var(--modal-leaves-background, #1f2937) !important;
+  background-image: var(--modal-leaves-background-image, none) !important;
+  background-size: cover !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+}
+
+[data-modal-id="tasks"] {
+  background: var(--modal-tasks-background, #1f2937) !important;
+  background-image: var(--modal-tasks-background-image, none) !important;
+  background-size: cover !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+}
+
+[data-modal-id="todo"] {
+  background: var(--modal-todo-background, #1f2937) !important;
+  background-image: var(--modal-todo-background-image, none) !important;
+  background-size: cover !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+}
+
+[data-modal-id="news"] {
+  background: var(--modal-news-background, #1f2937) !important;
+  background-image: var(--modal-news-background-image, none) !important;
+  background-size: cover !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+}
+
+[data-modal-id="employees"] {
+  background: var(--modal-employees-background, #1f2937) !important;
+  background-image: var(--modal-employees-background-image, none) !important;
+  background-size: cover !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+}
+
+[data-modal-id="monitoring"] {
+  background: var(--modal-monitoring-background, #1f2937) !important;
+  background-image: var(--modal-monitoring-background-image, none) !important;
+  background-size: cover !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+}
+
+[data-modal-id="worktime"] {
+  background: var(--modal-worktime-background, #1f2937) !important;
+  background-image: var(--modal-worktime-background-image, none) !important;
+  background-size: cover !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+}
+
+[data-modal-id="management"] {
+  background: var(--modal-management-background, #1f2937) !important;
+  background-image: var(--modal-management-background-image, none) !important;
+  background-size: cover !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+}

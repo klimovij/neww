@@ -349,6 +349,7 @@ export default function AllLeavesCalendar({ open, onClose, token }) {
           onClick={onClose}
         >
           <div
+            data-modal-id="calendar"
             onClick={e=>e.stopPropagation()}
             style={{
               background:'linear-gradient(135deg, #232931 0%, #181c22 100%)',

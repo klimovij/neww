@@ -352,6 +352,7 @@ export default function AdminMobile({
       onClick={handleClose}
     >
       <div
+        data-modal-id="management"
         ref={modalRef}
         onClick={e => e.stopPropagation()}
         style={{
