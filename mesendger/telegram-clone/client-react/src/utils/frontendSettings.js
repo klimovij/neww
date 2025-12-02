@@ -93,6 +93,27 @@ export const applyFrontendSettings = (settings = null) => {
         // Стили иконок заголовка (стрелка назад, крестик)
         document.documentElement.style.setProperty(`--modal-${modalId}-header-icon-color`, modalSettings.headerIconColor || '#43e97b');
         
+        // Стили блока фильтров
+        const filterBlockBg = modalSettings.filterBlockBackgroundImage 
+          ? `url(${modalSettings.filterBlockBackgroundImage})`
+          : modalSettings.filterBlockBackground || 'rgba(67, 233, 123, 0.08)';
+        document.documentElement.style.setProperty(`--modal-${modalId}-filter-block-background`, filterBlockBg);
+        
+        // Стили блока навигации
+        const navBlockBg = modalSettings.navBlockBackgroundImage 
+          ? `url(${modalSettings.navBlockBackgroundImage})`
+          : modalSettings.navBlockBackground || 'rgba(67, 233, 123, 0.1)';
+        document.documentElement.style.setProperty(`--modal-${modalId}-nav-block-background`, navBlockBg);
+        
+        // Стили сетки календаря
+        const calendarGridBg = modalSettings.calendarGridBackgroundImage 
+          ? `url(${modalSettings.calendarGridBackgroundImage})`
+          : modalSettings.calendarGridBackground || 'rgba(34, 40, 49, 0.97)';
+        document.documentElement.style.setProperty(`--modal-${modalId}-calendar-grid-background`, calendarGridBg);
+        document.documentElement.style.setProperty(`--modal-${modalId}-calendar-cell-background`, modalSettings.calendarCellBackground || 'rgba(67, 233, 123, 0.05)');
+        document.documentElement.style.setProperty(`--modal-${modalId}-calendar-cell-text-color`, modalSettings.calendarCellTextColor || '#ffffff');
+        document.documentElement.style.setProperty(`--modal-${modalId}-calendar-weekday-color`, modalSettings.calendarWeekdayColor || '#43e97b');
+        
         // Стили текста
         document.documentElement.style.setProperty(`--modal-${modalId}-text-color`, modalSettings.textColor);
         document.documentElement.style.setProperty(`--modal-${modalId}-text-size`, modalSettings.textSize);

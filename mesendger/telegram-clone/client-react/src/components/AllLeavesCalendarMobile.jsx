@@ -511,7 +511,9 @@ export default function AllLeavesCalendarMobile({ open, onClose, token, onOpenMo
             {showFilters && (
               <div style={{
                 padding: '16px 20px',
-                background: 'rgba(34,40,49,0.9)',
+                background: 'var(--modal-calendar-filter-block-background, rgba(67, 233, 123, 0.08))',
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
                 borderBottom: '1px solid var(--modal-calendar-border-color, rgba(67,233,123,0.1))',
                 display: 'flex',
                 flexDirection: 'column',
@@ -761,7 +763,9 @@ export default function AllLeavesCalendarMobile({ open, onClose, token, onOpenMo
                     justifyContent: 'space-between',
                     marginBottom: '16px',
                     padding: '12px',
-                    background: 'rgba(67,233,123,0.1)',
+                    background: 'var(--modal-calendar-nav-block-background, rgba(67,233,123,0.1))',
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
                     borderRadius: '12px'
                   }}>
                     <button
@@ -812,7 +816,9 @@ export default function AllLeavesCalendarMobile({ open, onClose, token, onOpenMo
 
                   {/* Календарь */}
                   <div style={{
-                    background: 'rgba(34,40,49,0.97)',
+                    background: 'var(--modal-calendar-calendar-grid-background, rgba(34,40,49,0.97))',
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
                     borderRadius: '16px',
                     padding: '12px',
                     boxShadow: '0 2px 12px rgba(33,147,176,0.15)'
@@ -830,7 +836,7 @@ export default function AllLeavesCalendarMobile({ open, onClose, token, onOpenMo
                           fontSize: '0.85em',
                           padding: '8px 0',
                           textAlign: 'center',
-                          color: 'var(--modal-calendar-header-icon-color, #43e97b)'
+                          color: 'var(--modal-calendar-calendar-weekday-color, #43e97b)'
                         }}>
                           {d}
                         </div>
@@ -854,21 +860,21 @@ export default function AllLeavesCalendarMobile({ open, onClose, token, onOpenMo
                           style={{
                             minHeight: '50px',
                             padding: '6px',
-                            background: '#fff',
+                            background: 'var(--modal-calendar-calendar-cell-background, rgba(67, 233, 123, 0.05))',
                             borderRadius: '8px',
                             display: 'flex',
                             flexDirection: 'column',
                             alignItems: 'center',
                             justifyContent: 'flex-start',
                             position: 'relative',
-                            color: '#222',
+                            color: 'var(--modal-calendar-calendar-cell-text-color, #222)',
                             cursor: 'pointer',
                             fontSize: '0.9em'
                           }}
                         >
                           <span style={{
                             fontWeight: 700,
-                            color: '#2193b0',
+                            color: 'var(--modal-calendar-calendar-cell-text-color, #2193b0)',
                             fontSize: '1em'
                           }}>
                             {date.getDate()}
@@ -892,7 +898,7 @@ export default function AllLeavesCalendarMobile({ open, onClose, token, onOpenMo
                           })()}
                         </div>
                       ) : (
-                        <div key={i} style={{ minHeight: '50px', padding: '6px' }}></div>
+                        <div key={i} style={{ minHeight: '50px', padding: '6px', background: 'transparent' }}></div>
                       ))}
                     </div>
                   </div>
