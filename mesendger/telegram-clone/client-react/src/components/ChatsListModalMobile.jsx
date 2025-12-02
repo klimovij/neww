@@ -355,9 +355,14 @@ export default function ChatsListModalMobile({ open, onClose, onOpenMobileSideba
     >
       <div
         ref={modalRef}
+        data-modal-id="chats"
         onClick={e => e.stopPropagation()}
         style={{
-          background: 'linear-gradient(135deg, #232931 0%, #181c22 100%)',
+          background: 'var(--modal-chats-background, linear-gradient(135deg, #232931 0%, #181c22 100%))',
+          backgroundImage: 'var(--modal-chats-background-image, none)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
           width: '100%',
           height: '100%',
           display: 'flex',

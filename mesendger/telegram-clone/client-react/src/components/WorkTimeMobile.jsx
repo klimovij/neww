@@ -618,11 +618,16 @@ export default function WorkTimeMobile({ open, onClose, onOpenMobileSidebar }) {
     >
       <div
         ref={modalRef}
+        data-modal-id="monitoring"
         style={{
           position: 'relative',
           width: '100%',
           height: '100%',
-          background: 'linear-gradient(135deg, #232931 0%, #181c22 100%)',
+          background: 'var(--modal-monitoring-background, linear-gradient(135deg, #232931 0%, #181c22 100%))',
+          backgroundImage: 'var(--modal-monitoring-background-image, none)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
           display: 'flex',
           flexDirection: 'column',
           overflowY: 'auto',

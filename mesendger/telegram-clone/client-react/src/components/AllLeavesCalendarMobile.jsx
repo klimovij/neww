@@ -345,12 +345,17 @@ export default function AllLeavesCalendarMobile({ open, onClose, token, onOpenMo
         >
           <div
             ref={modalRef}
+            data-modal-id="calendar"
             onClick={e => e.stopPropagation()}
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
             style={{
-              background: 'linear-gradient(135deg, #232931 0%, #181c22 100%)',
+              background: 'var(--modal-calendar-background, linear-gradient(135deg, #232931 0%, #181c22 100%))',
+              backgroundImage: 'var(--modal-calendar-background-image, none)',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundRepeat: 'no-repeat',
               width: '100%',
               height: '100%',
               display: 'flex',

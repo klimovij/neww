@@ -77,12 +77,16 @@ export default function NewsMobile({ open, onClose, onOpenMobileSidebar }) {
     >
       <div
         ref={modalRef}
+        data-modal-id="news"
         style={{
           position: 'relative',
           width: '100%',
           height: '100%',
-          backgroundColor: 'linear-gradient(135deg, #232931 0%, #181c22 100%)',
-          background: 'linear-gradient(135deg, #232931 0%, #181c22 100%)',
+          background: 'var(--modal-news-background, linear-gradient(135deg, #232931 0%, #181c22 100%))',
+          backgroundImage: 'var(--modal-news-background-image, none)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
           display: 'flex',
           flexDirection: 'column',
           overflowY: 'auto',
