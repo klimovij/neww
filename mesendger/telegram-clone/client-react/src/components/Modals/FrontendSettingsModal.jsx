@@ -46,6 +46,10 @@ const DEFAULT_SETTINGS = {
       buttonBackground: '#3b82f6',
       buttonBackgroundImage: '',
       buttonBackgroundImageOpacity: 0.1,
+      buttonTextColor: '#ffffff',
+      borderColor: 'rgba(67, 233, 123, 0.2)',
+      inputTextColor: '#ffffff',
+      headerIconColor: '#43e97b',
       textColor: '#ffffff',
       textSize: '14px',
       textAlign: 'left',
@@ -408,6 +412,112 @@ const ModalSettingsSection = ({ modalId, modalName, modalIcon: Icon, settings, o
                 />
               </div>
             )}
+
+            <div>
+              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500, color: '#d1d5db' }}>
+                Цвет текста кнопок
+              </label>
+              <input
+                type="color"
+                value={modalSettings.buttonTextColor || '#ffffff'}
+                onChange={(e) => updateModalSetting('buttonTextColor', e.target.value)}
+                style={{
+                  width: '100%',
+                  height: '50px',
+                  border: '1px solid rgba(75, 85, 99, 0.5)',
+                  borderRadius: '8px',
+                  cursor: 'pointer'
+                }}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Стили полей ввода */}
+        <div style={{ 
+          background: '#111827', 
+          padding: '20px', 
+          borderRadius: '12px',
+          border: '1px solid rgba(75, 85, 99, 0.3)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+            <FiType size={18} color="#a78bfa" />
+            <h3 style={{ margin: 0, fontSize: '1.1em', fontWeight: 600, color: '#a78bfa' }}>
+              Стили полей ввода в "{modalName}"
+            </h3>
+          </div>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div>
+              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500, color: '#d1d5db' }}>
+                Цвет рамок полей
+              </label>
+              <input
+                type="color"
+                value={modalSettings.borderColor || '#43e97b'}
+                onChange={(e) => updateModalSetting('borderColor', e.target.value)}
+                style={{
+                  width: '100%',
+                  height: '50px',
+                  border: '1px solid rgba(75, 85, 99, 0.5)',
+                  borderRadius: '8px',
+                  cursor: 'pointer'
+                }}
+              />
+            </div>
+
+            <div>
+              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500, color: '#d1d5db' }}>
+                Цвет текста полей
+              </label>
+              <input
+                type="color"
+                value={modalSettings.inputTextColor || '#ffffff'}
+                onChange={(e) => updateModalSetting('inputTextColor', e.target.value)}
+                style={{
+                  width: '100%',
+                  height: '50px',
+                  border: '1px solid rgba(75, 85, 99, 0.5)',
+                  borderRadius: '8px',
+                  cursor: 'pointer'
+                }}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Стили иконок заголовка */}
+        <div style={{ 
+          background: '#111827', 
+          padding: '20px', 
+          borderRadius: '12px',
+          border: '1px solid rgba(75, 85, 99, 0.3)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+            <FiX size={18} color="#f472b6" />
+            <h3 style={{ margin: 0, fontSize: '1.1em', fontWeight: 600, color: '#f472b6' }}>
+              Стили иконок заголовка в "{modalName}"
+            </h3>
+          </div>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div>
+              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500, color: '#d1d5db' }}>
+                Цвет стрелки назад и крестика
+              </label>
+              <input
+                type="color"
+                value={modalSettings.headerIconColor || '#43e97b'}
+                onChange={(e) => updateModalSetting('headerIconColor', e.target.value)}
+                style={{
+                  width: '100%',
+                  height: '50px',
+                  border: '1px solid rgba(75, 85, 99, 0.5)',
+                  borderRadius: '8px',
+                  cursor: 'pointer'
+                }}
+              />
+            </div>
           </div>
         </div>
 

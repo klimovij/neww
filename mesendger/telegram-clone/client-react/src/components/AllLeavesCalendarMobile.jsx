@@ -371,7 +371,7 @@ export default function AllLeavesCalendarMobile({ open, onClose, token, onOpenMo
               alignItems: 'center',
               justifyContent: 'space-between',
               padding: '16px 20px',
-              borderBottom: '1px solid rgba(67,233,123,0.2)',
+              borderBottom: '1px solid var(--modal-calendar-border-color, rgba(67,233,123,0.2))',
               background: 'rgba(34,40,49,0.95)',
               position: 'sticky',
               top: 0,
@@ -384,7 +384,7 @@ export default function AllLeavesCalendarMobile({ open, onClose, token, onOpenMo
                 }}
                 style={{
                   background: 'rgba(67,233,123,0.15)',
-                  border: '1px solid #43e97b',
+                  border: '1px solid var(--modal-calendar-header-icon-color, #43e97b)',
                   borderRadius: '50%',
                   width: 44,
                   height: 44,
@@ -392,7 +392,7 @@ export default function AllLeavesCalendarMobile({ open, onClose, token, onOpenMo
                   alignItems: 'center',
                   justifyContent: 'center',
                   cursor: 'pointer',
-                  color: '#43e97b',
+                  color: 'var(--modal-calendar-header-icon-color, #43e97b)',
                   fontSize: '20px',
                   padding: 0,
                   marginRight: '12px',
@@ -404,7 +404,7 @@ export default function AllLeavesCalendarMobile({ open, onClose, token, onOpenMo
               </button>
               <h2 style={{
                 margin: 0,
-                color: '#43e97b',
+                color: 'var(--modal-calendar-header-icon-color, #43e97b)',
                 fontWeight: 900,
                 fontSize: '1.4em',
                 flex: 1,
@@ -419,7 +419,7 @@ export default function AllLeavesCalendarMobile({ open, onClose, token, onOpenMo
                 }}
                 style={{
                   background: 'rgba(67,233,123,0.15)',
-                  border: '1px solid #43e97b',
+                  border: '1px solid var(--modal-calendar-header-icon-color, #43e97b)',
                   borderRadius: '50%',
                   width: 44,
                   height: 44,
@@ -427,7 +427,7 @@ export default function AllLeavesCalendarMobile({ open, onClose, token, onOpenMo
                   alignItems: 'center',
                   justifyContent: 'center',
                   cursor: 'pointer',
-                  color: '#43e97b',
+                  color: 'var(--modal-calendar-header-icon-color, #43e97b)',
                   fontSize: '20px',
                   padding: 0,
                   marginLeft: '12px',
@@ -444,7 +444,7 @@ export default function AllLeavesCalendarMobile({ open, onClose, token, onOpenMo
               display: 'flex',
               padding: '12px 20px',
               gap: '8px',
-              borderBottom: '1px solid rgba(67,233,123,0.1)',
+              borderBottom: '1px solid var(--modal-calendar-border-color, rgba(67,233,123,0.1))',
               background: 'rgba(34,40,49,0.8)'
             }}>
               <button
@@ -454,8 +454,8 @@ export default function AllLeavesCalendarMobile({ open, onClose, token, onOpenMo
                   padding: '12px',
                   borderRadius: '12px',
                   border: 'none',
-                  background: activeTab === 'calendar' ? '#43e97b' : 'rgba(67,233,123,0.15)',
-                  color: activeTab === 'calendar' ? '#222' : '#43e97b',
+                  background: activeTab === 'calendar' ? 'var(--modal-calendar-button-background, #43e97b)' : 'rgba(67,233,123,0.15)',
+                  color: activeTab === 'calendar' ? 'var(--modal-calendar-button-text-color, #222)' : 'var(--modal-calendar-header-icon-color, #43e97b)',
                   fontWeight: 700,
                   fontSize: '1em',
                   cursor: 'pointer',
@@ -471,8 +471,8 @@ export default function AllLeavesCalendarMobile({ open, onClose, token, onOpenMo
                   padding: '12px',
                   borderRadius: '12px',
                   border: 'none',
-                  background: activeTab === 'list' ? '#43e97b' : 'rgba(67,233,123,0.15)',
-                  color: activeTab === 'list' ? '#222' : '#43e97b',
+                  background: activeTab === 'list' ? 'var(--modal-calendar-button-background, #43e97b)' : 'rgba(67,233,123,0.15)',
+                  color: activeTab === 'list' ? 'var(--modal-calendar-button-text-color, #222)' : 'var(--modal-calendar-header-icon-color, #43e97b)',
                   fontWeight: 700,
                   fontSize: '1em',
                   cursor: 'pointer',
@@ -486,7 +486,7 @@ export default function AllLeavesCalendarMobile({ open, onClose, token, onOpenMo
             {/* Кнопка фильтров */}
             <div style={{
               padding: '12px 20px',
-              borderBottom: '1px solid rgba(67,233,123,0.1)',
+              borderBottom: '1px solid var(--modal-calendar-border-color, rgba(67,233,123,0.1))',
               background: 'rgba(34,40,49,0.6)'
             }}>
               <button
@@ -495,9 +495,9 @@ export default function AllLeavesCalendarMobile({ open, onClose, token, onOpenMo
                   width: '100%',
                   padding: '12px',
                   borderRadius: '12px',
-                  border: '1px solid #43e97b',
+                  border: '1px solid var(--modal-calendar-border-color, #43e97b)',
                   background: showFilters ? 'rgba(67,233,123,0.2)' : 'rgba(67,233,123,0.1)',
-                  color: '#43e97b',
+                  color: 'var(--modal-calendar-button-text-color, #43e97b)',
                   fontWeight: 700,
                   fontSize: '1em',
                   cursor: 'pointer'
@@ -512,7 +512,7 @@ export default function AllLeavesCalendarMobile({ open, onClose, token, onOpenMo
               <div style={{
                 padding: '16px 20px',
                 background: 'rgba(34,40,49,0.9)',
-                borderBottom: '1px solid rgba(67,233,123,0.1)',
+                borderBottom: '1px solid var(--modal-calendar-border-color, rgba(67,233,123,0.1))',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '16px'
@@ -520,7 +520,7 @@ export default function AllLeavesCalendarMobile({ open, onClose, token, onOpenMo
                 {/* Месяц и год */}
                 <div style={{ display: 'flex', gap: '12px' }}>
                   <div style={{ flex: 1 }}>
-                    <label style={{ display: 'block', color: '#43e97b', fontSize: '0.9em', marginBottom: '6px', fontWeight: 600 }}>
+                    <label style={{ display: 'block', color: 'var(--modal-calendar-header-icon-color, #43e97b)', fontSize: '0.9em', marginBottom: '6px', fontWeight: 600 }}>
                       Месяц
                     </label>
                     <select
@@ -531,9 +531,9 @@ export default function AllLeavesCalendarMobile({ open, onClose, token, onOpenMo
                         padding: '12px',
                         borderRadius: '10px',
                         fontSize: '1em',
-                        border: '1px solid #43e97b',
+                        border: '1px solid var(--modal-calendar-border-color, #43e97b)',
                         background: '#2d3748',
-                        color: '#fff'
+                        color: 'var(--modal-calendar-input-text-color, #fff)'
                       }}
                     >
                       {months.map((m, i) => (
@@ -542,7 +542,7 @@ export default function AllLeavesCalendarMobile({ open, onClose, token, onOpenMo
                     </select>
                   </div>
                   <div style={{ flex: 1 }}>
-                    <label style={{ display: 'block', color: '#43e97b', fontSize: '0.9em', marginBottom: '6px', fontWeight: 600 }}>
+                    <label style={{ display: 'block', color: 'var(--modal-calendar-header-icon-color, #43e97b)', fontSize: '0.9em', marginBottom: '6px', fontWeight: 600 }}>
                       Год
                     </label>
                     <select
@@ -553,9 +553,9 @@ export default function AllLeavesCalendarMobile({ open, onClose, token, onOpenMo
                         padding: '12px',
                         borderRadius: '10px',
                         fontSize: '1em',
-                        border: '1px solid #43e97b',
+                        border: '1px solid var(--modal-calendar-border-color, #43e97b)',
                         background: '#2d3748',
-                        color: '#fff'
+                        color: 'var(--modal-calendar-input-text-color, #fff)'
                       }}
                     >
                       {years.map(y => (
@@ -568,7 +568,7 @@ export default function AllLeavesCalendarMobile({ open, onClose, token, onOpenMo
                 {/* Поиск сотрудника для HR */}
                 {isHr && (
                   <div style={{ position: 'relative' }}>
-                    <label style={{ display: 'block', color: '#43e97b', fontSize: '0.9em', marginBottom: '6px', fontWeight: 600 }}>
+                    <label style={{ display: 'block', color: 'var(--modal-calendar-header-icon-color, #43e97b)', fontSize: '0.9em', marginBottom: '6px', fontWeight: 600 }}>
                       Сотрудник
                     </label>
                     <input
@@ -583,9 +583,9 @@ export default function AllLeavesCalendarMobile({ open, onClose, token, onOpenMo
                         padding: '12px',
                         borderRadius: '10px',
                         fontSize: '1em',
-                        border: '1px solid #43e97b',
+                        border: '1px solid var(--modal-calendar-border-color, #43e97b)',
                         background: '#2d3748',
-                        color: '#fff',
+                        color: 'var(--modal-calendar-input-text-color, #fff)',
                         boxSizing: 'border-box'
                       }}
                     />
@@ -598,7 +598,7 @@ export default function AllLeavesCalendarMobile({ open, onClose, token, onOpenMo
                         maxHeight: '200px',
                         overflowY: 'auto',
                         background: '#232931',
-                        border: '1px solid #43e97b',
+                        border: '1px solid var(--modal-calendar-border-color, #43e97b)',
                         borderRadius: '10px',
                         marginTop: '4px',
                         zIndex: 20
@@ -609,7 +609,7 @@ export default function AllLeavesCalendarMobile({ open, onClose, token, onOpenMo
                             padding: '12px',
                             cursor: 'pointer',
                             borderBottom: '1px solid #2a323d',
-                            color: '#fff',
+                            color: 'var(--modal-calendar-input-text-color, #fff)',
                             fontWeight: 600
                           }}
                         >
@@ -637,7 +637,7 @@ export default function AllLeavesCalendarMobile({ open, onClose, token, onOpenMo
                                 padding: '12px',
                                 cursor: 'pointer',
                                 borderBottom: '1px solid #2a323d',
-                                color: '#fff'
+                                color: 'var(--modal-calendar-input-text-color, #fff)'
                               }}
                             >
                               {u.username || `${u.first_name || ''} ${u.last_name || ''}`}
@@ -650,7 +650,7 @@ export default function AllLeavesCalendarMobile({ open, onClose, token, onOpenMo
 
                 {/* Тип события */}
                 <div>
-                  <label style={{ display: 'block', color: '#43e97b', fontSize: '0.9em', marginBottom: '8px', fontWeight: 600 }}>
+                  <label style={{ display: 'block', color: 'var(--modal-calendar-header-icon-color, #43e97b)', fontSize: '0.9em', marginBottom: '8px', fontWeight: 600 }}>
                     Тип события
                   </label>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
@@ -659,9 +659,9 @@ export default function AllLeavesCalendarMobile({ open, onClose, token, onOpenMo
                       style={{
                         padding: '12px',
                         borderRadius: '10px',
-                        border: '1px solid #43e97b',
-                        background: selectedType === 'all' ? '#43e97b' : 'rgba(67,233,123,0.1)',
-                        color: selectedType === 'all' ? '#222' : '#43e97b',
+                        border: '1px solid var(--modal-calendar-border-color, #43e97b)',
+                        background: selectedType === 'all' ? 'var(--modal-calendar-button-background, #43e97b)' : 'rgba(67,233,123,0.1)',
+                        color: selectedType === 'all' ? 'var(--modal-calendar-button-text-color, #222)' : 'var(--modal-calendar-header-icon-color, #43e97b)',
                         fontWeight: 700,
                         fontSize: '0.95em',
                         cursor: 'pointer'
@@ -674,9 +674,9 @@ export default function AllLeavesCalendarMobile({ open, onClose, token, onOpenMo
                       style={{
                         padding: '12px',
                         borderRadius: '10px',
-                        border: '1px solid #43e97b',
-                        background: selectedType === 'vacation' ? '#43e97b' : 'rgba(67,233,123,0.1)',
-                        color: selectedType === 'vacation' ? '#222' : '#43e97b',
+                        border: '1px solid var(--modal-calendar-border-color, #43e97b)',
+                        background: selectedType === 'vacation' ? 'var(--modal-calendar-button-background, #43e97b)' : 'rgba(67,233,123,0.1)',
+                        color: selectedType === 'vacation' ? 'var(--modal-calendar-button-text-color, #222)' : 'var(--modal-calendar-header-icon-color, #43e97b)',
                         fontWeight: 700,
                         fontSize: '0.95em',
                         cursor: 'pointer'
@@ -689,9 +689,9 @@ export default function AllLeavesCalendarMobile({ open, onClose, token, onOpenMo
                       style={{
                         padding: '12px',
                         borderRadius: '10px',
-                        border: '1px solid #43e97b',
-                        background: selectedType === 'leave' ? '#43e97b' : 'rgba(67,233,123,0.1)',
-                        color: selectedType === 'leave' ? '#222' : '#43e97b',
+                        border: '1px solid var(--modal-calendar-border-color, #43e97b)',
+                        background: selectedType === 'leave' ? 'var(--modal-calendar-button-background, #43e97b)' : 'rgba(67,233,123,0.1)',
+                        color: selectedType === 'leave' ? 'var(--modal-calendar-button-text-color, #222)' : 'var(--modal-calendar-header-icon-color, #43e97b)',
                         fontWeight: 700,
                         fontSize: '0.95em',
                         cursor: 'pointer'
@@ -704,9 +704,9 @@ export default function AllLeavesCalendarMobile({ open, onClose, token, onOpenMo
                       style={{
                         padding: '12px',
                         borderRadius: '10px',
-                        border: '1px solid #43e97b',
-                        background: selectedType === 'sick' ? '#43e97b' : 'rgba(67,233,123,0.1)',
-                        color: selectedType === 'sick' ? '#222' : '#43e97b',
+                        border: '1px solid var(--modal-calendar-border-color, #43e97b)',
+                        background: selectedType === 'sick' ? 'var(--modal-calendar-button-background, #43e97b)' : 'rgba(67,233,123,0.1)',
+                        color: selectedType === 'sick' ? 'var(--modal-calendar-button-text-color, #222)' : 'var(--modal-calendar-header-icon-color, #43e97b)',
                         fontWeight: 700,
                         fontSize: '0.95em',
                         cursor: 'pointer'
@@ -719,7 +719,7 @@ export default function AllLeavesCalendarMobile({ open, onClose, token, onOpenMo
 
                 {/* Статус */}
                 <div>
-                  <label style={{ display: 'block', color: '#43e97b', fontSize: '0.9em', marginBottom: '6px', fontWeight: 600 }}>
+                  <label style={{ display: 'block', color: 'var(--modal-calendar-header-icon-color, #43e97b)', fontSize: '0.9em', marginBottom: '6px', fontWeight: 600 }}>
                     Статус
                   </label>
                   <select
@@ -730,9 +730,9 @@ export default function AllLeavesCalendarMobile({ open, onClose, token, onOpenMo
                       padding: '12px',
                       borderRadius: '10px',
                       fontSize: '1em',
-                      border: '1px solid #43e97b',
+                      border: '1px solid var(--modal-calendar-border-color, #43e97b)',
                       background: '#2d3748',
-                      color: '#fff'
+                      color: 'var(--modal-calendar-input-text-color, #fff)'
                     }}
                   >
                     <option value="all">Все</option>
@@ -768,7 +768,7 @@ export default function AllLeavesCalendarMobile({ open, onClose, token, onOpenMo
                       onClick={() => handleMonthChange('prev')}
                       style={{
                         background: 'rgba(67,233,123,0.2)',
-                        border: '1px solid #43e97b',
+                        border: '1px solid var(--modal-calendar-border-color, #43e97b)',
                         borderRadius: '50%',
                         width: 44,
                         height: 44,
@@ -776,7 +776,7 @@ export default function AllLeavesCalendarMobile({ open, onClose, token, onOpenMo
                         alignItems: 'center',
                         justifyContent: 'center',
                         cursor: 'pointer',
-                        color: '#43e97b',
+                        color: 'var(--modal-calendar-header-icon-color, #43e97b)',
                         fontSize: '18px'
                       }}
                     >
@@ -784,7 +784,7 @@ export default function AllLeavesCalendarMobile({ open, onClose, token, onOpenMo
                     </button>
                     <div style={{
                       textAlign: 'center',
-                      color: '#43e97b',
+                      color: 'var(--modal-calendar-header-icon-color, #43e97b)',
                       fontWeight: 700,
                       fontSize: '1.2em'
                     }}>
@@ -794,7 +794,7 @@ export default function AllLeavesCalendarMobile({ open, onClose, token, onOpenMo
                       onClick={() => handleMonthChange('next')}
                       style={{
                         background: 'rgba(67,233,123,0.2)',
-                        border: '1px solid #43e97b',
+                        border: '1px solid var(--modal-calendar-border-color, #43e97b)',
                         borderRadius: '50%',
                         width: 44,
                         height: 44,
@@ -802,7 +802,7 @@ export default function AllLeavesCalendarMobile({ open, onClose, token, onOpenMo
                         alignItems: 'center',
                         justifyContent: 'center',
                         cursor: 'pointer',
-                        color: '#43e97b',
+                        color: 'var(--modal-calendar-header-icon-color, #43e97b)',
                         fontSize: '18px'
                       }}
                     >
@@ -830,7 +830,7 @@ export default function AllLeavesCalendarMobile({ open, onClose, token, onOpenMo
                           fontSize: '0.85em',
                           padding: '8px 0',
                           textAlign: 'center',
-                          color: '#43e97b'
+                          color: 'var(--modal-calendar-header-icon-color, #43e97b)'
                         }}>
                           {d}
                         </div>

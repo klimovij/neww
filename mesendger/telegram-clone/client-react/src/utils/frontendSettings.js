@@ -82,6 +82,14 @@ export const applyFrontendSettings = (settings = null) => {
           : modalSettings.buttonBackground;
         document.documentElement.style.setProperty(`--modal-${modalId}-button-background`, buttonBg);
         document.documentElement.style.setProperty(`--modal-${modalId}-button-background-opacity`, modalSettings.buttonBackgroundImageOpacity || 0.1);
+        document.documentElement.style.setProperty(`--modal-${modalId}-button-text-color`, modalSettings.buttonTextColor || '#ffffff');
+        
+        // Стили полей ввода
+        document.documentElement.style.setProperty(`--modal-${modalId}-border-color`, modalSettings.borderColor || 'rgba(67, 233, 123, 0.2)');
+        document.documentElement.style.setProperty(`--modal-${modalId}-input-text-color`, modalSettings.inputTextColor || '#ffffff');
+        
+        // Стили иконок заголовка (стрелка назад, крестик)
+        document.documentElement.style.setProperty(`--modal-${modalId}-header-icon-color`, modalSettings.headerIconColor || '#43e97b');
         
         // Стили текста
         document.documentElement.style.setProperty(`--modal-${modalId}-text-color`, modalSettings.textColor);
