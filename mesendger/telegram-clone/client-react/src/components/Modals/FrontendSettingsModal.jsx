@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiX, FiMonitor, FiImage, FiType, FiChevronDown, FiChevronUp, FiMenu, FiCalendar, FiMessageSquare, FiUmbrella, FiCheckSquare, FiList, FiFileText, FiUsers, FiClock, FiActivity, FiSettings } from 'react-icons/fi';
+import { FiX, FiMonitor, FiImage, FiType, FiChevronDown, FiChevronUp, FiMenu, FiCalendar, FiMessageSquare, FiUmbrella, FiCheckSquare, FiList, FiFileText, FiUsers, FiClock, FiActivity, FiSettings, FiLayout } from 'react-icons/fi';
 import { applyFrontendSettings } from '../../utils/frontendSettings';
 
 // Список вкладок
