@@ -49,13 +49,35 @@ export const applyFrontendSettings = (settings = null) => {
     document.documentElement.style.setProperty('--main-background-image', 'none');
   }
   
-  // Применяем фон модалок
+  // Применяем фон модалок (общий дефолт)
   document.documentElement.style.setProperty('--modal-background', activeSettings.modalBackground);
   if (activeSettings.modalBackgroundImage) {
     document.documentElement.style.setProperty('--modal-background-image', `url(${activeSettings.modalBackgroundImage})`);
     document.documentElement.style.setProperty('--modal-background-image-opacity', activeSettings.modalBackgroundImageOpacity);
   } else {
     document.documentElement.style.setProperty('--modal-background-image', 'none');
+  }
+  
+  // Применяем индивидуальные настройки для каждой модалки
+  if (activeSettings.modals) {
+    const modalIds = ['calendar', 'chats', 'leaves', 'tasks', 'todo', 'news', 'employees', 'monitoring', 'worktime', 'management'];
+    
+    modalIds.forEach(modalId => {
+      const modalSettings = activeSettings.modals[modalId];
+      if (modalSettings) {
+        // Цвет фона
+        document.documentElement.style.setProperty(`--modal-${modalId}-background`, modalSettings.background);
+        
+        // Изображение фона
+        if (modalSettings.backgroundImage) {
+          document.documentElement.style.setProperty(`--modal-${modalId}-background-image`, `url(${modalSettings.backgroundImage})`);
+          document.documentElement.style.setProperty(`--modal-${modalId}-background-image-opacity`, modalSettings.backgroundImageOpacity);
+        } else {
+          document.documentElement.style.setProperty(`--modal-${modalId}-background-image`, 'none');
+          document.documentElement.style.setProperty(`--modal-${modalId}-background-image-opacity`, '1');
+        }
+      }
+    });
   }
   
   // Применяем стили сайдбара

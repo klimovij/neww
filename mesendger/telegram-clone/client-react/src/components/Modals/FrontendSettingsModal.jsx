@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FiX, FiMonitor, FiImage, FiType, FiChevronDown, FiChevronUp, FiMenu, FiCalendar, FiMessageSquare, FiUmbrella, FiCheckSquare, FiList, FiFileText, FiUsers, FiClock, FiActivity, FiSettings } from 'react-icons/fi';
+import { applyFrontendSettings } from '../../utils/frontendSettings';
 
 // Список вкладок
 const TABS = [
@@ -22,7 +23,7 @@ const DEFAULT_SETTINGS = {
   mainBackgroundImage: '',
   mainBackgroundImageOpacity: 1,
   
-  // Фон модалок
+  // Фон модалок (общий дефолт)
   modalBackground: '#1f2937',
   modalBackgroundImage: '',
   modalBackgroundImageOpacity: 1,
@@ -35,6 +36,298 @@ const DEFAULT_SETTINGS = {
   sidebarTextSize: '14px',
   sidebarTextAlign: 'left',
   sidebarFontFamily: 'Inter, system-ui, -apple-system, sans-serif',
+  
+  // Индивидуальные настройки для каждой модалки
+  modals: {
+    calendar: {
+      background: '#1f2937',
+      backgroundImage: '',
+      backgroundImageOpacity: 1,
+    },
+    chats: {
+      background: '#1f2937',
+      backgroundImage: '',
+      backgroundImageOpacity: 1,
+    },
+    leaves: {
+      background: '#1f2937',
+      backgroundImage: '',
+      backgroundImageOpacity: 1,
+    },
+    tasks: {
+      background: '#1f2937',
+      backgroundImage: '',
+      backgroundImageOpacity: 1,
+    },
+    todo: {
+      background: '#1f2937',
+      backgroundImage: '',
+      backgroundImageOpacity: 1,
+    },
+    news: {
+      background: '#1f2937',
+      backgroundImage: '',
+      backgroundImageOpacity: 1,
+    },
+    employees: {
+      background: '#1f2937',
+      backgroundImage: '',
+      backgroundImageOpacity: 1,
+    },
+    monitoring: {
+      background: '#1f2937',
+      backgroundImage: '',
+      backgroundImageOpacity: 1,
+    },
+    worktime: {
+      background: '#1f2937',
+      backgroundImage: '',
+      backgroundImageOpacity: 1,
+    },
+    management: {
+      background: '#1f2937',
+      backgroundImage: '',
+      backgroundImageOpacity: 1,
+    },
+  }
+};
+
+// Компонент для настроек индивидуальной модалки
+const ModalSettingsSection = ({ modalId, modalName, modalIcon: Icon, settings, onSettingsChange }) => {
+  const modalSettings = settings.modals?.[modalId] || DEFAULT_SETTINGS.modals[modalId];
+
+  const handleBackgroundImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const base64 = await loadImageAsBase64(file);
+      const updatedModals = {
+        ...settings.modals,
+        [modalId]: {
+          ...modalSettings,
+          backgroundImage: base64
+        }
+      };
+      onSettingsChange({ ...settings, modals: updatedModals });
+    } catch (error) {
+      console.error('Ошибка загрузки изображения:', error);
+      alert(`❌ ${error.message}`);
+    }
+  };
+
+  const updateModalSetting = (key, value) => {
+    const updatedModals = {
+      ...settings.modals,
+      [modalId]: {
+        ...modalSettings,
+        [key]: value
+      }
+    };
+    onSettingsChange({ ...settings, modals: updatedModals });
+  };
+
+  return (
+    <>
+      {/* Левая колонка - настройки */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '24px' }}>
+        {/* Фон модалки */}
+        <div style={{ 
+          background: '#111827', 
+          padding: '20px', 
+          borderRadius: '12px',
+          border: '1px solid rgba(75, 85, 99, 0.3)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+            <FiImage size={18} color="#60a5fa" />
+            <h3 style={{ margin: 0, fontSize: '1.1em', fontWeight: 600, color: '#60a5fa' }}>
+              Фон модалки "{modalName}"
+            </h3>
+          </div>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {/* Цвет фона */}
+            <div>
+              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500, color: '#d1d5db' }}>
+                Цвет фона
+              </label>
+              <input
+                type="color"
+                value={modalSettings.background}
+                onChange={(e) => updateModalSetting('background', e.target.value)}
+                style={{
+                  width: '100%',
+                  height: '50px',
+                  border: '1px solid rgba(75, 85, 99, 0.5)',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  backgroundColor: modalSettings.background
+                }}
+              />
+            </div>
+
+            {/* Загрузка изображения */}
+            <div>
+              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500, color: '#d1d5db' }}>
+                Изображение фона
+              </label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleBackgroundImageUpload}
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  border: '1px solid rgba(75, 85, 99, 0.5)',
+                  borderRadius: '8px',
+                  backgroundColor: '#1f2937',
+                  color: '#d1d5db',
+                  cursor: 'pointer',
+                  fontSize: '14px'
+                }}
+              />
+              {modalSettings.backgroundImage && (
+                <button
+                  onClick={() => updateModalSetting('backgroundImage', '')}
+                  style={{
+                    marginTop: '8px',
+                    padding: '6px 12px',
+                    borderRadius: '6px',
+                    border: '1px solid rgba(239, 68, 68, 0.5)',
+                    background: 'rgba(239, 68, 68, 0.1)',
+                    color: '#ef4444',
+                    cursor: 'pointer',
+                    fontSize: '12px',
+                    fontWeight: 500
+                  }}
+                >
+                  Удалить изображение
+                </button>
+              )}
+            </div>
+
+            {/* Прозрачность изображения */}
+            {modalSettings.backgroundImage && (
+              <div>
+                <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500, color: '#d1d5db' }}>
+                  Прозрачность изображения: {Math.round(modalSettings.backgroundImageOpacity * 100)}%
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value={modalSettings.backgroundImageOpacity}
+                  onChange={(e) => updateModalSetting('backgroundImageOpacity', parseFloat(e.target.value))}
+                  style={{
+                    width: '100%',
+                    cursor: 'pointer'
+                  }}
+                />
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Правая колонка - превью */}
+      <div style={{ flex: '0 0 350px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div style={{
+          background: '#111827',
+          padding: '20px',
+          borderRadius: '12px',
+          border: '1px solid rgba(75, 85, 99, 0.3)',
+          height: 'fit-content'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+            <FiMonitor size={18} color="#60a5fa" />
+            <h3 style={{ margin: 0, fontSize: '1.1em', fontWeight: 600, color: '#60a5fa' }}>
+              Превью
+            </h3>
+          </div>
+
+          {/* Превью модалки */}
+          <div
+            style={{
+              background: modalSettings.background,
+              backgroundImage: modalSettings.backgroundImage ? `url(${modalSettings.backgroundImage})` : 'none',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              borderRadius: '12px',
+              padding: '20px',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
+              position: 'relative',
+              overflow: 'hidden',
+              minHeight: '250px'
+            }}
+          >
+            {/* Overlay для прозрачности изображения */}
+            {modalSettings.backgroundImage && (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  background: modalSettings.background,
+                  opacity: 1 - modalSettings.backgroundImageOpacity,
+                  pointerEvents: 'none',
+                  borderRadius: '12px'
+                }}
+              />
+            )}
+            
+            <div style={{ position: 'relative', zIndex: 1 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                <Icon size={32} color="#60a5fa" />
+                <div>
+                  <div style={{ 
+                    fontSize: '18px', 
+                    fontWeight: 700, 
+                    color: '#f3f4f6',
+                    marginBottom: '4px'
+                  }}>
+                    {modalName}
+                  </div>
+                  <div style={{ 
+                    fontSize: '13px', 
+                    color: '#9ca3af'
+                  }}>
+                    Превью модального окна
+                  </div>
+                </div>
+              </div>
+              
+              <div style={{ 
+                fontSize: '14px', 
+                color: '#d1d5db',
+                lineHeight: 1.6,
+                marginBottom: '16px'
+              }}>
+                Здесь отображается, как будет выглядеть модальное окно "{modalName}" с выбранным фоном и настройками.
+              </div>
+              
+              <div
+                style={{
+                  padding: '10px 16px',
+                  background: 'rgba(59, 130, 246, 0.15)',
+                  border: '1px solid rgba(59, 130, 246, 0.4)',
+                  borderRadius: '8px',
+                  color: '#60a5fa',
+                  fontSize: '14px',
+                  fontWeight: 500,
+                  textAlign: 'center'
+                }}
+              >
+                Пример кнопки
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
 };
 
 // Функция для сжатия изображения и конвертации в Base64
@@ -116,6 +409,12 @@ export default function FrontendSettingsModal({ open, onClose }) {
     }));
   };
 
+  // Обработчик изменения настроек с отслеживанием
+  const handleSettingsChange = (newSettings) => {
+    setSettings(newSettings);
+    setHasChanges(true);
+  };
+
   // Состояния для пресетов
   const [presets, setPresets] = useState([]);
   const [presetName, setPresetName] = useState('');
@@ -139,9 +438,18 @@ export default function FrontendSettingsModal({ open, onClose }) {
             const result = await response.json();
             if (result.success && result.settings) {
               console.log('📥 Настройки фронтенда загружены с сервера');
-              setSettings(result.settings);
+              // Объединяем с DEFAULT_SETTINGS, чтобы гарантировать наличие всех полей
+              const mergedSettings = {
+                ...DEFAULT_SETTINGS,
+                ...result.settings,
+                modals: {
+                  ...DEFAULT_SETTINGS.modals,
+                  ...(result.settings.modals || {})
+                }
+              };
+              setSettings(mergedSettings);
               // Сохраняем в localStorage для оффлайн доступа
-              localStorage.setItem('frontendSettings', JSON.stringify(result.settings));
+              localStorage.setItem('frontendSettings', JSON.stringify(mergedSettings));
               return;
             }
           }
@@ -153,7 +461,17 @@ export default function FrontendSettingsModal({ open, onClose }) {
         const saved = localStorage.getItem('frontendSettings');
         if (saved) {
           try {
-            setSettings(JSON.parse(saved));
+            const loadedSettings = JSON.parse(saved);
+            // Объединяем с DEFAULT_SETTINGS
+            const mergedSettings = {
+              ...DEFAULT_SETTINGS,
+              ...loadedSettings,
+              modals: {
+                ...DEFAULT_SETTINGS.modals,
+                ...(loadedSettings.modals || {})
+              }
+            };
+            setSettings(mergedSettings);
             console.log('📥 Настройки фронтенда загружены из localStorage');
           } catch (error) {
             console.error('Ошибка загрузки настроек из localStorage:', error);
@@ -312,33 +630,8 @@ export default function FrontendSettingsModal({ open, onClose }) {
       // Пытаемся сохранить локально
       localStorage.setItem('frontendSettings', JSON.stringify(settings));
       
-      // Применяем настройки глобально
-      document.documentElement.style.setProperty('--main-background', settings.mainBackground);
-      
-      if (settings.mainBackgroundImage) {
-        document.documentElement.style.setProperty('--main-background-image', `url(${settings.mainBackgroundImage})`);
-        document.documentElement.style.setProperty('--main-background-image-opacity', settings.mainBackgroundImageOpacity);
-      } else {
-        document.documentElement.style.setProperty('--main-background-image', 'none');
-      }
-      
-      document.documentElement.style.setProperty('--modal-background', settings.modalBackground);
-      if (settings.modalBackgroundImage) {
-        document.documentElement.style.setProperty('--modal-background-image', `url(${settings.modalBackgroundImage})`);
-        document.documentElement.style.setProperty('--modal-background-image-opacity', settings.modalBackgroundImageOpacity);
-      } else {
-        document.documentElement.style.setProperty('--modal-background-image', 'none');
-      }
-      
-      const buttonBg = settings.sidebarButtonBackgroundImage 
-        ? `url(${settings.sidebarButtonBackgroundImage})`
-        : settings.sidebarButtonBackground;
-      document.documentElement.style.setProperty('--sidebar-button-background', buttonBg);
-      document.documentElement.style.setProperty('--sidebar-button-background-opacity', settings.sidebarButtonBackgroundImageOpacity);
-      document.documentElement.style.setProperty('--sidebar-text-color', settings.sidebarTextColor);
-      document.documentElement.style.setProperty('--sidebar-text-size', settings.sidebarTextSize);
-      document.documentElement.style.setProperty('--sidebar-text-align', settings.sidebarTextAlign);
-      document.documentElement.style.setProperty('--sidebar-font-family', settings.sidebarFontFamily);
+      // Применяем настройки глобально через утилиту
+      applyFrontendSettings(settings);
       
       // Сохраняем на сервер для синхронизации между всеми устройствами
       try {
@@ -1571,203 +1864,103 @@ export default function FrontendSettingsModal({ open, onClose }) {
 
           {/* Вкладки для других модалок */}
           {activeTab === 'calendar' && (
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              width: '100%',
-              height: '100%',
-              color: '#9ca3af',
-              fontSize: '16px'
-            }}>
-              <div style={{ textAlign: 'center' }}>
-                <FiCalendar size={48} style={{ marginBottom: '16px', color: '#60a5fa' }} />
-                <div style={{ fontSize: '18px', fontWeight: 600, marginBottom: '8px', color: '#d1d5db' }}>
-                  Настройки "Общий календарь"
-                </div>
-                <div>Здесь будут настройки стилей для модалки "Общий календарь"</div>
-              </div>
-            </div>
+            <ModalSettingsSection
+              modalId="calendar"
+              modalName="Общий календарь"
+              modalIcon={FiCalendar}
+              settings={settings}
+              onSettingsChange={handleSettingsChange}
+            />
           )}
 
           {activeTab === 'chats' && (
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              width: '100%',
-              height: '100%',
-              color: '#9ca3af',
-              fontSize: '16px'
-            }}>
-              <div style={{ textAlign: 'center' }}>
-                <FiMessageSquare size={48} style={{ marginBottom: '16px', color: '#60a5fa' }} />
-                <div style={{ fontSize: '18px', fontWeight: 600, marginBottom: '8px', color: '#d1d5db' }}>
-                  Настройки "Чаты"
-                </div>
-                <div>Здесь будут настройки стилей для модалки "Чаты"</div>
-              </div>
-            </div>
+            <ModalSettingsSection
+              modalId="chats"
+              modalName="Чаты"
+              modalIcon={FiMessageSquare}
+              settings={settings}
+              onSettingsChange={handleSettingsChange}
+            />
           )}
 
           {activeTab === 'leaves' && (
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              width: '100%',
-              height: '100%',
-              color: '#9ca3af',
-              fontSize: '16px'
-            }}>
-              <div style={{ textAlign: 'center' }}>
-                <FiUmbrella size={48} style={{ marginBottom: '16px', color: '#60a5fa' }} />
-                <div style={{ fontSize: '18px', fontWeight: 600, marginBottom: '8px', color: '#d1d5db' }}>
-                  Настройки "Отгулы"
-                </div>
-                <div>Здесь будут настройки стилей для модалки "Отгулы"</div>
-              </div>
-            </div>
+            <ModalSettingsSection
+              modalId="leaves"
+              modalName="Отгулы"
+              modalIcon={FiUmbrella}
+              settings={settings}
+              onSettingsChange={handleSettingsChange}
+            />
           )}
 
           {activeTab === 'tasks' && (
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              width: '100%',
-              height: '100%',
-              color: '#9ca3af',
-              fontSize: '16px'
-            }}>
-              <div style={{ textAlign: 'center' }}>
-                <FiCheckSquare size={48} style={{ marginBottom: '16px', color: '#60a5fa' }} />
-                <div style={{ fontSize: '18px', fontWeight: 600, marginBottom: '8px', color: '#d1d5db' }}>
-                  Настройки "Задачи"
-                </div>
-                <div>Здесь будут настройки стилей для модалки "Задачи"</div>
-              </div>
-            </div>
+            <ModalSettingsSection
+              modalId="tasks"
+              modalName="Задачи"
+              modalIcon={FiCheckSquare}
+              settings={settings}
+              onSettingsChange={handleSettingsChange}
+            />
           )}
 
           {activeTab === 'todo' && (
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              width: '100%',
-              height: '100%',
-              color: '#9ca3af',
-              fontSize: '16px'
-            }}>
-              <div style={{ textAlign: 'center' }}>
-                <FiList size={48} style={{ marginBottom: '16px', color: '#60a5fa' }} />
-                <div style={{ fontSize: '18px', fontWeight: 600, marginBottom: '8px', color: '#d1d5db' }}>
-                  Настройки "Список дел"
-                </div>
-                <div>Здесь будут настройки стилей для модалки "Список дел"</div>
-              </div>
-            </div>
+            <ModalSettingsSection
+              modalId="todo"
+              modalName="Список дел"
+              modalIcon={FiList}
+              settings={settings}
+              onSettingsChange={handleSettingsChange}
+            />
           )}
 
           {activeTab === 'news' && (
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              width: '100%',
-              height: '100%',
-              color: '#9ca3af',
-              fontSize: '16px'
-            }}>
-              <div style={{ textAlign: 'center' }}>
-                <FiFileText size={48} style={{ marginBottom: '16px', color: '#60a5fa' }} />
-                <div style={{ fontSize: '18px', fontWeight: 600, marginBottom: '8px', color: '#d1d5db' }}>
-                  Настройки "Новости"
-                </div>
-                <div>Здесь будут настройки стилей для модалки "Новости"</div>
-              </div>
-            </div>
+            <ModalSettingsSection
+              modalId="news"
+              modalName="Новости"
+              modalIcon={FiFileText}
+              settings={settings}
+              onSettingsChange={handleSettingsChange}
+            />
           )}
 
           {activeTab === 'employees' && (
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              width: '100%',
-              height: '100%',
-              color: '#9ca3af',
-              fontSize: '16px'
-            }}>
-              <div style={{ textAlign: 'center' }}>
-                <FiUsers size={48} style={{ marginBottom: '16px', color: '#60a5fa' }} />
-                <div style={{ fontSize: '18px', fontWeight: 600, marginBottom: '8px', color: '#d1d5db' }}>
-                  Настройки "Сотрудники компании"
-                </div>
-                <div>Здесь будут настройки стилей для модалки "Сотрудники компании"</div>
-              </div>
-            </div>
+            <ModalSettingsSection
+              modalId="employees"
+              modalName="Сотрудники компании"
+              modalIcon={FiUsers}
+              settings={settings}
+              onSettingsChange={handleSettingsChange}
+            />
           )}
 
           {activeTab === 'monitoring' && (
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              width: '100%',
-              height: '100%',
-              color: '#9ca3af',
-              fontSize: '16px'
-            }}>
-              <div style={{ textAlign: 'center' }}>
-                <FiClock size={48} style={{ marginBottom: '16px', color: '#60a5fa' }} />
-                <div style={{ fontSize: '18px', fontWeight: 600, marginBottom: '8px', color: '#d1d5db' }}>
-                  Настройки "Мониторинг времени"
-                </div>
-                <div>Здесь будут настройки стилей для модалки "Мониторинг времени"</div>
-              </div>
-            </div>
+            <ModalSettingsSection
+              modalId="monitoring"
+              modalName="Мониторинг времени"
+              modalIcon={FiClock}
+              settings={settings}
+              onSettingsChange={handleSettingsChange}
+            />
           )}
 
           {activeTab === 'worktime' && (
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              width: '100%',
-              height: '100%',
-              color: '#9ca3af',
-              fontSize: '16px'
-            }}>
-              <div style={{ textAlign: 'center' }}>
-                <FiActivity size={48} style={{ marginBottom: '16px', color: '#60a5fa' }} />
-                <div style={{ fontSize: '18px', fontWeight: 600, marginBottom: '8px', color: '#d1d5db' }}>
-                  Настройки "Отработка отгулов"
-                </div>
-                <div>Здесь будут настройки стилей для модалки "Отработка отгулов"</div>
-              </div>
-            </div>
+            <ModalSettingsSection
+              modalId="worktime"
+              modalName="Отработка отгулов"
+              modalIcon={FiActivity}
+              settings={settings}
+              onSettingsChange={handleSettingsChange}
+            />
           )}
 
           {activeTab === 'management' && (
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              width: '100%',
-              height: '100%',
-              color: '#9ca3af',
-              fontSize: '16px'
-            }}>
-              <div style={{ textAlign: 'center' }}>
-                <FiSettings size={48} style={{ marginBottom: '16px', color: '#60a5fa' }} />
-                <div style={{ fontSize: '18px', fontWeight: 600, marginBottom: '8px', color: '#d1d5db' }}>
-                  Настройки "Управление"
-                </div>
-                <div>Здесь будут настройки стилей для модалки "Управление"</div>
-              </div>
-            </div>
+            <ModalSettingsSection
+              modalId="management"
+              modalName="Управление"
+              modalIcon={FiSettings}
+              settings={settings}
+              onSettingsChange={handleSettingsChange}
+            />
           )}
         </div>
 
