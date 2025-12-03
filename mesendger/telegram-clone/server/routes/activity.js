@@ -239,21 +239,26 @@ router.get('/activity-summary', async (req, res) => {
     }
 
     const perUser = {};
-    const IDLE_THRESHOLD = 5; // минут, как говорила HR
+    const IDLE_THRESHOLD = 5; // минут - порог простоя
+    
+    // Отладка: считаем статистику по idle_minutes
+    let statsDebug = { total: 0, withIdleZero: 0, withIdlePositive: 0, badTimestamps: 0 };
 
     for (const row of logs) {
       const u = row.username;
       if (!u) continue;
+      
+      statsDebug.total++;
 
       if (!perUser[u]) {
         perUser[u] = {
           username: u,
           totalActiveMinutes: 0,
           totalIdleMinutes: 0,
-          apps: {}, // procName -> minutes (уникальные минуты)
-          activeMinutesSet: new Set(), // Набор уникальных минут активности
-          idleMinutesSet: new Set(), // Набор уникальных минут простоя
-          appMinutesSet: {}, // procName -> Set минут
+          apps: {}, // procName -> minutes
+          activeMinutesSet: new Set(),
+          idleMinutesSet: new Set(),
+          appMinutesSet: {},
         };
       }
 
@@ -261,41 +266,44 @@ router.get('/activity-summary', async (req, res) => {
       const idle = Number(row.idle_minutes) || 0;
       const proc = row.proc_name || 'unknown';
       
-      // Получаем временную метку записи и округляем до минуты
+      if (idle === 0) statsDebug.withIdleZero++;
+      else statsDebug.withIdlePositive++;
+      
+      // Получаем временную метку и округляем до минуты
       const timestamp = row.timestamp;
-      let minuteKey = '';
-      try {
-        const date = new Date(timestamp);
-        if (!isNaN(date.getTime())) {
-          // Формируем ключ минуты: YYYY-MM-DD HH:MM
-          minuteKey = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')} ${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}`;
+      let minuteKey = null;
+      
+      if (timestamp) {
+        try {
+          const date = new Date(timestamp);
+          if (!isNaN(date.getTime())) {
+            // Ключ минуты: YYYY-MM-DD HH:MM
+            minuteKey = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')} ${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}`;
+          }
+        } catch (e) {
+          // Ошибка парсинга
         }
-      } catch (e) {
-        // Если не удалось распарсить timestamp, используем счётчик
-        minuteKey = `unknown_${bucket.activeMinutesSet.size + bucket.idleMinutesSet.size}`;
+      }
+      
+      // Если не удалось получить minuteKey - пропускаем запись
+      if (!minuteKey) {
+        statsDebug.badTimestamps++;
+        continue;
       }
 
       if (idle >= IDLE_THRESHOLD) {
-        // Добавляем минуту простоя только если она ещё не была посчитана
-        if (!bucket.idleMinutesSet.has(minuteKey)) {
-          bucket.idleMinutesSet.add(minuteKey);
-        }
-        // НЕ добавляем приложение в статистику - пользователь бездействует
+        bucket.idleMinutesSet.add(minuteKey);
       } else {
-        // Добавляем минуту активности только если она ещё не была посчитана
-        if (!bucket.activeMinutesSet.has(minuteKey)) {
-          bucket.activeMinutesSet.add(minuteKey);
-        }
-        // Добавляем приложение в статистику ТОЛЬКО если пользователь активен
-        // Считаем уникальные минуты для каждого приложения
+        bucket.activeMinutesSet.add(minuteKey);
         if (!bucket.appMinutesSet[proc]) {
           bucket.appMinutesSet[proc] = new Set();
         }
-        if (!bucket.appMinutesSet[proc].has(minuteKey)) {
-          bucket.appMinutesSet[proc].add(minuteKey);
-        }
+        bucket.appMinutesSet[proc].add(minuteKey);
       }
     }
+    
+    // Логируем статистику для отладки
+    console.log(`📊 [activity-summary] Статистика записей:`, statsDebug);
     
     // Преобразуем Set в количество минут
     for (const u of Object.keys(perUser)) {
@@ -303,12 +311,13 @@ router.get('/activity-summary', async (req, res) => {
       bucket.totalActiveMinutes = bucket.activeMinutesSet.size;
       bucket.totalIdleMinutes = bucket.idleMinutesSet.size;
       
-      // Преобразуем appMinutesSet в apps (количество минут)
+      // Логируем для отладки
+      console.log(`📊 [activity-summary] ${u}: активных минут=${bucket.totalActiveMinutes}, простой=${bucket.totalIdleMinutes}`);
+      
       for (const proc of Object.keys(bucket.appMinutesSet)) {
         bucket.apps[proc] = bucket.appMinutesSet[proc].size;
       }
       
-      // Удаляем временные Set для экономии памяти
       delete bucket.activeMinutesSet;
       delete bucket.idleMinutesSet;
       delete bucket.appMinutesSet;
