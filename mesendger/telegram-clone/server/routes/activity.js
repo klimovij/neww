@@ -250,23 +250,68 @@ router.get('/activity-summary', async (req, res) => {
           username: u,
           totalActiveMinutes: 0,
           totalIdleMinutes: 0,
-          apps: {}, // procName -> minutes
+          apps: {}, // procName -> minutes (уникальные минуты)
+          activeMinutesSet: new Set(), // Набор уникальных минут активности
+          idleMinutesSet: new Set(), // Набор уникальных минут простоя
+          appMinutesSet: {}, // procName -> Set минут
         };
       }
 
       const bucket = perUser[u];
       const idle = Number(row.idle_minutes) || 0;
       const proc = row.proc_name || 'unknown';
+      
+      // Получаем временную метку записи и округляем до минуты
+      const timestamp = row.timestamp;
+      let minuteKey = '';
+      try {
+        const date = new Date(timestamp);
+        if (!isNaN(date.getTime())) {
+          // Формируем ключ минуты: YYYY-MM-DD HH:MM
+          minuteKey = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')} ${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}`;
+        }
+      } catch (e) {
+        // Если не удалось распарсить timestamp, используем счётчик
+        minuteKey = `unknown_${bucket.activeMinutesSet.size + bucket.idleMinutesSet.size}`;
+      }
 
       if (idle >= IDLE_THRESHOLD) {
-        bucket.totalIdleMinutes += idle;
+        // Добавляем минуту простоя только если она ещё не была посчитана
+        if (!bucket.idleMinutesSet.has(minuteKey)) {
+          bucket.idleMinutesSet.add(minuteKey);
+        }
         // НЕ добавляем приложение в статистику - пользователь бездействует
       } else {
-        // считаем как 1 минуту активной работы
-        bucket.totalActiveMinutes += 1;
+        // Добавляем минуту активности только если она ещё не была посчитана
+        if (!bucket.activeMinutesSet.has(minuteKey)) {
+          bucket.activeMinutesSet.add(minuteKey);
+        }
         // Добавляем приложение в статистику ТОЛЬКО если пользователь активен
-        bucket.apps[proc] = (bucket.apps[proc] || 0) + 1;
+        // Считаем уникальные минуты для каждого приложения
+        if (!bucket.appMinutesSet[proc]) {
+          bucket.appMinutesSet[proc] = new Set();
+        }
+        if (!bucket.appMinutesSet[proc].has(minuteKey)) {
+          bucket.appMinutesSet[proc].add(minuteKey);
+        }
       }
+    }
+    
+    // Преобразуем Set в количество минут
+    for (const u of Object.keys(perUser)) {
+      const bucket = perUser[u];
+      bucket.totalActiveMinutes = bucket.activeMinutesSet.size;
+      bucket.totalIdleMinutes = bucket.idleMinutesSet.size;
+      
+      // Преобразуем appMinutesSet в apps (количество минут)
+      for (const proc of Object.keys(bucket.appMinutesSet)) {
+        bucket.apps[proc] = bucket.appMinutesSet[proc].size;
+      }
+      
+      // Удаляем временные Set для экономии памяти
+      delete bucket.activeMinutesSet;
+      delete bucket.idleMinutesSet;
+      delete bucket.appMinutesSet;
     }
 
     // Подтягиваем ФИО из таблицы users, чтобы в отчётах видеть русские имена
