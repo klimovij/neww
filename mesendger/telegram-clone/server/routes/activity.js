@@ -664,23 +664,40 @@ router.get('/activity-details', async (req, res) => {
     
     console.log(`📊 [activity-details] Всего записей приложений для ${username}: ${allApplications.length}`);
     
-    // НЕ дедуплицируем - показываем все события открытия/переключения приложений
-    // Сортируем по времени (новые сверху, как для сайтов)
-    const applications = allApplications
+    // ДЕДУПЛИКАЦИЯ: Показываем только уникальные приложения за день
+    // Для каждого приложения сохраняем только ПЕРВОЕ появление (самое раннее время)
+    const uniqueAppsMap = new Map(); // procName -> { procName, windowTitle, timestamp }
+    
+    // Сначала сортируем по времени (старые первые) чтобы взять первое появление
+    const sortedApps = allApplications.sort((a, b) => {
+      const parseDate = (ts) => {
+        if (!ts) return 0;
+        const date = new Date(ts);
+        return isNaN(date.getTime()) ? 0 : date.getTime();
+      };
+      return parseDate(a.timestamp) - parseDate(b.timestamp); // Возрастание (старые первые)
+    });
+    
+    // Оставляем только первое появление каждого приложения
+    for (const app of sortedApps) {
+      const procNameLower = app.procName.toLowerCase();
+      if (!uniqueAppsMap.has(procNameLower)) {
+        uniqueAppsMap.set(procNameLower, app);
+      }
+    }
+    
+    // Преобразуем в массив и сортируем по времени (новые сверху для отображения)
+    const applications = Array.from(uniqueAppsMap.values())
       .sort((a, b) => {
-        // Сортируем по времени (новые сверху)
-        // Безопасная обработка дат
         const parseDate = (ts) => {
           if (!ts) return 0;
           const date = new Date(ts);
           return isNaN(date.getTime()) ? 0 : date.getTime();
         };
-        const timeA = parseDate(a.timestamp);
-        const timeB = parseDate(b.timestamp);
-        return timeB - timeA; // Убывание (новые сверху)
+        return parseDate(b.timestamp) - parseDate(a.timestamp); // Убывание (новые сверху)
       });
     
-    console.log(`📊 [activity-details] Всего событий приложений для пользователя ${username}: ${applications.length}`);
+    console.log(`📊 [activity-details] Уникальных приложений для ${username}: ${applications.length} (из ${allApplications.length} записей)`);
     if (applications.length > 0) {
       console.log(`📊 [activity-details] Примеры событий приложений (первые 10):`, applications.slice(0, 10).map(a => ({ procName: a.procName, timestamp: a.timestamp, windowTitle: a.windowTitle?.substring(0, 30) || '' })));
       console.log(`📊 [activity-details] Все события приложений (первые 20):`, applications.slice(0, 20).map(a => ({ procName: a.procName, windowTitle: a.windowTitle?.substring(0, 30) || '', timestamp: a.timestamp })));
