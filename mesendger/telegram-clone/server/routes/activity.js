@@ -260,12 +260,13 @@ router.get('/activity-summary', async (req, res) => {
 
       if (idle >= IDLE_THRESHOLD) {
         bucket.totalIdleMinutes += idle;
+        // НЕ добавляем приложение в статистику - пользователь бездействует
       } else {
         // считаем как 1 минуту активной работы
         bucket.totalActiveMinutes += 1;
+        // Добавляем приложение в статистику ТОЛЬКО если пользователь активен
+        bucket.apps[proc] = (bucket.apps[proc] || 0) + 1;
       }
-
-      bucket.apps[proc] = (bucket.apps[proc] || 0) + 1;
     }
 
     // Подтягиваем ФИО из таблицы users, чтобы в отчётах видеть русские имена
@@ -542,7 +543,9 @@ router.get('/activity-details', async (req, res) => {
     
     // Получаем приложения (программы) - только НЕ-браузеры без browser_url
     // Исключаем браузеры и записи с browser_url (они уже в разделе "Сайты")
+    // ВАЖНО: Показываем только приложения в периоды АКТИВНОЙ работы (idle_minutes < IDLE_THRESHOLD)
     const browserProcessNames = ['chrome', 'msedge', 'firefox', 'opera', 'brave', 'safari', 'yandex'];
+    const IDLE_THRESHOLD = 5; // минут - порог простоя, выше которого считается бездействием
     
     // ДЕТАЛЬНАЯ ДИАГНОСТИКА: показываем, что фильтруется
     const userLogsWithProcName = userLogs.filter(log => log.proc_name && log.proc_name.trim() !== '');
@@ -552,6 +555,15 @@ router.get('/activity-details', async (req, res) => {
       const procNameLower = log.proc_name.toLowerCase();
       return browserProcessNames.some(browser => procNameLower.includes(browser));
     });
+    // Проверяем сколько логов отфильтруется по idle_minutes
+    const activeLogsCount = logsWithoutBrowserUrl.filter(log => {
+      const idleMinutes = Number(log.idle_minutes) || 0;
+      return idleMinutes < IDLE_THRESHOLD;
+    }).length;
+    const idleLogsCount = logsWithoutBrowserUrl.filter(log => {
+      const idleMinutes = Number(log.idle_minutes) || 0;
+      return idleMinutes >= IDLE_THRESHOLD;
+    }).length;
     
     console.log(`🔍 [activity-details] ДИАГНОСТИКА ФИЛЬТРАЦИИ для ${username}:`);
     console.log(`  - Всего логов: ${userLogs.length}`);
@@ -559,6 +571,8 @@ router.get('/activity-details', async (req, res) => {
     console.log(`  - Логов с browser_url (пойдут в "Сайты"): ${logsWithBrowserUrl.length}`);
     console.log(`  - Логов БЕЗ browser_url: ${logsWithoutBrowserUrl.length}`);
     console.log(`  - Из них идентифицированы как браузеры: ${logsIdentifiedAsBrowsers.length}`);
+    console.log(`  - Активных логов (idle < ${IDLE_THRESHOLD} мин): ${activeLogsCount}`);
+    console.log(`  - Логов в простое (idle >= ${IDLE_THRESHOLD} мин): ${idleLogsCount}`);
     
     if (logsWithoutBrowserUrl.length > 0) {
       const nonBrowserLogs = logsWithoutBrowserUrl.filter(log => {
@@ -583,6 +597,9 @@ router.get('/activity-details', async (req, res) => {
         const procNameLower = log.proc_name.toLowerCase();
         const isBrowser = browserProcessNames.some(browser => procNameLower.includes(browser));
         if (isBrowser) return false;
+        // ВАЖНО: Исключаем приложения в периоды простоя (когда пользователь бездействует)
+        const idleMinutes = Number(log.idle_minutes) || 0;
+        if (idleMinutes >= IDLE_THRESHOLD) return false; // Исключаем записи с простоем >= 5 минут
         return true;
       })
       .map(log => ({

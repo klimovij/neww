@@ -49,6 +49,16 @@ public class Win32 {
     [DllImport("user32.dll")]
     public static extern int GetWindowTextLength(IntPtr hWnd);
     
+    // Для определения времени бездействия пользователя
+    [DllImport("user32.dll")]
+    public static extern bool GetLastInputInfo(ref LASTINPUTINFO plii);
+    
+    [StructLayout(LayoutKind.Sequential)]
+    public struct LASTINPUTINFO {
+        public uint cbSize;
+        public uint dwTime;
+    }
+    
     // Для скриншотов
     [DllImport("user32.dll")]
     public static extern IntPtr GetDesktopWindow();
@@ -74,6 +84,19 @@ public class Win32 {
     public const int SM_CYSCREEN = 1;
     
     public delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
+    
+    // Метод для получения времени бездействия в минутах
+    public static int GetIdleMinutes() {
+        LASTINPUTINFO lastInput = new LASTINPUTINFO();
+        lastInput.cbSize = (uint)Marshal.SizeOf(typeof(LASTINPUTINFO));
+        
+        if (GetLastInputInfo(ref lastInput)) {
+            uint currentTicks = (uint)Environment.TickCount;
+            uint idleMilliseconds = currentTicks - lastInput.dwTime;
+            return (int)(idleMilliseconds / 60000); // Переводим в минуты
+        }
+        return 0;
+    }
 }
 "@ -ErrorAction SilentlyContinue
 
@@ -84,6 +107,18 @@ function Write-Log {
     $logMessage = "$timestamp - $Message"
     Write-Host $logMessage
     $logMessage | Out-File -FilePath $LOG_FILE -Append -Encoding UTF8
+}
+
+# Функция получения времени бездействия пользователя в минутах
+# Использует Windows API GetLastInputInfo для определения времени с последнего ввода (клавиатура/мышь)
+function Get-IdleMinutes {
+    try {
+        $idleMinutes = [Win32]::GetIdleMinutes()
+        return $idleMinutes
+    } catch {
+        # Если не удалось получить время бездействия, возвращаем 0 (считаем активным)
+        return 0
+    }
 }
 
 # Функция получения конфигурации (username и interval)
@@ -443,14 +478,22 @@ function Collect-Activity {
             }
         }
         
+        # Получаем время бездействия пользователя
+        $idleMinutes = Get-IdleMinutes
+        
         # Создаем основную запись для активного окна
         $activityData = @{
             username = $Username
             timestamp = $timestamp
-            idleMinutes = 0
+            idleMinutes = $idleMinutes
             procName = $processName
             windowTitle = $activeWindow
             browserUrl = $browserUrl
+        }
+        
+        # Логируем время бездействия для отладки
+        if ($idleMinutes -ge 5) {
+            Write-Log "⏸️ User idle for $idleMinutes minutes"
         }
         
         return $activityData
@@ -919,17 +962,20 @@ try {
                                 }
                             }
                             
+                            # Получаем текущее время бездействия
+                            $currentIdleMinutes = Get-IdleMinutes
+                            
                             $procActivity = @{
                                 username = $username
                                 timestamp = $procTimestamp
-                                idleMinutes = 0
+                                idleMinutes = $currentIdleMinutes
                                 procName = $procName
                                 windowTitle = $windowTitle
                                 browserUrl = $browserUrl
                             }
                             $activityBuffer += $procActivity
                             $collectedCount++
-                            Write-Log "Added process to buffer: $procName - $windowTitle"
+                            Write-Log "Added process to buffer: $procName - $windowTitle (idle: $currentIdleMinutes min)"
                         }
                     }
                     

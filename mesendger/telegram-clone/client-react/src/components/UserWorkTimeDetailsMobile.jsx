@@ -7,6 +7,24 @@ import { FiX, FiLogIn, FiLogOut, FiPower, FiClock, FiGlobe, FiCamera, FiExternal
 // Эта функция конвертирует UTC время в киевское время с учетом зимнего/летнего времени
 // ВСЕГДА ЛОГИРУЕМ для отладки
 console.log('%c🔧 [formatTime] Функция formatTime V5.2 загружена! BUILD 2025-11-29', 'background: #00ff00; color: #000000; font-size: 14px; font-weight: bold; padding: 4px;');
+
+// Функция для форматирования минут в часы и минуты
+// Например: 125 минут -> "2 часа 5 минут", 45 минут -> "45 минут"
+function formatMinutesToHours(totalMinutes) {
+  if (!totalMinutes || totalMinutes <= 0) return '0 минут';
+  
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  
+  if (hours === 0) {
+    return `${minutes} мин`;
+  } else if (minutes === 0) {
+    return `${hours} ч`;
+  } else {
+    return `${hours} ч ${minutes} мин`;
+  }
+}
+
 function formatTime(dtStr) {
   if (!dtStr) return '';
   
@@ -1376,14 +1394,14 @@ export default function UserWorkTimeDetailsMobile({
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
                       <span style={{ color: 'rgba(255, 255, 255, 0.6)' }}>Активность за период:</span>
                       <span style={{ color: '#43e97b', fontWeight: 600 }}>
-                        {activityStats.totalActiveMinutes} мин активно / {activityStats.totalIdleMinutes} мин простоя
+                        {formatMinutesToHours(activityStats.totalActiveMinutes)} активно / {formatMinutesToHours(activityStats.totalIdleMinutes)} простоя
                       </span>
                     </div>
                     {activityStats.topApps && activityStats.topApps.length > 0 && (
                       <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.7)' }}>
                         Топ приложений:{' '}
                         {activityStats.topApps
-                          .map(app => `${app.name || 'unknown'} (${app.minutes} мин)`)
+                          .map(app => `${app.name || 'unknown'} (${formatMinutesToHours(app.minutes)})`)
                           .join(', ')}
                       </div>
                     )}
@@ -1420,7 +1438,7 @@ export default function UserWorkTimeDetailsMobile({
                     Активность за период
                   </div>
                   <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.7)' }}>
-                    {localActivityStats.totalActiveMinutes} мин активно / {localActivityStats.totalIdleMinutes} мин простоя
+                    {formatMinutesToHours(localActivityStats.totalActiveMinutes)} активно / {formatMinutesToHours(localActivityStats.totalIdleMinutes)} простоя
                   </div>
                 </div>
               )}
@@ -1726,7 +1744,7 @@ export default function UserWorkTimeDetailsMobile({
                     Активность за период
                   </div>
                   <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.7)' }}>
-                    {activityStats.totalActiveMinutes} мин активно / {activityStats.totalIdleMinutes} мин простоя
+                    {formatMinutesToHours(activityStats.totalActiveMinutes)} активно / {formatMinutesToHours(activityStats.totalIdleMinutes)} простоя
                   </div>
                 </div>
               )}

@@ -2,6 +2,22 @@ import React from 'react';
 import Modal from 'react-modal';
 
 function UserWorkTimeDetailsModal({ isOpen, onRequestClose, logs, username, activityStats }) {
+  // Функция для форматирования минут в часы и минуты
+  function formatMinutesToHours(totalMinutes) {
+    if (!totalMinutes || totalMinutes <= 0) return '0 минут';
+    
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    
+    if (hours === 0) {
+      return `${minutes} мин`;
+    } else if (minutes === 0) {
+      return `${hours} ч`;
+    } else {
+      return `${hours} ч ${minutes} мин`;
+    }
+  }
+
   function formatTime(dtStr) {
     if (!dtStr) return '';
     // Парсим время как локальное (формат YYYY-MM-DD HH:mm:ss без часового пояса)
@@ -29,13 +45,13 @@ function UserWorkTimeDetailsModal({ isOpen, onRequestClose, logs, username, acti
         <div style={{ marginBottom: 16, padding: 8, borderRadius: 8, background: '#1e293b', color: '#e5e7eb' }}>
           <div style={{ fontWeight: 600, marginBottom: 4 }}>Активность за период</div>
           <div style={{ marginBottom: 4 }}>
-            {activityStats.totalActiveMinutes} мин активно / {activityStats.totalIdleMinutes} мин простоя
+            {formatMinutesToHours(activityStats.totalActiveMinutes)} активно / {formatMinutesToHours(activityStats.totalIdleMinutes)} простоя
           </div>
           {activityStats.topApps && activityStats.topApps.length > 0 && (
             <div style={{ fontSize: 13 }}>
               Топ приложений:{' '}
               {activityStats.topApps
-                .map(app => `${app.name || 'unknown'} (${app.minutes} мин)`)
+                .map(app => `${app.name || 'unknown'} (${formatMinutesToHours(app.minutes)})`)
                 .join(', ')}
             </div>
           )}
